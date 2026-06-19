@@ -28,18 +28,24 @@ function calcSub(amt,groups,p1,p2){
 }
 const fmt=n=>{if(n===''||n==null)return '';return`RM${Number(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}`;};
 
-const PROMPT=`You are an invoice data extractor for Malaysian wholesale distributors. Analyze this invoice image and extract ALL data into this exact JSON format. Respond with ONLY valid JSON — no markdown, no backticks, no explanation.
-{"supplier":"full supplier company name","invoice_no":"exact invoice number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description","product_code":"code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80}
-RULES:
-- qty: "20/0" -> extract only the first number 20. The /0 is returns.
-- volume_ml: Convert from description (1.5L=1500,1.75L=1750,500ML=500,320ML=320,300ML=300,1L=1000)
-- pack_size: "1X12"=12,"X24"=24
-- is_foc: true if list_price is 0.00 AND amount is 0.00
-- total_amount: The final "Total Amount Due" number
-- Include ALL line items including FOC items. Return ONLY the JSON object.`;
+const PROMPT=`You are an invoice data extractor for Malaysian wholesale distributors. Analyze this invoice image carefully and extract ALL data into this exact JSON format. Respond with ONLY valid JSON — no markdown, no backticks, no explanation.
+
+{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80}
+
+CRITICAL RULES:
+- invoice_no: Look for the field labeled "Document No", "Document No.", or "Doc No." on the invoice. This is the invoice number. It typically starts with "IN" followed by digits (e.g. IN93018360). Do NOT use PO numbers, Ref numbers, or Load Ref numbers. READ THE EXACT CHARACTERS CAREFULLY.
+- invoice_date: Use the "Invoice Date" or "Document Date" field. Format as DD/MM/YYYY.
+- qty: If shown as "20/0", extract ONLY the first number (20). The /0 means zero returns.
+- volume_ml: Convert the volume from the product description to milliliters (1.5L=1500, 1.75L=1750, 500ML=500, 320ML=320, 300ML=300, 1L=1000, 250ML=250, 370ML=370).
+- pack_size: Extract from description patterns like "1X12" or "X12" = 12, "1X24" or "X24" = 24.
+- is_foc: Set to true ONLY if list_price is 0.00 AND amount is 0.00 (Free Of Charge).
+- total_amount: Use the final "Total Amount Due" or "Total Amt" value.
+- supplier: The supplier company name is in the TOP HEADER of the invoice, NOT the "Ship To" or "Bill To" address.
+- Include ALL line items including FOC items.
+- Return ONLY the JSON object, nothing else.`;
 
 const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
-const bd='1.5px solid #111';
+const B='1px solid #000';
 
 export default function App(){
   const [invoices,setInvoices]=useState([]);
@@ -138,21 +144,21 @@ export default function App(){
     const rows=[],rc=inv.groups.length*4;
     inv.groups.forEach((g,gi)=>{
       rows.push(<tr key={`${inv.num}-${gi}-h`}>
-        {gi===0&&<td style={c.td} rowSpan={rc}>{inv.num}</td>}
-        {gi===0&&<td style={c.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
-        {gi===0&&<td style={c.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
-        {gi===0&&<td style={{...c.td,...c.mono}} rowSpan={rc}>{fmt(inv.raw.total_amount)}</td>}
-        <td style={c.catHdr} colSpan={2}>{g.label}</td>
+        {gi===0&&<td style={T.td} rowSpan={rc}>{inv.num}</td>}
+        {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
+        {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
+        {gi===0&&<td style={{...T.td,...T.amt}} rowSpan={rc}>{fmt(inv.raw.total_amount)}</td>}
+        <td style={T.cat} colSpan={2}>{g.label}</td>
       </tr>);
       rows.push(<tr key={`${inv.num}-${gi}-c`}>
-        <td style={c.subD}>{g.ctn} CTN x RM{g.rate.toFixed(2)} =</td>
-        <td style={c.subA}>{fmt(g.ctn*g.rate)}</td>
+        <td style={T.subL}>{g.ctn} CTN x RM{g.rate.toFixed(2)} =</td>
+        <td style={T.subR}>{fmt(g.ctn*g.rate)}</td>
       </tr>);
       rows.push(<tr key={`${inv.num}-${gi}-p1`}>
-        <td style={c.subD}>+ 0.4% =</td><td style={c.subA}>{gi===0?fmt(inv.subsidy.p1):''}</td>
+        <td style={T.subL}>+ 0.4% =</td><td style={T.subR}>{gi===0?fmt(inv.subsidy.p1):''}</td>
       </tr>);
       rows.push(<tr key={`${inv.num}-${gi}-p2`}>
-        <td style={c.subD}>+ 0.2% =</td><td style={c.subA}>{gi===0?fmt(inv.subsidy.p2):''}</td>
+        <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{gi===0?fmt(inv.subsidy.p2):''}</td>
       </tr>);
     });
     return rows;
@@ -163,138 +169,146 @@ export default function App(){
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @media print{
-          .no-print{display:none!important}
+          .noP{display:none!important}
           body,html{margin:0;padding:0;background:#fff}
           @page{size:A4 portrait;margin:12mm 10mm}
-          .print-wrap{max-width:100%!important;padding:0!important}
-          .doc-header{gap:16px!important;padding:12px 0!important}
-          .doc-header .co-name{font-size:16pt!important;white-space:nowrap}
+          .wrap{max-width:100%!important;padding:0!important}
         }
       `}</style>
 
-      <div className="print-wrap" style={{maxWidth:820,margin:'0 auto',padding:'24px 20px'}}>
+      <div className="wrap" style={{maxWidth:780,margin:'0 auto',padding:'20px'}}>
 
-        {/* HEADER */}
-        <div className="doc-header" style={{display:'flex',alignItems:'center',gap:20,paddingBottom:12,borderBottom:'3px solid #000',marginBottom:4}}>
-          <img src={LOGO} style={{height:64,flexShrink:0}} alt="CJK"/>
-          <div style={{flex:1}}>
-            <div className="co-name" style={{fontSize:17,fontWeight:700,letterSpacing:.3}}>
-              {CO.name} <span style={{fontWeight:400}}>{CO.reg}</span>
-            </div>
-            <div style={{fontSize:13,marginTop:2}}>{CO.addr}</div>
-            <div style={{fontSize:13}}>Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <span style={{color:'#0056b3',textDecoration:'underline'}}>{CO.email}</span></div>
-          </div>
-          <button className="no-print" onClick={()=>setShowSettings(!showSettings)}
-            style={{background:'none',border:'1px solid #ccc',borderRadius:4,padding:'4px 10px',cursor:'pointer',fontSize:12,fontFamily:'Arial,sans-serif',color:'#666',flexShrink:0}}>
-            ⚙ API
-          </button>
-        </div>
+        {/* ── HEADER ── */}
+        <table style={{width:'100%',borderCollapse:'collapse',borderBottom:'3px solid #000',paddingBottom:8}}>
+          <tbody><tr>
+            <td style={{width:72,paddingBottom:10,verticalAlign:'middle'}}>
+              <img src={LOGO} style={{height:60}} alt="CJK"/>
+            </td>
+            <td style={{paddingBottom:10,paddingLeft:14,verticalAlign:'middle'}}>
+              <div style={{fontSize:16,fontWeight:700}}>{CO.name}</div>
+              <div style={{fontSize:16,fontWeight:700}}>{CO.reg}</div>
+              <div style={{fontSize:12,marginTop:2}}>{CO.addr}</div>
+              <div style={{fontSize:12}}>Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={`mailto:${CO.email}`} style={{color:'#0056b3'}}>{CO.email}</a></div>
+            </td>
+            <td className="noP" style={{width:60,verticalAlign:'top',textAlign:'right'}}>
+              <button onClick={()=>setShowSettings(!showSettings)}
+                style={{background:'none',border:'1px solid #ccc',borderRadius:4,padding:'3px 8px',cursor:'pointer',fontSize:11,fontFamily:'Arial',color:'#888'}}>
+                ⚙ API
+              </button>
+            </td>
+          </tr></tbody>
+        </table>
 
-        {/* API KEY */}
+        {/* ── API KEY ── */}
         {(showSettings||!apiKey)&&(
-          <div className="no-print" style={{background:'#f9f9f9',border:'1px solid #ddd',borderRadius:8,padding:'14px 18px',marginBottom:16,marginTop:12}}>
-            <div style={{fontSize:13,fontWeight:700,marginBottom:8,fontFamily:'Arial,sans-serif'}}>
-              Groq API Key {apiKey&&<span style={{color:'#090',fontWeight:400}}>✓ connected</span>}
+          <div className="noP" style={{background:'#f8f8f8',border:'1px solid #ddd',borderRadius:6,padding:'12px 16px',margin:'14px 0'}}>
+            <div style={{fontSize:13,fontWeight:700,marginBottom:6,fontFamily:'Arial'}}>
+              Groq API Key {apiKey&&<span style={{color:'#080',fontWeight:400}}>✓ saved</span>}
             </div>
-            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <div style={{display:'flex',gap:8}}>
               <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)}
                 placeholder="gsk_..." onKeyDown={e=>e.key==='Enter'&&saveKey()}
-                style={{flex:1,padding:'7px 10px',border:'1.5px solid #bbb',borderRadius:4,fontSize:13,fontFamily:'monospace'}}/>
-              <button onClick={saveKey} style={{...btn(true),fontSize:12,padding:'7px 14px'}}>Save</button>
-              {apiKey&&<button onClick={()=>setShowSettings(false)} style={{...btn(false),fontSize:12,padding:'7px 14px'}}>Close</button>}
+                style={{flex:1,padding:'6px 10px',border:'1px solid #bbb',borderRadius:4,fontSize:13,fontFamily:'monospace'}}/>
+              <button onClick={saveKey} style={btn(1)}>Save</button>
+              {apiKey&&<button onClick={()=>setShowSettings(false)} style={btn(0)}>Close</button>}
             </div>
-            <div style={{fontSize:11,color:'#888',marginTop:6,fontFamily:'Arial,sans-serif'}}>
-              Free at <a href="https://console.groq.com" target="_blank" rel="noreferrer" style={{color:'#0056b3'}}>console.groq.com</a> — using {GROQ_MODEL}
+            <div style={{fontSize:11,color:'#999',marginTop:5,fontFamily:'Arial'}}>
+              Free at <a href="https://console.groq.com" target="_blank" rel="noreferrer" style={{color:'#0056b3'}}>console.groq.com</a>
             </div>
           </div>
         )}
 
-        {error&&<div className="no-print" style={{background:'#fff0f0',border:'1px solid #c00',borderRadius:6,padding:'10px 16px',color:'#c00',fontSize:14,marginBottom:14}}>
+        {error&&<div className="noP" style={{background:'#fff0f0',border:'1px solid #d00',borderRadius:6,padding:'10px 14px',color:'#c00',fontSize:13,margin:'10px 0'}}>
           {error}<span style={{float:'right',cursor:'pointer'}} onClick={()=>setError(null)}>✕</span>
         </div>}
 
+        {/* ── PAYMENT SUMMARY ── */}
         {invoices.length>0&&(<>
-          <div style={{textAlign:'center',fontWeight:700,fontSize:20,marginTop:12,letterSpacing:1}}>PAYMENT SUMMARY</div>
-          <div style={{textAlign:'center',fontWeight:700,fontSize:15,marginBottom:20,marginTop:4,letterSpacing:.5}}>
-            SUPPLIER: {config.name}
+          <div style={{textAlign:'center',margin:'20px 0 4px'}}>
+            <div style={{fontWeight:700,fontSize:19,letterSpacing:1}}>PAYMENT SUMMARY</div>
+            <div style={{fontWeight:700,fontSize:14,marginTop:2}}>SUPPLIER: {config.name}</div>
           </div>
 
-          <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',marginTop:14}}>
             <thead><tr>
-              <th style={{...c.th,width:40}}>NO.</th>
-              <th style={{...c.th,width:90}}>DATE</th>
-              <th style={{...c.th,width:130}}>INVOICE NO.</th>
-              <th style={{...c.th,width:140}}>AMOUNT</th>
-              <th style={c.th} colSpan={2}>TRANSPORT SUBSIDY</th>
+              <th style={{...T.th,width:36}}>NO.</th>
+              <th style={{...T.th,width:86}}>DATE</th>
+              <th style={{...T.th,width:120}}>INVOICE NO.</th>
+              <th style={{...T.th,width:120}}>AMOUNT</th>
+              <th style={T.th} colSpan={2}>TRANSPORT SUBSIDY</th>
             </tr></thead>
             <tbody>{invoices.map(inv=>subRows(inv))}</tbody>
           </table>
 
-          <div style={{display:'flex',justifyContent:'flex-end',marginTop:20}}>
-            <div>
-              <table style={{borderCollapse:'collapse'}}>
-                <tbody>
-                  <tr><td style={c.bL}>CARTON:</td><td style={c.bV}>{fmt(gC)}</td></tr>
-                  <tr><td style={c.bL}>0.4%:</td><td style={c.bV}>{fmt(gP1)}</td></tr>
-                  <tr><td style={c.bL}>0.2%:</td><td style={c.bV}>{fmt(gP2)}</td></tr>
-                </tbody>
-              </table>
-              <table style={{borderCollapse:'collapse',marginTop:10,width:'100%'}}>
-                <tbody><tr>
-                  <td style={{padding:'8px 14px',fontWeight:700,fontSize:15}}>TOTAL:</td>
-                  <td style={{padding:'8px 14px',fontWeight:700,fontSize:15,background:'#ffe600',border:'2px solid #000',textAlign:'right',fontFamily:'Arial,sans-serif'}}>{fmt(gT)}</td>
-                  <td style={{width:20}}/>
-                  <td style={{padding:'8px 14px',fontWeight:700,fontSize:15,background:'#000',color:'#fff',textAlign:'right',fontFamily:'Arial,sans-serif'}}>{fmt(gS)}</td>
-                </tr></tbody>
-              </table>
-            </div>
+          {/* ── BOTTOM TOTALS ── */}
+          <div style={{marginTop:16}}>
+            <table style={{borderCollapse:'collapse',marginLeft:'auto'}}>
+              <tbody>
+                <tr><td style={T.bxL}>CARTON:</td><td style={T.bxR}>{fmt(gC)}</td></tr>
+                <tr><td style={T.bxL}>0.4%:</td><td style={T.bxR}>{fmt(gP1)}</td></tr>
+                <tr><td style={T.bxL}>0.2%:</td><td style={T.bxR}>{fmt(gP2)}</td></tr>
+              </tbody>
+            </table>
+
+            <table style={{borderCollapse:'collapse',marginLeft:'auto',marginTop:8}}>
+              <tbody><tr>
+                <td style={{padding:'7px 12px',fontWeight:700,fontSize:14,textAlign:'right'}}>TOTAL:</td>
+                <td style={{padding:'7px 12px',fontWeight:700,fontSize:14,border:'2px solid #000',background:'#ffe600',textAlign:'right',fontFamily:'Arial',minWidth:110}}>{fmt(gT)}</td>
+                <td style={{width:16}}/>
+                <td style={{padding:'7px 12px',fontWeight:700,fontSize:14,background:'#000',color:'#fff',textAlign:'right',fontFamily:'Arial',minWidth:100}}>{fmt(gS)}</td>
+              </tr></tbody>
+            </table>
           </div>
 
-          <div style={{marginTop:28,textAlign:'center',lineHeight:2.2}}>
-            <div style={{fontSize:17,fontWeight:700}}>TOTAL AMOUNT = <span style={{fontSize:19}}>{fmt(tA)}</span></div>
-            <div style={{display:'inline-flex',alignItems:'center',gap:10,fontSize:15}}>
+          {/* ── FINAL AMOUNTS ── */}
+          <div style={{marginTop:24,textAlign:'center'}}>
+            <div style={{fontSize:16,fontWeight:700,margin:'8px 0'}}>
+              TOTAL AMOUNT = {fmt(tA)}
+            </div>
+            <div style={{fontSize:14,margin:'8px 0',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               <span style={{fontWeight:700}}>CREDIT NOTE =</span>
               <input type="number" step="0.01" value={creditNote||''} placeholder="0.00"
-                onChange={e=>setCreditNote(parseFloat(e.target.value)||0)} className="no-print"
-                style={{background:'#f5f5f5',border:'1.5px solid #888',borderRadius:4,padding:'4px 8px',fontFamily:'"Times New Roman",serif',fontSize:15,width:110,textAlign:'right'}}/>
-              {creditNote!==0&&<span style={{fontWeight:700,color:'#c00'}}>-{fmt(Math.abs(creditNote))}</span>}
+                onChange={e=>setCreditNote(parseFloat(e.target.value)||0)} className="noP"
+                style={{background:'#f5f5f5',border:'1px solid #999',borderRadius:3,padding:'3px 8px',fontFamily:'"Times New Roman"',fontSize:14,width:100,textAlign:'right'}}/>
+              {creditNote!==0&&<span style={{fontWeight:700}}>-{fmt(Math.abs(creditNote))}</span>}
             </div>
-            <div style={{fontSize:19,fontWeight:700,marginTop:2}}>TOTAL AMOUNT PAYABLE = <span style={{fontSize:21}}>{fmt(tP)}</span></div>
+            <div style={{fontSize:18,fontWeight:700,margin:'8px 0'}}>
+              TOTAL AMOUNT PAYABLE = {fmt(tP)}
+            </div>
           </div>
 
-          <div className="no-print" style={{display:'flex',gap:10,justifyContent:'center',marginTop:28,flexWrap:'wrap'}}>
-            <button style={btn(false)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
-            <button style={btn(true)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
-            <button style={btn(false)} onClick={downloadExcel}>↓ Excel</button>
-            <button style={{...btn(false),color:'#999',borderColor:'#ccc'}} onClick={reset}>Reset</button>
+          {/* ── BUTTONS ── */}
+          <div className="noP" style={{display:'flex',gap:8,justifyContent:'center',marginTop:24}}>
+            <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
+            <button style={btn(1)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
+            <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
+            <button style={{...btn(0),color:'#aaa',borderColor:'#ddd'}} onClick={reset}>Reset</button>
           </div>
         </>)}
 
+        {/* ── UPLOAD ── */}
         {showUpload&&!processing&&apiKey&&(
-          <div className="no-print"
-            style={{border:`2px dashed ${drag?'#d97706':'#bbb'}`,borderRadius:8,padding:'52px 24px',textAlign:'center',
-              cursor:'pointer',background:drag?'#fffbeb':'#fafafa',marginTop:20}}
+          <div className="noP"
+            style={{border:`2px dashed ${drag?'#c87b00':'#ccc'}`,borderRadius:8,padding:'48px 20px',textAlign:'center',
+              cursor:'pointer',background:drag?'#fffbeb':'#fafafa',marginTop:18}}
             onDragOver={e=>{e.preventDefault();setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
             onDrop={e=>{e.preventDefault();setDrag(false);processFile(e.dataTransfer?.files?.[0]);}}
             onClick={()=>fileRef.current?.click()}>
-            <div style={{fontSize:36,marginBottom:10,opacity:.35}}>📄</div>
-            <div style={{fontSize:16,fontWeight:600,fontFamily:'Arial,sans-serif'}}>
+            <div style={{fontSize:32,marginBottom:8,opacity:.3}}>📄</div>
+            <div style={{fontSize:15,fontWeight:600,fontFamily:'Arial'}}>
               {invoices.length>0?'Add another invoice':'Drop invoice photo here'}</div>
-            <div style={{fontSize:13,color:'#888',marginTop:4,fontFamily:'Arial,sans-serif'}}>or click to browse — JPG, PNG</div>
+            <div style={{fontSize:12,color:'#999',marginTop:3,fontFamily:'Arial'}}>or click to browse — JPG, PNG</div>
             <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}}
               onChange={e=>processFile(e.target.files?.[0])}/>
-            {invoices.length>0&&(
-              <button style={{...btn(false),marginTop:14,fontFamily:'Arial,sans-serif'}}
-                onClick={e=>{e.stopPropagation();setUploading(false);}}>Cancel</button>
-            )}
+            {invoices.length>0&&<button style={{...btn(0),marginTop:12}} onClick={e=>{e.stopPropagation();setUploading(false);}}>Cancel</button>}
           </div>
         )}
 
         {processing&&(
-          <div className="no-print" style={{textAlign:'center',padding:'64px 20px'}}>
-            <div style={{width:36,height:36,border:'3px solid #ddd',borderTop:'3px solid #000',borderRadius:'50%',margin:'0 auto 14px',animation:'spin .7s linear infinite'}}/>
-            <div style={{fontSize:14,color:'#666',fontFamily:'Arial,sans-serif'}}>Extracting with Groq...</div>
+          <div className="noP" style={{textAlign:'center',padding:'60px 20px'}}>
+            <div style={{width:32,height:32,border:'3px solid #eee',borderTop:'3px solid #000',borderRadius:'50%',margin:'0 auto 12px',animation:'spin .7s linear infinite'}}/>
+            <div style={{fontSize:13,color:'#888',fontFamily:'Arial'}}>Extracting with Groq...</div>
           </div>
         )}
       </div>
@@ -302,14 +316,15 @@ export default function App(){
   );
 }
 
-const c={
-  th:{border:bd,padding:'10px',fontWeight:700,fontSize:14,textAlign:'center',background:'#f0f0f0',letterSpacing:.3},
-  td:{border:bd,padding:'8px 12px',fontSize:14,textAlign:'center',verticalAlign:'middle'},
-  mono:{fontFamily:'Arial,sans-serif',textAlign:'right',fontWeight:700},
-  catHdr:{border:bd,padding:'6px 10px',fontSize:14,fontWeight:700,textDecoration:'underline',textAlign:'center'},
-  subD:{border:bd,padding:'6px 14px',fontSize:14,textAlign:'right',borderRight:'none'},
-  subA:{border:bd,padding:'6px 14px',fontSize:14,textAlign:'right',fontWeight:700,fontFamily:'Arial,sans-serif',borderLeft:'none'},
-  bL:{border:bd,padding:'5px 14px',fontSize:14,fontWeight:700,textAlign:'right',background:'#f5f5f5'},
-  bV:{border:bd,padding:'5px 14px',fontSize:14,fontWeight:700,textAlign:'right',fontFamily:'Arial,sans-serif',minWidth:110},
+/* ── TABLE STYLES ── */
+const T={
+  th:{border:B,padding:'8px 6px',fontWeight:700,fontSize:13,textAlign:'center',background:'#f2f2f2'},
+  td:{border:B,padding:'6px 8px',fontSize:13,textAlign:'center',verticalAlign:'middle'},
+  amt:{textAlign:'right',fontWeight:700,fontFamily:'Arial',paddingRight:10},
+  cat:{border:B,padding:'4px 6px',fontSize:13,fontWeight:700,textDecoration:'underline',textAlign:'center'},
+  subL:{border:B,padding:'4px 10px',fontSize:13,textAlign:'right'},
+  subR:{border:B,padding:'4px 10px',fontSize:13,textAlign:'right',fontWeight:700,fontFamily:'Arial'},
+  bxL:{border:B,padding:'4px 12px',fontSize:13,fontWeight:700,textAlign:'right',background:'#f2f2f2'},
+  bxR:{border:B,padding:'4px 12px',fontSize:13,fontWeight:700,textAlign:'right',fontFamily:'Arial',minWidth:100},
 };
-const btn=p=>({padding:'9px 20px',borderRadius:6,border:p?'none':'1.5px solid #999',fontWeight:600,fontSize:14,cursor:'pointer',background:p?'#111':'#fff',color:p?'#fff':'#222',fontFamily:'Arial,sans-serif'});
+const btn=p=>({padding:'7px 16px',borderRadius:5,border:p?'none':'1px solid #aaa',fontWeight:600,fontSize:13,cursor:'pointer',background:p?'#111':'#fff',color:p?'#fff':'#333',fontFamily:'Arial'});
