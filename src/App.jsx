@@ -38,7 +38,7 @@ RULES:
 - total_amount: The final "Total Amount Due" number
 - Include ALL line items including FOC items. Return ONLY the JSON object.`;
 
-const GROQ_MODEL='llama-3.2-90b-vision-preview';
+const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
 const bd='1.5px solid #111';
 
 export default function App(){
