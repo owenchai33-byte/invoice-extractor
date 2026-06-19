@@ -102,6 +102,8 @@ export default function App(){
         const sub=calcSub(parsed.total_amount,groups,config.pct1,config.pct2);
         setInvoices(prev=>[...prev,{raw:parsed,items,groups,subsidy:sub,num:prev.length+1}]);
         setUploading(false);setProcessing(false);
+        // Reset file input so same file can be re-selected
+        if(fileRef.current) fileRef.current.value='';
       }catch(e){console.error(e);setError(`Extraction failed: ${e.message}`);setProcessing(false);}
     };
     reader.readAsDataURL(file);
@@ -127,9 +129,9 @@ export default function App(){
       d.push(['','','','','','+ 0.2% =',gi===0?inv.subsidy.p2:'']);
     });});
     d.push([]);d.push(['','','','','','CARTON:',gC]);d.push(['','','','','','0.4%:',gP1]);d.push(['','','','','','0.2%:',gP2]);
-    d.push(['','','TOTAL:',gT,'','',gS]);d.push([]);
+    if(creditNote)d.push(['','','','','','CREDIT NOTE:',-Math.abs(creditNote)]);
+    d.push(['','','TOTAL:',gT,'','',gS+(creditNote?creditNote:0)]);d.push([]);
     d.push(['','','','',`TOTAL AMOUNT = RM${tA.toFixed(2)}`]);
-    if(creditNote)d.push(['','','','',`CREDIT NOTE = -RM${Math.abs(creditNote).toFixed(2)}`]);
     d.push(['','','','',`TOTAL AMOUNT PAYABLE = RM${tP.toFixed(2)}`]);
     const ws=XLSX.utils.aoa_to_sheet(d);
     ws['!cols']=[{wch:5},{wch:12},{wch:16},{wch:16},{wch:2},{wch:24},{wch:14}];
@@ -137,7 +139,7 @@ export default function App(){
     XLSX.writeFile(wb,`Payment_Summary_${config.name.split(' ')[0]}.xlsx`);
   };
 
-  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCreditNote(0);};
+  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCreditNote(0);if(fileRef.current)fileRef.current.value='';};
   const showUpload=invoices.length===0||uploading;
 
   const subRows=(inv)=>{
@@ -155,10 +157,10 @@ export default function App(){
         <td style={T.subR}>{fmt(g.ctn*g.rate)}</td>
       </tr>);
       rows.push(<tr key={`${inv.num}-${gi}-p1`}>
-        <td style={T.subL}>+ 0.4% =</td><td style={T.subR}>{gi===0?fmt(inv.subsidy.p1):''}</td>
+        <td style={T.subL}>+ 0.4% =</td><td style={T.subR}>{fmt(inv.subsidy.p1)}</td>
       </tr>);
       rows.push(<tr key={`${inv.num}-${gi}-p2`}>
-        <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{gi===0?fmt(inv.subsidy.p2):''}</td>
+        <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{fmt(inv.subsidy.p2)}</td>
       </tr>);
     });
     return rows;
@@ -237,20 +239,38 @@ export default function App(){
               <th style={{...T.th,width:120}}>AMOUNT</th>
               <th style={T.th} colSpan={2}>TRANSPORT SUBSIDY</th>
             </tr></thead>
-            <tbody>{invoices.map(inv=>subRows(inv))}</tbody>
+            <tbody>
+              {invoices.map(inv=>(
+                <React.Fragment key={inv.num}>{subRows(inv)}</React.Fragment>
+              ))}
+            </tbody>
           </table>
 
-          {/* ── BOTTOM TOTALS ── */}
+          {/* ── BOTTOM SUMMARY ── */}
           <div style={{marginTop:16}}>
             <table style={{borderCollapse:'collapse',marginLeft:'auto'}}>
               <tbody>
                 <tr><td style={T.bxL}>CARTON:</td><td style={T.bxR}>{fmt(gC)}</td></tr>
                 <tr><td style={T.bxL}>0.4%:</td><td style={T.bxR}>{fmt(gP1)}</td></tr>
                 <tr><td style={T.bxL}>0.2%:</td><td style={T.bxR}>{fmt(gP2)}</td></tr>
+                {/* CREDIT NOTE right below 0.2% */}
+                <tr>
+                  <td style={{...T.bxL,background:'#fff'}}>
+                    <span>CREDIT NOTE:</span>
+                  </td>
+                  <td style={{...T.bxR,background:'#fff'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:4}}>
+                      <input type="number" step="0.01" value={creditNote||''} placeholder="0.00"
+                        onChange={e=>setCreditNote(parseFloat(e.target.value)||0)} className="noP"
+                        style={{background:'#f5f5f5',border:'1px solid #999',borderRadius:3,padding:'2px 6px',fontFamily:'Arial',fontSize:13,width:90,textAlign:'right'}}/>
+                      <span>{creditNote?'-'+fmt(Math.abs(creditNote)):'RM0.00'}</span>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
 
-            <table style={{borderCollapse:'collapse',marginLeft:'auto',marginTop:8}}>
+            <table style={{borderCollapse:'collapse',marginLeft:'auto',marginTop:10}}>
               <tbody><tr>
                 <td style={{padding:'7px 12px',fontWeight:700,fontSize:14,textAlign:'right'}}>TOTAL:</td>
                 <td style={{padding:'7px 12px',fontWeight:700,fontSize:14,border:'2px solid #000',background:'#ffe600',textAlign:'right',fontFamily:'Arial',minWidth:110}}>{fmt(gT)}</td>
@@ -262,19 +282,8 @@ export default function App(){
 
           {/* ── FINAL AMOUNTS ── */}
           <div style={{marginTop:24,textAlign:'center'}}>
-            <div style={{fontSize:16,fontWeight:700,margin:'8px 0'}}>
-              TOTAL AMOUNT = {fmt(tA)}
-            </div>
-            <div style={{fontSize:14,margin:'8px 0',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              <span style={{fontWeight:700}}>CREDIT NOTE =</span>
-              <input type="number" step="0.01" value={creditNote||''} placeholder="0.00"
-                onChange={e=>setCreditNote(parseFloat(e.target.value)||0)} className="noP"
-                style={{background:'#f5f5f5',border:'1px solid #999',borderRadius:3,padding:'3px 8px',fontFamily:'"Times New Roman"',fontSize:14,width:100,textAlign:'right'}}/>
-              {creditNote!==0&&<span style={{fontWeight:700}}>-{fmt(Math.abs(creditNote))}</span>}
-            </div>
-            <div style={{fontSize:18,fontWeight:700,margin:'8px 0'}}>
-              TOTAL AMOUNT PAYABLE = {fmt(tP)}
-            </div>
+            <div style={{fontSize:16,fontWeight:700,margin:'8px 0'}}>TOTAL AMOUNT = {fmt(tA)}</div>
+            <div style={{fontSize:18,fontWeight:700,margin:'8px 0'}}>TOTAL AMOUNT PAYABLE = {fmt(tP)}</div>
           </div>
 
           {/* ── BUTTONS ── */}
@@ -300,7 +309,7 @@ export default function App(){
               {invoices.length>0?'Add another invoice':'Drop invoice photo here'}</div>
             <div style={{fontSize:12,color:'#999',marginTop:3,fontFamily:'Arial'}}>or click to browse — JPG, PNG</div>
             <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}}
-              onChange={e=>processFile(e.target.files?.[0])}/>
+              onChange={e=>{processFile(e.target.files?.[0]);e.target.value='';}}/>
             {invoices.length>0&&<button style={{...btn(0),marginTop:12}} onClick={e=>{e.stopPropagation();setUploading(false);}}>Cancel</button>}
           </div>
         )}
@@ -316,7 +325,6 @@ export default function App(){
   );
 }
 
-/* ── TABLE STYLES ── */
 const T={
   th:{border:B,padding:'8px 6px',fontWeight:700,fontSize:13,textAlign:'center',background:'#f2f2f2'},
   td:{border:B,padding:'6px 8px',fontSize:13,textAlign:'center',verticalAlign:'middle'},
