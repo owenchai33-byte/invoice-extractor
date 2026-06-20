@@ -47,7 +47,7 @@ const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
 
-export default function App(){
+export default function InvoiceExtractor() {
   const [invoices,setInvoices]=useState([]);
   const [uploading,setUploading]=useState(false);
   const [processing,setProcessing]=useState(false);
