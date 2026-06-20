@@ -282,15 +282,15 @@ export default function InvoiceExtractor() {
               <tr><td colSpan={5}/><td style={T.bxL}>0.2%:</td><td style={T.bxR}>{fmt(gP2)}</td></tr>
               <tr><td colSpan={5}/><td style={T.bxL}>CREDIT NOTE:</td><td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td></tr>
               <tr>
-                <td colSpan={3} style={{padding:'10px 8px',fontWeight:700,fontSize:16,textAlign:'right'}}>TOTAL:</td>
-                <td style={{padding:'8px 10px',fontWeight:700,fontSize:16,background:'#ffe600',border:'2px solid #000',textAlign:'center'}}>{fmt(gT)}</td>
-                <td colSpan={3}/>
+                <td colSpan={5}/>
+                <td style={{...T.bxL,borderTop:'2px solid #000'}}>TOTAL:</td>
+                <td style={{...T.bxR,borderTop:'2px solid #000',background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
               </tr>
             </tbody>
           </table>
 
           {/* TOTAL AMOUNT PAYABLE */}
-          <div style={{marginTop:24,textAlign:'center'}}>
+          <div style={{marginTop:24,textAlign:'right',paddingRight:4}}>
             <div style={{fontSize:24,fontWeight:700,letterSpacing:0.5}}>
               TOTAL AMOUNT PAYABLE = {fmt(tP)}
             </div>
