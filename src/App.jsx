@@ -160,7 +160,7 @@ export default function App(){
 
         {/* ═══ HEADER ═══ */}
         <div style={{display:'flex',alignItems:'center',gap:16,paddingBottom:12,borderBottom:'3px solid #000'}}>
-          <img src={LOGO} style={{height:60,flexShrink:0}} alt="CJK"/>
+          <img src={LOGO} style={{height:80,flexShrink:0,marginLeft:10}} alt="CJK"/>
           <div style={{flex:1,textAlign:'center'}}>
             <div style={{fontSize:18,fontWeight:700}}>{CO.name}</div>
             <div style={{fontSize:18,fontWeight:700}}>{CO.reg}</div>
@@ -249,23 +249,20 @@ export default function App(){
             </tbody>
           </table>
 
-          {/* ═══ SUMMARY BOX ═══ */}
-          <div style={{display:'flex',justifyContent:'flex-end',marginTop:16}}>
-            <table style={{borderCollapse:'collapse'}}>
-              <tbody>
-                <tr><td style={T.bxL}>CARTON:</td><td style={T.bxR}>{fmt(gC)}</td></tr>
-                <tr><td style={T.bxL}>0.4%:</td><td style={T.bxR}>{fmt(gP1)}</td></tr>
-                <tr><td style={T.bxL}>0.2%:</td><td style={T.bxR}>{fmt(gP2)}</td></tr>
-                <tr><td style={T.bxL}>CREDIT NOTE:</td><td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* ═══ TOTAL ROW ═══ */}
-          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',marginTop:10,gap:8}}>
-            <span style={{fontWeight:700,fontSize:16}}>TOTAL:</span>
-            <span style={{fontWeight:700,fontSize:16,background:'#ffe600',border:'2px solid #000',padding:'6px 14px',textAlign:'right',minWidth:110,display:'inline-block'}}>{fmt(gT)}</span>
-          </div>
+          {/* ═══ SUMMARY + TOTAL inside aligned table ═══ */}
+          <table style={{width:'100%',borderCollapse:'collapse'}}>
+            <tbody>
+              <tr><td colSpan={5} style={{padding:6}}/><td style={T.bxL}>CARTON:</td><td style={T.bxR}>{fmt(gC)}</td></tr>
+              <tr><td colSpan={5}/><td style={T.bxL}>0.4%:</td><td style={T.bxR}>{fmt(gP1)}</td></tr>
+              <tr><td colSpan={5}/><td style={T.bxL}>0.2%:</td><td style={T.bxR}>{fmt(gP2)}</td></tr>
+              <tr><td colSpan={5}/><td style={T.bxL}>CREDIT NOTE:</td><td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td></tr>
+              <tr>
+                <td colSpan={3} style={{padding:'10px 8px',fontWeight:700,fontSize:16,textAlign:'right'}}>TOTAL:</td>
+                <td style={{padding:'8px 10px',fontWeight:700,fontSize:16,background:'#ffe600',border:'2px solid #000',textAlign:'center'}}>{fmt(gT)}</td>
+                <td colSpan={3}/>
+              </tr>
+            </tbody>
+          </table>
 
           {/* ═══ TOTAL AMOUNT PAYABLE ═══ */}
           <div style={{marginTop:24,textAlign:'center'}}>
@@ -318,7 +315,7 @@ const T={
   td:{border:B,padding:'8px 10px',fontSize:16,textAlign:'center',verticalAlign:'middle',fontFamily:F},
   cat:{border:B,padding:'6px 8px',fontSize:16,fontWeight:700,textDecoration:'underline',textAlign:'center',fontFamily:F},
   subL:{border:B,padding:'6px 12px',fontSize:16,textAlign:'right',fontFamily:F},
-  subR:{border:B,padding:'6px 12px',fontSize:16,textAlign:'right',fontWeight:700,fontFamily:F,whiteSpace:'nowrap'},
+  subR:{border:B,padding:'6px 12px',fontSize:16,textAlign:'center',fontWeight:700,fontFamily:F,whiteSpace:'nowrap'},
   bxL:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',background:'#f0f0f0',fontFamily:F},
   bxR:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',fontFamily:F,minWidth:110,whiteSpace:'nowrap'},
 };
