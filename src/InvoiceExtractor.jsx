@@ -80,29 +80,47 @@ export default function InvoiceExtractor() {
       const reader=new FileReader();
       reader.onload=async()=>{
         try{
-          const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
-            body:JSON.stringify({
-              model:GROQ_MODEL,
-              messages:[{role:'user',content:[
-                {type:'image_url',image_url:{url:reader.result}},
-                {type:'text',text:PROMPT}
-              ]}],
-              max_tokens:2000, temperature:0.1,
-            }),
-          });
-          const data=await res.json();
-          if(data.error) throw new Error(data.error.message||JSON.stringify(data.error));
-          const txt=(data.choices?.[0]?.message?.content||'').trim().replace(/\`\`\`json|\`\`\`/g,'').trim();
-          const parsed=JSON.parse(txt);
-          const items=(parsed.items||[]).map(it=>({...it,category:matchCat(it.volume_ml,it.pack_size,config.rates)}));
-          const gMap={};
-          items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=it.qty;});
-          const groups=Object.values(gMap);
-          const sub=calcSub(parsed.total_amount,groups,config.pct1,config.pct2);
-          const id='inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-          resolve({raw:parsed,items,groups,subsidy:sub,id});
+          let lastErr=null;
+          for(let attempt=0;attempt<3;attempt++){
+            try{
+              if(attempt>0) await new Promise(r=>setTimeout(r,5000*(attempt)));
+              const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+                body:JSON.stringify({
+                  model:GROQ_MODEL,
+                  messages:[{role:'user',content:[
+                    {type:'image_url',image_url:{url:reader.result}},
+                    {type:'text',text:PROMPT}
+                  ]}],
+                  max_tokens:2000, temperature:0.1,
+                }),
+              });
+              const data=await res.json();
+              if(data.error){
+                if(data.error.message?.includes('Rate limit')||res.status===429){
+                  lastErr=new Error('Rate limit — retrying...');
+                  continue;
+                }
+                throw new Error(data.error.message||JSON.stringify(data.error));
+              }
+              let txt=(data.choices?.[0]?.message?.content||'').trim().replace(/```json|```/g,'').trim();
+              // Fix common JSON issues from AI
+              txt=txt.replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+              if(!txt.startsWith('{')) txt=txt.substring(txt.indexOf('{'));
+              if(!txt.endsWith('}')) txt=txt.substring(0,txt.lastIndexOf('}')+1);
+              const parsed=JSON.parse(txt);
+              const items=(parsed.items||[]).map(it=>({...it,category:matchCat(it.volume_ml,it.pack_size,config.rates)}));
+              const gMap={};
+              items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=it.qty;});
+              const groups=Object.values(gMap);
+              const sub=calcSub(parsed.total_amount,groups,config.pct1,config.pct2);
+              const id='inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+              resolve({raw:parsed,items,groups,subsidy:sub,id});
+              return;
+            }catch(inner){lastErr=inner;}
+          }
+          reject(lastErr||new Error('Failed after retries'));
         }catch(e){reject(e);}
       };
       reader.onerror=()=>reject(new Error('Failed to read file'));
@@ -116,9 +134,10 @@ export default function InvoiceExtractor() {
     if(fileArr.length===0){setError('No image files selected');return;}
     setError(null);setProcessing(true);
     setProcessingCount({done:0,total:fileArr.length});
-    const results=[];
+    const results=[]; const errors=[];
     for(let i=0;i<fileArr.length;i++){
       try{
+        if(i>0) await new Promise(r=>setTimeout(r,4000));
         const inv=await processSingleFile(fileArr[i]);
         results.push(inv);
         setProcessingCount(prev=>({...prev,done:prev.done+1}));
