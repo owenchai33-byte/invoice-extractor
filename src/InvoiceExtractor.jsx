@@ -128,10 +128,11 @@ export default function InvoiceExtractor() {
     });
   },[config,apiKey]);
 
-  const processFiles=useCallback(async (files)=>{
+  const processFiles=useCallback(async (files,append=false)=>{
     if(!apiKey){setError('Set your Groq API key first');setShowSettings(true);return;}
     const fileArr=Array.from(files).filter(f=>f.type.startsWith('image/'));
     if(fileArr.length===0){setError('No image files selected');return;}
+    if(!append){setInvoices([]);setCnValues({});}
     setError(null);setProcessing(true);
     setProcessingCount({done:0,total:fileArr.length});
     const results=[]; const errors=[];
@@ -332,14 +333,14 @@ export default function InvoiceExtractor() {
               cursor:'pointer',background:drag?'#fffbeb':'#fafafa',marginTop:18}}
             onDragOver={e=>{e.preventDefault();setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
-            onDrop={e=>{e.preventDefault();setDrag(false);if(e.dataTransfer?.files?.length)processFiles(e.dataTransfer.files);}}
+            onDrop={e=>{e.preventDefault();setDrag(false);if(e.dataTransfer?.files?.length)processFiles(e.dataTransfer.files,uploading);}}
             onClick={()=>fileRef.current?.click()}>
             <div style={{fontSize:32,marginBottom:8,opacity:.3}}>📄</div>
             <div style={{fontSize:16,fontWeight:600}}>
               {invoices.length>0?'Add more invoices':'Drop invoice photos here'}</div>
             <div style={{fontSize:13,color:'#999',marginTop:3}}>or click to browse — select multiple JPG, PNG</div>
             <input ref={fileRef} type="file" accept="image/*" multiple style={{display:'none'}}
-              onChange={e=>{if(e.target.files?.length)processFiles(e.target.files);e.target.value='';}}/>
+              onChange={e=>{if(e.target.files?.length)processFiles(e.target.files,uploading);e.target.value='';}}/>
             {invoices.length>0&&<button style={{...btn(0),marginTop:12}} onClick={e=>{e.stopPropagation();setUploading(false);}}>Cancel</button>}
           </div>
         )}
