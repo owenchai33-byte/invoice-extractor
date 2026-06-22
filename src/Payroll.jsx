@@ -135,38 +135,38 @@ const CSS=`
 .bo{background:#fff;color:#3f3f46;border:1px solid #d4d4d8}.bo:hover{background:#fafafa;border-color:#a1a1aa}
 .bg{background:transparent;color:#71717a}.bg:hover{color:#18181b;background:#f4f4f5}
 .br{color:#dc2626;background:transparent}.br:hover{background:#fef2f2}
-.body{max-width:1480px;margin:0 auto;padding:20px 24px 60px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.st{background:#fff;border-radius:10px;padding:16px 20px;border:1px solid #e4e4e7}
-.stl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;margin-bottom:4px}
-.stv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
-.sec{background:#fff;border-radius:10px;border:1px solid #e4e4e7;overflow:hidden;margin-bottom:16px}
-.sh{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f4f4f5}
-.sht{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.body{max-width:100%;margin:0 auto;padding:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.st{background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e4e4e7}
+.stl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;margin-bottom:3px}
+.stv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.sec{background:#fff;border-radius:8px;border:1px solid #e4e4e7;overflow:hidden;margin-bottom:12px}
+.sh{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f4f4f5}
+.sht{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .tw{overflow-x:auto}
-.t{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-.t th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap}
+.t{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums;table-layout:fixed}
+.t th{padding:5px 4px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t th.r{text-align:right}
-.t td{padding:7px 10px;border-bottom:1px solid #f4f4f5;vertical-align:middle}
+.t td{padding:4px 4px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t td.r{text-align:right}
 .t tr:hover{background:#fafafa}
-.t .gh{background:#18181b;color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em}
-.t .gh td{padding:6px 14px;border:none}
-.t .ph{background:#fef3c7}.t .ph td{padding:5px 14px;border-bottom:1px solid #fcd34d;font-size:11px;font-weight:700;color:#92400e}
+.t .gh{background:#18181b;color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em}
+.t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible}
+.t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
 .t .tr td{font-weight:700;background:#f0fdf4;border-top:2px solid #18181b;border-bottom:2px solid #18181b}
-.t .gr td{font-weight:700;background:#fef9c3;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:14px}
+.t .gr td{font-weight:700;background:#fef9c3;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
 .t .eh{background:#f0fdf4}
 .t .dh{background:#fef2f2}
 .t .nh{background:#eff6ff}
-.i{width:64px;text-align:right;border:none;border-bottom:1.5px dashed #d4d4d8;background:transparent;font-size:13px;font-family:inherit;font-variant-numeric:tabular-nums;padding:2px 4px;outline:none;transition:border-color .15s}
+.i{width:42px;text-align:right;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:11px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
 .i:focus{border-color:#2563eb;border-style:solid}
 .i::placeholder{color:#d4d4d8}
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em}
+.tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.04em}
 .tgb{background:#dbeafe;color:#1e40af}
 .tgc{background:#d1fae5;color:#065f46}
 .tgp{background:#fef3c7;color:#92400e}
-.notes{padding:12px 20px;background:#fffbeb;border-top:1px solid #fcd34d}
-.notes p{margin:0 0 4px;font-size:12px;color:#92400e;font-style:italic}
+.notes{padding:8px 14px;background:#fffbeb;border-top:1px solid #fcd34d}
+.notes p{margin:0 0 3px;font-size:11px;color:#92400e;font-style:italic}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:80}
 .pn{position:fixed;top:0;right:0;bottom:0;width:460px;max-width:100vw;background:#fff;z-index:90;overflow-y:auto;box-shadow:-8px 0 24px rgba(0,0,0,.1)}
 .pnh{padding:20px 24px;border-bottom:1px solid #e4e4e7;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2}
@@ -181,8 +181,32 @@ const CSS=`
 .sif{flex:1;min-width:0}
 .sin{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sim{font-size:11px;color:#a1a1aa}
-@media print{.np{display:none!important}.pr{background:#fff}.body{max-width:100%;padding:0}.sec{border:none;border-radius:0}.t th{position:static}.i{border:none!important}@page{size:A4 landscape;margin:8mm}.t{font-size:9pt}}
-.po{display:none}@media print{.po{display:block!important}}
+@media print{
+  .np{display:none!important}
+  .pr{background:#fff}
+  .body{max-width:100%;padding:0;margin:0}
+  .sec{border:none;border-radius:0;margin-bottom:6px;box-shadow:none}
+  .sh{padding:4px 0;border:none}
+  .sht{font-size:10pt;font-weight:700}
+  .t th{position:static;padding:3px 3px;font-size:6.5pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t td{padding:2px 3px;font-size:7pt}
+  .t .gh{background:#18181b!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gh td{padding:3px 6px;font-size:7.5pt}
+  .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .ph td{padding:2px 6px;font-size:7pt}
+  .t .tr td{background:#f0fdf4!important;font-size:7pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#fef9c3!important;font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .nh{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .i{border:none!important;font-size:7pt;width:36px}
+  .tw{overflow:visible}
+  .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4px 8px}
+  .notes p{font-size:7pt}
+  @page{size:A4 landscape;margin:6mm}
+}
+.po{display:none}
+@media print{.po{display:block!important;text-align:center;margin-bottom:8px}}
 `;
 
 export default function Payroll(){
@@ -231,10 +255,10 @@ export default function Payroll(){
   let gn=0;
   const Row=({r})=>{gn++;const n=gn;return(
     <tr>
-      <td className="r" style={{color:'#a1a1aa',width:32}}>{n}</td>
-      <td style={{fontWeight:600,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.name}</td>
-      <td style={{color:'#71717a',fontSize:12}}>{r.ic}</td>
-      <td style={{color:'#71717a',fontSize:12,maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.position}</td>
+      <td className="r" style={{color:'#a1a1aa'}}>{n}</td>
+      <td style={{fontWeight:600}} title={r.name}>{r.name}</td>
+      <td style={{color:'#71717a',fontSize:10}}>{r.ic}</td>
+      <td style={{color:'#71717a',fontSize:10}} title={r.position}>{r.position}</td>
       <td className="r">{fmt(r.salary)}</td>
       <td className="r"><input className="i" type="number" value={r.incentive||''} placeholder="0" onChange={e=>sM(r.id,'incentive',e.target.value)}/></td>
       <td className="r"><input className="i" type="number" value={r.bonus||''} placeholder="0" onChange={e=>sM(r.id,'bonus',e.target.value)}/></td>
@@ -247,7 +271,7 @@ export default function Payroll(){
       <td className="r" style={{color:'#71717a'}}>{fmt(r.eisE)}</td>
       <td className="r" style={{fontWeight:600}}>{fmt(r.eisE*2)}</td>
       <td className="r"><input className="i" type="number" value={r.advance||''} placeholder="0" onChange={e=>sM(r.id,'advance',e.target.value)}/></td>
-      <td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td>
+      <td className="r" style={{fontWeight:700,fontSize:12}}>{fmt(r.netPay)}</td>
     </tr>
   );};
   const TR=({l,t,c})=>(
@@ -301,6 +325,25 @@ export default function Payroll(){
           </div>
           <div className="tw">
             <table className="t">
+              <colgroup>
+                <col style={{width:'2.5%'}}/>
+                <col style={{width:'12%'}}/>
+                <col style={{width:'8%'}}/>
+                <col style={{width:'10%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'4.5%'}}/>
+                <col style={{width:'4.5%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'4.5%'}}/>
+                <col style={{width:'4.5%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'4%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'5%'}}/>
+                <col style={{width:'6%'}}/>
+              </colgroup>
               <thead>
                 <tr>
                   <th colSpan={4}></th>
@@ -309,12 +352,12 @@ export default function Payroll(){
                   <th className="nh" style={{textAlign:'center'}}>NET PAY</th>
                 </tr>
                 <tr>
-                  <th className="r" style={{width:32}}>#</th><th>Name</th><th>IC No</th><th>Position</th>
-                  <th className="r eh">Salary</th><th className="r eh">Incentive</th><th className="r eh">{bl.length>12?bl.substring(0,12)+'..':bl}</th>
+                  <th className="r">#</th><th>Name</th><th>IC No</th><th>Position</th>
+                  <th className="r eh">Salary</th><th className="r eh">Incent</th><th className="r eh">{bl.length>8?bl.substring(0,8):bl}</th>
                   <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jml EPF</th>
-                  <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jml SOCSO</th>
-                  <th className="r dh">EIS</th><th className="r dh">Jml EIS</th><th className="r dh">Advance</th>
-                  <th className="r nh" style={{width:90}}></th>
+                  <th className="r dh">SOC(M)</th><th className="r dh">SOC(P)</th><th className="r dh">Jml SOC</th>
+                  <th className="r dh">EIS</th><th className="r dh">Jml EIS</th><th className="r dh">Adv</th>
+                  <th className="r nh">Net Pay</th>
                 </tr>
               </thead>
               <tbody>
