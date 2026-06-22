@@ -193,27 +193,44 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .sh{padding:4px 0;border:none}
   .sht{font-size:10pt;font-weight:700}
   .stats{display:none!important}
-  .t{font-size:7pt;table-layout:auto!important;width:100%}
-  .t col{width:auto!important}
-  .t th{position:static;padding:4px 3px;font-size:6.5pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:visible}
-  .t td{padding:3px 4px;font-size:7pt;white-space:nowrap;overflow:visible;text-overflow:clip;max-width:none!important}
+  .t{font-size:6.5pt;table-layout:fixed!important;width:100%}
+  /* Explicit print column widths — sum = 100% */
+  .t col:nth-child(1){width:2%!important}    /* # */
+  .t col:nth-child(2){width:13%!important}   /* Name */
+  .t col:nth-child(3){width:8%!important}    /* IC */
+  .t col:nth-child(4){width:11%!important}   /* Position */
+  .t col:nth-child(5){width:5.5%!important}  /* Salary */
+  .t col:nth-child(6){width:4.5%!important}  /* Incent */
+  .t col:nth-child(7){width:4.5%!important}  /* Bonus */
+  .t col:nth-child(8){width:5%!important}    /* EPF(M) */
+  .t col:nth-child(9){width:5%!important}    /* EPF(P) */
+  .t col:nth-child(10){width:5%!important}   /* Jml EPF */
+  .t col:nth-child(11){width:5%!important}   /* SOC(M) */
+  .t col:nth-child(12){width:5%!important}   /* SOC(P) */
+  .t col:nth-child(13){width:5%!important}   /* Jml SOC */
+  .t col:nth-child(14){width:4%!important}   /* EIS */
+  .t col:nth-child(15){width:4.5%!important} /* Jml EIS */
+  .t col:nth-child(16){width:4.5%!important} /* Adv */
+  .t col:nth-child(17){width:6.5%!important} /* Net Pay */
+  .t th{position:static;padding:3px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
+  .t td{padding:2px 2px;font-size:6.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .t .gh{background:#18181b!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gh td{padding:3px 6px;font-size:7.5pt;font-weight:700}
+  .t .gh td{padding:2px 4px;font-size:7pt;font-weight:700;overflow:visible}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .ph td{padding:2px 6px;font-size:7pt;font-weight:700;color:#92400e}
-  .t .tr td{background:#f0fdf4!important;font-size:7pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#fef9c3!important;font-size:8pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
+  .t .tr td{background:#f0fdf4!important;font-size:6.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#fef9c3!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .nh{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .i{border:none!important;font-size:7pt;width:auto!important;min-width:0!important;padding:0;background:transparent!important;text-align:right}
-  .tw{overflow:visible}
+  .i{border:none!important;font-size:6.5pt;width:100%!important;padding:0!important;background:transparent!important;text-align:right}
+  .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
-  .notes p{font-size:7pt}
-  @page{size:A4 landscape;margin:7mm}
+  .notes p{font-size:6.5pt}
+  @page{size:A4 landscape;margin:6mm}
 }
 .po{display:none}
-@media print{.po{display:block!important;text-align:center;margin-bottom:8px}.po div:first-child{font-size:12pt!important;font-weight:700}.po div:last-child{font-size:10pt!important;font-weight:600}}
+@media print{.po{display:block!important;text-align:center;margin-bottom:6px}.po div:first-child{font-size:11pt!important;font-weight:700}.po div:last-child{font-size:9.5pt!important;font-weight:600}}
 `;
 
 export default function Payroll(){
