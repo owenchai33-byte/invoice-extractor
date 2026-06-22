@@ -189,29 +189,30 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .np{display:none!important}
   .pr{background:#fff}
   .body{max-width:100%;padding:0;margin:0}
-  .sec{border:none;border-radius:0;margin-bottom:4px;box-shadow:none}
-  .sh{padding:3px 0;border:none}
-  .sht{font-size:9pt;font-weight:700}
-  .t{font-size:6pt}
-  .t th{position:static;padding:2px 2px;font-size:5.5pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t td{padding:1.5px 2px;font-size:6pt}
+  .sec{border:none;border-radius:0;margin-bottom:6px;box-shadow:none}
+  .sh{padding:4px 0;border:none}
+  .sht{font-size:10pt;font-weight:700}
+  .stats{display:none!important}
+  .t{font-size:7.5pt}
+  .t th{position:static;padding:3px 4px;font-size:7pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important}
+  .t td{padding:2.5px 4px;font-size:7.5pt;white-space:nowrap;overflow:visible;text-overflow:clip}
   .t .gh{background:#18181b!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gh td{padding:2px 4px;font-size:6.5pt}
+  .t .gh td{padding:3px 6px;font-size:8pt;font-weight:700}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .ph td{padding:1.5px 4px;font-size:6pt}
-  .t .tr td{background:#f0fdf4!important;font-size:6pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#fef9c3!important;font-size:7pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .ph td{padding:2px 6px;font-size:7.5pt;font-weight:700;color:#92400e}
+  .t .tr td{background:#f0fdf4!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#fef9c3!important;font-size:8.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .nh{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .i{border:none!important;font-size:6pt;width:28px;padding:0}
+  .i{border:none!important;font-size:7.5pt;width:auto;padding:0;background:transparent!important}
   .tw{overflow:visible}
-  .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:3px 6px}
-  .notes p{font-size:6pt}
-  @page{size:A4 portrait;margin:5mm}
+  .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
+  .notes p{font-size:7.5pt}
+  @page{size:A4 landscape;margin:8mm}
 }
 .po{display:none}
-@media print{.po{display:block!important;text-align:center;margin-bottom:6px}.po div:first-child{font-size:11pt!important}.po div:last-child{font-size:9pt!important}}
+@media print{.po{display:block!important;text-align:center;margin-bottom:8px}.po div:first-child{font-size:13pt!important;font-weight:700}.po div:last-child{font-size:10.5pt!important;font-weight:600}}
 `;
 
 export default function Payroll(){
