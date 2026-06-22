@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
 // STATUTORY TABLES — 2026 Malaysia (KWSP / PERKESO / EIS)
@@ -222,7 +222,7 @@ export default function Payroll(){
   const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
   const[bl,setBl]=useState('GAWAI BONUS');
   const[pan,setPan]=useState(false),[eid,setEid]=useState(null);
-  const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent'});
+  const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
 
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
@@ -235,9 +235,14 @@ export default function Payroll(){
 
   const comp=useCallback(s=>{
     const a=getAgeFromIC(s.ic,ref),m=gM(s.id),epf=calcEPF(s.salary,a),socso=calcSOCSO(s.salary,a),eis=calcEIS(s.salary,a);
-    const net=s.salary+(m.incentive||0)+(m.bonus||0)-epf.employee-socso.employee-eis.employee-(m.advance||0);
-    return{...s,age:a,incentive:m.incentive||0,bonus:m.bonus||0,advance:m.advance||0,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
-  },[ref,gM]);
+    // Use monthly override if exists, otherwise fall back to staff default
+    const hasMonthly = pd[mk]?.[s.id];
+    const inc = hasMonthly && 'incentive' in hasMonthly ? (m.incentive||0) : (s.defIncentive||0);
+    const bon = hasMonthly && 'bonus' in hasMonthly ? (m.bonus||0) : (s.defBonus||0);
+    const adv = hasMonthly && 'advance' in hasMonthly ? (m.advance||0) : (s.defAdvance||0);
+    const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
+    return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
+  },[ref,gM,pd,mk]);
 
   const bS=useMemo(()=>staff.filter(s=>s.method==='bank').map(comp),[staff,comp]);
   const cS=useMemo(()=>staff.filter(s=>s.method==='cash').map(comp),[staff,comp]);
@@ -249,13 +254,43 @@ export default function Payroll(){
   const ptT=useMemo(()=>({advance:ptR.reduce((s,r)=>s+r.advance,0),netPay:ptR.reduce((s,r)=>s+r.netPay,0)}),[ptR]);
   const notes=useMemo(()=>[...bS,...cS].filter(r=>r.underAge).map(r=>`${r.name.split(' ')[0]}: below 18 years old, not subject to EIS deduction per PERKESO.`),[bS,cS]);
 
-  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent'});setEid(null);};
-  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent'});};
+  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
+  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
   const delS=id=>{if(confirm('Remove this staff?'))setStaff(p=>p.filter(s=>s.id!==id));};
-  const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status});};
+  const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
   const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);};
   const delPT=id=>{if(confirm('Remove?'))setPt(p=>p.filter(s=>s.id!==id));};
   const fmt=n=>n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // EditableCell — uncontrolled input that holds local state during typing,
+  // commits to global state only on blur/Enter so focus never jumps
+  const EditableCell = ({value, onCommit, placeholder='0', width=50}) => {
+    const ref = useRef(null);
+    const [local, setLocal] = useState(value ? String(value) : '');
+    const lastExternal = useRef(value);
+    // Sync from external only when external changes AND user isn't typing
+    useEffect(() => {
+      if (lastExternal.current !== value && document.activeElement !== ref.current) {
+        setLocal(value ? String(value) : '');
+      }
+      lastExternal.current = value;
+    }, [value]);
+    const commit = () => {
+      const n = parseFloat(local) || 0;
+      if (n !== (value || 0)) onCommit(n);
+    };
+    return (
+      <input ref={ref} className="i" type="text" inputMode="decimal" value={local} placeholder={placeholder}
+        onChange={e => setLocal(e.target.value.replace(/[^0-9.-]/g,''))}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); ref.current?.blur(); }
+          if (e.key === 'Escape') { setLocal(value ? String(value) : ''); ref.current?.blur(); }
+        }}
+        style={{width}}
+      />
+    );
+  };
 
   let gn=0;
   const Row=({r})=>{gn++;const n=gn;return(
@@ -265,8 +300,8 @@ export default function Payroll(){
       <td style={{color:'#71717a',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#71717a',fontSize:10}} title={r.position}>{r.position}</td>
       <td className="r">{fmt(r.salary)}</td>
-      <td className="r"><input className="i" type="number" value={r.incentive||''} placeholder="0" onChange={e=>sM(r.id,'incentive',e.target.value)}/></td>
-      <td className="r"><input className="i" type="number" value={r.bonus||''} placeholder="0" onChange={e=>sM(r.id,'bonus',e.target.value)}/></td>
+      <td className="r"><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)}/></td>
+      <td className="r"><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>
       <td className="r" style={{color:'#71717a'}}>{fmt(r.epfM)}</td>
       <td className="r" style={{color:'#71717a'}}>{fmt(r.epfP)}</td>
       <td className="r" style={{fontWeight:600}}>{fmt(r.epfM+r.epfP)}</td>
@@ -275,7 +310,7 @@ export default function Payroll(){
       <td className="r" style={{fontWeight:600}}>{fmt(r.socsoM+r.socsoP)}</td>
       <td className="r" style={{color:'#71717a'}}>{fmt(r.eisE)}</td>
       <td className="r" style={{fontWeight:600}}>{fmt(r.eisE*2)}</td>
-      <td className="r"><input className="i" type="number" value={r.advance||''} placeholder="0" onChange={e=>sM(r.id,'advance',e.target.value)}/></td>
+      <td className="r"><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td>
       <td className="r" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap'}}>{fmt(r.netPay)}</td>
     </tr>
   );};
@@ -385,7 +420,7 @@ export default function Payroll(){
             <table className="t">
               <thead><tr><th className="r" style={{width:32}}>#</th><th>Name</th><th>IC No</th><th className="r">Wages/Day</th><th className="r">Days</th><th className="r">Advance</th><th className="r" style={{width:90}}>Net Pay</th></tr></thead>
               <tbody>
-                {ptR.map((r,i)=><tr key={r.id}><td className="r" style={{color:'#a1a1aa'}}>{i+1}</td><td style={{fontWeight:600}}>{r.name}</td><td style={{color:'#71717a',fontSize:12}}>{r.ic}</td><td className="r"><input className="i" type="number" value={r.wagePerDay||''} placeholder="0" onChange={e=>sM(r.id,'wagePerDay',e.target.value)}/></td><td className="r"><input className="i" type="number" value={r.daysWorked||''} placeholder="0" onChange={e=>sM(r.id,'daysWorked',e.target.value)} style={{width:48}}/></td><td className="r"><input className="i" type="number" value={r.advance||''} placeholder="0" onChange={e=>sM(r.id,'advance',e.target.value)}/></td><td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td></tr>)}
+                {ptR.map((r,i)=><tr key={r.id}><td className="r" style={{color:'#a1a1aa'}}>{i+1}</td><td style={{fontWeight:600}}>{r.name}</td><td style={{color:'#71717a',fontSize:12}}>{r.ic}</td><td className="r"><EditableCell value={r.wagePerDay} onCommit={v=>sM(r.id,'wagePerDay',v)}/></td><td className="r"><EditableCell value={r.daysWorked} onCommit={v=>sM(r.id,'daysWorked',v)} width={36}/></td><td className="r"><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td><td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td></tr>)}
                 <tr className="tr"><td colSpan={5} style={{fontWeight:700}}>TOTAL</td><td className="r">{fmt(ptT.advance)}</td><td className="r">{fmt(ptT.netPay)}</td></tr>
               </tbody>
             </table>
@@ -406,11 +441,18 @@ export default function Payroll(){
                 <div className="ff"><label className="fl">Position</label><input className="fi" value={fm.position} onChange={e=>setFm(f=>({...f,position:e.target.value.toUpperCase()}))} placeholder="JOB TITLE"/></div>
                 <div><label className="fl">Payment</label><select className="fs" value={fm.method} onChange={e=>setFm(f=>({...f,method:e.target.value}))}><option value="bank">Bank Transfer</option><option value="cash">Cash</option></select></div>
                 <div><label className="fl">Status</label><select className="fs" value={fm.status} onChange={e=>setFm(f=>({...f,status:e.target.value}))}><option value="permanent">Permanent</option><option value="probationary">Probationary</option></select></div>
+                <div className="ff" style={{borderTop:'1px solid #e4e4e7',paddingTop:12,marginTop:4}}>
+                  <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.05em',color:'#a1a1aa',marginBottom:8}}>Default Monthly Values</div>
+                  <div style={{fontSize:11,color:'#a1a1aa',marginBottom:10}}>Auto-fills each new month. You can still override per month in the payroll table.</div>
+                </div>
+                <div><label className="fl">Default Incentive (RM)</label><input className="fi" type="number" value={fm.defIncentive||''} placeholder="0" onChange={e=>setFm(f=>({...f,defIncentive:parseFloat(e.target.value)||0}))}/></div>
+                <div><label className="fl">Default Bonus (RM)</label><input className="fi" type="number" value={fm.defBonus||''} placeholder="0" onChange={e=>setFm(f=>({...f,defBonus:parseFloat(e.target.value)||0}))}/></div>
+                <div className="ff"><label className="fl">Default Advance (RM)</label><input className="fi" type="number" value={fm.defAdvance||''} placeholder="0" onChange={e=>setFm(f=>({...f,defAdvance:parseFloat(e.target.value)||0}))}/></div>
               </div>
               {fm.ic&&getAgeFromIC(fm.ic,new Date())!==null&&<div style={{fontSize:12,color:getAgeFromIC(fm.ic,new Date())<18?'#dc2626':'#71717a',marginBottom:12}}>Age: {getAgeFromIC(fm.ic,new Date())} {getAgeFromIC(fm.ic,new Date())<18&&'— EIS exempt (under 18)'}</div>}
               <div style={{display:'flex',gap:8}}>
                 <button className="b bd" onClick={eid?updS:addS}>{eid?'Update':'Add Staff'}</button>
-                {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent'});}}>Cancel</button>}
+                {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});}}>Cancel</button>}
               </div>
             </div>
             <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({staff.length})</div>
