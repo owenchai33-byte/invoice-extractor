@@ -332,7 +332,7 @@ export default function InvoiceExtractor() {
                     <td style={T.td}>{displayNum}</td>
                     <td style={T.td}>{inv.raw.invoice_date}</td>
                     <td style={T.td}>{inv.raw.invoice_no}</td>
-                    <td style={{...T.td,textAlign:'right',fontWeight:700,paddingRight:10}}>{fmt(inv.raw.total_amount)}</td>
+                    <td style={{...T.td,fontWeight:700}}>{fmt(inv.raw.total_amount)}</td>
                     <td style={{...T.td,padding:4}}>
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
@@ -365,7 +365,7 @@ export default function InvoiceExtractor() {
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
-                    {gi===0&&<td style={{...T.td,textAlign:'right',fontWeight:700,paddingRight:10}} rowSpan={rc}>{fmt(inv.raw.total_amount)}</td>}
+                    {gi===0&&<td style={{...T.td,fontWeight:700}} rowSpan={rc}>{fmt(inv.raw.total_amount)}</td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
