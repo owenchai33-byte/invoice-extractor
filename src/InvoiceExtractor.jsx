@@ -128,11 +128,11 @@ export default function InvoiceExtractor() {
     });
   },[config,apiKey]);
 
-  const processFiles=useCallback(async (files,append=false)=>{
+  const processFiles=useCallback(async (files)=>{
     if(!apiKey){setError('Set your Groq API key first');setShowSettings(true);return;}
     const fileArr=Array.from(files).filter(f=>f.type.startsWith('image/'));
     if(fileArr.length===0){setError('No image files selected');return;}
-    if(!append){setInvoices([]);setCnValues({});}
+    setInvoices([]);setCnValues({});
     setError(null);setProcessing(true);
     setProcessingCount({done:0,total:fileArr.length});
     const results=[]; const errors=[];
@@ -260,10 +260,25 @@ export default function InvoiceExtractor() {
             </tr></thead>
             <tbody>
               {invoices.map((inv,idx)=>{
-                const rc=inv.groups.length*4;
+                const rc=Math.max(inv.groups.length*4,1);
                 const cn=cnValues[inv.id]||0;
                 const displayNum=idx+1;
                 const rows=[];
+                if(inv.groups.length===0){
+                  rows.push(<tr key={inv.id+'-empty'}>
+                    <td style={T.td}>{displayNum}</td>
+                    <td style={T.td}>{inv.raw.invoice_date}</td>
+                    <td style={T.td}>{inv.raw.invoice_no}</td>
+                    <td style={{...T.td,textAlign:'right',fontWeight:700,paddingRight:10}}>{fmt(inv.raw.total_amount)}</td>
+                    <td style={{...T.td,padding:4}}>
+                      <input type="number" step="0.01" value={cn||''} placeholder="0.00"
+                        onChange={e=>setCn(inv.id,e.target.value)} className="noP"
+                        style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
+                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
+                    </td>
+                    <td style={{...T.td,color:'#999',fontStyle:'italic',fontSize:13}} colSpan={2}>No category matched</td>
+                  </tr>);
+                } else {
                 inv.groups.forEach((g,gi)=>{
                   rows.push(<tr key={inv.id+'-'+gi+'-h'}>
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
@@ -289,6 +304,7 @@ export default function InvoiceExtractor() {
                     <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{fmt(inv.subsidy.p2)}</td>
                   </tr>);
                 });
+                }
                 return <React.Fragment key={inv.id}>{rows}</React.Fragment>;
               })}
             </tbody>
@@ -333,14 +349,14 @@ export default function InvoiceExtractor() {
               cursor:'pointer',background:drag?'#fffbeb':'#fafafa',marginTop:18}}
             onDragOver={e=>{e.preventDefault();setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
-            onDrop={e=>{e.preventDefault();setDrag(false);if(e.dataTransfer?.files?.length)processFiles(e.dataTransfer.files,uploading);}}
+            onDrop={e=>{e.preventDefault();setDrag(false);if(e.dataTransfer?.files?.length)processFiles(e.dataTransfer.files);}}
             onClick={()=>fileRef.current?.click()}>
             <div style={{fontSize:32,marginBottom:8,opacity:.3}}>📄</div>
             <div style={{fontSize:16,fontWeight:600}}>
               {invoices.length>0?'Add more invoices':'Drop invoice photos here'}</div>
             <div style={{fontSize:13,color:'#999',marginTop:3}}>or click to browse — select multiple JPG, PNG</div>
             <input ref={fileRef} type="file" accept="image/*" multiple style={{display:'none'}}
-              onChange={e=>{if(e.target.files?.length)processFiles(e.target.files,uploading);e.target.value='';}}/>
+              onChange={e=>{if(e.target.files?.length)processFiles(e.target.files);e.target.value='';}}/>
             {invoices.length>0&&<button style={{...btn(0),marginTop:12}} onClick={e=>{e.stopPropagation();setUploading(false);}}>Cancel</button>}
           </div>
         )}
