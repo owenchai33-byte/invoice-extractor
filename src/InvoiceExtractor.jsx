@@ -20,24 +20,23 @@ const CO = { name:'CHAI JEE KIONG TRADING SDN BHD', reg:'(200901034210)',
   addr:'No. 19, 21, 23, 25, 27, Jalan Petanak, 93100, Kuching, Sarawak.',
   tel:'082-427630', email:'chaijeekionghq@gmail.com' };
 
-function matchCat(v,p,rates,desc){
+function matchCat(v,p,rates,desc,code){
   // Coerce to numbers in case AI returns strings
   v = Number(v); p = Number(p);
   // Try direct match first
-  if(!isNaN(v)&&!isNaN(p)){
+  if(!isNaN(v)&&v>0&&!isNaN(p)&&p>0){
     const m = rates.find(r=>v>=r.minVol&&v<=r.maxVol&&p===r.packSize);
     if(m) return m;
   }
-  // Fallback: parse from description string if AI got volume/pack wrong
-  if(desc){
-    const d = String(desc).toUpperCase();
-    // Match volume patterns: "1.5L", "500ML", "320ML", "1L" etc
+  // Fallback: parse from description and/or product code string
+  const sources = [desc, code].filter(Boolean);
+  for(const src of sources){
+    const d = String(src).toUpperCase();
     let volMl = null;
     const mlMatch = d.match(/(\d+(?:\.\d+)?)\s*ML/);
     const lMatch = d.match(/(\d+(?:\.\d+)?)\s*L(?![A-Z])/);
     if(mlMatch) volMl = parseFloat(mlMatch[1]);
     else if(lMatch) volMl = parseFloat(lMatch[1]) * 1000;
-    // Match pack: "X12", "1X12", "X24"
     let packN = null;
     const pMatch = d.match(/[X×]\s*(\d+)(?!\d)/);
     if(pMatch) packN = parseInt(pMatch[1]);
@@ -57,18 +56,26 @@ const fmt=n=>{if(n===''||n==null)return '';return`RM${Number(n).toLocaleString('
 
 const PROMPT=`You are an invoice data extractor for Malaysian wholesale distributors. Analyze this invoice image carefully and extract ALL data into this exact JSON format. Respond with ONLY valid JSON — no markdown, no backticks, no explanation.
 
-{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80}
+{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80}
 
 CRITICAL RULES:
 - invoice_no: Look for "Document No", "Document No." or "Doc No." field. Typically starts with "IN" followed by digits (e.g. IN93018360). Do NOT use PO numbers, Ref numbers, or Load Ref numbers. READ THE EXACT CHARACTERS CAREFULLY.
 - invoice_date: Use "Invoice Date" or "Document Date". Format DD/MM/YYYY.
 - qty: "20/0" -> extract only 20. The /0 means zero returns.
-- volume_ml: Convert from description (1.5L=1500, 1.75L=1750, 500ML=500, 320ML=320, 300ML=300, 1L=1000).
-- pack_size: "1X12"=12, "X24"=24.
+- volume_ml is REQUIRED and MUST be a number, never null. Parse from product description. Examples:
+  * "320MLALSCN1X12" -> volume_ml: 320
+  * "500MLPLBTN1X24" -> volume_ml: 500
+  * "300MLALSCN1X12" -> volume_ml: 300
+  * "1.5LPLBTN1X12" -> volume_ml: 1500
+  * "1LPLBTN1X12" -> volume_ml: 1000
+- pack_size is REQUIRED and MUST be a number, never null. Look for "X12", "1X12", "X24", "N1X12", "N1X24" patterns:
+  * "1X12" or "N1X12" or "X12" -> pack_size: 12
+  * "1X24" or "N1X24" or "X24" -> pack_size: 24
+- description: MUST include the full product code string like "320MLALSCN1X12" exactly as printed.
 - is_foc: true only if list_price=0.00 AND amount=0.00.
 - total_amount: Final "Total Amount Due" value.
 - supplier: Company name from TOP HEADER, NOT "Ship To"/"Bill To".
-- Include ALL items including FOC. Return ONLY JSON.`;
+- Include ALL items including FOC. Even small/short product lines must be extracted. Return ONLY JSON.`;
 
 const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
 const B='1px solid #000';
@@ -137,7 +144,11 @@ export default function InvoiceExtractor() {
               if(!txt.startsWith('{')) txt=txt.substring(txt.indexOf('{'));
               if(!txt.endsWith('}')) txt=txt.substring(0,txt.lastIndexOf('}')+1);
               const parsed=JSON.parse(txt);
-              const items=(parsed.items||[]).map(it=>({...it,category:matchCat(it.volume_ml,it.pack_size,config.rates,it.description)}));
+              const items=(parsed.items||[]).map(it=>({...it,category:matchCat(it.volume_ml,it.pack_size,config.rates,it.description,it.product_code)}));
+              const unmatched=items.filter(it=>!it.category);
+              if(unmatched.length>0){
+                console.warn('[Invoice]',parsed.invoice_no,'has',unmatched.length,'unmatched items:',unmatched.map(u=>({desc:u.description,code:u.product_code,vol:u.volume_ml,pack:u.pack_size})));
+              }
               const gMap={};
               items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=it.qty;});
               const groups=Object.values(gMap);
