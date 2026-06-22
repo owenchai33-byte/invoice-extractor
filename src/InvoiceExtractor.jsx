@@ -92,6 +92,7 @@ export default function InvoiceExtractor() {
   const [apiKey,setApiKey]=useState('');
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
+  const [manualEntry,setManualEntry]=useState({});  // { invId: { rateId, ctn } }
   const fileRef=useRef(null);
   const config=SUPPLIERS['CHOON HUA'];
 
@@ -107,6 +108,19 @@ export default function InvoiceExtractor() {
   };
 
   const setCn=(id,val)=>setCnValues(prev=>({...prev,[id]:parseFloat(val)||0}));
+
+  // Manually assign a category to an unmatched invoice
+  const assignCategory=(invId,rateId,ctnInput)=>{
+    const rate=config.rates.find(r=>r.id===rateId);
+    const ctn=parseInt(ctnInput);
+    if(!rate||!ctn||ctn<=0) return;
+    setInvoices(prev=>prev.map(inv=>{
+      if(inv.id!==invId) return inv;
+      const groups=[{...rate,ctn}];
+      const sub=calcSub(inv.raw.total_amount,groups,config.pct1,config.pct2);
+      return {...inv,groups,subsidy:sub};
+    }));
+  };
 
   const processSingleFile=useCallback(async (file)=>{
     if(!file?.type.startsWith('image/')) throw new Error('Not an image file: '+file.name);
@@ -303,6 +317,7 @@ export default function InvoiceExtractor() {
                 const displayNum=idx+1;
                 const rows=[];
                 if(inv.groups.length===0){
+                  const me=manualEntry[inv.id]||{rateId:'',ctn:''};
                   rows.push(<tr key={inv.id+'-empty'}>
                     <td style={T.td}>{displayNum}</td>
                     <td style={T.td}>{inv.raw.invoice_date}</td>
@@ -314,7 +329,25 @@ export default function InvoiceExtractor() {
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
                       {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
                     </td>
-                    <td style={{...T.td,color:'#999',fontStyle:'italic',fontSize:13}} colSpan={2}>No category matched</td>
+                    <td style={{...T.td,padding:8}} colSpan={2}>
+                      <div className="noP" style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
+                        <span style={{fontSize:12,color:'#888'}}>AI missed this — pick category:</span>
+                        <select value={me.rateId}
+                          onChange={e=>setManualEntry(p=>({...p,[inv.id]:{...me,rateId:e.target.value}}))}
+                          style={{padding:'4px 6px',fontSize:13,border:'1px solid #aaa',borderRadius:3,fontFamily:F}}>
+                          <option value="">— Category —</option>
+                          {config.rates.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}
+                        </select>
+                        <input type="number" placeholder="CTN" value={me.ctn}
+                          onChange={e=>setManualEntry(p=>({...p,[inv.id]:{...me,ctn:e.target.value}}))}
+                          style={{width:70,padding:'4px 6px',fontSize:13,border:'1px solid #aaa',borderRadius:3,fontFamily:F}}/>
+                        <button onClick={()=>assignCategory(inv.id,me.rateId,me.ctn)}
+                          disabled={!me.rateId||!me.ctn}
+                          style={{padding:'4px 12px',fontSize:13,background:(me.rateId&&me.ctn)?'#111':'#ddd',color:'#fff',border:'none',borderRadius:3,cursor:(me.rateId&&me.ctn)?'pointer':'not-allowed',fontWeight:600}}>
+                          Apply
+                        </button>
+                      </div>
+                    </td>
                   </tr>);
                 } else {
                 inv.groups.forEach((g,gi)=>{
