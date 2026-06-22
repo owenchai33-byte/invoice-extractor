@@ -20,7 +20,34 @@ const CO = { name:'CHAI JEE KIONG TRADING SDN BHD', reg:'(200901034210)',
   addr:'No. 19, 21, 23, 25, 27, Jalan Petanak, 93100, Kuching, Sarawak.',
   tel:'082-427630', email:'chaijeekionghq@gmail.com' };
 
-function matchCat(v,p,rates){ return rates.find(r=>v>=r.minVol&&v<=r.maxVol&&p===r.packSize)||null; }
+function matchCat(v,p,rates,desc){
+  // Coerce to numbers in case AI returns strings
+  v = Number(v); p = Number(p);
+  // Try direct match first
+  if(!isNaN(v)&&!isNaN(p)){
+    const m = rates.find(r=>v>=r.minVol&&v<=r.maxVol&&p===r.packSize);
+    if(m) return m;
+  }
+  // Fallback: parse from description string if AI got volume/pack wrong
+  if(desc){
+    const d = String(desc).toUpperCase();
+    // Match volume patterns: "1.5L", "500ML", "320ML", "1L" etc
+    let volMl = null;
+    const mlMatch = d.match(/(\d+(?:\.\d+)?)\s*ML/);
+    const lMatch = d.match(/(\d+(?:\.\d+)?)\s*L(?![A-Z])/);
+    if(mlMatch) volMl = parseFloat(mlMatch[1]);
+    else if(lMatch) volMl = parseFloat(lMatch[1]) * 1000;
+    // Match pack: "X12", "1X12", "X24"
+    let packN = null;
+    const pMatch = d.match(/[X×]\s*(\d+)(?!\d)/);
+    if(pMatch) packN = parseInt(pMatch[1]);
+    if(volMl && packN){
+      const m = rates.find(r=>volMl>=r.minVol&&volMl<=r.maxVol&&packN===r.packSize);
+      if(m) return m;
+    }
+  }
+  return null;
+}
 function calcSub(amt,groups,p1,p2){
   const c=groups.reduce((s,g)=>s+g.ctn*g.rate,0), r=v=>Math.round(v*100)/100;
   const v1=r((amt-c)*p1), v2=r((amt-c-v1)*p2);
@@ -110,7 +137,7 @@ export default function InvoiceExtractor() {
               if(!txt.startsWith('{')) txt=txt.substring(txt.indexOf('{'));
               if(!txt.endsWith('}')) txt=txt.substring(0,txt.lastIndexOf('}')+1);
               const parsed=JSON.parse(txt);
-              const items=(parsed.items||[]).map(it=>({...it,category:matchCat(it.volume_ml,it.pack_size,config.rates)}));
+              const items=(parsed.items||[]).map(it=>({...it,category:matchCat(it.volume_ml,it.pack_size,config.rates,it.description)}));
               const gMap={};
               items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=it.qty;});
               const groups=Object.values(gMap);
