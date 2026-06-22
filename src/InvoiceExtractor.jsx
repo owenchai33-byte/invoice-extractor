@@ -247,12 +247,22 @@ export default function InvoiceExtractor() {
         @media print{
           .noP{display:none!important}
           body,html{margin:0;padding:0;background:#fff}
-          @page{size:A4 portrait;margin:12mm 10mm}
+          @page{size:A4 portrait;margin:8mm 8mm}
           .wrap{max-width:100%!important;padding:0!important}
+          /* Force everything onto one page */
+          .print-area{font-size:12px!important}
+          .print-area h1,.print-area h2,.print-area h3{font-size:14px!important;margin:4px 0!important}
+          .print-area table{font-size:11px!important}
+          .print-area td,.print-area th{padding:4px 6px!important}
+          .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
+          .print-area img{max-height:55px!important}
+          /* Prevent page breaks inside critical sections */
+          .print-area,.print-area table{page-break-inside:avoid}
+          .print-area tr{page-break-inside:avoid}
         }
       `}</style>
 
-      <div className="wrap" style={{maxWidth:780,margin:'0 auto',padding:'20px'}}>
+      <div className="wrap print-area" style={{maxWidth:780,margin:'0 auto',padding:'20px'}}>
 
         {/* HEADER */}
         <div style={{display:'flex',alignItems:'center',gap:16,paddingBottom:12,borderBottom:'3px solid #000'}}>
@@ -378,28 +388,39 @@ export default function InvoiceExtractor() {
                 }
                 return <React.Fragment key={inv.id}>{rows}</React.Fragment>;
               })}
+              {/* SUMMARY BOX — aligned with table columns above */}
+              <tr><td colSpan={7} style={{padding:6,border:'none'}}/></tr>
+              <tr>
+                <td colSpan={5} style={{border:'none'}}/>
+                <td style={T.bxL}>CARTON:</td>
+                <td style={T.bxR}>{fmt(gC)}</td>
+              </tr>
+              <tr>
+                <td colSpan={5} style={{border:'none'}}/>
+                <td style={T.bxL}>0.4%:</td>
+                <td style={T.bxR}>{fmt(gP1)}</td>
+              </tr>
+              <tr>
+                <td colSpan={5} style={{border:'none'}}/>
+                <td style={T.bxL}>0.2%:</td>
+                <td style={T.bxR}>{fmt(gP2)}</td>
+              </tr>
+              <tr>
+                <td colSpan={5} style={{border:'none'}}/>
+                <td style={T.bxL}>CREDIT NOTE:</td>
+                <td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
+              </tr>
+              <tr>
+                <td colSpan={5} style={{border:'none'}}/>
+                <td style={{...T.bxL,borderTop:'2px solid #000'}}>TOTAL:</td>
+                <td style={{...T.bxR,borderTop:'2px solid #000',background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
+              </tr>
             </tbody>
           </table>
 
-          {/* SUMMARY + TOTAL */}
-          <div style={{display:'flex',justifyContent:'flex-end',marginTop:4}}>
-            <table style={{borderCollapse:'collapse',width:320}}>
-              <tbody>
-                <tr><td style={T.bxL}>CARTON:</td><td style={T.bxR}>{fmt(gC)}</td></tr>
-                <tr><td style={T.bxL}>0.4%:</td><td style={T.bxR}>{fmt(gP1)}</td></tr>
-                <tr><td style={T.bxL}>0.2%:</td><td style={T.bxR}>{fmt(gP2)}</td></tr>
-                <tr><td style={T.bxL}>CREDIT NOTE:</td><td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td></tr>
-                <tr>
-                  <td style={{...T.bxL,borderTop:'2px solid #000'}}>TOTAL:</td>
-                  <td style={{...T.bxR,borderTop:'2px solid #000',background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
           {/* TOTAL AMOUNT PAYABLE */}
-          <div style={{marginTop:24,textAlign:'right'}}>
-            <div style={{fontSize:24,fontWeight:700,letterSpacing:0.5}}>
+          <div className="total-payable" style={{marginTop:16,textAlign:'right'}}>
+            <div style={{fontSize:22,fontWeight:700,letterSpacing:0.5}}>
               TOTAL AMOUNT PAYABLE = {fmt(tP)}
             </div>
           </div>
