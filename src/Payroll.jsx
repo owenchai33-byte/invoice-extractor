@@ -135,19 +135,19 @@ const CSS=`
 .bo{background:#fff;color:#3f3f46;border:1px solid #d4d4d8}.bo:hover{background:#fafafa;border-color:#a1a1aa}
 .bg{background:transparent;color:#71717a}.bg:hover{color:#18181b;background:#f4f4f5}
 .br{color:#dc2626;background:transparent}.br:hover{background:#fef2f2}
-.body{max-width:100%;margin:0 auto;padding:16px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.st{background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e4e4e7}
-.stl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;margin-bottom:3px}
-.stv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.body{max-width:100%;margin:0 auto;padding:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.st{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e4e4e7}
+.stl{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;margin-bottom:3px}
+.stv{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
 .sec{background:#fff;border-radius:8px;border:1px solid #e4e4e7;overflow:hidden;margin-bottom:12px}
 .sh{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f4f4f5}
 .sht{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
-.tw{overflow-x:auto}
-.t{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums;table-layout:fixed}
-.t th{padding:5px 4px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tw{overflow-x:visible}
+.t{width:100%;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums;table-layout:fixed}
+.t th{padding:5px 3px;text-align:left;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t th.r{text-align:right}
-.t td{padding:4px 4px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t td.r{text-align:right}
 .t tr:hover{background:#fafafa}
 .t .gh{background:#18181b;color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em}
@@ -158,9 +158,13 @@ const CSS=`
 .t .eh{background:#f0fdf4}
 .t .dh{background:#fef2f2}
 .t .nh{background:#eff6ff}
-.i{width:42px;text-align:right;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:11px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
+.i{width:50px;text-align:right;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:10.5px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
 .i:focus{border-color:#2563eb;border-style:solid}
 .i::placeholder{color:#d4d4d8}
+/* Remove spinner arrows from number inputs - allow direct typing */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.04em}
 .tgb{background:#dbeafe;color:#1e40af}
 .tgc{background:#d1fae5;color:#065f46}
@@ -258,7 +262,7 @@ export default function Payroll(){
     <tr>
       <td className="r" style={{color:'#a1a1aa'}}>{n}</td>
       <td style={{fontWeight:600}} title={r.name}>{r.name}</td>
-      <td style={{color:'#71717a',fontSize:10}}>{r.ic}</td>
+      <td style={{color:'#71717a',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#71717a',fontSize:10}} title={r.position}>{r.position}</td>
       <td className="r">{fmt(r.salary)}</td>
       <td className="r"><input className="i" type="number" value={r.incentive||''} placeholder="0" onChange={e=>sM(r.id,'incentive',e.target.value)}/></td>
@@ -272,7 +276,7 @@ export default function Payroll(){
       <td className="r" style={{color:'#71717a'}}>{fmt(r.eisE)}</td>
       <td className="r" style={{fontWeight:600}}>{fmt(r.eisE*2)}</td>
       <td className="r"><input className="i" type="number" value={r.advance||''} placeholder="0" onChange={e=>sM(r.id,'advance',e.target.value)}/></td>
-      <td className="r" style={{fontWeight:700,fontSize:12}}>{fmt(r.netPay)}</td>
+      <td className="r" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap'}}>{fmt(r.netPay)}</td>
     </tr>
   );};
   const TR=({l,t,c})=>(
@@ -328,22 +332,22 @@ export default function Payroll(){
             <table className="t">
               <colgroup>
                 <col style={{width:'2.5%'}}/>
-                <col style={{width:'12%'}}/>
-                <col style={{width:'8%'}}/>
+                <col style={{width:'14%'}}/>
                 <col style={{width:'10%'}}/>
-                <col style={{width:'5%'}}/>
-                <col style={{width:'5%'}}/>
-                <col style={{width:'5%'}}/>
+                <col style={{width:'11%'}}/>
+                <col style={{width:'5.5%'}}/>
                 <col style={{width:'4.5%'}}/>
                 <col style={{width:'4.5%'}}/>
-                <col style={{width:'5%'}}/>
-                <col style={{width:'4.5%'}}/>
-                <col style={{width:'4.5%'}}/>
-                <col style={{width:'5%'}}/>
                 <col style={{width:'4%'}}/>
-                <col style={{width:'5%'}}/>
-                <col style={{width:'5%'}}/>
-                <col style={{width:'6%'}}/>
+                <col style={{width:'4%'}}/>
+                <col style={{width:'4.5%'}}/>
+                <col style={{width:'4%'}}/>
+                <col style={{width:'4%'}}/>
+                <col style={{width:'4.5%'}}/>
+                <col style={{width:'3.5%'}}/>
+                <col style={{width:'4%'}}/>
+                <col style={{width:'4%'}}/>
+                <col style={{width:'7.5%'}}/>
               </colgroup>
               <thead>
                 <tr>
