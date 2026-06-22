@@ -193,26 +193,27 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .sh{padding:4px 0;border:none}
   .sht{font-size:10pt;font-weight:700}
   .stats{display:none!important}
-  .t{font-size:7.5pt}
-  .t th{position:static;padding:3px 4px;font-size:7pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important}
-  .t td{padding:2.5px 4px;font-size:7.5pt;white-space:nowrap;overflow:visible;text-overflow:clip}
+  .t{font-size:7pt;table-layout:auto!important;width:100%}
+  .t col{width:auto!important}
+  .t th{position:static;padding:4px 3px;font-size:6.5pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:visible}
+  .t td{padding:3px 4px;font-size:7pt;white-space:nowrap;overflow:visible;text-overflow:clip;max-width:none!important}
   .t .gh{background:#18181b!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gh td{padding:3px 6px;font-size:8pt;font-weight:700}
+  .t .gh td{padding:3px 6px;font-size:7.5pt;font-weight:700}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .ph td{padding:2px 6px;font-size:7.5pt;font-weight:700;color:#92400e}
-  .t .tr td{background:#f0fdf4!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#fef9c3!important;font-size:8.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .ph td{padding:2px 6px;font-size:7pt;font-weight:700;color:#92400e}
+  .t .tr td{background:#f0fdf4!important;font-size:7pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#fef9c3!important;font-size:8pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .nh{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .i{border:none!important;font-size:7.5pt;width:auto;padding:0;background:transparent!important}
+  .i{border:none!important;font-size:7pt;width:auto!important;min-width:0!important;padding:0;background:transparent!important;text-align:right}
   .tw{overflow:visible}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
-  .notes p{font-size:7.5pt}
-  @page{size:A4 landscape;margin:8mm}
+  .notes p{font-size:7pt}
+  @page{size:A4 landscape;margin:7mm}
 }
 .po{display:none}
-@media print{.po{display:block!important;text-align:center;margin-bottom:8px}.po div:first-child{font-size:13pt!important;font-weight:700}.po div:last-child{font-size:10.5pt!important;font-weight:600}}
+@media print{.po{display:block!important;text-align:center;margin-bottom:8px}.po div:first-child{font-size:12pt!important;font-weight:700}.po div:last-child{font-size:10pt!important;font-weight:600}}
 `;
 
 export default function Payroll(){
