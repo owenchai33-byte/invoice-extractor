@@ -470,9 +470,9 @@ const T={
   th:{border:B,padding:'10px 8px',fontWeight:700,fontSize:16,textAlign:'center',background:'#f0f0f0',fontFamily:F},
   td:{border:B,padding:'8px 10px',fontSize:16,textAlign:'center',verticalAlign:'middle',fontFamily:F},
   cat:{border:B,padding:'6px 8px',fontSize:16,fontWeight:700,textDecoration:'underline',textAlign:'center',fontFamily:F},
-  subL:{border:B,padding:'6px 12px',fontSize:16,textAlign:'right',fontFamily:F},
-  subR:{border:B,padding:'6px 12px',fontSize:16,textAlign:'center',fontWeight:700,fontFamily:F,whiteSpace:'nowrap'},
+  subL:{border:B,padding:'6px 12px',fontSize:16,textAlign:'right',fontFamily:F,fontVariantNumeric:'tabular-nums'},
+  subR:{border:B,padding:'6px 12px',fontSize:16,textAlign:'right',fontWeight:700,fontFamily:F,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums',width:110},
   bxL:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',background:'#f0f0f0',fontFamily:F},
-  bxR:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',fontFamily:F,minWidth:110,whiteSpace:'nowrap'},
+  bxR:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',fontFamily:F,minWidth:110,width:110,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'},
 };
 const btn=p=>({padding:'8px 18px',borderRadius:5,border:p?'none':'1px solid #aaa',fontWeight:600,fontSize:14,cursor:'pointer',background:p?'#111':'#fff',color:p?'#fff':'#333',fontFamily:F});
