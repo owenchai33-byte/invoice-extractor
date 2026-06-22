@@ -145,7 +145,7 @@ const CSS=`
 .sht{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .tw{overflow-x:visible}
 .t{width:100%;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums;table-layout:fixed}
-.t th{padding:5px 3px;text-align:left;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t th{padding:5px 3px;text-align:left;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:break-word;line-height:1.15;vertical-align:bottom}
 .t th.r{text-align:right}
 .t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t td.r{text-align:right}
@@ -195,25 +195,27 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .stats{display:none!important}
   .t{font-size:6.5pt;table-layout:fixed!important;width:100%}
   /* Explicit print column widths — sum = 100% */
-  .t col:nth-child(1){width:2%!important}    /* # */
-  .t col:nth-child(2){width:13%!important}   /* Name */
-  .t col:nth-child(3){width:8%!important}    /* IC */
-  .t col:nth-child(4){width:11%!important}   /* Position */
-  .t col:nth-child(5){width:5.5%!important}  /* Salary */
-  .t col:nth-child(6){width:4.5%!important}  /* Incent */
-  .t col:nth-child(7){width:4.5%!important}  /* Bonus */
-  .t col:nth-child(8){width:5%!important}    /* EPF(M) */
-  .t col:nth-child(9){width:5%!important}    /* EPF(P) */
-  .t col:nth-child(10){width:5%!important}   /* Jml EPF */
-  .t col:nth-child(11){width:5%!important}   /* SOC(M) */
-  .t col:nth-child(12){width:5%!important}   /* SOC(P) */
-  .t col:nth-child(13){width:5%!important}   /* Jml SOC */
-  .t col:nth-child(14){width:4%!important}   /* EIS */
-  .t col:nth-child(15){width:4.5%!important} /* Jml EIS */
-  .t col:nth-child(16){width:4.5%!important} /* Adv */
-  .t col:nth-child(17){width:6.5%!important} /* Net Pay */
+  .t col:nth-child(1){width:1.8%!important}   /* # */
+  .t col:nth-child(2){width:15%!important}    /* Name */
+  .t col:nth-child(3){width:9.5%!important}   /* IC */
+  .t col:nth-child(4){width:12%!important}    /* Position */
+  .t col:nth-child(5){width:5%!important}     /* Salary */
+  .t col:nth-child(6){width:4%!important}     /* Incent */
+  .t col:nth-child(7){width:4%!important}     /* Bonus */
+  .t col:nth-child(8){width:4.3%!important}   /* EPF(M) */
+  .t col:nth-child(9){width:4.3%!important}   /* EPF(P) */
+  .t col:nth-child(10){width:4.5%!important}  /* Jml EPF */
+  .t col:nth-child(11){width:4.3%!important}  /* SOC(M) */
+  .t col:nth-child(12){width:4.3%!important}  /* SOC(P) */
+  .t col:nth-child(13){width:4.5%!important}  /* Jml SOC */
+  .t col:nth-child(14){width:3.5%!important}  /* EIS */
+  .t col:nth-child(15){width:4%!important}    /* Jml EIS */
+  .t col:nth-child(16){width:4%!important}    /* Adv */
+  .t col:nth-child(17){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:3px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
   .t td{padding:2px 2px;font-size:6.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Allow name, IC, position to wrap so nothing gets cut off */
+  .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
   .t .gh{background:#18181b!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .gh td{padding:2px 4px;font-size:7pt;font-weight:700;overflow:visible}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -276,6 +278,8 @@ export default function Payroll(){
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
   const delS=id=>{if(confirm('Remove this staff?'))setStaff(p=>p.filter(s=>s.id!==id));};
+  // Inline update of staff salary from the payroll table
+  const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
   const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
   const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);};
   const delPT=id=>{if(confirm('Remove?'))setPt(p=>p.filter(s=>s.id!==id));};
@@ -318,7 +322,7 @@ export default function Payroll(){
       <td style={{fontWeight:600}} title={r.name}>{r.name}</td>
       <td style={{color:'#71717a',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#71717a',fontSize:10}} title={r.position}>{r.position}</td>
-      <td className="r">{fmt(r.salary)}</td>
+      <td className="r"><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60}/></td>
       <td className="r"><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)}/></td>
       <td className="r"><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>
       <td className="r" style={{color:'#71717a'}}>{fmt(r.epfM)}</td>
@@ -412,10 +416,10 @@ export default function Payroll(){
                 </tr>
                 <tr>
                   <th className="r">#</th><th>Name</th><th>IC No</th><th>Position</th>
-                  <th className="r eh">Salary</th><th className="r eh">Incent</th><th className="r eh">{bl.length>8?bl.substring(0,8):bl}</th>
-                  <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jml EPF</th>
-                  <th className="r dh">SOC(M)</th><th className="r dh">SOC(P)</th><th className="r dh">Jml SOC</th>
-                  <th className="r dh">EIS</th><th className="r dh">Jml EIS</th><th className="r dh">Adv</th>
+                  <th className="r eh">Salary</th><th className="r eh">Incentive</th><th className="r eh">{bl}</th>
+                  <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jumlah EPF</th>
+                  <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jumlah SOCSO</th>
+                  <th className="r dh">EIS</th><th className="r dh">Jumlah EIS</th><th className="r dh">Advance</th>
                   <th className="r nh">Net Pay</th>
                 </tr>
               </thead>
