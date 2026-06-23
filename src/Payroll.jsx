@@ -156,6 +156,9 @@ const CSS=`
 .t .tr td{font-weight:700;background:#f0fdf4;border-top:2px solid #18181b;border-bottom:2px solid #18181b}
 .t .gr td{font-weight:700;background:#fef9c3;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
 .t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
+.drag-handle:hover{background:#f4f4f5}
+.drag-handle:hover span:first-child{color:#71717a!important}
+.drag-handle:active{cursor:grabbing!important}
 .t .eh{background:#f0fdf4}
 .t .dh{background:#fef2f2}
 .t .nh{background:#eff6ff}
@@ -337,21 +340,36 @@ export default function Payroll(){
     const isDragOver=dragOverId===r.id&&dragId!==r.id;
     return(
     <tr
-      draggable
-      onDragStart={e=>{setDragId(r.id);e.dataTransfer.effectAllowed='move';}}
-      onDragEnd={()=>{setDragId(null);setDragOverId(null);}}
-      onDragOver={e=>{e.preventDefault();setDragOverId(r.id);e.dataTransfer.dropEffect='move';}}
-      onDragLeave={()=>{if(dragOverId===r.id)setDragOverId(null);}}
-      onDrop={e=>{e.preventDefault();if(dragId&&dragId!==r.id)reorderStaff(dragId,r.id);setDragId(null);setDragOverId(null);}}
+      data-sid={r.id}
       style={{
-        opacity:isDragging?0.4:1,
-        cursor:'grab',
+        opacity:isDragging?0.35:1,
         background:isDragOver?'#eff6ff':undefined,
         boxShadow:isDragOver?'inset 0 2px 0 #2563eb':undefined,
-        transition:'background 120ms,box-shadow 120ms',
+        transition:'background 100ms,box-shadow 100ms,opacity 100ms',
       }}
     >
-      <td className="r" style={{color:'#a1a1aa'}}>{n}</td>
+      <td className="r drag-handle" style={{color:'#a1a1aa',cursor:'grab',userSelect:'none',position:'relative'}}
+        onPointerDown={e=>{e.preventDefault();setDragId(r.id);e.currentTarget.setPointerCapture(e.pointerId);}}
+        onPointerMove={e=>{
+          if(dragId!==r.id) return;
+          const el=document.elementFromPoint(e.clientX,e.clientY);
+          const tr=el?.closest('tr[data-sid]');
+          const overId=tr?.getAttribute('data-sid');
+          if(overId&&overId!==r.id) setDragOverId(overId);
+        }}
+        onPointerUp={e=>{
+          if(dragOverId&&dragId&&dragOverId!==dragId) reorderStaff(dragId,dragOverId);
+          setDragId(null);setDragOverId(null);
+          try{e.currentTarget.releasePointerCapture(e.pointerId);}catch{}
+        }}
+        onPointerCancel={()=>{setDragId(null);setDragOverId(null);}}
+        title="Drag to reorder"
+      >
+        <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+          <span style={{color:'#d4d4d8',fontSize:11,lineHeight:1,letterSpacing:-1}}>⋮⋮</span>
+          {n}
+        </span>
+      </td>
       <td style={{fontWeight:600,color:'#000'}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
