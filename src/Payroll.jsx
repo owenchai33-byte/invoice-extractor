@@ -150,11 +150,12 @@ const CSS=`
 .t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .t td.r{text-align:right}
 .t tr:hover{background:#fafafa}
-.t .gh{background:#18181b;color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em}
-.t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible}
+.t .gh{background:#e5e7eb;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
+.t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
 .t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
 .t .tr td{font-weight:700;background:#f0fdf4;border-top:2px solid #18181b;border-bottom:2px solid #18181b}
 .t .gr td{font-weight:700;background:#fef9c3;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
+.t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
 .t .eh{background:#f0fdf4}
 .t .dh{background:#fef2f2}
 .t .nh{background:#eff6ff}
@@ -216,7 +217,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t td{padding:2px 2px;font-size:6.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Allow name, IC, position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
-  .t .gh{background:#18181b!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gh{background:#e5e7eb!important;color:#18181b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .gh td{padding:2px 4px;font-size:7pt;font-weight:700;overflow:visible}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
@@ -243,6 +244,8 @@ export default function Payroll(){
   const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
   const[bl,setBl]=useState('GAWAI BONUS');
   const[pan,setPan]=useState(false),[eid,setEid]=useState(null);
+  const[dragId,setDragId]=useState(null);
+  const[dragOverId,setDragOverId]=useState(null);
   const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
 
@@ -280,6 +283,19 @@ export default function Payroll(){
   const delS=id=>{if(confirm('Remove this staff?'))setStaff(p=>p.filter(s=>s.id!==id));};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
+  // Reorder staff via drag and drop
+  const reorderStaff=(fromId,toId)=>{
+    if(fromId===toId) return;
+    setStaff(p=>{
+      const arr=[...p];
+      const fromIdx=arr.findIndex(s=>s.id===fromId);
+      const toIdx=arr.findIndex(s=>s.id===toId);
+      if(fromIdx<0||toIdx<0) return p;
+      const[moved]=arr.splice(fromIdx,1);
+      arr.splice(toIdx,0,moved);
+      return arr;
+    });
+  };
   const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
   const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);};
   const delPT=id=>{if(confirm('Remove?'))setPt(p=>p.filter(s=>s.id!==id));};
@@ -316,35 +332,52 @@ export default function Payroll(){
   };
 
   let gn=0;
-  const Row=({r})=>{gn++;const n=gn;return(
-    <tr>
+  const Row=({r})=>{gn++;const n=gn;
+    const isDragging=dragId===r.id;
+    const isDragOver=dragOverId===r.id&&dragId!==r.id;
+    return(
+    <tr
+      draggable
+      onDragStart={e=>{setDragId(r.id);e.dataTransfer.effectAllowed='move';}}
+      onDragEnd={()=>{setDragId(null);setDragOverId(null);}}
+      onDragOver={e=>{e.preventDefault();setDragOverId(r.id);e.dataTransfer.dropEffect='move';}}
+      onDragLeave={()=>{if(dragOverId===r.id)setDragOverId(null);}}
+      onDrop={e=>{e.preventDefault();if(dragId&&dragId!==r.id)reorderStaff(dragId,r.id);setDragId(null);setDragOverId(null);}}
+      style={{
+        opacity:isDragging?0.4:1,
+        cursor:'grab',
+        background:isDragOver?'#eff6ff':undefined,
+        boxShadow:isDragOver?'inset 0 2px 0 #2563eb':undefined,
+        transition:'background 120ms,box-shadow 120ms',
+      }}
+    >
       <td className="r" style={{color:'#a1a1aa'}}>{n}</td>
-      <td style={{fontWeight:600}} title={r.name}>{r.name}</td>
-      <td style={{color:'#71717a',fontSize:10}} title={r.ic}>{r.ic}</td>
-      <td style={{color:'#71717a',fontSize:10}} title={r.position}>{r.position}</td>
-      <td className="r"><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60}/></td>
-      <td className="r"><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)}/></td>
-      <td className="r"><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>
-      <td className="r" style={{color:'#71717a'}}>{fmt(r.epfM)}</td>
-      <td className="r" style={{color:'#71717a'}}>{fmt(r.epfP)}</td>
-      <td className="r" style={{fontWeight:600}}>{fmt(r.epfM+r.epfP)}</td>
-      <td className="r" style={{color:'#71717a'}}>{fmt(r.socsoM)}</td>
-      <td className="r" style={{color:'#71717a'}}>{fmt(r.socsoP)}</td>
-      <td className="r" style={{fontWeight:600}}>{fmt(r.socsoM+r.socsoP)}</td>
-      <td className="r" style={{color:'#71717a'}}>{fmt(r.eisE)}</td>
-      <td className="r" style={{fontWeight:600}}>{fmt(r.eisE*2)}</td>
-      <td className="r"><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td>
-      <td className="r" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap'}}>{fmt(r.netPay)}</td>
+      <td style={{fontWeight:600,color:'#000'}} title={r.name}>{r.name}</td>
+      <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
+      <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60}/></td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)}/></td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>
+      <td className="r" style={{color:'#000'}}>{fmt(r.epfM)}</td>
+      <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.epfP)}</td>
+      <td className="r" style={{color:'#000'}}>{fmt(r.epfM+r.epfP)}</td>
+      <td className="r" style={{color:'#000'}}>{fmt(r.socsoM)}</td>
+      <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.socsoP)}</td>
+      <td className="r" style={{color:'#000'}}>{fmt(r.socsoM+r.socsoP)}</td>
+      <td className="r" style={{color:'#000'}}>{fmt(r.eisE)}</td>
+      <td className="r" style={{color:'#000'}}>{fmt(r.eisE*2)}</td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td>
+      <td className="r" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}}>{fmt(r.netPay)}</td>
     </tr>
   );};
   const TR=({l,t,c})=>(
     <tr className={c}>
       <td colSpan={4} style={{fontWeight:700}}>{l}</td>
-      <td className="r">{fmt(t[4])}</td><td className="r">{fmt(t[5])}</td><td className="r">{fmt(t[6])}</td>
-      <td className="r">{fmt(t[7])}</td><td className="r">{fmt(t[8])}</td><td className="r">{fmt(t[9])}</td>
-      <td className="r">{fmt(t[10])}</td><td className="r">{fmt(t[11])}</td><td className="r">{fmt(t[12])}</td>
-      <td className="r">{fmt(t[13])}</td><td className="r">{fmt(t[14])}</td><td className="r">{fmt(t[15])}</td>
-      <td className="r">{fmt(t[16])}</td>
+      <td className="r tcell">{fmt(t[4])}</td><td className="r tcell">{fmt(t[5])}</td><td className="r tcell">{fmt(t[6])}</td>
+      <td className="r tcell">{fmt(t[7])}</td><td className="r tcell">{fmt(t[8])}</td><td className="r tcell">{fmt(t[9])}</td>
+      <td className="r tcell">{fmt(t[10])}</td><td className="r tcell">{fmt(t[11])}</td><td className="r tcell">{fmt(t[12])}</td>
+      <td className="r tcell">{fmt(t[13])}</td><td className="r tcell">{fmt(t[14])}</td><td className="r tcell">{fmt(t[15])}</td>
+      <td className="r tcell">{fmt(t[16])}</td>
     </tr>
   );
 
