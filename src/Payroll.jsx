@@ -3,24 +3,27 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 // ═══════════════════════════════════════════════════════════════
 // STATUTORY TABLES — 2026 Malaysia (KWSP / PERKESO / EIS)
 // ═══════════════════════════════════════════════════════════════
+// SOCSO Category 1 — Under 60, Updated June 2026
+// [maxWage, employer, employee_invalidity, employee_non_emp_injury]
+// Includes Lindung 24 Jam (Non-Employment Injury Scheme) — employee-only contribution
 const SOCSO_CAT1 = [
-  [30,0.40,0.10],[50,0.70,0.20],[70,1.10,0.30],[100,1.50,0.40],
-  [140,2.10,0.60],[200,2.95,0.85],[300,4.35,1.25],[400,6.15,1.75],
-  [500,7.85,2.25],[600,9.65,2.75],[700,11.35,3.25],[800,13.15,3.75],
-  [900,14.85,4.25],[1000,16.65,4.75],[1100,18.35,5.25],[1200,20.15,5.75],
-  [1300,21.85,6.25],[1400,23.65,6.75],[1500,25.35,7.25],[1600,27.15,7.75],
-  [1700,28.85,8.25],[1800,30.65,8.75],[1900,32.35,9.25],[2000,34.15,9.75],
-  [2100,35.85,10.25],[2200,37.65,10.75],[2300,39.35,11.25],[2400,41.15,11.75],
-  [2500,42.85,12.25],[2600,44.65,12.75],[2700,46.35,13.25],[2800,48.15,13.75],
-  [2900,49.85,14.25],[3000,51.65,14.75],[3100,53.35,15.25],[3200,55.15,15.75],
-  [3300,56.85,16.25],[3400,58.65,16.75],[3500,60.35,17.25],[3600,62.15,17.75],
-  [3700,63.85,18.25],[3800,65.65,18.75],[3900,67.35,19.25],[4000,69.15,19.75],
-  [4100,70.85,20.25],[4200,72.65,20.75],[4300,74.35,21.25],[4400,76.15,21.75],
-  [4500,77.85,22.25],[4600,79.65,22.75],[4700,81.35,23.25],[4800,83.15,23.75],
-  [4900,84.85,24.25],[5000,86.65,24.75],[5100,88.35,25.25],[5200,90.15,25.75],
-  [5300,91.85,26.25],[5400,93.65,26.75],[5500,95.35,27.25],[5600,97.15,27.75],
-  [5700,98.85,28.25],[5800,100.65,28.75],[5900,102.35,29.25],
-  [6000,104.65,29.90],[Infinity,104.65,29.90]
+  [30,0.40,0.10,0.20],[50,0.70,0.20,0.30],[70,1.10,0.30,0.50],[100,1.50,0.40,0.65],
+  [140,2.10,0.60,0.90],[200,2.95,0.85,1.25],[300,4.35,1.25,1.85],[400,6.15,1.75,2.65],
+  [500,7.85,2.25,3.35],[600,9.65,2.75,4.15],[700,11.35,3.25,4.85],[800,13.15,3.75,5.65],
+  [900,14.85,4.25,6.35],[1000,16.65,4.75,7.15],[1100,18.35,5.25,7.85],[1200,20.15,5.75,8.65],
+  [1300,21.85,6.25,9.35],[1400,23.65,6.75,10.15],[1500,25.35,7.25,10.85],[1600,27.15,7.75,11.65],
+  [1700,28.85,8.25,12.35],[1800,30.65,8.75,13.15],[1900,32.35,9.25,13.85],[2000,34.15,9.75,14.65],
+  [2100,35.85,10.25,15.35],[2200,37.65,10.75,16.15],[2300,39.35,11.25,16.85],[2400,41.15,11.75,17.65],
+  [2500,42.85,12.25,18.35],[2600,44.65,12.75,19.15],[2700,46.35,13.25,19.85],[2800,48.15,13.75,20.65],
+  [2900,49.85,14.25,21.35],[3000,51.65,14.75,22.15],[3100,53.35,15.25,22.85],[3200,55.15,15.75,23.65],
+  [3300,56.85,16.25,24.35],[3400,58.65,16.75,25.15],[3500,60.35,17.25,25.85],[3600,62.15,17.75,26.65],
+  [3700,63.85,18.25,27.35],[3800,65.65,18.75,28.15],[3900,67.35,19.25,28.85],[4000,69.15,19.75,29.65],
+  [4100,70.85,20.25,30.35],[4200,72.65,20.75,31.15],[4300,74.35,21.25,31.85],[4400,76.15,21.75,32.65],
+  [4500,77.85,22.25,33.35],[4600,79.65,22.75,34.15],[4700,81.35,23.25,34.85],[4800,83.15,23.75,35.65],
+  [4900,84.85,24.25,36.35],[5000,86.65,24.75,37.15],[5100,88.35,25.25,37.85],[5200,90.15,25.75,38.65],
+  [5300,91.85,26.25,39.35],[5400,93.65,26.75,40.15],[5500,95.35,27.25,40.85],[5600,97.15,27.75,41.65],
+  [5700,98.85,28.25,42.35],[5800,100.65,28.75,43.15],[5900,102.35,29.25,43.85],
+  [6000,104.65,29.90,44.55],[Infinity,104.65,29.90,44.55]
 ];
 const SOCSO_CAT2 = [
   [30,0.30],[50,0.50],[70,0.80],[100,1.10],[140,1.50],[200,2.10],
@@ -55,7 +58,12 @@ function getAgeFromIC(ic, refDate) {
 }
 function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[t.length-1];}
 function calcEPF(s,a){if(a>=60)return{employer:Math.round(s*0.065),employee:Math.round(s*0.055)};return{employer:Math.round(s*(s<=5000?0.13:0.12)),employee:Math.round(s*0.11)};}
-function calcSOCSO(s,a){if(a>=60){const b=lookupBand(SOCSO_CAT2,s);return{employer:b[1],employee:0};}const b=lookupBand(SOCSO_CAT1,s);return{employer:b[1],employee:b[2]};}
+function calcSOCSO(s,a){
+  if(a>=60){const b=lookupBand(SOCSO_CAT2,s);return{employer:b[1],employee:0,employeeInv:0,employeeNEI:0};}
+  const b=lookupBand(SOCSO_CAT1,s);
+  // b[1]=employer, b[2]=employee invalidity, b[3]=employee non-employment injury
+  return{employer:b[1],employee:Math.round((b[2]+b[3])*100)/100,employeeInv:b[2],employeeNEI:b[3]};
+}
 function calcEIS(s,a){if(a<18||a>=60)return{employer:0,employee:0};const b=lookupBand(EIS_TABLE,s);return{employer:b[1],employee:b[1]};}
 
 const LS_S='cjk_payroll_staff',LS_P='cjk_payroll_data';
@@ -145,10 +153,11 @@ const CSS=`
 .sht{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .tw{overflow-x:visible}
 .t{width:100%;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums;table-layout:fixed}
-.t th{padding:5px 3px;text-align:left;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:break-word;line-height:1.15;vertical-align:bottom}
-.t th.r{text-align:right}
+.t th{padding:5px 3px;text-align:center;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:break-word;line-height:1.15;vertical-align:bottom}
+.t th.r{text-align:center}
+.t th.l{text-align:left}
 .t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.t td.r{text-align:right}
+.t td.r{text-align:center}
 .t tr:hover{background:#fafafa}
 .t .gh{background:#e5e7eb;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
 .t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
@@ -162,7 +171,7 @@ const CSS=`
 .t .eh{background:#f0fdf4}
 .t .dh{background:#fef2f2}
 .t .nh{background:#eff6ff}
-.i{width:50px;text-align:right;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:10.5px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
+.i{width:50px;text-align:center;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:10.5px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
 .i:focus{border-color:#2563eb;border-style:solid}
 .i::placeholder{color:#d4d4d8}
 /* Remove spinner arrows from number inputs - allow direct typing */
@@ -261,12 +270,20 @@ export default function Payroll(){
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
 
   const comp=useCallback(s=>{
-    const a=getAgeFromIC(s.ic,ref),m=gM(s.id),epf=calcEPF(s.salary,a),socso=calcSOCSO(s.salary,a),eis=calcEIS(s.salary,a);
+    const a=getAgeFromIC(s.ic,ref),m=gM(s.id);
     // Use monthly override if exists, otherwise fall back to staff default
     const hasMonthly = pd[mk]?.[s.id];
     const inc = hasMonthly && 'incentive' in hasMonthly ? (m.incentive||0) : (s.defIncentive||0);
     const bon = hasMonthly && 'bonus' in hasMonthly ? (m.bonus||0) : (s.defBonus||0);
     const adv = hasMonthly && 'advance' in hasMonthly ? (m.advance||0) : (s.defAdvance||0);
+    // Per KWSP/PERKESO 2026 guidelines:
+    // - Incentive is treated as wages → subject to EPF + SOCSO + EIS (recalc bands)
+    // - Bonus → subject to EPF only (recalc EPF band with bonus added)
+    const epfWage = s.salary + inc + bon;          // bonus + incentive both raise EPF base
+    const socsoEisWage = s.salary + inc;            // only incentive raises SOCSO/EIS base
+    const epf=calcEPF(epfWage,a);
+    const socso=calcSOCSO(socsoEisWage,a);
+    const eis=calcEIS(socsoEisWage,a);
     const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
     return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
   },[ref,gM,pd,mk]);
@@ -492,7 +509,7 @@ export default function Payroll(){
                   <th className="nh" style={{textAlign:'center'}}>NET PAY</th>
                 </tr>
                 <tr>
-                  <th className="r">#</th><th>Name</th><th>IC No</th><th>Position</th>
+                  <th className="r">#</th><th className="l">Name</th><th className="l">IC No</th><th className="l">Position</th>
                   <th className="r eh">Salary</th><th className="r eh">Incentive</th><th className="r eh">{bl}</th>
                   <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jumlah EPF</th>
                   <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jumlah SOCSO</th>
