@@ -334,6 +334,45 @@ export default function Payroll(){
     );
   };
 
+  // Drag manager — uses refs for live state during drag (no React lag)
+  const dragRef = useRef({ id: null, overId: null });
+  const startDrag = (id, e) => {
+    e.preventDefault();
+    dragRef.current.id = id;
+    setDragId(id);
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+      const x = ev.clientX, y = ev.clientY;
+      // Find the row under the pointer
+      const el = document.elementFromPoint(x, y);
+      const tr = el?.closest('tr[data-sid]');
+      const overId = tr?.getAttribute('data-sid') || null;
+      if (overId !== dragRef.current.overId) {
+        dragRef.current.overId = overId;
+        setDragOverId(overId);
+      }
+    };
+    const onUp = () => {
+      const fromId = dragRef.current.id;
+      const toId = dragRef.current.overId;
+      if (fromId && toId && fromId !== toId) reorderStaff(fromId, toId);
+      dragRef.current.id = null;
+      dragRef.current.overId = null;
+      setDragId(null);
+      setDragOverId(null);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  };
+
   let gn=0;
   const Row=({r})=>{gn++;const n=gn;
     const isDragging=dragId===r.id;
@@ -345,24 +384,11 @@ export default function Payroll(){
         opacity:isDragging?0.35:1,
         background:isDragOver?'#eff6ff':undefined,
         boxShadow:isDragOver?'inset 0 2px 0 #2563eb':undefined,
-        transition:'background 100ms,box-shadow 100ms,opacity 100ms',
+        transition:'opacity 100ms',
       }}
     >
-      <td className="r drag-handle" style={{color:'#a1a1aa',cursor:'grab',userSelect:'none',position:'relative'}}
-        onPointerDown={e=>{e.preventDefault();setDragId(r.id);e.currentTarget.setPointerCapture(e.pointerId);}}
-        onPointerMove={e=>{
-          if(dragId!==r.id) return;
-          const el=document.elementFromPoint(e.clientX,e.clientY);
-          const tr=el?.closest('tr[data-sid]');
-          const overId=tr?.getAttribute('data-sid');
-          if(overId&&overId!==r.id) setDragOverId(overId);
-        }}
-        onPointerUp={e=>{
-          if(dragOverId&&dragId&&dragOverId!==dragId) reorderStaff(dragId,dragOverId);
-          setDragId(null);setDragOverId(null);
-          try{e.currentTarget.releasePointerCapture(e.pointerId);}catch{}
-        }}
-        onPointerCancel={()=>{setDragId(null);setDragOverId(null);}}
+      <td className="r drag-handle" style={{color:'#a1a1aa',cursor:'grab',userSelect:'none',touchAction:'none'}}
+        onPointerDown={e=>startDrag(r.id,e)}
         title="Drag to reorder"
       >
         <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
