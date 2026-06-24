@@ -130,6 +130,34 @@ export default function InvoiceExtractor() {
 
   const setCn=(id,val)=>setCnValues(prev=>({...prev,[id]:parseFloat(val)||0}));
 
+  // Manually edit the CTN count for a specific category group within an invoice
+  const updateGroupCtn=(invId,rateId,newCtn)=>{
+    const ctn=parseInt(newCtn);
+    if(isNaN(ctn)||ctn<0) return;
+    setInvoices(prev=>prev.map(inv=>{
+      if(inv.id!==invId) return inv;
+      const groups=inv.groups.map(g=>g.id===rateId?{...g,ctn}:g);
+      const sub=calcSub(inv.raw.total_amount,groups,config.pct1,config.pct2);
+      // Clear warning once total now matches declared
+      const extractedSum=groups.reduce((s,g)=>s+g.ctn,0);
+      const warning=inv.declaredTotal>0 && extractedSum!==inv.declaredTotal
+        ? `Current total: ${extractedSum} cartons. Invoice shows ${inv.declaredTotal}. Adjust if needed.`
+        : null;
+      return {...inv,groups,subsidy:sub,warning};
+    }));
+  };
+
+  // Manually edit total_amount on an invoice
+  const updateInvoiceAmount=(invId,newAmount)=>{
+    const amt=parseFloat(newAmount);
+    if(isNaN(amt)||amt<0) return;
+    setInvoices(prev=>prev.map(inv=>{
+      if(inv.id!==invId) return inv;
+      const sub=calcSub(amt,inv.groups,config.pct1,config.pct2);
+      return {...inv,raw:{...inv.raw,total_amount:amt},subsidy:sub};
+    }));
+  };
+
   // Manually assign a category to an unmatched invoice
   const assignCategory=(invId,rateId,ctnInput)=>{
     const rate=config.rates.find(r=>r.id===rateId);
@@ -194,6 +222,9 @@ export default function InvoiceExtractor() {
               const gMap={};
               items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=Number(it.qty)||0;});
               const groupKeys=Object.keys(gMap);
+              // Detect mismatch — extracted carton sum vs invoice PRODUCT TOTAL
+              const extractedCtnSum=Object.values(gMap).reduce((s,g)=>s+g.ctn,0);
+              const hasMismatch=declaredTotal>0 && extractedCtnSum!==declaredTotal;
               // AUTO-CORRECT: if everything mapped to ONE category and we know the declared PRODUCT TOTAL,
               // trust the declared total over the extracted line-item sum (handles AI missing FOC/duplicate rows)
               if(groupKeys.length===1 && declaredTotal>0 && declaredTotal!==gMap[groupKeys[0]].ctn){
@@ -203,7 +234,11 @@ export default function InvoiceExtractor() {
               const groups=Object.values(gMap);
               const sub=calcSub(parsed.total_amount,groups,config.pct1,config.pct2);
               const id='inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-              resolve({raw:parsed,items,groups,subsidy:sub,id});
+              // Warning if multi-category mismatch (can't auto-correct without knowing which category got short-counted)
+              const warning=(groupKeys.length>1 && hasMismatch)
+                ? `AI extracted ${extractedCtnSum} cartons but invoice shows ${declaredTotal}. Please verify the CTN per category below.`
+                : null;
+              resolve({raw:parsed,items,groups,subsidy:sub,id,warning,declaredTotal});
               return;
             }catch(inner){lastErr=inner;}
           }
@@ -400,7 +435,14 @@ export default function InvoiceExtractor() {
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
-                    {gi===0&&<td style={{...T.td,fontWeight:700}} rowSpan={rc}>{fmt(inv.raw.total_amount)}</td>}
+                    {gi===0&&<td style={{...T.td,fontWeight:700,padding:4}} rowSpan={rc}>
+                      <input type="number" step="0.01" value={inv.raw.total_amount}
+                        onChange={e=>updateInvoiceAmount(inv.id,e.target.value)} className="noP"
+                        style={{width:'100%',border:'1px dashed transparent',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'transparent'}}
+                        onFocus={e=>e.target.style.borderColor='#2563eb'}
+                        onBlur={e=>e.target.style.borderColor='transparent'}
+                        title="Click to edit invoice amount"/>
+                    </td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
@@ -410,7 +452,15 @@ export default function InvoiceExtractor() {
                     <td style={T.cat} colSpan={2}>{g.label}</td>
                   </tr>);
                   rows.push(<tr key={inv.id+'-'+gi+'-c'}>
-                    <td style={T.subL}>{g.ctn} CTN x RM{g.rate.toFixed(2)} =</td>
+                    <td style={{...T.subL,padding:'4px 8px'}}>
+                      <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+                        <input type="number" value={g.ctn} min="0"
+                          onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP"
+                          style={{width:60,border:'1px dashed #aaa',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600}}
+                          title="Click to edit CTN count"/>
+                        <span>CTN x RM{g.rate.toFixed(2)} =</span>
+                      </span>
+                    </td>
                     <td style={T.subR}>{fmt(g.ctn*g.rate)}</td>
                   </tr>);
                   rows.push(<tr key={inv.id+'-'+gi+'-p1'}>
@@ -420,6 +470,14 @@ export default function InvoiceExtractor() {
                     <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{fmt(inv.subsidy.p2)}</td>
                   </tr>);
                 });
+                // Warning row if AI extraction mismatch detected
+                if(inv.warning){
+                  rows.push(<tr key={inv.id+'-warn'} className="noP">
+                    <td colSpan={7} style={{padding:'8px 12px',background:'#fef3c7',border:'1px solid #fbbf24',fontSize:13,color:'#92400e',fontFamily:F}}>
+                      <strong>⚠ Verify cartons:</strong> {inv.warning}
+                    </td>
+                  </tr>);
+                }
                 }
                 return <React.Fragment key={inv.id}>{rows}</React.Fragment>;
               })}
