@@ -58,24 +58,45 @@ const PROMPT=`You are an invoice data extractor for Malaysian wholesale distribu
 
 {"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80}
 
-CRITICAL RULES:
-- invoice_no: Look for "Document No", "Document No." or "Doc No." field. Typically starts with "IN" followed by digits (e.g. IN93018360). Do NOT use PO numbers, Ref numbers, or Load Ref numbers. READ THE EXACT CHARACTERS CAREFULLY.
-- invoice_date: Use "Invoice Date" or "Document Date". Format DD/MM/YYYY.
-- qty: "20/0" -> extract only 20. The /0 means zero returns.
-- volume_ml is REQUIRED and MUST be a number, never null. Parse from product description. Examples:
-  * "320MLALSCN1X12" -> volume_ml: 320
-  * "500MLPLBTN1X24" -> volume_ml: 500
-  * "300MLALSCN1X12" -> volume_ml: 300
-  * "1.5LPLBTN1X12" -> volume_ml: 1500
-  * "1LPLBTN1X12" -> volume_ml: 1000
-- pack_size is REQUIRED and MUST be a number, never null. Look for "X12", "1X12", "X24", "N1X12", "N1X24" patterns:
-  * "1X12" or "N1X12" or "X12" -> pack_size: 12
-  * "1X24" or "N1X24" or "X24" -> pack_size: 24
-- description: MUST include the full product code string like "320MLALSCN1X12" exactly as printed.
-- is_foc: true only if list_price=0.00 AND amount=0.00.
-- total_amount: Final "Total Amount Due" value.
-- supplier: Company name from TOP HEADER, NOT "Ship To"/"Bill To".
-- Include ALL items including FOC. Even small/short product lines must be extracted. Return ONLY JSON.`;
+CRITICAL EXTRACTION RULES — read carefully:
+
+1. EXTRACT EVERY SINGLE LINE ITEM. Do not skip any rows in the products table, even if:
+   - The amount is 0.00 (these are FOC / free-of-charge items)
+   - The list price is 0.00
+   - The line looks like a duplicate (same product code repeated is common, treat each as separate)
+   - The description appears short or truncated
+   - Examples: an invoice with rows "qty 3, qty 170, qty 5" of the SAME product MUST have all 3 rows extracted, not just one.
+
+2. CARTON TOTALS MUST MATCH:
+   - The invoice has a "PRODUCT TOTAL" line showing total cartons (e.g. "PRODUCT TOTAL 178")
+   - This must equal the sum of all qty values from line items
+   - Set total_qty to this PRODUCT TOTAL value
+   - If your items[].qty values don't sum to total_qty, you missed some lines — re-check the invoice
+
+3. invoice_no: Look for "Document No", "Document No." or "Doc No." field. Typically starts with "IN" followed by digits (e.g. IN93018360). Do NOT use PO numbers, Ref numbers, or Load Ref numbers. READ THE EXACT CHARACTERS CAREFULLY.
+
+4. invoice_date: Use "Invoice Date" or "Document Date". Format DD/MM/YYYY.
+
+5. qty: "20/0" -> extract only 20. The /0 means zero returns. "3/0" -> 3. "170/0" -> 170.
+
+6. volume_ml is REQUIRED and MUST be a number, never null. Parse from product description:
+   * "320MLALSCN1X24" -> volume_ml: 320, pack_size: 24
+   * "500MLPLBTN1X24" -> volume_ml: 500, pack_size: 24
+   * "300MLALSCN1X12" -> volume_ml: 300, pack_size: 12
+   * "1.5LPLBTN1X12" -> volume_ml: 1500, pack_size: 12
+   * "1LPLBTN1X12" -> volume_ml: 1000, pack_size: 12
+
+7. pack_size: Look for "X12", "1X12", "X24", "N1X12", "N1X24" patterns. MUST be a number.
+
+8. description: MUST include the full product code string like "320MLALSCN1X24" exactly as printed.
+
+9. is_foc: true only if list_price=0.00 AND amount=0.00. FOC items still count for total_qty.
+
+10. total_amount: Final "Total Amount Due" value (the absolute bottom-line MYR amount).
+
+11. supplier: Company name from TOP HEADER, NOT "Ship To"/"Bill To".
+
+Be thorough. Missing line items causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
 const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
 const B='1px solid #000';
@@ -163,8 +184,22 @@ export default function InvoiceExtractor() {
               if(unmatched.length>0){
                 console.warn('[Invoice]',parsed.invoice_no,'has',unmatched.length,'unmatched items:',unmatched.map(u=>({desc:u.description,code:u.product_code,vol:u.volume_ml,pack:u.pack_size})));
               }
+              // SANITY CHECK: extracted items qty sum should equal PRODUCT TOTAL on invoice
+              const itemsQtySum = items.reduce((s,it)=>s+(Number(it.qty)||0),0);
+              const declaredTotal = Number(parsed.total_qty)||0;
+              if(declaredTotal>0 && Math.abs(itemsQtySum-declaredTotal)>0){
+                console.warn('[Invoice]',parsed.invoice_no,
+                  `CARTON MISMATCH: items sum to ${itemsQtySum} but PRODUCT TOTAL on invoice is ${declaredTotal}. AI likely missed line items.`);
+              }
               const gMap={};
-              items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=it.qty;});
+              items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=Number(it.qty)||0;});
+              const groupKeys=Object.keys(gMap);
+              // AUTO-CORRECT: if everything mapped to ONE category and we know the declared PRODUCT TOTAL,
+              // trust the declared total over the extracted line-item sum (handles AI missing FOC/duplicate rows)
+              if(groupKeys.length===1 && declaredTotal>0 && declaredTotal!==gMap[groupKeys[0]].ctn){
+                console.info('[Invoice]',parsed.invoice_no,'auto-correcting CTN',gMap[groupKeys[0]].ctn,'→',declaredTotal,'based on PRODUCT TOTAL');
+                gMap[groupKeys[0]].ctn=declaredTotal;
+              }
               const groups=Object.values(gMap);
               const sub=calcSub(parsed.total_amount,groups,config.pct1,config.pct2);
               const id='inv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
@@ -190,7 +225,7 @@ export default function InvoiceExtractor() {
     const results=[]; const errors=[];
     for(let i=0;i<fileArr.length;i++){
       try{
-        if(i>0) await new Promise(r=>setTimeout(r,4000));
+        if(i>0) await new Promise(r=>setTimeout(r,6000));
         const inv=await processSingleFile(fileArr[i]);
         results.push(inv);
         setProcessingCount(prev=>({...prev,done:prev.done+1}));
