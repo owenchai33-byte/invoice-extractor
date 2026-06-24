@@ -317,8 +317,8 @@ export default function InvoiceExtractor() {
         .printOnly{display:none}
         @media print{
           .noP{display:none!important}
-          .screenOnly{display:none!important}
-          .printOnly{display:inline!important}
+          .screenOnly{display:none!important;visibility:hidden!important;width:0!important;height:0!important;overflow:hidden!important;position:absolute!important}
+          .printOnly{display:inline!important;visibility:visible!important}
           body,html{margin:0;padding:0;background:#fff}
           @page{size:A4 portrait;margin:8mm 8mm}
           .wrap{max-width:100%!important;padding:0!important}
@@ -389,8 +389,8 @@ export default function InvoiceExtractor() {
               <th style={{...T.th,width:36}}>NO.</th>
               <th style={{...T.th,width:86}}>DATE</th>
               <th style={{...T.th,width:120}}>INVOICE NO.</th>
-              <th style={{...T.th,width:120}}>AMOUNT</th>
-              <th style={{...T.th,width:70}}>CN</th>
+              <th style={{...T.th,width:88}}>AMOUNT</th>
+              <th style={{...T.th,width:60}}>CN</th>
               <th style={T.th} colSpan={2}>TRANSPORT SUBSIDY</th>
             </tr></thead>
             <tbody>
