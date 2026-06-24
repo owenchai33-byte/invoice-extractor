@@ -314,8 +314,11 @@ export default function InvoiceExtractor() {
     <div style={{fontFamily:F,fontSize:16,background:'#fff',color:'#000',minHeight:'100vh'}}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
+        .printOnly{display:none}
         @media print{
           .noP{display:none!important}
+          .screenOnly{display:none!important}
+          .printOnly{display:inline!important}
           body,html{margin:0;padding:0;background:#fff}
           @page{size:A4 portrait;margin:8mm 8mm}
           .wrap{max-width:100%!important;padding:0!important}
@@ -326,23 +329,6 @@ export default function InvoiceExtractor() {
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
           .print-area img{max-height:55px!important}
-          /* Make inputs look like plain text values when printing */
-          .print-area input{
-            border:none!important;
-            background:transparent!important;
-            padding:0!important;
-            margin:0!important;
-            -webkit-appearance:none!important;
-            appearance:none!important;
-            color:#000!important;
-            font-weight:inherit!important;
-            font-family:inherit!important;
-            -webkit-print-color-adjust:exact;
-            print-color-adjust:exact;
-          }
-          .print-area input[type="number"]{
-            -moz-appearance:textfield!important;
-          }
           /* Prevent page breaks inside critical sections */
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
@@ -454,24 +440,27 @@ export default function InvoiceExtractor() {
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
                     {gi===0&&<td style={{...T.td,fontWeight:700,padding:4}} rowSpan={rc}>
                       <input type="number" step="0.01" value={inv.raw.total_amount}
-                        onChange={e=>updateInvoiceAmount(inv.id,e.target.value)} className="noP"
+                        onChange={e=>updateInvoiceAmount(inv.id,e.target.value)} className="noP screenOnly"
                         style={{width:'100%',border:'1px dashed transparent',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'transparent'}}
                         onFocus={e=>e.target.style.borderColor='#2563eb'}
                         onBlur={e=>e.target.style.borderColor='transparent'}
                         title="Click to edit invoice amount"/>
+                      <span className="printOnly">{fmt(inv.raw.total_amount)}</span>
                     </td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
-                        onChange={e=>setCn(inv.id,e.target.value)} className="noP"
+                        onChange={e=>setCn(inv.id,e.target.value)} className="noP screenOnly"
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
                       {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
+                      <span className="printOnly">{cn>0?'-'+fmt(cn):''}</span>
                     </td>}
                     <td style={{...T.subL,padding:'4px 8px'}}>
                       <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
                         <input type="number" value={g.ctn} min="0"
-                          onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP"
+                          onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP screenOnly"
                           style={{width:60,border:'1px dashed #aaa',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600}}
                           title="Click to edit CTN count"/>
+                        <span className="printOnly" style={{fontWeight:600}}>{g.ctn}</span>
                         <span>CTN x RM{g.rate.toFixed(2)} =</span>
                       </span>
                     </td>
