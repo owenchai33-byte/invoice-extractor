@@ -482,13 +482,13 @@ export default function InvoiceExtractor() {
                       )}
                     </td>}
                     <td style={{...T.subL,padding:'4px 8px'}}>
-                      <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+                      <span style={{display:'inline-flex',alignItems:'baseline',gap:4,justifyContent:'flex-end',width:'100%',whiteSpace:'nowrap'}}>
                         {isPrinting ? (
                           <span style={{fontWeight:600}}>{g.ctn}</span>
                         ) : (
                           <input type="number" value={g.ctn} min="0"
                             onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP"
-                            style={{width:60,border:'1px dashed #aaa',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600}}
+                            style={{width:50,border:'1px dashed #aaa',borderRadius:3,padding:'1px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600,verticalAlign:'baseline'}}
                             title="Click to edit CTN count"/>
                         )}
                         <span>CTN x RM{g.rate.toFixed(2)} =</span>
