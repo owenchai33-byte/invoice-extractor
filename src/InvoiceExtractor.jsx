@@ -102,6 +102,62 @@ const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
 
+// Click-to-edit Amount component — always displays formatted RM value, switches to input when clicked
+function EditableAmount({value,onCommit,format}){
+  const [editing,setEditing]=useState(false);
+  const [local,setLocal]=useState(String(value));
+  const ref=useRef(null);
+  useEffect(()=>{ if(!editing) setLocal(String(value)); },[value,editing]);
+  useEffect(()=>{ if(editing&&ref.current){ ref.current.focus(); ref.current.select(); } },[editing]);
+  const commit=()=>{
+    const n=parseFloat(local);
+    if(!isNaN(n)&&n>=0&&n!==value) onCommit(n);
+    setEditing(false);
+  };
+  if(editing){
+    return <input ref={ref} type="number" step="0.01" value={local}
+      onChange={e=>setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape'){setLocal(String(value));setEditing(false);} }}
+      className="noP"
+      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'#fff'}}/>;
+  }
+  return <span
+    onClick={()=>setEditing(true)}
+    className="editable-text"
+    title="Click to edit amount"
+    style={{display:'block',cursor:'text',padding:'3px 4px',borderRadius:3,fontSize:16,fontWeight:700,textAlign:'center'}}
+  >{format(value)}</span>;
+}
+
+// Click-to-edit CTN component — always shows plain number, switches to input when clicked
+function EditableCtn({value,onCommit}){
+  const [editing,setEditing]=useState(false);
+  const [local,setLocal]=useState(String(value));
+  const ref=useRef(null);
+  useEffect(()=>{ if(!editing) setLocal(String(value)); },[value,editing]);
+  useEffect(()=>{ if(editing&&ref.current){ ref.current.focus(); ref.current.select(); } },[editing]);
+  const commit=()=>{
+    const n=parseInt(local);
+    if(!isNaN(n)&&n>=0&&n!==value) onCommit(n);
+    setEditing(false);
+  };
+  if(editing){
+    return <input ref={ref} type="number" min="0" value={local}
+      onChange={e=>setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape'){setLocal(String(value));setEditing(false);} }}
+      className="noP"
+      style={{width:50,border:'1px solid #2563eb',borderRadius:3,padding:'1px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600,verticalAlign:'baseline'}}/>;
+  }
+  return <span
+    onClick={()=>setEditing(true)}
+    className="editable-text"
+    title="Click to edit CTN count"
+    style={{cursor:'text',fontWeight:600,padding:'1px 4px',borderRadius:3}}
+  >{value}</span>;
+}
+
 export default function InvoiceExtractor() {
   const [invoices,setInvoices]=useState([]);
   const [uploading,setUploading]=useState(false);
@@ -114,27 +170,8 @@ export default function InvoiceExtractor() {
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
   const [manualEntry,setManualEntry]=useState({});  // { invId: { rateId, ctn } }
-  const [isPrinting,setIsPrinting]=useState(false);
   const fileRef=useRef(null);
   const config=SUPPLIERS['CHOON HUA'];
-
-  // Detect print mode - switches editable inputs to plain text during print
-  useEffect(()=>{
-    const beforePrint=()=>setIsPrinting(true);
-    const afterPrint=()=>setIsPrinting(false);
-    window.addEventListener('beforeprint',beforePrint);
-    window.addEventListener('afterprint',afterPrint);
-    const mq=window.matchMedia('print');
-    const handler=(e)=>setIsPrinting(e.matches);
-    if(mq.addEventListener) mq.addEventListener('change',handler);
-    else mq.addListener(handler);
-    return ()=>{
-      window.removeEventListener('beforeprint',beforePrint);
-      window.removeEventListener('afterprint',afterPrint);
-      if(mq.removeEventListener) mq.removeEventListener('change',handler);
-      else mq.removeListener(handler);
-    };
-  },[]);
 
   useEffect(()=>{
     try{ const k=localStorage.getItem('groq_api_key'); if(k) setApiKey(k); }catch(e){}
@@ -333,6 +370,7 @@ export default function InvoiceExtractor() {
     <div style={{fontFamily:F,fontSize:16,background:'#fff',color:'#000',minHeight:'100vh'}}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
+        .editable-text:hover{background:#f0f9ff;outline:1px dashed #93c5fd;outline-offset:-1px}
         .printOnly{display:none}
         @media print{
           .noP{display:none!important}
@@ -457,40 +495,25 @@ export default function InvoiceExtractor() {
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
-                    {gi===0&&<td style={{...T.td,fontWeight:700,padding:4}} rowSpan={rc}>
-                      {isPrinting ? (
-                        <span style={{fontSize:16,fontWeight:700}}>{fmt(inv.raw.total_amount)}</span>
-                      ) : (
-                        <input type="number" step="0.01" value={inv.raw.total_amount}
-                          onChange={e=>updateInvoiceAmount(inv.id,e.target.value)} className="noP"
-                          style={{width:'100%',border:'1px dashed transparent',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'transparent'}}
-                          onFocus={e=>e.target.style.borderColor='#2563eb'}
-                          onBlur={e=>e.target.style.borderColor='transparent'}
-                          title="Click to edit invoice amount"/>
-                      )}
+                    {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative'}} rowSpan={rc}>
+                      <EditableAmount
+                        value={inv.raw.total_amount}
+                        onCommit={v=>updateInvoiceAmount(inv.id,v)}
+                        format={fmt}
+                      />
                     </td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>
-                      {isPrinting ? (
-                        <span>{cn>0?'-'+fmt(cn):''}</span>
-                      ) : (
-                        <>
-                          <input type="number" step="0.01" value={cn||''} placeholder="0.00"
-                            onChange={e=>setCn(inv.id,e.target.value)} className="noP"
-                            style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
-                          {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
-                        </>
-                      )}
+                      <input type="number" step="0.01" value={cn||''} placeholder="0.00"
+                        onChange={e=>setCn(inv.id,e.target.value)} className="noP"
+                        style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
+                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
                     </td>}
                     <td style={{...T.subL,padding:'4px 8px'}}>
                       <span style={{display:'inline-flex',alignItems:'baseline',gap:4,justifyContent:'flex-end',width:'100%',whiteSpace:'nowrap'}}>
-                        {isPrinting ? (
-                          <span style={{fontWeight:600}}>{g.ctn}</span>
-                        ) : (
-                          <input type="number" value={g.ctn} min="0"
-                            onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP"
-                            style={{width:50,border:'1px dashed #aaa',borderRadius:3,padding:'1px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600,verticalAlign:'baseline'}}
-                            title="Click to edit CTN count"/>
-                        )}
+                        <EditableCtn
+                          value={g.ctn}
+                          onCommit={v=>updateGroupCtn(inv.id,g.id,v)}
+                        />
                         <span>CTN x RM{g.rate.toFixed(2)} =</span>
                       </span>
                     </td>
