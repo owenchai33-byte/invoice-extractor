@@ -114,8 +114,27 @@ export default function InvoiceExtractor() {
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
   const [manualEntry,setManualEntry]=useState({});  // { invId: { rateId, ctn } }
+  const [isPrinting,setIsPrinting]=useState(false);
   const fileRef=useRef(null);
   const config=SUPPLIERS['CHOON HUA'];
+
+  // Detect print mode - switches editable inputs to plain text during print
+  useEffect(()=>{
+    const beforePrint=()=>setIsPrinting(true);
+    const afterPrint=()=>setIsPrinting(false);
+    window.addEventListener('beforeprint',beforePrint);
+    window.addEventListener('afterprint',afterPrint);
+    const mq=window.matchMedia('print');
+    const handler=(e)=>setIsPrinting(e.matches);
+    if(mq.addEventListener) mq.addEventListener('change',handler);
+    else mq.addListener(handler);
+    return ()=>{
+      window.removeEventListener('beforeprint',beforePrint);
+      window.removeEventListener('afterprint',afterPrint);
+      if(mq.removeEventListener) mq.removeEventListener('change',handler);
+      else mq.removeListener(handler);
+    };
+  },[]);
 
   useEffect(()=>{
     try{ const k=localStorage.getItem('groq_api_key'); if(k) setApiKey(k); }catch(e){}
@@ -439,28 +458,39 @@ export default function InvoiceExtractor() {
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
                     {gi===0&&<td style={{...T.td,fontWeight:700,padding:4}} rowSpan={rc}>
-                      <input type="number" step="0.01" value={inv.raw.total_amount}
-                        onChange={e=>updateInvoiceAmount(inv.id,e.target.value)} className="noP screenOnly"
-                        style={{width:'100%',border:'1px dashed transparent',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'transparent'}}
-                        onFocus={e=>e.target.style.borderColor='#2563eb'}
-                        onBlur={e=>e.target.style.borderColor='transparent'}
-                        title="Click to edit invoice amount"/>
-                      <span className="printOnly">{fmt(inv.raw.total_amount)}</span>
+                      {isPrinting ? (
+                        <span style={{fontSize:16,fontWeight:700}}>{fmt(inv.raw.total_amount)}</span>
+                      ) : (
+                        <input type="number" step="0.01" value={inv.raw.total_amount}
+                          onChange={e=>updateInvoiceAmount(inv.id,e.target.value)} className="noP"
+                          style={{width:'100%',border:'1px dashed transparent',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'transparent'}}
+                          onFocus={e=>e.target.style.borderColor='#2563eb'}
+                          onBlur={e=>e.target.style.borderColor='transparent'}
+                          title="Click to edit invoice amount"/>
+                      )}
                     </td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>
-                      <input type="number" step="0.01" value={cn||''} placeholder="0.00"
-                        onChange={e=>setCn(inv.id,e.target.value)} className="noP screenOnly"
-                        style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
-                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
-                      <span className="printOnly">{cn>0?'-'+fmt(cn):''}</span>
+                      {isPrinting ? (
+                        <span>{cn>0?'-'+fmt(cn):''}</span>
+                      ) : (
+                        <>
+                          <input type="number" step="0.01" value={cn||''} placeholder="0.00"
+                            onChange={e=>setCn(inv.id,e.target.value)} className="noP"
+                            style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
+                          {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
+                        </>
+                      )}
                     </td>}
                     <td style={{...T.subL,padding:'4px 8px'}}>
                       <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
-                        <input type="number" value={g.ctn} min="0"
-                          onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP screenOnly"
-                          style={{width:60,border:'1px dashed #aaa',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600}}
-                          title="Click to edit CTN count"/>
-                        <span className="printOnly" style={{fontWeight:600}}>{g.ctn}</span>
+                        {isPrinting ? (
+                          <span style={{fontWeight:600}}>{g.ctn}</span>
+                        ) : (
+                          <input type="number" value={g.ctn} min="0"
+                            onChange={e=>updateGroupCtn(inv.id,g.id,e.target.value)} className="noP"
+                            style={{width:60,border:'1px dashed #aaa',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600}}
+                            title="Click to edit CTN count"/>
+                        )}
                         <span>CTN x RM{g.rate.toFixed(2)} =</span>
                       </span>
                     </td>
