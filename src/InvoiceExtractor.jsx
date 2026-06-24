@@ -326,6 +326,23 @@ export default function InvoiceExtractor() {
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
           .print-area img{max-height:55px!important}
+          /* Make inputs look like plain text values when printing */
+          .print-area input{
+            border:none!important;
+            background:transparent!important;
+            padding:0!important;
+            margin:0!important;
+            -webkit-appearance:none!important;
+            appearance:none!important;
+            color:#000!important;
+            font-weight:inherit!important;
+            font-family:inherit!important;
+            -webkit-print-color-adjust:exact;
+            print-color-adjust:exact;
+          }
+          .print-area input[type="number"]{
+            -moz-appearance:textfield!important;
+          }
           /* Prevent page breaks inside critical sections */
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
@@ -392,7 +409,7 @@ export default function InvoiceExtractor() {
             </tr></thead>
             <tbody>
               {invoices.map((inv,idx)=>{
-                const rc=Math.max(inv.groups.length*4,1);
+                const rc=Math.max(inv.groups.length*3,1);
                 const cn=cnValues[inv.id]||0;
                 const displayNum=idx+1;
                 const rows=[];
@@ -431,7 +448,7 @@ export default function InvoiceExtractor() {
                   </tr>);
                 } else {
                 inv.groups.forEach((g,gi)=>{
-                  rows.push(<tr key={inv.id+'-'+gi+'-h'}>
+                  rows.push(<tr key={inv.id+'-'+gi+'-c'}>
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_date}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>{inv.raw.invoice_no}</td>}
@@ -449,9 +466,6 @@ export default function InvoiceExtractor() {
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
                       {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
                     </td>}
-                    <td style={T.cat} colSpan={2}>{g.label}</td>
-                  </tr>);
-                  rows.push(<tr key={inv.id+'-'+gi+'-c'}>
                     <td style={{...T.subL,padding:'4px 8px'}}>
                       <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
                         <input type="number" value={g.ctn} min="0"
