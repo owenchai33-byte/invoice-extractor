@@ -550,7 +550,8 @@ export default function InvoiceExtractor() {
     });
   };
 
-  // Manually assign a category to an unmatched invoice (groups was empty)
+  // Manually assign a category (works for both empty-groups invoices and adding more to existing).
+  // If the rate is already in the invoice's groups, sums the CTN. Otherwise appends a new group.
   const assignCategory=(invId,rateId,ctnInput)=>{
     const rate=config.rates.find(r=>r.id===rateId);
     const ctn=parseInt(ctnInput);
@@ -558,9 +559,30 @@ export default function InvoiceExtractor() {
     setInvoices(prev=>{
       const updated = prev.map(inv=>{
         if(inv.id!==invId) return inv;
-        const groups=[{...rate,ctn}];
+        const existing = inv.groups.find(g=>g.id===rateId);
+        let groups;
+        if(existing){
+          groups = inv.groups.map(g => g.id===rateId ? {...g, ctn: g.ctn + ctn} : g);
+        } else {
+          groups = [...inv.groups, {...rate, ctn}];
+        }
         const sub=calcSub(inv.raw.total_amount,groups,config.pct1,config.pct2);
         return {...inv, groups, subsidy:sub, _manuallyAssigned:true, _issuesDismissed:false};
+      });
+      return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
+    });
+    // Clear the manual-entry input after applying
+    setManualEntry(p=>({...p, [invId]: {rateId:'', ctn:''}}));
+  };
+
+  // Update the PRODUCT TOTAL declared value (from invoice header) — affects mismatch checks.
+  const updateDeclaredTotal=(invId, value)=>{
+    const total = parseInt(value);
+    if(isNaN(total) || total < 0) return;
+    setInvoices(prev=>{
+      const updated = prev.map(inv=>{
+        if(inv.id!==invId) return inv;
+        return {...inv, declaredTotal: total, _issuesDismissed:false};
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
     });
@@ -771,7 +793,7 @@ export default function InvoiceExtractor() {
           .print-area table{font-size:11px!important}
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
-          .print-area img{max-height:75px!important}
+          .print-area img{max-height:110px!important}
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
         }
@@ -779,17 +801,33 @@ export default function InvoiceExtractor() {
 
       <div className="wrap print-area" style={{maxWidth:780,margin:'0 auto',padding:'20px'}}>
 
-        {/* HEADER */}
-        <div style={{display:'flex',alignItems:'center',gap:16,paddingBottom:12,borderBottom:'3px solid #000'}}>
-          <img src={LOGO} style={{height:110,flexShrink:0,marginLeft:10}} alt="CJK"/>
-          <div style={{flex:1,textAlign:'center'}}>
-            <div style={{fontSize:18,fontWeight:700}}>{CO.name}</div>
-            <div style={{fontSize:18,fontWeight:700}}>{CO.reg}</div>
-            <div style={{fontSize:14,marginTop:2}}>{CO.addr}</div>
-            <div style={{fontSize:14}}>Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={'mailto:'+CO.email} style={{color:'#0056b3'}}>{CO.email}</a></div>
+        {/* HEADER — 3-column grid keeps the company text truly centered on the page,
+            regardless of whether the right column is visible (it collapses to empty space in print) */}
+        <div style={{
+          display:'grid',
+          gridTemplateColumns:'170px 1fr 170px',
+          alignItems:'center',
+          gap:16,
+          paddingBottom:14,
+          borderBottom:'3px solid #000'
+        }}>
+          {/* LEFT — logo */}
+          <div style={{display:'flex',justifyContent:'flex-start',alignItems:'center'}}>
+            <img src={LOGO} style={{height:140,maxWidth:'100%',objectFit:'contain'}} alt="CJK"/>
           </div>
-          <div className="noP" style={{width:60,flexShrink:0,textAlign:'right'}}>
-            <button onClick={()=>setShowSettings(!showSettings)}
+
+          {/* CENTER — company info */}
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:700,letterSpacing:0.3}}>{CO.name}</div>
+            <div style={{fontSize:18,fontWeight:700,marginTop:2}}>{CO.reg}</div>
+            <div style={{fontSize:14,marginTop:6,lineHeight:1.5}}>{CO.addr}</div>
+            <div style={{fontSize:14,lineHeight:1.5}}>Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={'mailto:'+CO.email} style={{color:'#0056b3'}}>{CO.email}</a></div>
+          </div>
+
+          {/* RIGHT — empty spacer that mirrors the logo column for balance.
+              API button lives here on screen, gone on print, but the column always reserves its width. */}
+          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center'}}>
+            <button className="noP" onClick={()=>setShowSettings(!showSettings)}
               style={{background:'none',border:'1px solid #ccc',borderRadius:4,padding:'3px 8px',cursor:'pointer',fontSize:11,color:'#888'}}>
               ⚙ API
             </button>
@@ -1230,9 +1268,14 @@ export default function InvoiceExtractor() {
                 </div>
 
                 <div style={{color:'#6b7280'}}>PRODUCT TOTAL</div>
-                <div style={{fontWeight:600,padding:'6px 4px'}}>
-                  {previewInv.declaredTotal || 0} CTN
-                  <span style={{color:'#9ca3af',fontSize:11,marginLeft:6}}>(from invoice header, read-only)</span>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <ModalInput
+                    value={previewInv.declaredTotal}
+                    onCommit={v=>updateDeclaredTotal(previewInv.id,v)}
+                    type="number"
+                    narrow
+                  />
+                  <span style={{color:'#6b7280',fontSize:12}}>CTN (from invoice header)</span>
                 </div>
               </div>
 
@@ -1256,7 +1299,7 @@ export default function InvoiceExtractor() {
                 )) : <div style={{padding:'8px 0',color:'#6b7280',fontStyle:'italic'}}>No items extracted</div>}
               </div>
 
-              {/* Categories — CTN editable */}
+              {/* Categories — CTN editable, with inline manual-add UI */}
               <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>
                 Subsidy categories
               </div>
@@ -1273,7 +1316,53 @@ export default function InvoiceExtractor() {
                     <span style={{color:'#6b7280'}}>× RM{g.rate.toFixed(2)} =</span>
                     <span style={{fontWeight:600,minWidth:80,textAlign:'right'}}>{fmt(g.ctn*g.rate)}</span>
                   </div>
-                )) : <div style={{color:'#6b7280',fontStyle:'italic',fontSize:12}}>No categories matched</div>}
+                )) : <div style={{color:'#6b7280',fontStyle:'italic',fontSize:12,marginBottom:8}}>
+                  No categories auto-matched. Pick one manually below.
+                </div>}
+
+                {/* Manual category entry — always available so user can add/correct */}
+                <div style={{
+                  display:'flex',
+                  gap:6,
+                  alignItems:'center',
+                  marginTop: previewInv.groups?.length > 0 ? 10 : 0,
+                  paddingTop: previewInv.groups?.length > 0 ? 10 : 0,
+                  borderTop: previewInv.groups?.length > 0 ? '1px dashed #e5e7eb' : 'none',
+                  flexWrap:'wrap',
+                }}>
+                  <select
+                    value={(manualEntry[previewInv.id]||{}).rateId||''}
+                    onChange={e=>setManualEntry(p=>({...p,[previewInv.id]:{...(p[previewInv.id]||{}),rateId:e.target.value}}))}
+                    style={{padding:'5px 8px',fontSize:12,border:'1px solid #d1d5db',borderRadius:4,fontFamily:F,flex:1,minWidth:140,background:'#fff'}}>
+                    <option value="">— Pick category —</option>
+                    {config.rates.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="CTN"
+                    value={(manualEntry[previewInv.id]||{}).ctn||''}
+                    onChange={e=>setManualEntry(p=>({...p,[previewInv.id]:{...(p[previewInv.id]||{}),ctn:e.target.value}}))}
+                    style={{width:64,padding:'5px 8px',fontSize:12,border:'1px solid #d1d5db',borderRadius:4,fontFamily:F,textAlign:'right'}}/>
+                  <button
+                    onClick={()=>{
+                      const me = manualEntry[previewInv.id]||{};
+                      assignCategory(previewInv.id, me.rateId, me.ctn);
+                    }}
+                    disabled={!(manualEntry[previewInv.id]||{}).rateId || !(manualEntry[previewInv.id]||{}).ctn}
+                    style={{
+                      padding:'5px 14px',
+                      fontSize:12,
+                      background: ((manualEntry[previewInv.id]||{}).rateId && (manualEntry[previewInv.id]||{}).ctn) ? '#111' : '#ddd',
+                      color:'#fff',
+                      border:'none',
+                      borderRadius:4,
+                      cursor: ((manualEntry[previewInv.id]||{}).rateId && (manualEntry[previewInv.id]||{}).ctn) ? 'pointer' : 'not-allowed',
+                      fontWeight:600,
+                      fontFamily:F,
+                    }}>
+                    {previewInv.groups?.length > 0 ? '+ Add' : 'Apply'}
+                  </button>
+                </div>
               </div>
 
               {/* Subsidy breakdown */}
