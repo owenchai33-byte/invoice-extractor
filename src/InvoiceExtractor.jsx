@@ -402,9 +402,10 @@ const PROVIDERS = {
 };
 const AI_CFG = PROVIDERS[AI_PROVIDER];
 
-// Delay between invoice API calls. Gemini Flash free tier = 15 RPM = 4s minimum.
-// 5s gives a safety margin for retries inside the window.
-const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 5000 : 10000;
+// Delay between invoice API calls. Qwen 3.6 vision free tier = 30 RPM / 6K TPM.
+// Vision calls burn 3-5K tokens each; spacing 15s apart means max ~4 calls/min
+// = ~20K tokens/min worst case. Still over 6K TPM, so retries cover the gap.
+const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 5000 : 15000;
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
 
@@ -806,9 +807,14 @@ export default function InvoiceExtractor() {
       reader.onload=async()=>{
         try{
           let lastErr=null;
-          for(let attempt=0;attempt<3;attempt++){
+          // Rate-limit backoff schedule. The provider's per-minute window is 60s,
+          // so we space retries to actually cross window boundaries instead of all
+          // hammering inside the same locked window.
+          // Schedule (cumulative): 0s, 15s, 35s, 65s, 95s — total ~95s worst case.
+          const BACKOFF_MS = [0, 15000, 20000, 30000, 30000];
+          for(let attempt=0; attempt<BACKOFF_MS.length; attempt++){
             try{
-              if(attempt>0) await new Promise(r=>setTimeout(r,5000*(attempt)));
+              if(BACKOFF_MS[attempt]>0) await new Promise(r=>setTimeout(r,BACKOFF_MS[attempt]));
               let txt;
               try {
                 const result = await callAI({
@@ -821,7 +827,12 @@ export default function InvoiceExtractor() {
                 txt = (result.text||'').trim().replace(/```json|```/g,'').trim();
               } catch(apiErr) {
                 if(apiErr.code === 'rate_limit'){
-                  lastErr = apiErr;
+                  // Final attempt — surface a helpful message, not "retrying..."
+                  if(attempt === BACKOFF_MS.length - 1){
+                    lastErr = new Error('Rate limit hit even after retries. Wait a minute, or add a credit card to Groq (console.groq.com/settings/billing) for 10x higher limits — costs $0 if you stay under free quota.');
+                  } else {
+                    lastErr = apiErr;
+                  }
                   continue;
                 }
                 throw apiErr;  // auth/malformed/other surface immediately
