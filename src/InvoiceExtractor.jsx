@@ -122,6 +122,33 @@ async function pdfToImageFiles(file) {
   return out;
 }
 
+// Format a volume in ml as a clean string: 1500 → "1.5L", 1000 → "1L", 320 → "320ML"
+function formatVolUnit(ml){
+  if(!ml || ml <= 0) return '';
+  if(ml >= 1000){
+    const l = ml / 1000;
+    return l === Math.floor(l) ? `${l}L` : `${l.toFixed(1).replace(/\.0$/, '')}L`;
+  }
+  return `${ml}ML`;
+}
+
+// Build a label from the actual item volumes inside a group, not the rate category's example list.
+// Single volume → "320ML x 24". Multiple same-pack → "320ML/300ML x 24". Mixed pack → "320ML x 24 + 1.5L x 12".
+// Falls back to the rate label if no item volume data is available (e.g., manually assigned category).
+function deriveActualLabel(itemVolumes, rateLabel){
+  if(!itemVolumes || itemVolumes.size === 0) return rateLabel;
+  const vols = Array.from(itemVolumes.values());
+  if(vols.length === 1){
+    return `${formatVolUnit(vols[0].volume_ml)} x ${vols[0].pack_size}`;
+  }
+  const samePack = vols.every(v => v.pack_size === vols[0].pack_size);
+  if(samePack){
+    const sortedVols = vols.map(v => v.volume_ml).sort((a,b) => b-a);
+    return `${sortedVols.map(formatVolUnit).join('/')} x ${vols[0].pack_size}`;
+  }
+  return vols.map(v => `${formatVolUnit(v.volume_ml)} x ${v.pack_size}`).join(' + ');
+}
+
 // ============================================================
 // UPDATED matchCat WITH DESCRIPTION CROSS-CHECK (PATCH 4)
 // ============================================================
@@ -719,7 +746,31 @@ export default function InvoiceExtractor() {
               }
 
               const gMap={};
-              items.forEach(it=>{if(!it.category)return;const k=it.category.id;if(!gMap[k])gMap[k]={...it.category,ctn:0};gMap[k].ctn+=Number(it.qty)||0;});
+              items.forEach(it=>{
+                if(!it.category) return;
+                const k=it.category.id;
+                if(!gMap[k]){
+                  gMap[k] = {...it.category, ctn:0, _itemVolumes: new Map()};
+                }
+                gMap[k].ctn += Number(it.qty) || 0;
+                // Track actual volume from this item for correct label derivation later
+                const vol = it._usedVol || it.volume_ml;
+                const pack = it._usedPack || it.pack_size;
+                if(vol && pack){
+                  const volKey = `${vol}|${pack}`;
+                  if(!gMap[k]._itemVolumes.has(volKey)){
+                    gMap[k]._itemVolumes.set(volKey, {volume_ml:vol, pack_size:pack, ctn:0});
+                  }
+                  gMap[k]._itemVolumes.get(volKey).ctn += Number(it.qty) || 0;
+                }
+              });
+
+              // Derive each group's label from ACTUAL item volumes (not rate category list)
+              Object.values(gMap).forEach(g => {
+                g.label = deriveActualLabel(g._itemVolumes, g.label);
+                delete g._itemVolumes;  // strip the Map before storing (won't serialize)
+              });
+
               const groupKeys=Object.keys(gMap);
 
               // AUTO-CORRECT: single-category invoice trusts PRODUCT TOTAL over extracted line items
@@ -876,7 +927,7 @@ export default function InvoiceExtractor() {
           .print-area table{font-size:11px!important}
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
-          .print-area img{max-height:75px!important}
+          .print-area img{max-height:115px!important}
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
         }
@@ -892,7 +943,7 @@ export default function InvoiceExtractor() {
           textAlign:'center',
           paddingBottom:10,
           borderBottom:'2px solid #000',
-          minHeight:90,
+          minHeight:140,
         }}>
           {/* Logo — sized to match text block height for visual balance */}
           <img src={LOGO} alt="CJK" style={{
@@ -900,13 +951,13 @@ export default function InvoiceExtractor() {
             left:0,
             top:'50%',
             transform:'translateY(-50%)',
-            height:90,
-            maxWidth:100,
+            height:130,
+            maxWidth:140,
             objectFit:'contain',
           }}/>
 
           {/* Text block — tight padding around logo, all single-line */}
-          <div style={{padding:'2px 110px 0',lineHeight:1.3}}>
+          <div style={{padding:'2px 150px 0',lineHeight:1.3}}>
             <div style={{fontSize:18,fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>{CO.name}</div>
             <div style={{fontSize:12,marginTop:0,opacity:0.75,whiteSpace:'nowrap'}}>{CO.reg}</div>
             <div style={{fontSize:12,marginTop:5,whiteSpace:'nowrap'}}>{CO.addr}</div>
