@@ -365,10 +365,121 @@ CRITICAL EXTRACTION RULES — read carefully:
 
 Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
-const GROQ_MODEL='meta-llama/llama-4-scout-17b-16e-instruct';
-const BATCH_DELAY_MS = 6000;
+// =============================================================
+// AI PROVIDER CONFIG — Gemini 2.5 Flash primary, Groq as fallback
+// =============================================================
+// Why Gemini: free tier is 1500 RPD / 15 RPM / 1M TPM (vs Groq's 1000 / 30 / 30K).
+// Better vision/OCR accuracy. Stable model lifecycle — no surprise deprecations.
+// Privacy note: Google may use free-tier prompts for training. Invoice line items
+// are low-sensitivity but worth knowing.
+//
+// To switch providers, change AI_PROVIDER below.
+// To swap models within Gemini (e.g. flash-lite for higher RPM), change GEMINI_MODEL.
+const AI_PROVIDER = 'gemini';                    // 'gemini' | 'groq'
+const GEMINI_MODEL = 'gemini-2.5-flash';         // stable. Alternatives: 'gemini-2.5-flash-lite' (30 RPM, lower quality)
+const GROQ_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';  // ⚠️ DEPRECATED June 17, 2026 — fallback only
+
+// Provider-specific config used by settings UI + API call dispatch.
+const PROVIDERS = {
+  gemini: {
+    label: 'Google Gemini',
+    storageKey: 'gemini_api_key',
+    placeholder: 'AIza...',
+    consoleUrl: 'https://aistudio.google.com/app/apikey',
+    consoleName: 'Google AI Studio',
+    model: GEMINI_MODEL,
+  },
+  groq: {
+    label: 'Groq',
+    storageKey: 'groq_api_key',
+    placeholder: 'gsk_...',
+    consoleUrl: 'https://console.groq.com',
+    consoleName: 'console.groq.com',
+    model: GROQ_MODEL,
+  },
+};
+const AI_CFG = PROVIDERS[AI_PROVIDER];
+
+// Delay between invoice API calls. Gemini Flash free tier = 15 RPM = 4s minimum.
+// 5s gives a safety margin for retries inside the window.
+const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 5000 : 10000;
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
+
+// =============================================================
+// API CALL DISPATCH — provider-agnostic vision + JSON extraction
+// =============================================================
+// Returns { text, status } or throws Error with .code in
+// { 'rate_limit', 'auth', 'malformed', 'other' } for the retry loop to handle.
+async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
+  if(provider === 'gemini'){
+    // Gemini wants base64 separated from the data URL prefix.
+    const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(imageDataUrl);
+    if(!m) throw Object.assign(new Error('Bad image data URL'), {code:'malformed'});
+    const [, mimeType, base64Data] = m;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{
+          parts:[
+            {text: prompt},
+            {inline_data: {mime_type: mimeType, data: base64Data}},
+          ],
+        }],
+        generationConfig:{
+          temperature: 0.1,
+          maxOutputTokens: 2000,
+          responseMimeType: 'application/json',
+        },
+      }),
+    });
+    if(res.status === 429){
+      throw Object.assign(new Error('Rate limit — retrying...'), {code:'rate_limit'});
+    }
+    if(res.status === 401 || res.status === 403){
+      throw Object.assign(new Error('API key rejected — check your Gemini key in settings'), {code:'auth'});
+    }
+    const data = await res.json();
+    if(data.error){
+      const msg = data.error.message || JSON.stringify(data.error);
+      if(/quota|rate/i.test(msg)) throw Object.assign(new Error('Rate limit — retrying...'), {code:'rate_limit'});
+      throw Object.assign(new Error(msg), {code:'other'});
+    }
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if(!text) throw Object.assign(new Error('Gemini returned empty response'), {code:'malformed'});
+    return {text};
+  }
+
+  // Groq fallback (OpenAI-compatible API)
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
+    body: JSON.stringify({
+      model,
+      messages:[{role:'user', content:[
+        {type:'image_url', image_url:{url: imageDataUrl}},
+        {type:'text', text: prompt},
+      ]}],
+      max_tokens:2000, temperature:0.1,
+    }),
+  });
+  const data = await res.json();
+  if(data.error){
+    const msg = data.error.message || JSON.stringify(data.error);
+    if(msg.includes('Rate limit') || res.status === 429){
+      throw Object.assign(new Error('Rate limit — retrying...'), {code:'rate_limit'});
+    }
+    if(res.status === 401 || res.status === 403){
+      throw Object.assign(new Error('API key rejected — check your Groq key in settings'), {code:'auth'});
+    }
+    throw Object.assign(new Error(msg), {code:'other'});
+  }
+  const text = (data.choices?.[0]?.message?.content || '').trim();
+  return {text};
+}
 
 // ============================================================
 // CLICK-TO-EDIT COMPONENTS
@@ -537,13 +648,13 @@ export default function InvoiceExtractor() {
   }, [previewInvId]);
 
   useEffect(()=>{
-    try{ const k=localStorage.getItem('groq_api_key'); if(k) setApiKey(k); }catch(e){}
+    try{ const k=localStorage.getItem(AI_CFG.storageKey); if(k) setApiKey(k); }catch(e){}
   },[]);
 
   const saveKey=()=>{
     if(!keyInput.trim())return;
     setApiKey(keyInput.trim());
-    try{localStorage.setItem('groq_api_key',keyInput.trim());}catch(e){}
+    try{localStorage.setItem(AI_CFG.storageKey,keyInput.trim());}catch(e){}
     setShowSettings(false);
   };
 
@@ -696,27 +807,23 @@ export default function InvoiceExtractor() {
           for(let attempt=0;attempt<3;attempt++){
             try{
               if(attempt>0) await new Promise(r=>setTimeout(r,5000*(attempt)));
-              const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-                method:'POST',
-                headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
-                body:JSON.stringify({
-                  model:GROQ_MODEL,
-                  messages:[{role:'user',content:[
-                    {type:'image_url',image_url:{url:reader.result}},
-                    {type:'text',text:PROMPT}
-                  ]}],
-                  max_tokens:2000, temperature:0.1,
-                }),
-              });
-              const data=await res.json();
-              if(data.error){
-                if(data.error.message?.includes('Rate limit')||res.status===429){
-                  lastErr=new Error('Rate limit — retrying...');
+              let txt;
+              try {
+                const result = await callAI({
+                  provider: AI_PROVIDER,
+                  apiKey,
+                  model: AI_CFG.model,
+                  imageDataUrl: reader.result,
+                  prompt: PROMPT,
+                });
+                txt = (result.text||'').trim().replace(/```json|```/g,'').trim();
+              } catch(apiErr) {
+                if(apiErr.code === 'rate_limit'){
+                  lastErr = apiErr;
                   continue;
                 }
-                throw new Error(data.error.message||JSON.stringify(data.error));
+                throw apiErr;  // auth/malformed/other surface immediately
               }
-              let txt=(data.choices?.[0]?.message?.content||'').trim().replace(/```json|```/g,'').trim();
               // Strip any prose before/after the JSON object
               if(!txt.startsWith('{')) txt=txt.substring(txt.indexOf('{'));
               if(!txt.endsWith('}')) txt=txt.substring(0,txt.lastIndexOf('}')+1);
@@ -844,7 +951,7 @@ export default function InvoiceExtractor() {
   },[config,apiKey]);
 
   const processFiles=useCallback(async (files)=>{
-    if(!apiKey){setError('Set your Groq API key first');setShowSettings(true);return;}
+    if(!apiKey){setError(`Set your ${AI_CFG.label} API key first`);setShowSettings(true);return;}
     const fileArr=Array.from(files);
     if(fileArr.length===0){setError('No files selected');return;}
 
@@ -1019,17 +1126,18 @@ export default function InvoiceExtractor() {
         {(showSettings||!apiKey)&&(
           <div className="noP" style={{background:'#f8f8f8',border:'1px solid #ddd',borderRadius:6,padding:'12px 16px',margin:'14px 0'}}>
             <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>
-              Groq API Key {apiKey&&<span style={{color:'#080',fontWeight:400}}>✓ saved</span>}
+              {AI_CFG.label} API Key {apiKey&&<span style={{color:'#080',fontWeight:400}}>✓ saved</span>}
             </div>
             <div style={{display:'flex',gap:8}}>
               <input type="password" value={keyInput} onChange={e=>setKeyInput(e.target.value)}
-                placeholder="gsk_..." onKeyDown={e=>e.key==='Enter'&&saveKey()}
+                placeholder={AI_CFG.placeholder} onKeyDown={e=>e.key==='Enter'&&saveKey()}
                 style={{flex:1,padding:'6px 10px',border:'1px solid #bbb',borderRadius:4,fontSize:14,fontFamily:'monospace'}}/>
               <button onClick={saveKey} style={btn(1)}>Save</button>
               {apiKey&&<button onClick={()=>setShowSettings(false)} style={btn(0)}>Close</button>}
             </div>
             <div style={{fontSize:12,color:'#999',marginTop:5}}>
-              Free at <a href="https://console.groq.com" target="_blank" rel="noreferrer" style={{color:'#0056b3'}}>console.groq.com</a>
+              Free at <a href={AI_CFG.consoleUrl} target="_blank" rel="noreferrer" style={{color:'#0056b3'}}>{AI_CFG.consoleName}</a>
+              <span style={{marginLeft:8,color:'#bbb'}}>· Using model: <code style={{background:'#eee',padding:'1px 4px',borderRadius:2,fontSize:11}}>{AI_CFG.model}</code></span>
             </div>
           </div>
         )}
@@ -1372,7 +1480,7 @@ export default function InvoiceExtractor() {
           <div className="noP" style={{textAlign:'center',padding:'60px 20px'}}>
             <div style={{width:32,height:32,border:'3px solid #eee',borderTop:'3px solid #000',borderRadius:'50%',margin:'0 auto 12px',animation:'spin .7s linear infinite'}}/>
             <div style={{fontSize:14,color:'#888'}}>
-              Extracting with Groq...{processingCount.total>1&&` (${processingCount.done}/${processingCount.total})`}
+              Extracting with {AI_CFG.label}...{processingCount.total>1&&` (${processingCount.done}/${processingCount.total})`}
             </div>
           </div>
         )}
