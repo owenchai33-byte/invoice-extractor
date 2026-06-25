@@ -366,19 +366,21 @@ CRITICAL EXTRACTION RULES — read carefully:
 Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
 // =============================================================
-// AI PROVIDER CONFIG — Gemini 2.5 Flash (vision + JSON mode)
+// AI PROVIDER CONFIG — Groq Llama 4 Scout (vision + JSON mode)
 // =============================================================
-// Switched from Groq because Qwen 3.6's 8K TPM free tier can't fit even ONE
-// vision request without blocking the next. Gemini free tier = 1M TPM (125x more),
-// 1500 RPD, no credit card needed. Better OCR accuracy too.
-// Privacy trade-off: Google may use free-tier prompts for training. CJK invoice
-// line items are low-sensitivity (no PII, just SKUs/prices) but worth knowing.
-//
-// To switch back to Groq later, change AI_PROVIDER and update GROQ_MODEL to the
-// current vision model (check console.groq.com/docs/vision).
-const AI_PROVIDER = 'gemini';                  // 'gemini' | 'groq'
-const GEMINI_MODEL = 'gemini-2.5-flash';       // vision + JSON, generous free tier
-const GROQ_MODEL = 'qwen/qwen3.6-27b';         // backup option if Gemini breaks
+// Switched back to Scout because:
+//   1) Gemini blocks browser-direct API calls via CORS (needs a backend proxy)
+//   2) Qwen 3.6's 8K TPM free tier is too tight for vision requests
+//   3) Scout's 30K TPM free tier comfortably handles full-resolution invoice images
+// Scout was officially deprecated June 17, 2026, but is still functional on Groq's
+// vision endpoint as of today. Groq deprecation announcements typically allow months
+// of continued access. When Scout actually goes dark, options will be:
+//   A) Switch to qwen/qwen3.6-27b + aggressive image downsizing (works but slow)
+//   B) Add a Vercel API route to proxy Gemini calls (best long-term — solves CORS once)
+//   C) Add a credit card to Groq for the 10x Developer tier limits (no minimum spend)
+const AI_PROVIDER = 'groq';
+const GROQ_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';  // 30K TPM, vision + JSON, working today
+const GEMINI_MODEL = 'gemini-2.5-flash';                          // BLOCKED by CORS from browser — needs proxy
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
