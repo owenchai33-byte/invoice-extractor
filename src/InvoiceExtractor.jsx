@@ -10,11 +10,21 @@ const SUPPLIERS = {
   'CHOON HUA': {
     name: 'CHOON HUA TRADING CORPORATION SDN BHD',
     rates: [
-      { id:'r1', label:'1.5/1.75L x 12', rate:0.50, minVol:1000, maxVol:2000, packSize:12 },
-      { id:'r2', label:'500ML x 24', rate:0.50, minVol:450, maxVol:500, packSize:24 },
-      { id:'r3', label:'320/300ML x 24', rate:0.40, minVol:290, maxVol:330, packSize:24 },
-      { id:'r4', label:'500ML x 12', rate:0.25, minVol:450, maxVol:500, packSize:12 },
-      { id:'r5', label:'370/320/300ML x 12', rate:0.20, minVol:290, maxVol:380, packSize:12 },
+      // 1.5/1.75/1L x 12 — all RM0.50
+      { id:'r1a', label:'1.75L x 12', rate:0.50, minVol:1650, maxVol:1850, packSize:12 },
+      { id:'r1b', label:'1.5L x 12',  rate:0.50, minVol:1400, maxVol:1600, packSize:12 },
+      { id:'r1c', label:'1L x 12',    rate:0.50, minVol:950,  maxVol:1100, packSize:12 },
+      // 500ML x 24 — RM0.50
+      { id:'r2',  label:'500ML x 24', rate:0.50, minVol:450,  maxVol:510,  packSize:24 },
+      // 320/300ML x 24 — RM0.40
+      { id:'r3a', label:'320ML x 24', rate:0.40, minVol:315,  maxVol:340,  packSize:24 },
+      { id:'r3b', label:'300ML x 24', rate:0.40, minVol:285,  maxVol:314,  packSize:24 },
+      // 500ML x 12 — RM0.25
+      { id:'r4',  label:'500ML x 12', rate:0.25, minVol:450,  maxVol:510,  packSize:12 },
+      // 370/320/300ML x 12 — RM0.20
+      { id:'r5a', label:'370ML x 12', rate:0.20, minVol:355,  maxVol:385,  packSize:12 },
+      { id:'r5b', label:'320ML x 12', rate:0.20, minVol:315,  maxVol:340,  packSize:12 },
+      { id:'r5c', label:'300ML x 12', rate:0.20, minVol:285,  maxVol:314,  packSize:12 },
     ],
     pct1:0.004, pct2:0.002,
   }
@@ -182,6 +192,8 @@ function matchCat(volume_ml, pack_size, rates, description, code){
 }
 
 function calcSub(amt,groups,p1,p2){
+  // Zero-amount invoices (FOC / free) have no subsidy claim — all columns zero out.
+  if(!amt || amt <= 0) return {carton:0, p1:0, p2:0, total:0};
   const c=groups.reduce((s,g)=>s+g.ctn*g.rate,0), r=v=>Math.round(v*100)/100;
   const v1=r((amt-c)*p1), v2=r((amt-c-v1)*p2);
   return {carton:r(c),p1:v1,p2:v2,total:r(c+v1+v2)};
@@ -637,6 +649,24 @@ export default function InvoiceExtractor() {
       const updated = prev.map(inv=>{
         if(inv.id!==invId) return inv;
         return {...inv, declaredTotal: total, _issuesDismissed:false};
+      });
+      return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
+    });
+  };
+
+  // Manually adjust a subsidy line (carton, p1, or p2). Total auto-recomputes as sum.
+  // Edits to CTN / amount / categories will overwrite these via calcSub.
+  const updateSubsidyLine=(invId, line, value)=>{
+    const v = parseFloat(value);
+    if(isNaN(v) || v < 0) return;
+    if(!['carton','p1','p2'].includes(line)) return;
+    setInvoices(prev=>{
+      const updated = prev.map(inv=>{
+        if(inv.id!==invId) return inv;
+        const r = n => Math.round(n*100)/100;
+        const newSub = {...inv.subsidy, [line]: r(v)};
+        newSub.total = r((newSub.carton||0) + (newSub.p1||0) + (newSub.p2||0));
+        return {...inv, subsidy: newSub, _issuesDismissed:false};
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
     });
@@ -1163,10 +1193,10 @@ export default function InvoiceExtractor() {
                     </td>}
                     <td colSpan={2} style={{
                       border:B,
-                      padding:'4px 12px',
-                      fontSize:13,
+                      padding:'6px 12px',
+                      fontSize:16,
                       fontWeight:600,
-                      color:'#555',
+                      color:'#333',
                       background:'#f9fafb',
                       textAlign:'left',
                       fontFamily:F,
@@ -1187,14 +1217,28 @@ export default function InvoiceExtractor() {
                     <td style={T.subR}>{fmt(g.ctn*g.rate)}</td>
                   </tr>);
 
-                  // ROW 3 — + 0.4%
+                  // ROW 3 — + 0.4% (editable)
                   rows.push(<tr key={inv.id+'-'+gi+'-p1'}>
-                    <td style={T.subL}>+ 0.4% =</td><td style={T.subR}>{fmt(inv.subsidy.p1)}</td>
+                    <td style={T.subL}>+ 0.4% =</td>
+                    <td style={T.subR}>
+                      <EditableAmount
+                        value={inv.subsidy.p1}
+                        onCommit={v=>updateSubsidyLine(inv.id,'p1',v)}
+                        format={fmt}
+                      />
+                    </td>
                   </tr>);
 
-                  // ROW 4 — + 0.2%
+                  // ROW 4 — + 0.2% (editable)
                   rows.push(<tr key={inv.id+'-'+gi+'-p2'}>
-                    <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{fmt(inv.subsidy.p2)}</td>
+                    <td style={T.subL}>+ 0.2% =</td>
+                    <td style={T.subR}>
+                      <EditableAmount
+                        value={inv.subsidy.p2}
+                        onCommit={v=>updateSubsidyLine(inv.id,'p2',v)}
+                        format={fmt}
+                      />
+                    </td>
                   </tr>);
                 });
                 }
@@ -1554,21 +1598,42 @@ export default function InvoiceExtractor() {
                 </div>
               </div>
 
-              {/* Subsidy breakdown */}
+              {/* Subsidy breakdown — all 3 lines editable */}
               <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>
-                Transport subsidy
+                Transport subsidy <span style={{textTransform:'none',fontWeight:400,fontSize:10,color:'#9ca3af',marginLeft:4}}>(click any value to adjust)</span>
               </div>
               <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:4,padding:'10px 12px',marginBottom:16,fontSize:13}}>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
-                  <span style={{color:'#6b7280'}}>Carton</span><span>{fmt(previewInv.subsidy.carton)}</span>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'3px 0',gap:8}}>
+                  <span style={{color:'#6b7280'}}>Carton</span>
+                  <div style={{width:110}}>
+                    <ModalInput
+                      value={previewInv.subsidy.carton ?? 0}
+                      onCommit={v=>updateSubsidyLine(previewInv.id,'carton',v)}
+                      type="number" step="0.01" narrow
+                    />
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
-                  <span style={{color:'#6b7280'}}>+ 0.4%</span><span>{fmt(previewInv.subsidy.p1)}</span>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'3px 0',gap:8}}>
+                  <span style={{color:'#6b7280'}}>+ 0.4%</span>
+                  <div style={{width:110}}>
+                    <ModalInput
+                      value={previewInv.subsidy.p1 ?? 0}
+                      onCommit={v=>updateSubsidyLine(previewInv.id,'p1',v)}
+                      type="number" step="0.01" narrow
+                    />
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
-                  <span style={{color:'#6b7280'}}>+ 0.2%</span><span>{fmt(previewInv.subsidy.p2)}</span>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'3px 0',gap:8}}>
+                  <span style={{color:'#6b7280'}}>+ 0.2%</span>
+                  <div style={{width:110}}>
+                    <ModalInput
+                      value={previewInv.subsidy.p2 ?? 0}
+                      onCommit={v=>updateSubsidyLine(previewInv.id,'p2',v)}
+                      type="number" step="0.01" narrow
+                    />
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0 2px',borderTop:'1px solid #e5e7eb',marginTop:4,fontWeight:700}}>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0 2px',borderTop:'1px solid #e5e7eb',marginTop:4,fontWeight:700}}>
                   <span>Total subsidy</span><span>{fmt(previewInv.subsidy.total)}</span>
                 </div>
               </div>
