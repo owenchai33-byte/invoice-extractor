@@ -402,10 +402,10 @@ const PROVIDERS = {
 };
 const AI_CFG = PROVIDERS[AI_PROVIDER];
 
-// Delay between invoice API calls. Qwen 3.6 vision free tier = 30 RPM / 6K TPM.
-// Vision calls burn 3-5K tokens each; spacing 15s apart means max ~4 calls/min
-// = ~20K tokens/min worst case. Still over 6K TPM, so retries cover the gap.
-const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 5000 : 15000;
+// Delay between invoice API calls. Images downsized to 1280px before send (~2K tokens each),
+// plus prompt (~1.5K) + response budget (~4K) = ~7.5K per call. Under Qwen 3.6 free tier's
+// 8K TPM, so we can pace ~6-7 calls/min comfortably without triggering the cap.
+const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 5000 : 10000;
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
 
@@ -466,7 +466,7 @@ async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
         {type:'image_url', image_url:{url: imageDataUrl}},
         {type:'text', text: prompt},
       ]}],
-      max_tokens:6000, temperature:0.1,  // long invoices have 20+ line items; 2000 caused JSON truncation
+      max_tokens:4000, temperature:0.1,  // shrunk image leaves room for response; 4000 fits 25+ line items
     }),
   });
   const data = await res.json();
@@ -807,6 +807,17 @@ export default function InvoiceExtractor() {
       reader.onload=async()=>{
         try{
           let lastErr=null;
+          // Downsize the image once before any API attempt. Full-resolution PDF renders
+          // are ~7K tokens each — too big for Qwen 3.6's 8K TPM free tier ceiling.
+          // 1280px @ JPEG 0.75 lands at ~1.5-2K tokens with no real OCR quality loss
+          // for printed invoices. This is the single biggest token saver.
+          let optimizedImage;
+          try {
+            optimizedImage = await downsizeBase64ToJPEG(reader.result, 1280, 0.75);
+          } catch(e) {
+            console.warn('Image downsize failed, using original:', e);
+            optimizedImage = reader.result;
+          }
           // Rate-limit backoff schedule. The provider's per-minute window is 60s,
           // so we space retries to actually cross window boundaries instead of all
           // hammering inside the same locked window.
@@ -821,7 +832,7 @@ export default function InvoiceExtractor() {
                   provider: AI_PROVIDER,
                   apiKey,
                   model: AI_CFG.model,
-                  imageDataUrl: reader.result,
+                  imageDataUrl: optimizedImage,
                   prompt: PROMPT,
                 });
                 txt = (result.text||'').trim().replace(/```json|```/g,'').trim();
