@@ -366,20 +366,19 @@ CRITICAL EXTRACTION RULES — read carefully:
 Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
 // =============================================================
-// AI PROVIDER CONFIG — Groq Qwen 3.6 27B (vision + JSON mode)
+// AI PROVIDER CONFIG — Gemini 2.5 Flash (vision + JSON mode)
 // =============================================================
-// Qwen 3.6 27B is Groq's current vision lineup, recommended replacement for the
-// deprecated Llama 4 Scout. Vision + JSON mode + 131K context, OpenAI-compatible API.
-// Free tier: 30 RPM / 6K TPM / 1,000 RPD — plenty for ~50-200 invoices/day.
-// Need more? Add a card to Groq for Developer tier (10x limits, $0 if under free quota).
-// Privacy bonus: Groq doesn't train on your prompts.
+// Switched from Groq because Qwen 3.6's 8K TPM free tier can't fit even ONE
+// vision request without blocking the next. Gemini free tier = 1M TPM (125x more),
+// 1500 RPD, no credit card needed. Better OCR accuracy too.
+// Privacy trade-off: Google may use free-tier prompts for training. CJK invoice
+// line items are low-sensitivity (no PII, just SKUs/prices) but worth knowing.
 //
-// To switch providers, change AI_PROVIDER below.
-// If Qwen 3.6 gets deprecated, check console.groq.com/docs/vision for the current
-// vision-capable model list and update GROQ_MODEL.
-const AI_PROVIDER = 'groq';                    // 'groq' | 'gemini'
-const GROQ_MODEL = 'qwen/qwen3.6-27b';         // vision + JSON, current
-const GEMINI_MODEL = 'gemini-2.5-flash';       // backup option if Groq breaks
+// To switch back to Groq later, change AI_PROVIDER and update GROQ_MODEL to the
+// current vision model (check console.groq.com/docs/vision).
+const AI_PROVIDER = 'gemini';                  // 'gemini' | 'groq'
+const GEMINI_MODEL = 'gemini-2.5-flash';       // vision + JSON, generous free tier
+const GROQ_MODEL = 'qwen/qwen3.6-27b';         // backup option if Gemini breaks
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
