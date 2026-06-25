@@ -20,8 +20,7 @@ const SUPPLIERS = {
   }
 };
 const CO = { name:'CHAI JEE KIONG TRADING SDN BHD', reg:'(200901034210)',
-  addrLine1:'No. 19, 21, 23, 25, 27, Jalan Petanak,',
-  addrLine2:'93100 Kuching, Sarawak.',
+  addr:'No. 19, 21, 23, 25, 27, Jalan Petanak, 93100 Kuching, Sarawak.',
   tel:'082-427630', email:'chaijeekionghq@gmail.com' };
 
 // ============================================================
@@ -616,6 +615,20 @@ export default function InvoiceExtractor() {
     });
   };
 
+  // Remove a category from an invoice's groups (user clicks × in the modal).
+  // Recomputes subsidy and issues after removal.
+  const removeGroup=(invId, rateId)=>{
+    setInvoices(prev=>{
+      const updated = prev.map(inv=>{
+        if(inv.id!==invId) return inv;
+        const groups = inv.groups.filter(g => g.id !== rateId);
+        const sub = calcSub(inv.raw.total_amount, groups, config.pct1, config.pct2);
+        return {...inv, groups, subsidy:sub, _issuesDismissed:false};
+      });
+      return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
+    });
+  };
+
   const processSingleFile=useCallback(async (file)=>{
     if(!file?.type.startsWith('image/')) throw new Error('Not an image file: '+file.name);
     return new Promise((resolve,reject)=>{
@@ -863,7 +876,7 @@ export default function InvoiceExtractor() {
           .print-area table{font-size:11px!important}
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
-          .print-area img{max-height:110px!important}
+          .print-area img{max-height:75px!important}
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
         }
@@ -871,34 +884,33 @@ export default function InvoiceExtractor() {
 
       <div className="wrap print-area" style={{maxWidth:780,margin:'0 auto',padding:'20px'}}>
 
-        {/* HEADER — logo absolutely positioned on the left so it doesn't push the text off-center.
-            Text container uses full page width with text-align:center for true page centering.
-            Side padding keeps text from running under the logo or off the right edge. */}
+        {/* HEADER — compact letterhead layout.
+            Logo absolute on the left (doesn't push text off-center).
+            Text stacked tightly: 4 lines, all one-liners, neat spacing. */}
         <div style={{
           position:'relative',
           textAlign:'center',
-          paddingBottom:14,
-          borderBottom:'3px solid #000',
-          minHeight:140,
+          paddingBottom:10,
+          borderBottom:'2px solid #000',
+          minHeight:90,
         }}>
-          {/* Logo — absolute, vertically centered with text block */}
+          {/* Logo — sized to match text block height for visual balance */}
           <img src={LOGO} alt="CJK" style={{
             position:'absolute',
             left:0,
             top:'50%',
             transform:'translateY(-50%)',
-            height:130,
-            maxWidth:140,
+            height:90,
+            maxWidth:100,
             objectFit:'contain',
           }}/>
 
-          {/* Text — full-width container, padded on both sides to clear the logo */}
-          <div style={{padding:'4px 150px 0'}}>
-            <div style={{fontSize:21,fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>{CO.name}</div>
-            <div style={{fontSize:18,fontWeight:700,marginTop:3}}>{CO.reg}</div>
-            <div style={{fontSize:14,marginTop:8,lineHeight:1.5,whiteSpace:'nowrap'}}>{CO.addrLine1}</div>
-            <div style={{fontSize:14,lineHeight:1.5,whiteSpace:'nowrap'}}>{CO.addrLine2}</div>
-            <div style={{fontSize:14,marginTop:4,lineHeight:1.5,whiteSpace:'nowrap'}}>
+          {/* Text block — tight padding around logo, all single-line */}
+          <div style={{padding:'2px 110px 0',lineHeight:1.3}}>
+            <div style={{fontSize:18,fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>{CO.name}</div>
+            <div style={{fontSize:12,marginTop:0,opacity:0.75,whiteSpace:'nowrap'}}>{CO.reg}</div>
+            <div style={{fontSize:12,marginTop:5,whiteSpace:'nowrap'}}>{CO.addr}</div>
+            <div style={{fontSize:12,marginTop:1,whiteSpace:'nowrap'}}>
               Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={'mailto:'+CO.email} style={{color:'#0056b3'}}>{CO.email}</a>
             </div>
           </div>
@@ -985,7 +997,7 @@ export default function InvoiceExtractor() {
             </tr></thead>
             <tbody>
               {invoices.map((inv,idx)=>{
-                const rc=Math.max(inv.groups.length*3,1);
+                const rc=Math.max(inv.groups.length*4,1);  // 4 rows per group: label + CTN + 0.4% + 0.2%
                 const cn=cnValues[inv.id]||0;
                 const displayNum=idx+1;
                 const rows=[];
@@ -1057,7 +1069,8 @@ export default function InvoiceExtractor() {
                   </tr>);
                 } else {
                 inv.groups.forEach((g,gi)=>{
-                  rows.push(<tr key={inv.id+'-'+gi+'-c'}>
+                  // ROW 1 — VOLUME LABEL (rowSpan metadata cells live here, on the first row of the group)
+                  rows.push(<tr key={inv.id+'-'+gi+'-lbl'}>
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>
                       <EditableText
@@ -1097,6 +1110,20 @@ export default function InvoiceExtractor() {
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
                       {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
                     </td>}
+                    <td colSpan={2} style={{
+                      border:B,
+                      padding:'4px 12px',
+                      fontSize:13,
+                      fontWeight:600,
+                      color:'#555',
+                      background:'#f9fafb',
+                      textAlign:'left',
+                      fontFamily:F,
+                    }}>{g.label}</td>
+                  </tr>);
+
+                  // ROW 2 — CTN x RM = subtotal
+                  rows.push(<tr key={inv.id+'-'+gi+'-c'}>
                     <td style={{...T.subL,padding:'4px 8px'}}>
                       <span style={{display:'inline-flex',alignItems:'baseline',gap:4,justifyContent:'flex-end',width:'100%',whiteSpace:'nowrap'}}>
                         <EditableCtn
@@ -1108,9 +1135,13 @@ export default function InvoiceExtractor() {
                     </td>
                     <td style={T.subR}>{fmt(g.ctn*g.rate)}</td>
                   </tr>);
+
+                  // ROW 3 — + 0.4%
                   rows.push(<tr key={inv.id+'-'+gi+'-p1'}>
                     <td style={T.subL}>+ 0.4% =</td><td style={T.subR}>{fmt(inv.subsidy.p1)}</td>
                   </tr>);
+
+                  // ROW 4 — + 0.2%
                   rows.push(<tr key={inv.id+'-'+gi+'-p2'}>
                     <td style={T.subL}>+ 0.2% =</td><td style={T.subR}>{fmt(inv.subsidy.p2)}</td>
                   </tr>);
@@ -1393,7 +1424,7 @@ export default function InvoiceExtractor() {
               </div>
               <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:4,padding:'10px 12px',marginBottom:16}}>
                 {previewInv.groups?.length > 0 ? previewInv.groups.map((g,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',alignItems:'center',fontSize:12,gap:8}}>
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',alignItems:'center',fontSize:12,gap:6}}>
                     <span style={{color:'#6b7280',flex:1}}>{g.label}</span>
                     <ModalInput
                       value={g.ctn}
@@ -1402,7 +1433,26 @@ export default function InvoiceExtractor() {
                       narrow
                     />
                     <span style={{color:'#6b7280'}}>× RM{g.rate.toFixed(2)} =</span>
-                    <span style={{fontWeight:600,minWidth:80,textAlign:'right'}}>{fmt(g.ctn*g.rate)}</span>
+                    <span style={{fontWeight:600,minWidth:70,textAlign:'right'}}>{fmt(g.ctn*g.rate)}</span>
+                    <button
+                      onClick={()=>removeGroup(previewInv.id, g.id)}
+                      title={`Remove ${g.label}`}
+                      style={{
+                        background:'none',
+                        border:'none',
+                        color:'#9ca3af',
+                        cursor:'pointer',
+                        fontSize:18,
+                        lineHeight:1,
+                        padding:'0 6px',
+                        marginLeft:2,
+                        borderRadius:3,
+                        fontFamily:F,
+                      }}
+                      onMouseEnter={e=>{e.currentTarget.style.color='#dc2626';}}
+                      onMouseLeave={e=>{e.currentTarget.style.color='#9ca3af';}}>
+                      ×
+                    </button>
                   </div>
                 )) : <div style={{color:'#6b7280',fontStyle:'italic',fontSize:12,marginBottom:8}}>
                   No categories auto-matched. Pick one manually below.
