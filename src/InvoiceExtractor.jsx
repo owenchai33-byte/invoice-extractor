@@ -393,8 +393,6 @@ function EditableText({value,onCommit,placeholder='—',invalid=false}){
       cursor:'text',
       padding:'2px 4px',
       borderRadius:3,
-      color: invalid ? '#dc2626' : 'inherit',
-      fontWeight: invalid ? 600 : 'inherit',
     }}
   >{value || placeholder}</span>;
 }
@@ -415,9 +413,20 @@ export default function InvoiceExtractor() {
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
   const [manualEntry,setManualEntry]=useState({});  // { invId: { rateId, ctn } }
-  const [previewImage,setPreviewImage]=useState(null);  // base64 data URL for fullscreen viewer
+  const [previewInvId,setPreviewInvId]=useState(null);  // invoice id whose source we're viewing
   const fileRef=useRef(null);
   const config=SUPPLIERS['CHOON HUA'];
+
+  // The live invoice being previewed (lookup ensures it stays in sync with edits)
+  const previewInv = previewInvId ? invoices.find(i => i.id === previewInvId) : null;
+
+  // Esc closes preview modal
+  useEffect(() => {
+    if (!previewInvId) return;
+    const handler = e => { if (e.key === 'Escape') setPreviewInvId(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [previewInvId]);
 
   useEffect(()=>{
     try{ const k=localStorage.getItem('groq_api_key'); if(k) setApiKey(k); }catch(e){}
@@ -699,7 +708,7 @@ export default function InvoiceExtractor() {
     XLSX.writeFile(wb,'Payment_Summary_'+config.name.split(' ')[0]+'.xlsx');
   };
 
-  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setManualEntry({});setPreviewImage(null);if(fileRef.current)fileRef.current.value='';};
+  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setManualEntry({});setPreviewInvId(null);if(fileRef.current)fileRef.current.value='';};
   const showUpload=invoices.length===0||uploading;
 
   return(
@@ -837,7 +846,7 @@ export default function InvoiceExtractor() {
                           placeholder="IN..."
                         />
                         {inv.image && (
-                          <button className="noP" onClick={()=>setPreviewImage(inv.image)}
+                          <button className="noP" onClick={()=>setPreviewInvId(inv.id)}
                             title="View source invoice image"
                             style={{background:'#fff',border:'1px solid #d1d5db',borderRadius:3,padding:'1px 5px',cursor:'pointer',fontSize:12,lineHeight:1,fontFamily:F}}>
                             👁
@@ -899,7 +908,7 @@ export default function InvoiceExtractor() {
                           placeholder="IN..."
                         />
                         {inv.image && (
-                          <button className="noP" onClick={()=>setPreviewImage(inv.image)}
+                          <button className="noP" onClick={()=>setPreviewInvId(inv.id)}
                             title="View source invoice image"
                             style={{background:'#fff',border:'1px solid #d1d5db',borderRadius:3,padding:'1px 5px',cursor:'pointer',fontSize:12,lineHeight:1,fontFamily:F}}>
                             👁
@@ -958,7 +967,7 @@ export default function InvoiceExtractor() {
                           </strong>
                           <div style={{display:'flex',gap:6}}>
                             {inv.image && (
-                              <button onClick={()=>setPreviewImage(inv.image)}
+                              <button onClick={()=>setPreviewInvId(inv.id)}
                                 style={{padding:'3px 10px',fontSize:11,border:'1px solid #d1d5db',background:'#fff',borderRadius:4,cursor:'pointer',fontFamily:F}}>
                                 👁 View source
                               </button>
@@ -1075,39 +1084,169 @@ export default function InvoiceExtractor() {
         )}
       </div>
 
-      {/* FULLSCREEN SOURCE IMAGE VIEWER — click anywhere or press Escape to close */}
-      {previewImage && (
+      {/* SIDE-BY-SIDE COMPARISON VIEW — source image (left) + extracted data summary (right) */}
+      {previewInv && (
         <div className="noP"
-          onClick={()=>setPreviewImage(null)}
-          onKeyDown={e=>{if(e.key==='Escape')setPreviewImage(null);}}
-          tabIndex={0}
+          onClick={()=>setPreviewInvId(null)}
           style={{
             position:'fixed',
             inset:0,
-            background:'rgba(0,0,0,0.92)',
+            background:'rgba(0,0,0,0.85)',
             display:'flex',
-            flexDirection:'column',
             alignItems:'center',
             justifyContent:'center',
             zIndex:9999,
-            cursor:'zoom-out',
             padding:20,
           }}>
-          <div style={{color:'#fff',fontSize:12,marginBottom:10,opacity:0.7,fontFamily:F}}>
-            Click anywhere or press Esc to close
-          </div>
-          <img
-            src={previewImage}
-            alt="Source invoice"
+          <div
             onClick={e=>e.stopPropagation()}
             style={{
-              maxWidth:'95vw',
-              maxHeight:'88vh',
-              objectFit:'contain',
-              boxShadow:'0 4px 32px rgba(0,0,0,0.5)',
-              cursor:'default',
               background:'#fff',
-            }}/>
+              width:'min(1400px, 96vw)',
+              height:'min(900px, 92vh)',
+              display:'flex',
+              borderRadius:8,
+              overflow:'hidden',
+              boxShadow:'0 8px 48px rgba(0,0,0,0.4)',
+              fontFamily:F,
+            }}>
+
+            {/* LEFT — Source invoice photo */}
+            <div style={{
+              flex:'1 1 60%',
+              background:'#111',
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+              padding:16,
+              overflow:'auto',
+            }}>
+              {previewInv.image ? (
+                <img src={previewInv.image} alt="Source invoice"
+                  style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',background:'#fff'}}/>
+              ) : (
+                <div style={{color:'#888',fontSize:14}}>No source image available</div>
+              )}
+            </div>
+
+            {/* RIGHT — Extracted data summary */}
+            <div style={{
+              flex:'1 1 40%',
+              minWidth:380,
+              padding:'18px 22px',
+              overflowY:'auto',
+              background:'#fafafa',
+              borderLeft:'1px solid #e5e7eb',
+              fontSize:13,
+              color:'#111',
+            }}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,paddingBottom:10,borderBottom:'1px solid #e5e7eb'}}>
+                <div>
+                  <div style={{fontSize:11,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,fontWeight:600}}>Verify against source</div>
+                  <div style={{fontSize:16,fontWeight:700,marginTop:2}}>Extracted Data</div>
+                </div>
+                <button onClick={()=>setPreviewInvId(null)}
+                  style={{padding:'5px 12px',fontSize:12,border:'1px solid #d1d5db',background:'#fff',borderRadius:4,cursor:'pointer',fontFamily:F}}>
+                  Close (Esc)
+                </button>
+              </div>
+
+              {/* Key fields */}
+              <div style={{display:'grid',gridTemplateColumns:'130px 1fr',rowGap:9,columnGap:14,marginBottom:18}}>
+                <div style={{color:'#6b7280'}}>Invoice No</div>
+                <div style={{fontWeight:600,fontFamily:'monospace'}}>{previewInv.raw.invoice_no || '—'}</div>
+
+                <div style={{color:'#6b7280'}}>Date</div>
+                <div style={{fontWeight:600}}>{previewInv.raw.invoice_date || '—'}</div>
+
+                <div style={{color:'#6b7280'}}>Supplier</div>
+                <div style={{fontWeight:600,fontSize:12,lineHeight:1.4}}>{previewInv.raw.supplier || '—'}</div>
+
+                <div style={{color:'#6b7280'}}>Total Amount</div>
+                <div style={{fontWeight:700,fontSize:18}}>{fmt(previewInv.raw.total_amount)}</div>
+
+                <div style={{color:'#6b7280'}}>PRODUCT TOTAL</div>
+                <div style={{fontWeight:600}}>{previewInv.declaredTotal || 0} CTN</div>
+              </div>
+
+              {/* Line items */}
+              <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>
+                Line items extracted ({previewInv.items?.length || 0})
+              </div>
+              <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:4,padding:'6px 10px',marginBottom:16,maxHeight:180,overflowY:'auto'}}>
+                {previewInv.items?.length > 0 ? previewInv.items.map((it,i)=>(
+                  <div key={i} style={{padding:'5px 0',borderBottom:i<previewInv.items.length-1?'1px solid #f3f4f6':'none'}}>
+                    <div style={{fontFamily:'monospace',fontSize:11,fontWeight:600}}>{it.description || it.product_code || '?'}</div>
+                    <div style={{color:'#6b7280',fontSize:11,marginTop:2}}>
+                      qty {it.qty}
+                      {it.is_foc && <span style={{marginLeft:6,padding:'1px 5px',background:'#f3f4f6',borderRadius:3,fontSize:10,fontWeight:600}}>FOC</span>}
+                      <span style={{marginLeft:8}}>• {fmt(it.amount)}</span>
+                      {it.category
+                        ? <span style={{marginLeft:8,color:'#059669'}}>→ {it.category.label}</span>
+                        : <span style={{marginLeft:8,color:'#dc2626'}}>⚠ no category</span>}
+                    </div>
+                  </div>
+                )) : <div style={{padding:'8px 0',color:'#6b7280',fontStyle:'italic'}}>No items extracted</div>}
+              </div>
+
+              {/* Categories */}
+              <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>
+                Subsidy categories
+              </div>
+              <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:4,padding:'10px 12px',marginBottom:16}}>
+                {previewInv.groups?.length > 0 ? previewInv.groups.map((g,i)=>(
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontSize:12}}>
+                    <span style={{color:'#6b7280'}}>{g.label}</span>
+                    <span style={{fontWeight:600}}>{g.ctn} × RM{g.rate.toFixed(2)} = {fmt(g.ctn*g.rate)}</span>
+                  </div>
+                )) : <div style={{color:'#6b7280',fontStyle:'italic',fontSize:12}}>No categories matched</div>}
+              </div>
+
+              {/* Subsidy breakdown */}
+              <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>
+                Transport subsidy
+              </div>
+              <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:4,padding:'10px 12px',marginBottom:16,fontSize:13}}>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
+                  <span style={{color:'#6b7280'}}>Carton</span><span>{fmt(previewInv.subsidy.carton)}</span>
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
+                  <span style={{color:'#6b7280'}}>+ 0.4%</span><span>{fmt(previewInv.subsidy.p1)}</span>
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'2px 0'}}>
+                  <span style={{color:'#6b7280'}}>+ 0.2%</span><span>{fmt(previewInv.subsidy.p2)}</span>
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',padding:'6px 0 2px',borderTop:'1px solid #e5e7eb',marginTop:4,fontWeight:700}}>
+                  <span>Total subsidy</span><span>{fmt(previewInv.subsidy.total)}</span>
+                </div>
+              </div>
+
+              {/* Issues if any */}
+              {previewInv.issues?.length > 0 && (
+                <div style={{
+                  background: previewInv.issues.some(i=>i.severity==='error') ? '#fef2f2' : '#fffbeb',
+                  border: `1px solid ${previewInv.issues.some(i=>i.severity==='error') ? '#f87171' : '#fbbf24'}`,
+                  borderRadius:4,
+                  padding:'10px 12px',
+                  marginBottom:14,
+                  fontSize:12,
+                }}>
+                  <div style={{fontWeight:700,marginBottom:6}}>
+                    {previewInv.issues.some(i=>i.severity==='error') ? '🛑' : '⚠'} {previewInv.issues.length} unresolved issue{previewInv.issues.length>1?'s':''}
+                  </div>
+                  <ul style={{margin:0,paddingLeft:16,lineHeight:1.5}}>
+                    {previewInv.issues.map((iss,i)=>(
+                      <li key={i}>{iss.msg}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{padding:'10px 12px',background:'#f0f9ff',border:'1px solid #93c5fd',borderRadius:4,fontSize:11,color:'#1e40af',lineHeight:1.5}}>
+                💡 Compare numbers on the right against the photo on the left. If anything's off, close this view and click the field in the table to edit.
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
