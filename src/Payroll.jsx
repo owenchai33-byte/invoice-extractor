@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-
 // ═══════════════════════════════════════════════════════════════
 // STATUTORY TABLES — 2026 Malaysia (KWSP / PERKESO / EIS)
 // ═══════════════════════════════════════════════════════════════
@@ -65,11 +64,9 @@ function calcSOCSO(s,a){
   return{employer:b[1],employee:Math.round((b[2]+b[3])*100)/100,employeeInv:b[2],employeeNEI:b[3]};
 }
 function calcEIS(s,a){if(a<18||a>=60)return{employer:0,employee:0};const b=lookupBand(EIS_TABLE,s);return{employer:b[1],employee:b[1]};}
-
 const LS_S='cjk_payroll_staff',LS_P='cjk_payroll_data';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
-
 const SAMPLE_STAFF=[
   {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:1700,method:'bank',status:'permanent'},
   {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:1700,method:'bank',status:'permanent'},
@@ -97,7 +94,6 @@ const SAMPLE_STAFF=[
 const SAMPLE_PT=[{id:'p1',name:'TAN WEI HOW',ic:'071210-13-0507',position:'',wagePerDay:0,status:'part-time'}];
 const MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-
 async function loadXLSX(){if(window.XLSX)return window.XLSX;return new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';s.onload=()=>r(window.XLSX);s.onerror=j;document.head.appendChild(s);});}
 async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL){
   const X=await loadXLSX(),wb=X.utils.book_new(),ws={},mg=[];const mn=MONTHS[mo];
@@ -123,7 +119,6 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL){
   ws['!cols']=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12].map(w=>({wch:w}));
   X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ_STAFF_PAYROLL_${yr}_${mn}.xlsx`);
 }
-
 // ═══════════════════════════════════════════════════════════════
 // STYLES
 // ═══════════════════════════════════════════════════════════════
@@ -247,7 +242,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .po{display:none}
 @media print{.po{display:block!important;text-align:center;margin-bottom:6px}.po div:first-child{font-size:11pt!important;font-weight:700}.po div:last-child{font-size:9.5pt!important;font-weight:600}}
 `;
-
 export default function Payroll(){
   const now=new Date();
   const[mo,setMo]=useState(now.getMonth()),[yr,setYr]=useState(now.getFullYear());
@@ -260,15 +254,13 @@ export default function Payroll(){
   const[dragOverId,setDragOverId]=useState(null);
   const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
-
+  const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
   useEffect(()=>{saveJ('cjk_pt',pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
-
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
-
   const comp=useCallback(s=>{
     const a=getAgeFromIC(s.ic,ref),m=gM(s.id);
     // Use monthly override if exists, otherwise fall back to staff default
@@ -287,17 +279,14 @@ export default function Payroll(){
     const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
     return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
   },[ref,gM,pd,mk]);
-
   const bS=useMemo(()=>staff.filter(s=>s.method==='bank').map(comp),[staff,comp]);
   const cS=useMemo(()=>staff.filter(s=>s.method==='cash').map(comp),[staff,comp]);
   const ptR=useMemo(()=>pt.map(s=>{const m=gM(s.id),w=m.wagePerDay||s.wagePerDay||0,d=m.daysWorked||0,a=m.advance||0;return{...s,wagePerDay:w,daysWorked:d,advance:a,netPay:Math.round((w*d-a)*100)/100};}),[pt,gM]);
-
   function sumR(rows){const t={};[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>t[c]=0);rows.forEach(r=>{t[4]+=r.salary;t[5]+=r.incentive;t[6]+=r.bonus;t[7]+=r.epfM;t[8]+=r.epfP;t[9]+=r.epfM+r.epfP;t[10]+=r.socsoM;t[11]+=r.socsoP;t[12]+=r.socsoM+r.socsoP;t[13]+=r.eisE;t[14]+=r.eisE*2;t[15]+=r.advance;t[16]+=r.netPay;});Object.keys(t).forEach(k=>t[k]=Math.round(t[k]*100)/100);return t;}
   const bT=useMemo(()=>sumR(bS),[bS]),cT=useMemo(()=>sumR(cS),[cS]);
   const gT=useMemo(()=>{const t={};Object.keys(bT).forEach(k=>t[k]=Math.round((bT[k]+cT[k])*100)/100);return t;},[bT,cT]);
   const ptT=useMemo(()=>({advance:ptR.reduce((s,r)=>s+r.advance,0),netPay:ptR.reduce((s,r)=>s+r.netPay,0)}),[ptR]);
   const notes=useMemo(()=>[...bS,...cS].filter(r=>r.underAge).map(r=>`${r.name.split(' ')[0]}: below 18 years old, not subject to EIS deduction per PERKESO.`),[bS,cS]);
-
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
   const delS=id=>{if(confirm('Remove this staff?'))setStaff(p=>p.filter(s=>s.id!==id));};
@@ -317,10 +306,67 @@ export default function Payroll(){
     });
   };
   const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
-  const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);};
+  const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);setEidPT(null);};
   const delPT=id=>{if(confirm('Remove?'))setPt(p=>p.filter(s=>s.id!==id));};
-  const fmt=n=>n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 
+  // Edit existing part-time staff — opens the PT form prefilled.
+  const edPT=s=>{setEidPT(s.id);setPtfm({name:s.name,ic:s.ic,wagePerDay:s.wagePerDay||0});setPtf(true);};
+
+  // Save edits to existing part-time staff.
+  const updPT=()=>{
+    setPt(p=>p.map(s=>s.id===eidPT?{...s,name:ptfm.name,ic:ptfm.ic,wagePerDay:ptfm.wagePerDay}:s));
+    setEidPT(null);
+    setPtfm({name:'',ic:'',wagePerDay:0});
+    setPtf(false);
+  };
+
+  // Convert a part-time staff member to full-time.
+  // Creates a new FT record with defaults (salary 1700, cash, permanent) and opens the FT edit form
+  // so the user can fix salary/method/etc immediately.
+  const convertPTtoFT=s=>{
+    if(!confirm(`Move ${s.name} to Full-Time?\n\nDefaults: Salary RM1,700, Cash payment, Permanent status. You can edit these right after.`))return;
+    const newFT={
+      id:'s'+Date.now(),
+      name:s.name,
+      ic:s.ic,
+      position:s.position||'',
+      salary:1700,
+      method:'cash',
+      status:'permanent',
+      defIncentive:0,defBonus:0,defAdvance:0,
+    };
+    setStaff(p=>[...p,newFT]);
+    setPt(p=>p.filter(x=>x.id!==s.id));
+    // Prefill the FT edit form with the new record so user can adjust immediately
+    setEid(newFT.id);
+    setFm({name:newFT.name,ic:newFT.ic,position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
+    // Close the PT edit form if it was open
+    setEidPT(null);
+    setPtf(false);
+  };
+
+  // Convert a full-time staff member to part-time.
+  // Drops salary/method/status and adds wagePerDay=0; opens the PT edit form.
+  const convertFTtoPT=s=>{
+    if(!confirm(`Move ${s.name} to Part-Time?\n\nFull-time salary and defaults will be removed. You'll set wages per day in the part-time form.`))return;
+    const newPT={
+      id:'p'+Date.now(),
+      name:s.name,
+      ic:s.ic,
+      position:s.position||'',
+      wagePerDay:0,
+      status:'part-time',
+    };
+    setPt(p=>[...p,newPT]);
+    setStaff(p=>p.filter(x=>x.id!==s.id));
+    setEidPT(newPT.id);
+    setPtfm({name:newPT.name,ic:newPT.ic,wagePerDay:0});
+    setPtf(true);
+    // Close the FT edit form if it was open
+    setEid(null);
+    setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
+  };
+  const fmt=n=>n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   // EditableCell — uncontrolled input that holds local state during typing,
   // commits to global state only on blur/Enter so focus never jumps
   const EditableCell = ({value, onCommit, placeholder='0', width=50}) => {
@@ -350,7 +396,6 @@ export default function Payroll(){
       />
     );
   };
-
   // Drag manager — uses refs for live state during drag (no React lag)
   const dragRef = useRef({ id: null, overId: null });
   const startDrag = (id, e) => {
@@ -359,7 +404,6 @@ export default function Payroll(){
     setDragId(id);
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
-
     const onMove = (ev) => {
       const x = ev.clientX, y = ev.clientY;
       // Find the row under the pointer
@@ -389,7 +433,6 @@ export default function Payroll(){
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
   };
-
   let gn=0;
   const Row=({r})=>{gn++;const n=gn;
     const isDragging=dragId===r.id;
@@ -441,10 +484,8 @@ export default function Payroll(){
       <td className="r tcell">{fmt(t[16])}</td>
     </tr>
   );
-
   gn=0;
   const pc=cS.filter(r=>r.status==='permanent'),pb=cS.filter(r=>r.status==='probationary');
-
   return(
     <div className="pr">
       <style>{CSS}</style>
@@ -573,10 +614,31 @@ export default function Payroll(){
               </div>
             </div>
             <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({staff.length})</div>
-            {staff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span>{s.status==='probationary'&&<span className="tag tgp">PROB</span>}<button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Del</button></div>)}
+            {staff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span>{s.status==='probationary'&&<span className="tag tgp">PROB</span>}<button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#92400e'}} onClick={()=>convertFTtoPT(s)} title="Move to Part-Time">→ PT</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Del</button></div>)}
             <div style={{fontSize:12,fontWeight:700,margin:'20px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Part-Time ({pt.length})<button className="b bg" style={{marginLeft:8,fontSize:11}} onClick={()=>setPtf(!ptf)}>+ Add</button></div>
-            {ptf&&<div style={{background:'#fafafa',borderRadius:8,padding:12,marginBottom:12,border:'1px solid #e4e4e7'}}><div className="fg"><div><label className="fl">Name</label><input className="fi" value={ptfm.name} onChange={e=>setPtfm(f=>({...f,name:e.target.value.toUpperCase()}))}/></div><div><label className="fl">IC</label><input className="fi" value={ptfm.ic} onChange={e=>setPtfm(f=>({...f,ic:e.target.value}))}/></div></div><div style={{display:'flex',gap:8,marginTop:8}}><button className="b bd" onClick={addPT}>Add</button><button className="b bo" onClick={()=>setPtf(false)}>Cancel</button></div></div>}
-            {pt.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.ic}</div></div><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delPT(s.id)}>Del</button></div>)}
+            {ptf&&<div style={{background:'#fafafa',borderRadius:8,padding:12,marginBottom:12,border:'1px solid #e4e4e7'}}>
+              <div style={{fontSize:11,fontWeight:700,marginBottom:10,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>{eidPT?'Edit Part-Time':'Add Part-Time'}</div>
+              <div className="fg">
+                <div><label className="fl">Name</label><input className="fi" value={ptfm.name} onChange={e=>setPtfm(f=>({...f,name:e.target.value.toUpperCase()}))}/></div>
+                <div><label className="fl">IC</label><input className="fi" value={ptfm.ic} onChange={e=>setPtfm(f=>({...f,ic:e.target.value}))}/></div>
+                <div className="ff"><label className="fl">Default Wage/Day (RM)</label><input className="fi" type="number" value={ptfm.wagePerDay||''} placeholder="0" onChange={e=>setPtfm(f=>({...f,wagePerDay:parseFloat(e.target.value)||0}))}/></div>
+              </div>
+              <div style={{display:'flex',gap:8,marginTop:8}}>
+                <button className="b bd" onClick={eidPT?updPT:addPT}>{eidPT?'Update':'Add'}</button>
+                <button className="b bo" onClick={()=>{setPtf(false);setEidPT(null);setPtfm({name:'',ic:'',wagePerDay:0});}}>Cancel</button>
+              </div>
+            </div>}
+            {pt.map(s=>(
+              <div className="si" key={s.id}>
+                <div className="sif">
+                  <div className="sin">{s.name}</div>
+                  <div className="sim">{s.ic}{s.wagePerDay?` · RM${s.wagePerDay}/day`:''}</div>
+                </div>
+                <button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edPT(s)}>Edit</button>
+                <button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#1e40af'}} onClick={()=>convertPTtoFT(s)} title="Move to Full-Time">→ FT</button>
+                <button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delPT(s.id)}>Del</button>
+              </div>
+            ))}
           </div>
         </div>
       </>}
