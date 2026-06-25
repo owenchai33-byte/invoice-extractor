@@ -927,7 +927,7 @@ export default function InvoiceExtractor() {
           .print-area table{font-size:11px!important}
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
-          .print-area img{max-height:115px!important}
+          .print-area img{max-height:80px!important}
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
         }
@@ -941,23 +941,23 @@ export default function InvoiceExtractor() {
         <div style={{
           position:'relative',
           textAlign:'center',
-          paddingBottom:10,
+          paddingBottom:8,
           borderBottom:'2px solid #000',
-          minHeight:140,
+          minHeight:90,
         }}>
-          {/* Logo — sized to match text block height for visual balance */}
+          {/* Logo — sized to match text block height (~85px) so they align as a single row, no wasted vertical space */}
           <img src={LOGO} alt="CJK" style={{
             position:'absolute',
             left:0,
             top:'50%',
             transform:'translateY(-50%)',
-            height:130,
-            maxWidth:140,
+            height:85,
+            maxWidth:95,
             objectFit:'contain',
           }}/>
 
           {/* Text block — tight padding around logo, all single-line */}
-          <div style={{padding:'2px 150px 0',lineHeight:1.3}}>
+          <div style={{padding:'2px 105px 0',lineHeight:1.3}}>
             <div style={{fontSize:18,fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>{CO.name}</div>
             <div style={{fontSize:12,marginTop:0,opacity:0.75,whiteSpace:'nowrap'}}>{CO.reg}</div>
             <div style={{fontSize:12,marginTop:5,whiteSpace:'nowrap'}}>{CO.addr}</div>
