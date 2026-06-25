@@ -8,11 +8,12 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "xlsx": "^0.18.5"
-  },
+"dependencies": {
+     "react": "^18.x.x",
+     "react-dom": "^18.x.x",
+     "xlsx": "^0.18.5",
+     "pdfjs-dist": "^4.0.379"
+   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
     "vite": "^5.0.0"
