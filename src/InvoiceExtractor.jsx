@@ -397,6 +397,43 @@ function EditableText({value,onCommit,placeholder='—',invalid=false}){
   >{value || placeholder}</span>;
 }
 
+// Inline editor for the side-by-side comparison modal — always-visible input field
+// so fields look obviously editable. Commits on blur or Enter. Esc cancels.
+function ModalInput({value, onCommit, placeholder, type='text', step, mono=false, bold=false, narrow=false}){
+  const [local, setLocal] = useState(String(value ?? ''));
+  useEffect(()=>{ setLocal(String(value ?? '')); }, [value]);
+  const commit = () => {
+    if(local !== String(value ?? '')) onCommit(local);
+  };
+  return (
+    <input
+      type={type}
+      step={step}
+      value={local}
+      placeholder={placeholder}
+      onChange={e=>setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e=>{
+        if(e.key==='Enter'){e.preventDefault(); e.target.blur();}
+        if(e.key==='Escape'){e.stopPropagation(); setLocal(String(value ?? '')); e.target.blur();}
+      }}
+      style={{
+        width: narrow ? 64 : '100%',
+        padding: bold ? '7px 10px' : '6px 10px',
+        border: '1px solid #d1d5db',
+        borderRadius: 4,
+        background: '#fff',
+        fontSize: bold ? 16 : 13,
+        fontWeight: bold ? 700 : 'normal',
+        fontFamily: mono ? 'monospace' : F,
+        boxSizing: 'border-box',
+        textAlign: narrow ? 'right' : 'left',
+        color: '#111',
+      }}
+    />
+  );
+}
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -420,10 +457,15 @@ export default function InvoiceExtractor() {
   // The live invoice being previewed (lookup ensures it stays in sync with edits)
   const previewInv = previewInvId ? invoices.find(i => i.id === previewInvId) : null;
 
-  // Esc closes preview modal
+  // Esc closes preview modal (unless user is typing in an input)
   useEffect(() => {
     if (!previewInvId) return;
-    const handler = e => { if (e.key === 'Escape') setPreviewInvId(null); };
+    const handler = e => {
+      if (e.key === 'Escape') {
+        if (document.activeElement?.tagName === 'INPUT') return;
+        setPreviewInvId(null);
+      }
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [previewInvId]);
@@ -1151,22 +1193,47 @@ export default function InvoiceExtractor() {
                 </button>
               </div>
 
-              {/* Key fields */}
-              <div style={{display:'grid',gridTemplateColumns:'130px 1fr',rowGap:9,columnGap:14,marginBottom:18}}>
+              {/* Key fields — editable */}
+              <div style={{display:'grid',gridTemplateColumns:'130px 1fr',rowGap:11,columnGap:14,marginBottom:18,alignItems:'center'}}>
                 <div style={{color:'#6b7280'}}>Invoice No</div>
-                <div style={{fontWeight:600,fontFamily:'monospace'}}>{previewInv.raw.invoice_no || '—'}</div>
+                <ModalInput
+                  value={previewInv.raw.invoice_no}
+                  onCommit={v=>updateInvoiceField(previewInv.id,'invoice_no',v)}
+                  placeholder="IN..."
+                  mono
+                />
 
                 <div style={{color:'#6b7280'}}>Date</div>
-                <div style={{fontWeight:600}}>{previewInv.raw.invoice_date || '—'}</div>
+                <ModalInput
+                  value={previewInv.raw.invoice_date}
+                  onCommit={v=>updateInvoiceField(previewInv.id,'invoice_date',v)}
+                  placeholder="DD/MM/YYYY"
+                />
 
                 <div style={{color:'#6b7280'}}>Supplier</div>
-                <div style={{fontWeight:600,fontSize:12,lineHeight:1.4}}>{previewInv.raw.supplier || '—'}</div>
+                <ModalInput
+                  value={previewInv.raw.supplier}
+                  onCommit={v=>updateInvoiceField(previewInv.id,'supplier',v)}
+                  placeholder="Supplier name"
+                />
 
                 <div style={{color:'#6b7280'}}>Total Amount</div>
-                <div style={{fontWeight:700,fontSize:18}}>{fmt(previewInv.raw.total_amount)}</div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontWeight:700,fontSize:16}}>RM</span>
+                  <ModalInput
+                    value={previewInv.raw.total_amount}
+                    onCommit={v=>updateInvoiceAmount(previewInv.id,v)}
+                    type="number"
+                    step="0.01"
+                    bold
+                  />
+                </div>
 
                 <div style={{color:'#6b7280'}}>PRODUCT TOTAL</div>
-                <div style={{fontWeight:600}}>{previewInv.declaredTotal || 0} CTN</div>
+                <div style={{fontWeight:600,padding:'6px 4px'}}>
+                  {previewInv.declaredTotal || 0} CTN
+                  <span style={{color:'#9ca3af',fontSize:11,marginLeft:6}}>(from invoice header, read-only)</span>
+                </div>
               </div>
 
               {/* Line items */}
@@ -1189,15 +1256,22 @@ export default function InvoiceExtractor() {
                 )) : <div style={{padding:'8px 0',color:'#6b7280',fontStyle:'italic'}}>No items extracted</div>}
               </div>
 
-              {/* Categories */}
+              {/* Categories — CTN editable */}
               <div style={{fontSize:11,fontWeight:700,color:'#6b7280',textTransform:'uppercase',letterSpacing:0.5,marginBottom:6}}>
                 Subsidy categories
               </div>
               <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:4,padding:'10px 12px',marginBottom:16}}>
                 {previewInv.groups?.length > 0 ? previewInv.groups.map((g,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontSize:12}}>
-                    <span style={{color:'#6b7280'}}>{g.label}</span>
-                    <span style={{fontWeight:600}}>{g.ctn} × RM{g.rate.toFixed(2)} = {fmt(g.ctn*g.rate)}</span>
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',alignItems:'center',fontSize:12,gap:8}}>
+                    <span style={{color:'#6b7280',flex:1}}>{g.label}</span>
+                    <ModalInput
+                      value={g.ctn}
+                      onCommit={v=>updateGroupCtn(previewInv.id,g.id,v)}
+                      type="number"
+                      narrow
+                    />
+                    <span style={{color:'#6b7280'}}>× RM{g.rate.toFixed(2)} =</span>
+                    <span style={{fontWeight:600,minWidth:80,textAlign:'right'}}>{fmt(g.ctn*g.rate)}</span>
                   </div>
                 )) : <div style={{color:'#6b7280',fontStyle:'italic',fontSize:12}}>No categories matched</div>}
               </div>
