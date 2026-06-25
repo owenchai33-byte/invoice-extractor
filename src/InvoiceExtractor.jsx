@@ -17,7 +17,8 @@ const SUPPLIERS = {
   }
 };
 const CO = { name:'CHAI JEE KIONG TRADING SDN BHD', reg:'(200901034210)',
-  addr:'No. 19, 21, 23, 25, 27, Jalan Petanak, 93100, Kuching, Sarawak.',
+  addrLine1:'No. 19, 21, 23, 25, 27, Jalan Petanak,',
+  addrLine2:'93100 Kuching, Sarawak.',
   tel:'082-427630', email:'chaijeekionghq@gmail.com' };
 
 // ============================================================
@@ -801,37 +802,55 @@ export default function InvoiceExtractor() {
 
       <div className="wrap print-area" style={{maxWidth:780,margin:'0 auto',padding:'20px'}}>
 
-        {/* HEADER — 3-column grid keeps the company text truly centered on the page,
-            regardless of whether the right column is visible (it collapses to empty space in print) */}
+        {/* HEADER — logo absolutely positioned on the left so it doesn't push the text off-center.
+            Text container uses full page width with text-align:center for true page centering.
+            Side padding keeps text from running under the logo or off the right edge. */}
         <div style={{
-          display:'grid',
-          gridTemplateColumns:'170px 1fr 170px',
-          alignItems:'center',
-          gap:16,
+          position:'relative',
+          textAlign:'center',
           paddingBottom:14,
-          borderBottom:'3px solid #000'
+          borderBottom:'3px solid #000',
+          minHeight:140,
         }}>
-          {/* LEFT — logo */}
-          <div style={{display:'flex',justifyContent:'flex-start',alignItems:'center'}}>
-            <img src={LOGO} style={{height:140,maxWidth:'100%',objectFit:'contain'}} alt="CJK"/>
+          {/* Logo — absolute, vertically centered with text block */}
+          <img src={LOGO} alt="CJK" style={{
+            position:'absolute',
+            left:0,
+            top:'50%',
+            transform:'translateY(-50%)',
+            height:130,
+            maxWidth:140,
+            objectFit:'contain',
+          }}/>
+
+          {/* Text — full-width container, padded on both sides to clear the logo */}
+          <div style={{padding:'4px 150px 0'}}>
+            <div style={{fontSize:21,fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>{CO.name}</div>
+            <div style={{fontSize:18,fontWeight:700,marginTop:3}}>{CO.reg}</div>
+            <div style={{fontSize:14,marginTop:8,lineHeight:1.5,whiteSpace:'nowrap'}}>{CO.addrLine1}</div>
+            <div style={{fontSize:14,lineHeight:1.5,whiteSpace:'nowrap'}}>{CO.addrLine2}</div>
+            <div style={{fontSize:14,marginTop:4,lineHeight:1.5,whiteSpace:'nowrap'}}>
+              Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={'mailto:'+CO.email} style={{color:'#0056b3'}}>{CO.email}</a>
+            </div>
           </div>
 
-          {/* CENTER — company info */}
-          <div style={{textAlign:'center'}}>
-            <div style={{fontSize:20,fontWeight:700,letterSpacing:0.3}}>{CO.name}</div>
-            <div style={{fontSize:18,fontWeight:700,marginTop:2}}>{CO.reg}</div>
-            <div style={{fontSize:14,marginTop:6,lineHeight:1.5}}>{CO.addr}</div>
-            <div style={{fontSize:14,lineHeight:1.5}}>Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={'mailto:'+CO.email} style={{color:'#0056b3'}}>{CO.email}</a></div>
-          </div>
-
-          {/* RIGHT — empty spacer that mirrors the logo column for balance.
-              API button lives here on screen, gone on print, but the column always reserves its width. */}
-          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center'}}>
-            <button className="noP" onClick={()=>setShowSettings(!showSettings)}
-              style={{background:'none',border:'1px solid #ccc',borderRadius:4,padding:'3px 8px',cursor:'pointer',fontSize:11,color:'#888'}}>
-              ⚙ API
-            </button>
-          </div>
+          {/* API button — absolute right, screen only */}
+          <button className="noP" onClick={()=>setShowSettings(!showSettings)}
+            style={{
+              position:'absolute',
+              right:0,
+              top:'50%',
+              transform:'translateY(-50%)',
+              background:'none',
+              border:'1px solid #ccc',
+              borderRadius:4,
+              padding:'3px 8px',
+              cursor:'pointer',
+              fontSize:11,
+              color:'#888',
+            }}>
+            ⚙ API
+          </button>
         </div>
 
         {/* API KEY */}
