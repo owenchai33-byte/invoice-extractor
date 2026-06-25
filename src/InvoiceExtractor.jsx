@@ -366,18 +366,20 @@ CRITICAL EXTRACTION RULES — read carefully:
 Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
 // =============================================================
-// AI PROVIDER CONFIG — Gemini 2.5 Flash primary, Groq as fallback
+// AI PROVIDER CONFIG — Groq Llama 4 Maverick (vision + JSON mode)
 // =============================================================
-// Why Gemini: free tier is 1500 RPD / 15 RPM / 1M TPM (vs Groq's 1000 / 30 / 30K).
-// Better vision/OCR accuracy. Stable model lifecycle — no surprise deprecations.
-// Privacy note: Google may use free-tier prompts for training. Invoice line items
-// are low-sensitivity but worth knowing.
+// Why Groq + Maverick: you already have a working Groq key. Maverick replaces
+// the deprecated Llama 4 Scout — still vision-capable, still on Groq's lineup.
+// Free tier: 15 RPM / 3K TPM / 500 RPD — fine for ~50-200 invoices/day.
+// Need more? Add a card to Groq for Developer tier (10x limits, $0 if under free quota).
+// Privacy bonus: Groq doesn't train on your prompts (unlike Gemini free tier).
 //
 // To switch providers, change AI_PROVIDER below.
-// To swap models within Gemini (e.g. flash-lite for higher RPM), change GEMINI_MODEL.
-const AI_PROVIDER = 'gemini';                    // 'gemini' | 'groq'
-const GEMINI_MODEL = 'gemini-2.5-flash';         // stable. Alternatives: 'gemini-2.5-flash-lite' (30 RPM, lower quality)
-const GROQ_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';  // ⚠️ DEPRECATED June 17, 2026 — fallback only
+// If Maverick ever gets deprecated, change GROQ_MODEL to the next vision model
+// (check console.groq.com/docs/models for current vision-capable options).
+const AI_PROVIDER = 'groq';                                            // 'groq' | 'gemini'
+const GROQ_MODEL = 'meta-llama/llama-4-maverick-17b-128e-instruct';    // vision + JSON, current
+const GEMINI_MODEL = 'gemini-2.5-flash';                               // backup option if Groq breaks
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
