@@ -49,10 +49,10 @@ function normalizeDate(s){
   return {date:t,ok:false};
 }
 
-// Validate invoice number format: "IN" + 3 or more digits.
+// Validate invoice number format: "IN" + exactly 8 digits (Choon Hua format).
 function validInvoiceNo(s){
   if(!s||typeof s!=='string') return false;
-  return /^IN\d{3,}$/i.test(s.trim());
+  return /^IN\d{8}$/i.test(s.trim());
 }
 
 // Parse volume_ml and pack_size from description / product code text.
@@ -72,6 +72,27 @@ function parseDesc(desc, code){
     if(volume && pack) return {volume, pack};
   }
   return {volume:null, pack:null};
+}
+
+// Downsize image base64 → smaller JPEG preview for in-app verification.
+// Uses canvas. maxWidth=1024, quality=0.7 → ~100-300KB per invoice.
+function downsizeBase64ToJPEG(dataURL, maxWidth = 1024, quality = 0.7){
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => {
+      try {
+        const ratio = Math.min(maxWidth / img.width, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } catch(e) { reject(e); }
+    };
+    img.onerror = () => reject(new Error('Image load failed'));
+    img.src = dataURL;
+  });
 }
 
 // ============================================================
@@ -185,6 +206,15 @@ function computeIssues({parsed, items, groups, declaredTotal, isDuplicate, extra
     });
   }
 
+  // 7. AI self-reported uncertainty on specific fields
+  if(parsed.uncertain_fields && Array.isArray(parsed.uncertain_fields) && parsed.uncertain_fields.length > 0){
+    issues.push({
+      kind: 'ai_uncertain',
+      severity: 'warn',
+      msg: `AI flagged ${parsed.uncertain_fields.length} field(s) as unclear in the source image: ${parsed.uncertain_fields.join(', ')}. Verify against the source — click 👁 to view.`,
+    });
+  }
+
   // NOTE: We intentionally do NOT check items[].amount sum vs total_amount.
   // Choon Hua (and most Malaysian wholesale) invoices show per-line GROSS amounts,
   // then deduct a wholesale discount at the footer to reach the final total.
@@ -220,7 +250,7 @@ function recomputeIssues(inv, allInvoices){
 // ============================================================
 const PROMPT=`You are an invoice data extractor for Malaysian wholesale distributors. Analyze this invoice image carefully and extract ALL data into this exact JSON format. Respond with ONLY valid JSON — no markdown, no backticks, no explanation.
 
-{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80}
+{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80,"uncertain_fields":[]}
 
 CRITICAL EXTRACTION RULES — read carefully:
 
@@ -264,6 +294,8 @@ CRITICAL EXTRACTION RULES — read carefully:
 11. total_amount: Final "Total Amount Due" / "Grand Total" value (the absolute bottom-line MYR amount, NOT the subtotal before tax).
 
 12. supplier: From the TOP HEADER of the invoice (the company that ISSUED the invoice), NOT "Ship To" / "Bill To" / customer address blocks. If unsure, the supplier is usually the largest/most prominent company name at the top.
+
+13. uncertain_fields: array of top-level field names where the source text was actually UNREADABLE, BLURRY, CUT OFF, or AMBIGUOUS (not just slightly faded — only when you GENUINELY had to guess). Possible values: "invoice_no", "invoice_date", "supplier", "total_amount", "total_qty". Return [] if text was clear, even if your overall confidence is imperfect. Use this ONLY for genuine readability problems — flagging falsely is worse than not flagging. Be honest but precise.
 
 Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
@@ -383,6 +415,7 @@ export default function InvoiceExtractor() {
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
   const [manualEntry,setManualEntry]=useState({});  // { invId: { rateId, ctn } }
+  const [previewImage,setPreviewImage]=useState(null);  // base64 data URL for fullscreen viewer
   const fileRef=useRef(null);
   const config=SUPPLIERS['CHOON HUA'];
 
@@ -580,7 +613,12 @@ export default function InvoiceExtractor() {
                 manuallyAssigned: false,
               });
 
-              resolve({raw:parsed,items,groups,subsidy:sub,id,issues,declaredTotal, _issuesDismissed:false, _manuallyAssigned:false});
+              // Generate downsized preview for in-app verification (non-blocking — failure is OK)
+              let imagePreview = null;
+              try { imagePreview = await downsizeBase64ToJPEG(reader.result, 1024, 0.7); }
+              catch(e) { console.warn('Image preview generation failed for', file.name, e); }
+
+              resolve({raw:parsed,items,groups,subsidy:sub,id,issues,declaredTotal, image: imagePreview, _issuesDismissed:false, _manuallyAssigned:false});
               return;
             }catch(inner){lastErr=inner;}
           }
@@ -661,7 +699,7 @@ export default function InvoiceExtractor() {
     XLSX.writeFile(wb,'Payment_Summary_'+config.name.split(' ')[0]+'.xlsx');
   };
 
-  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setManualEntry({});if(fileRef.current)fileRef.current.value='';};
+  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setManualEntry({});setPreviewImage(null);if(fileRef.current)fileRef.current.value='';};
   const showUpload=invoices.length===0||uploading;
 
   return(
@@ -791,12 +829,21 @@ export default function InvoiceExtractor() {
                       />
                     </td>
                     <td style={T.td}>
-                      <EditableText
-                        value={inv.raw.invoice_no}
-                        onCommit={v=>updateInvoiceField(inv.id,'invoice_no',v)}
-                        invalid={invNoInvalid}
-                        placeholder="IN..."
-                      />
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                        <EditableText
+                          value={inv.raw.invoice_no}
+                          onCommit={v=>updateInvoiceField(inv.id,'invoice_no',v)}
+                          invalid={invNoInvalid}
+                          placeholder="IN..."
+                        />
+                        {inv.image && (
+                          <button className="noP" onClick={()=>setPreviewImage(inv.image)}
+                            title="View source invoice image"
+                            style={{background:'#fff',border:'1px solid #d1d5db',borderRadius:3,padding:'1px 5px',cursor:'pointer',fontSize:12,lineHeight:1,fontFamily:F}}>
+                            👁
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td style={{...T.td,fontWeight:700}}>
                       <EditableAmount
@@ -844,12 +891,21 @@ export default function InvoiceExtractor() {
                       />
                     </td>}
                     {gi===0&&<td style={T.td} rowSpan={rc}>
-                      <EditableText
-                        value={inv.raw.invoice_no}
-                        onCommit={v=>updateInvoiceField(inv.id,'invoice_no',v)}
-                        invalid={invNoInvalid}
-                        placeholder="IN..."
-                      />
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                        <EditableText
+                          value={inv.raw.invoice_no}
+                          onCommit={v=>updateInvoiceField(inv.id,'invoice_no',v)}
+                          invalid={invNoInvalid}
+                          placeholder="IN..."
+                        />
+                        {inv.image && (
+                          <button className="noP" onClick={()=>setPreviewImage(inv.image)}
+                            title="View source invoice image"
+                            style={{background:'#fff',border:'1px solid #d1d5db',borderRadius:3,padding:'1px 5px',cursor:'pointer',fontSize:12,lineHeight:1,fontFamily:F}}>
+                            👁
+                          </button>
+                        )}
+                      </div>
                     </td>}
                     {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative'}} rowSpan={rc}>
                       <EditableAmount
@@ -901,6 +957,12 @@ export default function InvoiceExtractor() {
                             {hasError ? '🛑' : '⚠'} {inv.issues.length} issue{inv.issues.length>1?'s':''} on invoice {inv.raw.invoice_no||'(no number)'} — verify before exporting
                           </strong>
                           <div style={{display:'flex',gap:6}}>
+                            {inv.image && (
+                              <button onClick={()=>setPreviewImage(inv.image)}
+                                style={{padding:'3px 10px',fontSize:11,border:'1px solid #d1d5db',background:'#fff',borderRadius:4,cursor:'pointer',fontFamily:F}}>
+                                👁 View source
+                              </button>
+                            )}
                             {hasError && (
                               <button onClick={()=>removeInvoice(inv.id)}
                                 style={{padding:'3px 10px',fontSize:11,border:'1px solid #dc2626',background:'#fff',color:'#dc2626',borderRadius:4,cursor:'pointer',fontFamily:F}}>
@@ -1012,6 +1074,42 @@ export default function InvoiceExtractor() {
           </div>
         )}
       </div>
+
+      {/* FULLSCREEN SOURCE IMAGE VIEWER — click anywhere or press Escape to close */}
+      {previewImage && (
+        <div className="noP"
+          onClick={()=>setPreviewImage(null)}
+          onKeyDown={e=>{if(e.key==='Escape')setPreviewImage(null);}}
+          tabIndex={0}
+          style={{
+            position:'fixed',
+            inset:0,
+            background:'rgba(0,0,0,0.92)',
+            display:'flex',
+            flexDirection:'column',
+            alignItems:'center',
+            justifyContent:'center',
+            zIndex:9999,
+            cursor:'zoom-out',
+            padding:20,
+          }}>
+          <div style={{color:'#fff',fontSize:12,marginBottom:10,opacity:0.7,fontFamily:F}}>
+            Click anywhere or press Esc to close
+          </div>
+          <img
+            src={previewImage}
+            alt="Source invoice"
+            onClick={e=>e.stopPropagation()}
+            style={{
+              maxWidth:'95vw',
+              maxHeight:'88vh',
+              objectFit:'contain',
+              boxShadow:'0 4px 32px rgba(0,0,0,0.5)',
+              cursor:'default',
+              background:'#fff',
+            }}/>
+        </div>
+      )}
     </div>
   );
 }
