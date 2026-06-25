@@ -682,7 +682,7 @@ export default function InvoiceExtractor() {
           .print-area table{font-size:11px!important}
           .print-area td,.print-area th{padding:4px 6px!important}
           .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
-          .print-area img{max-height:55px!important}
+          .print-area img{max-height:75px!important}
           .print-area,.print-area table{page-break-inside:avoid}
           .print-area tr{page-break-inside:avoid}
         }
@@ -692,7 +692,7 @@ export default function InvoiceExtractor() {
 
         {/* HEADER */}
         <div style={{display:'flex',alignItems:'center',gap:16,paddingBottom:12,borderBottom:'3px solid #000'}}>
-          <img src={LOGO} style={{height:80,flexShrink:0,marginLeft:10}} alt="CJK"/>
+          <img src={LOGO} style={{height:110,flexShrink:0,marginLeft:10}} alt="CJK"/>
           <div style={{flex:1,textAlign:'center'}}>
             <div style={{fontSize:18,fontWeight:700}}>{CO.name}</div>
             <div style={{fontSize:18,fontWeight:700}}>{CO.reg}</div>
