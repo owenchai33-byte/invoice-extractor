@@ -433,7 +433,7 @@ async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
         }],
         generationConfig:{
           temperature: 0.1,
-          maxOutputTokens: 2000,
+          maxOutputTokens: 6000,  // long invoices have 20+ line items; 2000 caused JSON truncation
           responseMimeType: 'application/json',
         },
       }),
@@ -465,7 +465,7 @@ async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
         {type:'image_url', image_url:{url: imageDataUrl}},
         {type:'text', text: prompt},
       ]}],
-      max_tokens:2000, temperature:0.1,
+      max_tokens:6000, temperature:0.1,  // long invoices have 20+ line items; 2000 caused JSON truncation
     }),
   });
   const data = await res.json();
@@ -846,7 +846,11 @@ export default function InvoiceExtractor() {
                 } catch (repairErr) {
                   // Both failed — surface a user-friendly error, not the raw parser output
                   console.error('[Invoice] Raw AI response:', txt);
-                  throw new Error(`AI returned malformed data for "${file.name}". Try re-uploading, or use a clearer/sharper photo. (Technical: ${parseErr.message})`);
+                  const isTruncated = /Unexpected end/i.test(parseErr.message);
+                  const hint = isTruncated
+                    ? 'Response was cut off mid-data (invoice may have too many line items). Try splitting the invoice or contact dev.'
+                    : 'Try re-uploading, or use a clearer/sharper photo.';
+                  throw new Error(`AI returned malformed data for "${file.name}". ${hint} (Technical: ${parseErr.message})`);
                 }
               }
 
