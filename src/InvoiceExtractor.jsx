@@ -188,16 +188,12 @@ function computeIssues({parsed, items, groups, declaredTotal, isDuplicate, extra
     });
   }
 
-  // 7. Line amounts sum vs invoice total
-  const itemAmountSum = items.reduce((s,it)=>s+(Number(it.amount)||0),0);
-  const decTotal = Number(parsed.total_amount)||0;
-  if(decTotal > 0 && Math.abs(itemAmountSum-decTotal) > 0.50){
-    issues.push({
-      kind:'amount_mismatch',
-      severity:'warn',
-      msg:`Line amounts sum to RM${itemAmountSum.toFixed(2)} but invoice total is RM${decTotal.toFixed(2)}. AI may have misread a line.`,
-    });
-  }
+  // NOTE: We intentionally do NOT check items[].amount sum vs total_amount.
+  // Choon Hua (and most Malaysian wholesale) invoices show per-line GROSS amounts,
+  // then deduct a wholesale discount at the footer to reach the final total.
+  // So lineSum > total is NORMAL on virtually every invoice — checking it produced
+  // 100% false positives in production. The total_amount field is click-to-edit
+  // if it ever needs correction.
 
   return issues;
 }
