@@ -366,20 +366,20 @@ CRITICAL EXTRACTION RULES — read carefully:
 Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
 
 // =============================================================
-// AI PROVIDER CONFIG — Groq Llama 4 Maverick (vision + JSON mode)
+// AI PROVIDER CONFIG — Groq Qwen 3.6 27B (vision + JSON mode)
 // =============================================================
-// Why Groq + Maverick: you already have a working Groq key. Maverick replaces
-// the deprecated Llama 4 Scout — still vision-capable, still on Groq's lineup.
-// Free tier: 15 RPM / 3K TPM / 500 RPD — fine for ~50-200 invoices/day.
+// Qwen 3.6 27B is Groq's current vision lineup, recommended replacement for the
+// deprecated Llama 4 Scout. Vision + JSON mode + 131K context, OpenAI-compatible API.
+// Free tier: 30 RPM / 6K TPM / 1,000 RPD — plenty for ~50-200 invoices/day.
 // Need more? Add a card to Groq for Developer tier (10x limits, $0 if under free quota).
-// Privacy bonus: Groq doesn't train on your prompts (unlike Gemini free tier).
+// Privacy bonus: Groq doesn't train on your prompts.
 //
 // To switch providers, change AI_PROVIDER below.
-// If Maverick ever gets deprecated, change GROQ_MODEL to the next vision model
-// (check console.groq.com/docs/models for current vision-capable options).
-const AI_PROVIDER = 'groq';                                            // 'groq' | 'gemini'
-const GROQ_MODEL = 'meta-llama/llama-4-maverick-17b-128e-instruct';    // vision + JSON, current
-const GEMINI_MODEL = 'gemini-2.5-flash';                               // backup option if Groq breaks
+// If Qwen 3.6 gets deprecated, check console.groq.com/docs/vision for the current
+// vision-capable model list and update GROQ_MODEL.
+const AI_PROVIDER = 'groq';                    // 'groq' | 'gemini'
+const GROQ_MODEL = 'qwen/qwen3.6-27b';         // vision + JSON, current
+const GEMINI_MODEL = 'gemini-2.5-flash';       // backup option if Groq breaks
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
