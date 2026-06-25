@@ -620,11 +620,29 @@ export default function InvoiceExtractor() {
                 throw new Error(data.error.message||JSON.stringify(data.error));
               }
               let txt=(data.choices?.[0]?.message?.content||'').trim().replace(/```json|```/g,'').trim();
-              // Fix common JSON issues from AI
-              txt=txt.replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+              // Strip any prose before/after the JSON object
               if(!txt.startsWith('{')) txt=txt.substring(txt.indexOf('{'));
               if(!txt.endsWith('}')) txt=txt.substring(0,txt.lastIndexOf('}')+1);
-              const parsed=JSON.parse(txt);
+              // Remove trailing commas (common AI output flaw)
+              txt=txt.replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+
+              // Try strict parse first; fall back to aggressive repair for unquoted keys
+              let parsed;
+              try {
+                parsed = JSON.parse(txt);
+              } catch (parseErr) {
+                // AI sometimes returns unquoted property names like `total_amount: 7800.80`
+                // Add quotes to any bare key immediately after `{` or `,`
+                const repaired = txt.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+                try {
+                  parsed = JSON.parse(repaired);
+                  console.warn(`[Invoice] ${file.name}: JSON auto-repaired (unquoted keys)`);
+                } catch (repairErr) {
+                  // Both failed — surface a user-friendly error, not the raw parser output
+                  console.error('[Invoice] Raw AI response:', txt);
+                  throw new Error(`AI returned malformed data for "${file.name}". Try re-uploading, or use a clearer/sharper photo. (Technical: ${parseErr.message})`);
+                }
+              }
 
               // PATCH 6 — normalize date at source
               const dc = normalizeDate(parsed.invoice_date);
