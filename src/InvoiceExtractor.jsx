@@ -204,7 +204,7 @@ const fmt=n=>{if(n===''||n==null)return '';return`RM${Number(n).toLocaleString('
 // ISSUES AGGREGATOR (PATCH 5)
 // ============================================================
 // Returns an array of {kind, severity:'warn'|'error', msg, details?} for an invoice.
-function computeIssues({parsed, items, groups, declaredTotal, isDuplicate, extractedCtnSum, manuallyAssigned}){
+function computeIssues({parsed, items, groups, declaredTotal, duplicateInfo, extractedCtnSum, manuallyAssigned}){
   const issues = [];
 
   // 1. Invoice number format
@@ -226,13 +226,28 @@ function computeIssues({parsed, items, groups, declaredTotal, isDuplicate, extra
     });
   }
 
-  // 3. Duplicate invoice_no in batch
-  if(isDuplicate){
-    issues.push({
-      kind:'duplicate',
-      severity:'error',
-      msg:`Invoice number ${parsed.invoice_no} is already in this batch. Likely a duplicate file — remove one before exporting.`,
-    });
+  // 3. Duplicate invoice_no in batch — but distinguish true dupes from AI extraction errors.
+  // Same invoice_no + same date + same amount → user actually uploaded the same file twice.
+  // Same invoice_no but DIFFERENT date/amount → AI misread the number on one of them.
+  if(duplicateInfo){
+    if(duplicateInfo.isLikelyTrueDuplicate){
+      issues.push({
+        kind:'duplicate',
+        severity:'error',
+        msg:`Same invoice number, date, and amount as another invoice in this batch — likely a duplicate file. Remove one before exporting.`,
+      });
+    } else {
+      // Extraction error — AI almost certainly misread the invoice number on one of them.
+      // Tell the user to compare against the source image and fix whichever is wrong.
+      const otherAmtStr = duplicateInfo.otherAmount
+        ? `RM${parseFloat(duplicateInfo.otherAmount).toFixed(2)}`
+        : '(unknown amount)';
+      issues.push({
+        kind:'duplicate',
+        severity:'error',
+        msg:`Invoice number ${parsed.invoice_no} is also used by another invoice with different date/amount (${duplicateInfo.otherDate||'?'}, ${otherAmtStr}). AI likely misread the invoice number on one of them — click "View source" to compare against the actual image, then click the invoice number to fix it.`,
+      });
+    }
   }
 
   // 4. Unmatched items — skip if user manually assigned a category
@@ -281,31 +296,68 @@ function computeIssues({parsed, items, groups, declaredTotal, isDuplicate, extra
     });
   }
 
-  // NOTE: We intentionally do NOT check items[].amount sum vs total_amount.
+  // 8. Sanity check: decimal-point error detection.
+  // We don't check items.amount vs total_amount tightly (Choon Hua applies wholesale discounts
+  // at the footer, so lineSum > total is NORMAL). But if total_amount is 10x off from lineSum,
+  // that's a decimal misread — flag it. Example: lineSum RM6,800 but total_amount RM680.00.
+  const lineSum = items.reduce((s,it)=>s+(parseFloat(it.amount)||0), 0);
+  const total = parseFloat(parsed.total_amount) || 0;
+  if(lineSum > 0 && total > 0){
+    const ratio = lineSum / total;
+    // Discounts typically 1-15%, so ratio of 1.0–1.2 is normal. Anything >3x or <0.4x signals decimal error.
+    if(ratio > 3 || ratio < 0.4){
+      issues.push({
+        kind: 'amount_sanity',
+        severity: 'error',
+        msg: `Total amount RM${total.toFixed(2)} looks wrong vs sum of line items RM${lineSum.toFixed(2)}. AI may have misread a decimal point (e.g. 6893.40 vs 689.34). Verify the total_amount against the source image.`,
+      });
+    }
+  }
+
+  // NOTE: We intentionally do NOT check items[].amount sum vs total_amount tightly.
   // Choon Hua (and most Malaysian wholesale) invoices show per-line GROSS amounts,
   // then deduct a wholesale discount at the footer to reach the final total.
   // So lineSum > total is NORMAL on virtually every invoice — checking it produced
-  // 100% false positives in production. The total_amount field is click-to-edit
-  // if it ever needs correction.
+  // 100% false positives in production. Only the order-of-magnitude check above runs.
 
   return issues;
 }
 
 // Helper: recompute issues for an invoice given full invoice list (for dup check).
 function recomputeIssues(inv, allInvoices){
-  const isDup = allInvoices.some(other =>
+  // Find any other invoice in batch with the same invoice number
+  const otherDups = allInvoices.filter(other =>
     other.id !== inv.id &&
     other.raw?.invoice_no &&
     inv.raw?.invoice_no &&
     String(other.raw.invoice_no).trim().toUpperCase() === String(inv.raw.invoice_no).trim().toUpperCase()
   );
+
+  let duplicateInfo = null;
+  if(otherDups.length > 0){
+    // Compare metadata to determine if it's truly a duplicate file or an extraction mistake.
+    // True duplicate = same invoice_no + same date + same total_amount → user uploaded same file twice.
+    // Extraction error = same invoice_no but DIFFERENT date or amount → AI misread the number on one.
+    const other = otherDups[0];
+    const sameDate = (inv.raw.invoice_date||'').trim() === (other.raw.invoice_date||'').trim();
+    const myAmt = parseFloat(inv.raw.total_amount) || 0;
+    const otherAmt = parseFloat(other.raw.total_amount) || 0;
+    const sameAmount = Math.abs(myAmt - otherAmt) < 0.01;
+    duplicateInfo = {
+      isLikelyTrueDuplicate: sameDate && sameAmount,
+      otherDate: other.raw.invoice_date,
+      otherAmount: other.raw.total_amount,
+      otherInvoiceNo: other.raw.invoice_no,
+    };
+  }
+
   const extractedCtnSum = inv.groups.reduce((s,g)=>s+g.ctn, 0);
   return computeIssues({
     parsed: inv.raw,
     items: inv.items,
     groups: inv.groups,
     declaredTotal: inv.declaredTotal,
-    isDuplicate: isDup,
+    duplicateInfo,
     extractedCtnSum,
     manuallyAssigned: inv._manuallyAssigned,
   });
@@ -318,7 +370,23 @@ const PROMPT=`You are an invoice data extractor for Malaysian wholesale distribu
 
 {"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80,"uncertain_fields":[]}
 
-CRITICAL EXTRACTION RULES — read carefully:
+============================================================
+ABSOLUTE TRUTHFULNESS — THE MOST IMPORTANT RULES:
+============================================================
+
+A. NEVER FABRICATE DATA. If you cannot read a number, date, or text clearly, you MUST flag it in uncertain_fields. Do NOT invent plausible-looking values to fill gaps. A flagged uncertain field is GOOD — the human will verify. A wrong number that wasn't flagged is BAD — it ships as data and causes real errors.
+
+B. WHEN IN DOUBT, FLAG IT. The previous version of this prompt said "flagging falsely is worse than not flagging" — that was WRONG. Reverse it: flagging extra fields is harmless; missing an unclear field is harmful. If a digit could plausibly be read two ways, flag the field as uncertain.
+
+C. DO NOT GUESS DIGITS. Numbers like 0/6/8, 1/7, 3/5/8, 5/6 are commonly confused in scanned invoices. Read each digit individually. If even ONE digit in invoice_no or total_amount is ambiguous, flag the entire field as uncertain.
+
+D. NO INVENTED LINE ITEMS. Only extract rows that are actually visible in the products table. Do not add rows that "should" be there based on patterns. Do not duplicate rows. Do not skip rows.
+
+E. NO ROUNDING OR APPROXIMATION on monetary values. If the invoice shows 6,893.40 you write 6893.40 — not 6900 or 6893. Read the exact decimal places printed.
+
+============================================================
+EXTRACTION RULES:
+============================================================
 
 1. EXTRACT EVERY SINGLE LINE ITEM. Do not skip any rows in the products table, even if:
    - The amount is 0.00 (these are FOC / free-of-charge items)
@@ -343,9 +411,9 @@ CRITICAL EXTRACTION RULES — read carefully:
    - "1LPLBTN1X12" -> volume_ml: 1000, pack_size: 12
    - DOUBLE-CHECK: re-read the description before emitting volume_ml/pack_size. They must agree.
 
-4. invoice_no: From "Document No" / "Document No." / "Doc No." field. Typically starts with "IN" followed by digits (e.g. IN93018360). Extract the FULL alphanumeric string including the "IN" prefix. Do NOT use PO numbers, Ref numbers, or Load Ref numbers.
+4. invoice_no: From "Document No" / "Document No." / "Doc No." field. Typically starts with "IN" followed by 8 digits (e.g. IN93018360). READ EACH DIGIT INDIVIDUALLY. Invoice numbers are usually printed at the top in small font where digits like 3/8, 0/8/6, 1/7, 5/6 can be easy to confuse. If ANY digit is unclear, add "invoice_no" to uncertain_fields — do NOT guess. Do NOT use PO numbers, Ref numbers, or Load Ref numbers.
 
-5. invoice_date: From "Invoice Date" or "Document Date" field. Output STRICTLY in DD/MM/YYYY format with leading zeros (e.g. "05/06/2026" not "5/6/2026"). NEVER use YYYY-MM-DD or MM/DD/YYYY formats.
+5. invoice_date: From "Invoice Date" or "Document Date" field. Output STRICTLY in DD/MM/YYYY format with leading zeros (e.g. "05/06/2026" not "5/6/2026"). NEVER use YYYY-MM-DD or MM/DD/YYYY formats. If unclear, flag as uncertain.
 
 6. qty: "20/0" -> extract only 20. The /0 means zero returns. "3/0" -> 3. "170/0" -> 170.
 
@@ -357,13 +425,22 @@ CRITICAL EXTRACTION RULES — read carefully:
 
 10. is_foc: true ONLY if list_price=0.00 AND amount=0.00. FOC items still count for total_qty.
 
-11. total_amount: Final "Total Amount Due" / "Grand Total" value (the absolute bottom-line MYR amount, NOT the subtotal before tax).
+11. total_amount: Final "Total Amount Due" / "Grand Total" value (the absolute bottom-line MYR amount, NOT the subtotal before tax). READ EACH DIGIT — do not approximate or round. If even one digit is unclear, flag as uncertain.
 
 12. supplier: From the TOP HEADER of the invoice (the company that ISSUED the invoice), NOT "Ship To" / "Bill To" / customer address blocks. If unsure, the supplier is usually the largest/most prominent company name at the top.
 
-13. uncertain_fields: array of top-level field names where the source text was actually UNREADABLE, BLURRY, CUT OFF, or AMBIGUOUS (not just slightly faded — only when you GENUINELY had to guess). Possible values: "invoice_no", "invoice_date", "supplier", "total_amount", "total_qty". Return [] if text was clear, even if your overall confidence is imperfect. Use this ONLY for genuine readability problems — flagging falsely is worse than not flagging. Be honest but precise.
+13. uncertain_fields: ARRAY of top-level field names where you had ANY doubt about the reading. Possible values: "invoice_no", "invoice_date", "supplier", "total_amount", "total_qty". BE LIBERAL — when in doubt, FLAG IT. The human reviewer will verify and clear false flags; that's much better than letting a wrong value slip through unflagged.
 
-Be thorough. Missing line items or wrong volume/pack causes incorrect transport subsidy calculations. Return ONLY JSON.`;
+============================================================
+SELF-CHECK BEFORE RESPONDING:
+============================================================
+Before returning your JSON, verify:
+- Does the sum of items[].amount roughly equal total_amount? (Allow for small discounts/rounding.) If wildly off (e.g. 10x off), you likely misread a decimal — re-scan.
+- Does the sum of items[].qty equal total_qty? If not, you missed a row or invented one — re-scan.
+- Is every digit in invoice_no something you'd bet on? If not, add it to uncertain_fields.
+- Is every digit in total_amount something you'd bet on? If not, add it to uncertain_fields.
+
+Return ONLY the JSON object. Nothing else.`;
 
 // =============================================================
 // AI PROVIDER CONFIG — Groq Llama 4 Scout (vision + JSON mode)
@@ -957,7 +1034,7 @@ export default function InvoiceExtractor() {
                 items,
                 groups,
                 declaredTotal,
-                isDuplicate: false,  // set in processFiles against full batch
+                duplicateInfo: null,  // set in processFiles against full batch via recomputeIssues
                 extractedCtnSum,
                 manuallyAssigned: false,
               });
