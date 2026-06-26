@@ -793,7 +793,17 @@ export default function InvoiceExtractor() {
           const dc = normalizeDate(value);
           if(dc.ok) normalized = dc.date;
         }
-        return {...inv, raw:{...inv.raw, [field]: normalized}, _issuesDismissed:false};
+        // Numeric fields used in calcSub must be numbers, not strings
+        if(field==='total_amount'){
+          const n = parseFloat(value);
+          normalized = isNaN(n) ? 0 : n;
+        }
+        const updatedInv = {...inv, raw:{...inv.raw, [field]: normalized}, _issuesDismissed:false};
+        // If total_amount changed, recompute subsidy — 0.4% and 0.2% depend on it.
+        if(field==='total_amount'){
+          updatedInv.subsidy = calcSub(updatedInv.raw.total_amount, updatedInv.groups, config.pct1, config.pct2);
+        }
+        return updatedInv;
       });
       // Recompute all issues because invoice_no change affects duplicate status across all invoices
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
@@ -1153,8 +1163,9 @@ export default function InvoiceExtractor() {
       d.push(['','','','','','','+ 0.2% =',inv.subsidy.p2]);
     });});
     d.push([]);d.push(['','','','','','','CARTON:',gC]);d.push(['','','','','','','0.4%:',gP1]);d.push(['','','','','','','0.2%:',gP2]);
+    d.push(['','','','','','','TOTAL SUBSIDY:',gS]);
     if(totalCn)d.push(['','','','','','','CREDIT NOTE:',-totalCn]);
-    d.push(['','','','TOTAL:',gT]);d.push([]);
+    d.push(['','','','INVOICE TOTAL:',gT]);d.push([]);
     d.push(['','','','','TOTAL AMOUNT PAYABLE = RM'+tP.toFixed(2)]);
     const ws=XLSX.utils.aoa_to_sheet(d);
     ws['!cols']=[{wch:5},{wch:12},{wch:16},{wch:16},{wch:10},{wch:2},{wch:24},{wch:14}];
@@ -1549,12 +1560,17 @@ export default function InvoiceExtractor() {
               </tr>
               <tr>
                 <td colSpan={5} style={{border:'none'}}/>
+                <td style={{...T.bxL,borderTop:'1px solid #aaa',fontWeight:700}}>TOTAL SUBSIDY:</td>
+                <td style={{...T.bxR,borderTop:'1px solid #aaa',fontWeight:700}}>{fmt(gS)}</td>
+              </tr>
+              <tr>
+                <td colSpan={5} style={{border:'none'}}/>
                 <td style={T.bxL}>CREDIT NOTE:</td>
                 <td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
               </tr>
               <tr>
                 <td colSpan={5} style={{border:'none'}}/>
-                <td style={{...T.bxL,borderTop:'2px solid #000'}}>TOTAL:</td>
+                <td style={{...T.bxL,borderTop:'2px solid #000'}}>INVOICE TOTAL:</td>
                 <td style={{...T.bxR,borderTop:'2px solid #000',background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
               </tr>
             </tbody>
