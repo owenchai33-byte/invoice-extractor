@@ -710,6 +710,19 @@ export default function InvoiceExtractor() {
   const [manualEntry,setManualEntry]=useState({});  // { invId: { rateId, ctn } }
   const [previewInvId,setPreviewInvId]=useState(null);  // invoice id whose source we're viewing
   const fileRef=useRef(null);
+  const uploadAreaRef=useRef(null);
+
+  // When user clicks "+ Add Invoice", scroll the upload dropzone into view.
+  // Without this, the dropzone renders below the existing invoice table — off-screen
+  // since the user already scrolled down to click the button. Looks like nothing happened.
+  useEffect(()=>{
+    if(uploading && invoices.length>0 && uploadAreaRef.current){
+      // Defer to next tick so DOM has rendered the dropzone
+      setTimeout(()=>{
+        uploadAreaRef.current?.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 50);
+    }
+  },[uploading, invoices.length]);
   const config=SUPPLIERS['CHOON HUA'];
 
   // The live invoice being previewed (lookup ensures it stays in sync with edits)
@@ -1565,16 +1578,23 @@ export default function InvoiceExtractor() {
 
         {/* UPLOAD */}
         {showUpload&&!processing&&apiKey&&(
-          <div className="noP"
-            style={{border:'2px dashed '+(drag?'#c87b00':'#ccc'),borderRadius:8,padding:'48px 20px',textAlign:'center',
-              cursor:'pointer',background:drag?'#fffbeb':'#fafafa',marginTop:18}}
+          <div ref={uploadAreaRef} className="noP"
+            style={{
+              border:'2px dashed '+(drag?'#c87b00':invoices.length>0?'#c87b00':'#ccc'),
+              borderRadius:8,padding:'48px 20px',textAlign:'center',
+              cursor:'pointer',
+              background:drag?'#fffbeb':invoices.length>0?'#fffbeb':'#fafafa',
+              marginTop:18,
+              boxShadow: invoices.length>0 ? '0 0 0 4px rgba(200,123,0,0.12)' : 'none',
+              transition:'background .2s, border-color .2s',
+            }}
             onDragOver={e=>{e.preventDefault();setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
             onDrop={e=>{e.preventDefault();setDrag(false);if(e.dataTransfer?.files?.length)processFiles(e.dataTransfer.files);}}
             onClick={()=>fileRef.current?.click()}>
-            <div style={{fontSize:32,marginBottom:8,opacity:.3}}>📄</div>
+            <div style={{fontSize:32,marginBottom:8,opacity:.5}}>📄</div>
             <div style={{fontSize:16,fontWeight:600}}>
-              {invoices.length>0?'Add more invoices':'Drop invoice photos or PDFs here'}</div>
+              {invoices.length>0?`Add more invoices to your batch of ${invoices.length}`:'Drop invoice photos or PDFs here'}</div>
             <div style={{fontSize:13,color:'#999',marginTop:3}}>or click to browse — JPG, PNG, PDF (multi-page OK)</div>
             <input ref={fileRef} type="file" accept="image/*,.pdf,application/pdf" multiple style={{display:'none'}}
               onChange={e=>{if(e.target.files?.length)processFiles(e.target.files);e.target.value='';}}/>
