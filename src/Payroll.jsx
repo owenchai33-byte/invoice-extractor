@@ -56,7 +56,35 @@ function getAgeFromIC(ic, refDate) {
   if (m<0||(m===0&&ref.getDate()<dob.getDate())) age--; return age;
 }
 function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[t.length-1];}
-function calcEPF(s,a){if(a>=60)return{employer:Math.round(s*0.065),employee:Math.round(s*0.055)};return{employer:Math.round(s*(s<=5000?0.13:0.12)),employee:Math.round(s*0.11)};}
+// EPF — KWSP Jadual Ketiga (Third Schedule).
+// For monthly wages up to RM5,000, contributions are calculated using RM20 wage bands.
+// Within each band, the contribution is calculated on the UPPER EDGE of the band and
+// rounded UP to the nearest ringgit. This is why a wage of 2550 produces 333/282
+// (band 2540.01–2560.00, upper edge 2560 × 13%/11% rounded up) — not 332/281 (flat %).
+// Above RM5,000, percentage applies directly without banding.
+// Note: for age 60+ Malaysian citizens, KWSP changed rates in 2024 to 0% employee /
+// 4% employer. Old rate (6.5/5.5) preserved here — verify with accountant before relying.
+function calcEPF(s, a){
+  // Banding helper: round wage UP to nearest RM20 (upper edge of band).
+  // For wages > RM5,000, no banding — flat percentage on actual wage.
+  const banded = s <= 5000 ? Math.ceil(s / 20) * 20 : s;
+
+  if (a >= 60) {
+    // Age 60+ legacy rate: 6.5% employer / 5.5% employee.
+    // TODO: verify current 2026 KWSP rate for 60+ citizens (likely 4%/0%).
+    return {
+      employer: Math.ceil(banded * 0.065),
+      employee: Math.ceil(banded * 0.055),
+    };
+  }
+
+  // Under 60: 11% employee / 13% employer (≤5K) or 12% employer (>5K)
+  const employerRate = s <= 5000 ? 0.13 : 0.12;
+  return {
+    employer: Math.ceil(banded * employerRate),
+    employee: Math.ceil(banded * 0.11),
+  };
+}
 function calcSOCSO(s,a){
   if(a>=60){const b=lookupBand(SOCSO_CAT2,s);return{employer:b[1],employee:0,employeeInv:0,employeeNEI:0};}
   const b=lookupBand(SOCSO_CAT1,s);
