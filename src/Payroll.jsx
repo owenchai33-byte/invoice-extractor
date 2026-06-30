@@ -50,7 +50,13 @@ const EIS_TABLE = [
 ];
 function getAgeFromIC(ic, refDate) {
   if (!ic || ic.length < 6) return null;
-  const c = ic.replace(/-/g, ''), yy = parseInt(c.substring(0,2)), mm = parseInt(c.substring(2,4))-1, dd = parseInt(c.substring(4,6));
+  const c = ic.replace(/-/g, '');
+  const yy = parseInt(c.substring(0,2));
+  const mm = parseInt(c.substring(2,4)) - 1;
+  const dd = parseInt(c.substring(4,6));
+  // Defensive: garbage strings (e.g. "abcdef") parse to NaN. Return null so
+  // downstream calcs don't silently treat NaN age as under-60.
+  if (isNaN(yy) || isNaN(mm) || isNaN(dd)) return null;
   const yr = yy <= 30 ? 2000+yy : 1900+yy, dob = new Date(yr,mm,dd), ref = refDate||new Date();
   let age = ref.getFullYear()-dob.getFullYear(); const m = ref.getMonth()-dob.getMonth();
   if (m<0||(m===0&&ref.getDate()<dob.getDate())) age--; return age;
@@ -65,6 +71,9 @@ function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[t.lengt
 // Note: for age 60+ Malaysian citizens, KWSP changed rates in 2024 to 0% employee /
 // 4% employer. Old rate (6.5/5.5) preserved here — verify with accountant before relying.
 function calcEPF(s, a){
+  // Defensive guard: invalid/blank/negative wages → zero deductions.
+  // Without this, NaN/undefined would propagate or produce nonsense values.
+  if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0 };
   // Banding helper: round wage UP to nearest RM20 (upper edge of band).
   // For wages > RM5,000, no banding — flat percentage on actual wage.
   const banded = s <= 5000 ? Math.ceil(s / 20) * 20 : s;
@@ -86,12 +95,24 @@ function calcEPF(s, a){
   };
 }
 function calcSOCSO(s,a){
+  // Defensive guard: invalid/blank/negative wages → zero deductions.
+  // Critical: without this, NaN/undefined would fall through lookupBand's loop
+  // and return the LAST band (max contribution at RM6,000 ceiling), silently
+  // over-charging the employee at max rate.
+  if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0, employeeInv: 0, employeeNEI: 0 };
   if(a>=60){const b=lookupBand(SOCSO_CAT2,s);return{employer:b[1],employee:0,employeeInv:0,employeeNEI:0};}
   const b=lookupBand(SOCSO_CAT1,s);
   // b[1]=employer, b[2]=employee invalidity, b[3]=employee non-employment injury
   return{employer:b[1],employee:Math.round((b[2]+b[3])*100)/100,employeeInv:b[2],employeeNEI:b[3]};
 }
-function calcEIS(s,a){if(a<18||a>=60)return{employer:0,employee:0};const b=lookupBand(EIS_TABLE,s);return{employer:b[1],employee:b[1]};}
+function calcEIS(s,a){
+  // Defensive guard: invalid/blank/negative wages → zero deductions.
+  // Same falls-through-to-max-band issue as SOCSO without this guard.
+  if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0 };
+  if(a<18||a>=60)return{employer:0,employee:0};
+  const b=lookupBand(EIS_TABLE,s);
+  return{employer:b[1],employee:b[1]};
+}
 const LS_S='cjk_payroll_staff',LS_P='cjk_payroll_data';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
@@ -314,7 +335,10 @@ export default function Payroll(){
   const bT=useMemo(()=>sumR(bS),[bS]),cT=useMemo(()=>sumR(cS),[cS]);
   const gT=useMemo(()=>{const t={};Object.keys(bT).forEach(k=>t[k]=Math.round((bT[k]+cT[k])*100)/100);return t;},[bT,cT]);
   const ptT=useMemo(()=>({advance:ptR.reduce((s,r)=>s+r.advance,0),netPay:ptR.reduce((s,r)=>s+r.netPay,0)}),[ptR]);
-  const notes=useMemo(()=>[...bS,...cS].filter(r=>r.underAge).map(r=>`${r.name.split(' ')[0]}: below 18 years old, not subject to EIS deduction per PERKESO.`),[bS,cS]);
+  const notes=useMemo(()=>[...bS,...cS].filter(r=>r.underAge).map(r=>{
+    const firstName = (r.name||'(unnamed)').split(' ')[0];
+    return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;
+  }),[bS,cS]);
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
   const delS=id=>{if(confirm('Remove this staff?'))setStaff(p=>p.filter(s=>s.id!==id));};
@@ -394,7 +418,14 @@ export default function Payroll(){
     setEid(null);
     setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
   };
-  const fmt=n=>n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  // Format a number as Malaysian-style currency (e.g. 1,489.10).
+  // Defensive: null/undefined/NaN/non-finite values render as "0.00" rather than
+  // crashing the whole row. Without this, a single corrupted value in localStorage
+  // could break the entire payroll table render.
+  const fmt=n=>{
+    if(n==null || !isFinite(n)) return '0.00';
+    return n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
   // EditableCell — uncontrolled input that holds local state during typing,
   // commits to global state only on blur/Enter so focus never jumps
   const EditableCell = ({value, onCommit, placeholder='0', width=50}) => {
