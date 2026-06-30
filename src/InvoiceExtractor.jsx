@@ -76,7 +76,11 @@ function parseDesc(desc, code){
     const d = String(src).toUpperCase();
     let volume = null;
     const mlMatch = d.match(/(\d+(?:\.\d+)?)\s*ML/);
-    const lMatch = d.match(/(\d+(?:\.\d+)?)\s*L(?![A-Z])/);
+    // L regex: digits before L, allow letters after (product codes like "1.5LPLBTN").
+    // mlMatch is tried first, so this won't accidentally swallow ML units.
+    // Requires digit immediately before L (with optional space), avoiding false
+    // positives on words like "BOTTLE" where there's no digit before L.
+    const lMatch = d.match(/(\d+(?:\.\d+)?)\s*L/);
     if(mlMatch) volume = parseFloat(mlMatch[1]);
     else if(lMatch) volume = parseFloat(lMatch[1]) * 1000;
     let pack = null;
@@ -137,7 +141,9 @@ function formatVolUnit(ml){
   if(!ml || ml <= 0) return '';
   if(ml >= 1000){
     const l = ml / 1000;
-    return l === Math.floor(l) ? `${l}L` : `${l.toFixed(1).replace(/\.0$/, '')}L`;
+    // Use just enough decimal places to be exact: 1.0 → "1", 1.5 → "1.5", 1.75 → "1.75".
+    // parseFloat strips trailing zeros so 1.50 → "1.5", 1.00 → "1".
+    return `${parseFloat(l.toFixed(3))}L`;
   }
   return `${ml}ML`;
 }
@@ -206,6 +212,12 @@ const fmt=n=>{if(n===''||n==null)return '';return`RM${Number(n).toLocaleString('
 // Returns an array of {kind, severity:'warn'|'error', msg, details?} for an invoice.
 function computeIssues({parsed, items, groups, declaredTotal, duplicateInfo, extractedCtnSum, manuallyAssigned}){
   const issues = [];
+  // Defensive guards: if any caller passes null/undefined (e.g., from corrupted
+  // localStorage or a partially-loaded invoice), default to safe empty values
+  // instead of crashing the whole UI render.
+  parsed = parsed || {};
+  items = Array.isArray(items) ? items : [];
+  groups = Array.isArray(groups) ? groups : [];
 
   // 1. Invoice number format
   if(!parsed.invoice_no || !validInvoiceNo(parsed.invoice_no)){
