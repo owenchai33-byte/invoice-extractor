@@ -198,11 +198,15 @@ function matchCat(volume_ml, pack_size, rates, description, code){
 }
 
 function calcSub(amt,groups,p1,p2){
-  // Zero-amount invoices (FOC / free) have no subsidy claim — all columns zero out.
-  if(!amt || amt <= 0) return {carton:0, p1:0, p2:0, total:0};
   const c=groups.reduce((s,g)=>s+g.ctn*g.rate,0), r=v=>Math.round(v*100)/100;
+  const carton=r(c);
+  // FOC / zero-amount invoices: the goods were still physically delivered, so
+  // the CARTON subsidy (RM per CTN × qty) is still owed by the supplier. Only
+  // the 0.4% and 0.2% percentages zero out — they're calculated on (amt - carton),
+  // which would be negative when amt=0. Total = just the carton amount.
+  if(!amt || amt <= 0) return {carton, p1:0, p2:0, total:carton};
   const v1=r((amt-c)*p1), v2=r((amt-c-v1)*p2);
-  return {carton:r(c),p1:v1,p2:v2,total:r(c+v1+v2)};
+  return {carton, p1:v1, p2:v2, total:r(c+v1+v2)};
 }
 const fmt=n=>{if(n===''||n==null)return '';return`RM${Number(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}`;};
 
