@@ -583,7 +583,7 @@ async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
 // ============================================================
 
 // Click-to-edit Amount component — always displays formatted RM value, switches to input when clicked
-function EditableAmount({value,onCommit,format}){
+function EditableAmount({value,onCommit,format,align='center'}){
   const [editing,setEditing]=useState(false);
   const [local,setLocal]=useState(String(value));
   const ref=useRef(null);
@@ -600,13 +600,13 @@ function EditableAmount({value,onCommit,format}){
       onBlur={commit}
       onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape'){setLocal(String(value));setEditing(false);} }}
       className="noP"
-      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:'center',fontWeight:700,boxSizing:'border-box',background:'#fff'}}/>;
+      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'3px 4px',fontSize:16,fontFamily:F,textAlign:align,fontWeight:700,boxSizing:'border-box',background:'#fff'}}/>;
   }
   return <span
     onClick={()=>setEditing(true)}
     className="editable-text"
     title="Click to edit amount"
-    style={{display:'block',cursor:'text',padding:'3px 4px',borderRadius:3,fontSize:16,fontWeight:700,textAlign:'center'}}
+    style={{display:'block',cursor:'text',padding:'3px 4px',borderRadius:3,fontSize:16,fontWeight:700,textAlign:align,fontVariantNumeric:'tabular-nums'}}
   >{format(value)}</span>;
 }
 
@@ -1373,11 +1373,12 @@ export default function InvoiceExtractor() {
                         )}
                       </div>
                     </td>
-                    <td style={{...T.td,fontWeight:700}}>
+                    <td style={{...T.td,fontWeight:700,textAlign:'right'}}>
                       <EditableAmount
                         value={inv.raw.total_amount}
                         onCommit={v=>updateInvoiceAmount(inv.id,v)}
                         format={fmt}
+                        align="right"
                       />
                     </td>
                     <td style={{...T.td,padding:4}}>
@@ -1436,11 +1437,12 @@ export default function InvoiceExtractor() {
                         )}
                       </div>
                     </td>}
-                    {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative'}} rowSpan={rc}>
+                    {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative',textAlign:'right'}} rowSpan={rc}>
                       <EditableAmount
                         value={inv.raw.total_amount}
                         onCommit={v=>updateInvoiceAmount(inv.id,v)}
                         format={fmt}
+                        align="right"
                       />
                     </td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>
@@ -1564,8 +1566,8 @@ export default function InvoiceExtractor() {
               {/* COLUMN FOOTER — invoice-total under AMOUNT column, credit-note under CN column */}
               <tr>
                 <td colSpan={3} style={{border:'none'}}/>
-                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
-                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:18,textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{fmt(gT)}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,textAlign:'right',fontVariantNumeric:'tabular-nums',color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
                 <td colSpan={2} style={{border:'none'}}/>
               </tr>
               {/* SUMMARY BOX — right-aligned subsidy breakdown */}
@@ -1944,6 +1946,6 @@ const T={
   subL:{border:B,padding:'6px 12px',fontSize:16,textAlign:'right',fontFamily:F,fontVariantNumeric:'tabular-nums'},
   subR:{border:B,padding:'6px 12px',fontSize:16,textAlign:'left',fontWeight:700,fontFamily:F,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums',width:110},
   bxL:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',background:'#f0f0f0',fontFamily:F},
-  bxR:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'left',fontFamily:F,minWidth:110,width:110,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'},
+  bxR:{border:B,padding:'6px 14px',fontSize:16,fontWeight:700,textAlign:'right',fontFamily:F,minWidth:110,width:110,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'},
 };
 const btn=p=>({padding:'8px 18px',borderRadius:5,border:p?'none':'1px solid #aaa',fontWeight:600,fontSize:14,cursor:'pointer',background:p?'#111':'#fff',color:p?'#fff':'#333',fontFamily:F});
