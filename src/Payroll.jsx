@@ -1,10 +1,14 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 // ═══════════════════════════════════════════════════════════════
-// STATUTORY TABLES — 2026 Malaysia (KWSP / PERKESO / EIS)
+// STATUTORY TABLES — Malaysia
+// Sources: PERKESO SOCSO+SKBBK (June 2026), PERKESO EIS Akta 800
+// (Oct 2024), KWSP EPF Jadual Ketiga (effective Oct 2025).
+// All three tables share the same 65 wage bands:
+// 30, 50, 70, 100, 140, 200, 300, 400, then +100 up to 6,000, then ceiling.
 // ═══════════════════════════════════════════════════════════════
-// SOCSO Category 1 — Under 60, Updated June 2026
-// [maxWage, employer, employee_invalidity, employee_non_emp_injury]
-// Includes Lindung 24 Jam (Non-Employment Injury Scheme) — employee-only contribution
+
+// SOCSO Category 1 — under 60. [maxWage, employer, employee_invalidity, employee_SKBBK]
+// employee total = invalidity + SKBBK (Non-Employment Injury, aka Lindung 24 Jam).
 export const SOCSO_CAT1 = [
   [30,0.40,0.10,0.20],[50,0.70,0.20,0.30],[70,1.10,0.30,0.50],[100,1.50,0.40,0.65],
   [140,2.10,0.60,0.90],[200,2.95,0.85,1.25],[300,4.35,1.25,1.85],[400,6.15,1.75,2.65],
@@ -22,31 +26,44 @@ export const SOCSO_CAT1 = [
   [4900,84.85,24.25,36.35],[5000,86.65,24.75,37.15],[5100,88.35,25.25,37.85],[5200,90.15,25.75,38.65],
   [5300,91.85,26.25,39.35],[5400,93.65,26.75,40.15],[5500,95.35,27.25,40.85],[5600,97.15,27.75,41.65],
   [5700,98.85,28.25,42.35],[5800,100.65,28.75,43.15],[5900,102.35,29.25,43.85],
-  [6000,104.65,29.90,44.55],[Infinity,104.65,29.90,44.55]
+  [6000,104.15,29.75,44.65],[Infinity,104.15,29.75,44.65]
 ];
+
+// SOCSO Category 2 — age 60+. [maxWage, employer, employee_SKBBK]
+// Employee SKBBK column added per June 2026 PERKESO update (previously employer-only).
 export const SOCSO_CAT2 = [
-  [30,0.30],[50,0.50],[70,0.80],[100,1.10],[140,1.50],[200,2.10],
-  [300,3.10],[400,4.40],[500,5.60],[600,6.90],[700,8.10],[800,9.40],
-  [900,10.60],[1000,11.90],[1100,13.10],[1200,14.40],[1300,15.60],
-  [1400,16.90],[1500,18.10],[1700,20.60],[1900,23.10],[2000,24.40],
-  [2200,26.90],[2500,30.60],[2800,34.40],[3000,36.90],[3300,40.60],
-  [3500,43.10],[3800,46.90],[4000,49.40],[4300,53.10],[4500,55.60],
-  [4800,59.40],[5000,61.90],[5300,65.60],[5600,69.40],[5900,73.10],
-  [6000,74.40],[Infinity,74.40]
+  [30,0.30,0.20],[50,0.50,0.30],[70,0.80,0.50],[100,1.10,0.65],
+  [140,1.50,0.90],[200,2.10,1.25],[300,3.10,1.85],[400,4.40,2.65],
+  [500,5.60,3.35],[600,6.90,4.15],[700,8.10,4.85],[800,9.40,5.65],
+  [900,10.60,6.35],[1000,11.90,7.15],[1100,13.10,7.85],[1200,14.40,8.65],
+  [1300,15.60,9.35],[1400,16.90,10.15],[1500,18.10,10.85],[1600,19.40,11.65],
+  [1700,20.60,12.35],[1800,21.90,13.15],[1900,23.10,13.85],[2000,24.40,14.65],
+  [2100,25.60,15.35],[2200,26.90,16.15],[2300,28.10,16.85],[2400,29.40,17.65],
+  [2500,30.60,18.35],[2600,31.90,19.15],[2700,33.10,19.85],[2800,34.40,20.65],
+  [2900,35.60,21.35],[3000,36.90,22.15],[3100,38.10,22.85],[3200,39.40,23.65],
+  [3300,40.60,24.35],[3400,41.90,25.15],[3500,43.10,25.85],[3600,44.40,26.65],
+  [3700,45.60,27.35],[3800,46.90,28.15],[3900,48.10,28.85],[4000,49.40,29.65],
+  [4100,50.60,30.35],[4200,51.90,31.15],[4300,53.10,31.85],[4400,54.40,32.65],
+  [4500,55.60,33.35],[4600,56.90,34.15],[4700,58.10,34.85],[4800,59.40,35.65],
+  [4900,60.60,36.35],[5000,61.90,37.15],[5100,63.10,37.85],[5200,64.40,38.65],
+  [5300,65.60,39.35],[5400,66.90,40.15],[5500,68.10,40.85],[5600,69.40,41.65],
+  [5700,70.60,42.35],[5800,71.90,43.15],[5900,73.10,43.85],
+  [6000,74.40,44.65],[Infinity,74.40,44.65]
 ];
+
+// EIS — same 65 bands as SOCSO. Employer and employee pay the same amount.
 export const EIS_TABLE = [
-  [30,0.05],[50,0.10],[100,0.20],[200,0.30],[300,0.50],[400,0.70],
-  [500,0.90],[600,1.10],[700,1.30],[800,1.50],[900,1.70],[1000,1.90],
-  [1100,2.10],[1200,2.30],[1300,2.50],[1400,2.70],[1500,2.90],
-  [1600,3.10],[1700,3.30],[1800,3.50],[1900,3.70],[2000,3.90],
-  [2100,4.10],[2200,4.30],[2300,4.50],[2400,4.70],[2500,4.90],
-  [2600,5.10],[2700,5.30],[2800,5.50],[2900,5.70],[3000,5.90],
-  [3100,6.10],[3200,6.30],[3300,6.50],[3400,6.70],[3500,6.90],
-  [3600,7.10],[3700,7.30],[3800,7.50],[3900,7.70],[4000,7.90],
-  [4100,8.10],[4200,8.30],[4300,8.50],[4400,8.70],[4500,8.90],
-  [4600,9.10],[4700,9.30],[4800,9.50],[4900,9.70],[5000,9.90],
-  [5200,10.30],[5400,10.70],[5600,11.10],[5800,11.50],
-  [6000,11.90],[Infinity,11.90]
+  [30,0.05],[50,0.10],[70,0.15],[100,0.20],[140,0.25],[200,0.35],
+  [300,0.50],[400,0.70],[500,0.90],[600,1.10],[700,1.30],[800,1.50],
+  [900,1.70],[1000,1.90],[1100,2.10],[1200,2.30],[1300,2.50],[1400,2.70],
+  [1500,2.90],[1600,3.10],[1700,3.30],[1800,3.50],[1900,3.70],[2000,3.90],
+  [2100,4.10],[2200,4.30],[2300,4.50],[2400,4.70],[2500,4.90],[2600,5.10],
+  [2700,5.30],[2800,5.50],[2900,5.70],[3000,5.90],[3100,6.10],[3200,6.30],
+  [3300,6.50],[3400,6.70],[3500,6.90],[3600,7.10],[3700,7.30],[3800,7.50],
+  [3900,7.70],[4000,7.90],[4100,8.10],[4200,8.30],[4300,8.50],[4400,8.70],
+  [4500,8.90],[4600,9.10],[4700,9.30],[4800,9.50],[4900,9.70],[5000,9.90],
+  [5100,10.10],[5200,10.30],[5300,10.50],[5400,10.70],[5500,10.90],[5600,11.10],
+  [5700,11.30],[5800,11.50],[5900,11.70],[6000,11.90],[Infinity,11.90]
 ];
 export function getAgeFromIC(ic, refDate) {
   if (!ic || ic.length < 6) return null;
@@ -70,24 +87,27 @@ export function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[
 // Above RM5,000, percentage applies directly without banding.
 // Note: for age 60+ Malaysian citizens, KWSP changed rates in 2024 to 0% employee /
 // 4% employer. Old rate (6.5/5.5) preserved here — verify with accountant before relying.
+// EPF — KWSP Jadual Ketiga (effective 1 October 2025).
+// Wages ≤ RM5,000: RM20 wage bands, contribution on upper edge, ceiling-rounded.
+// Wages > RM5,000: RM100 wage bands (same banding rule, contribution on upper edge).
+// Rates depend on age + citizenship. We assume Malaysian citizens (CJK is
+// all-Malaysian) — Part A under 60, Part E at 60+. If a PR or foreigner-
+// elected-pre-1998 is hired, add a citizenship flag and switch to Part C rates
+// (6.5%/5.5%). Foreign workers (Part F) are 2%/2% flat.
 export function calcEPF(s, a){
   // Defensive guard: invalid/blank/negative wages → zero deductions.
-  // Without this, NaN/undefined would propagate or produce nonsense values.
   if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0 };
-  // Banding helper: round wage UP to nearest RM20 (upper edge of band).
-  // For wages > RM5,000, no banding — flat percentage on actual wage.
-  const banded = s <= 5000 ? Math.ceil(s / 20) * 20 : s;
+  const banded = s <= 5000 ? Math.ceil(s / 20) * 20 : Math.ceil(s / 100) * 100;
 
   if (a >= 60) {
-    // Age 60+ legacy rate: 6.5% employer / 5.5% employee.
-    // TODO: verify current 2026 KWSP rate for 60+ citizens (likely 4%/0%).
+    // Part E — Malaysian citizens 60+: employer 4%, employee 0%.
     return {
-      employer: Math.ceil(banded * 0.065),
-      employee: Math.ceil(banded * 0.055),
+      employer: Math.ceil(banded * 0.04),
+      employee: 0,
     };
   }
 
-  // Under 60: 11% employee / 13% employer (≤5K) or 12% employer (>5K)
+  // Part A — under 60: 11% employee, 13% employer (≤5K) or 12% employer (>5K).
   const employerRate = s <= 5000 ? 0.13 : 0.12;
   return {
     employer: Math.ceil(banded * employerRate),
@@ -100,9 +120,15 @@ export function calcSOCSO(s,a){
   // and return the LAST band (max contribution at RM6,000 ceiling), silently
   // over-charging the employee at max rate.
   if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0, employeeInv: 0, employeeNEI: 0 };
-  if(a>=60){const b=lookupBand(SOCSO_CAT2,s);return{employer:b[1],employee:0,employeeInv:0,employeeNEI:0};}
+  if(a>=60){
+    // Cat 2 (age 60+): employer + employee SKBBK (Non-Employment Injury).
+    // Employer covers employment-injury only; employee pays SKBBK contribution
+    // per June 2026 PERKESO update.
+    const b=lookupBand(SOCSO_CAT2,s);
+    return{employer:b[1],employee:b[2],employeeInv:0,employeeNEI:b[2]};
+  }
   const b=lookupBand(SOCSO_CAT1,s);
-  // b[1]=employer, b[2]=employee invalidity, b[3]=employee non-employment injury
+  // b[1]=employer, b[2]=employee invalidity, b[3]=employee SKBBK/NEI
   return{employer:b[1],employee:Math.round((b[2]+b[3])*100)/100,employeeInv:b[2],employeeNEI:b[3]};
 }
 export function calcEIS(s,a){

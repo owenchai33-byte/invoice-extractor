@@ -29,8 +29,10 @@ describe('EPF Third Schedule (under 60)', () => {
   it('RM5000 at threshold', () => {
     expect(calcEPF(5000, 30)).toEqual({ employer: 650, employee: 550 });
   });
-  it('RM5001 no band (12% flat)', () => {
-    expect(calcEPF(5001, 30)).toEqual({ employer: 601, employee: 551 });
+  it('RM5001 → next RM100 band (5100)', () => {
+    // Above RM5000 uses RM100 bands: ceil(5001/100)*100 = 5100.
+    // 5100 * 0.12 = 612, 5100 * 0.11 = 561.
+    expect(calcEPF(5001, 30)).toEqual({ employer: 612, employee: 561 });
   });
   it('RM10000 high wage', () => {
     expect(calcEPF(10000, 30)).toEqual({ employer: 1200, employee: 1100 });
@@ -46,18 +48,22 @@ describe('EPF Third Schedule (under 60)', () => {
   });
 });
 
-describe('EPF age 60+', () => {
-  it('60yo RM2550', () => {
-    expect(calcEPF(2550, 60)).toEqual({ employer: 167, employee: 141 });
+describe('EPF age 60+ (Part E — Malaysian citizens, 4%/0%)', () => {
+  it('60yo RM2550 → banded 2560 × 4%', () => {
+    // ceil(2560 * 0.04) = ceil(102.4) = 103.
+    expect(calcEPF(2550, 60)).toEqual({ employer: 103, employee: 0 });
   });
   it('60yo RM1700', () => {
-    expect(calcEPF(1700, 60)).toEqual({ employer: 111, employee: 94 });
+    // 1700 * 0.04 = 68 exact.
+    expect(calcEPF(1700, 60)).toEqual({ employer: 68, employee: 0 });
   });
   it('65yo RM5000', () => {
-    expect(calcEPF(5000, 65)).toEqual({ employer: 325, employee: 275 });
+    // 5000 * 0.04 = 200 exact.
+    expect(calcEPF(5000, 65)).toEqual({ employer: 200, employee: 0 });
   });
   it('75yo RM3000', () => {
-    expect(calcEPF(3000, 75)).toEqual({ employer: 195, employee: 165 });
+    // 3000 * 0.04 = 120 exact.
+    expect(calcEPF(3000, 75)).toEqual({ employer: 120, employee: 0 });
   });
 });
 
@@ -84,12 +90,12 @@ describe('SOCSO Cat 1 (under 60, includes Lindung 24 Jam)', () => {
   });
   it('RM6000 ceiling', () => {
     expect(calcSOCSO(6000, 30)).toEqual({
-      employer: 104.65, employee: 74.45, employeeInv: 29.90, employeeNEI: 44.55,
+      employer: 104.15, employee: 74.40, employeeInv: 29.75, employeeNEI: 44.65,
     });
   });
   it('RM10000 above ceiling (capped)', () => {
     expect(calcSOCSO(10000, 30)).toEqual({
-      employer: 104.65, employee: 74.45, employeeInv: 29.90, employeeNEI: 44.55,
+      employer: 104.15, employee: 74.40, employeeInv: 29.75, employeeNEI: 44.65,
     });
   });
   it('RM30 minimum', () => {
@@ -99,20 +105,22 @@ describe('SOCSO Cat 1 (under 60, includes Lindung 24 Jam)', () => {
   });
 });
 
-describe('SOCSO Cat 2 (age 60+)', () => {
+describe('SOCSO Cat 2 (age 60+, includes SKBBK employee)', () => {
   it('60yo RM1700', () => {
+    // Band 1600-1700: employer 20.60, SKBBK 12.35.
     expect(calcSOCSO(1700, 60)).toEqual({
-      employer: 20.60, employee: 0, employeeInv: 0, employeeNEI: 0,
+      employer: 20.60, employee: 12.35, employeeInv: 0, employeeNEI: 12.35,
     });
   });
   it('65yo RM3000', () => {
+    // Band 2900-3000: employer 36.90, SKBBK 22.15.
     expect(calcSOCSO(3000, 65)).toEqual({
-      employer: 36.90, employee: 0, employeeInv: 0, employeeNEI: 0,
+      employer: 36.90, employee: 22.15, employeeInv: 0, employeeNEI: 22.15,
     });
   });
   it('70yo RM6000 ceiling', () => {
     expect(calcSOCSO(6000, 70)).toEqual({
-      employer: 74.40, employee: 0, employeeInv: 0, employeeNEI: 0,
+      employer: 74.40, employee: 44.65, employeeInv: 0, employeeNEI: 44.65,
     });
   });
 });
