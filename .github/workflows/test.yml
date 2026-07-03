@@ -7,6 +7,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm ci
+          node-version: 22
+      # Using `npm install` instead of `npm ci`: npm 11's lockfile format
+      # marks esbuild's platform-specific optionalDependencies as required
+      # under vitest's nested tree, and `npm ci` on a runner whose platform
+      # doesn't match every optional dep errors out with EBADPLATFORM.
+      # `npm install` skips unsupported optionals cleanly.
+      - run: npm install --no-audit --no-fund
       - run: npm test
