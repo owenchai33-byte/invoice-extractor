@@ -1178,10 +1178,14 @@ export default function InvoiceExtractor() {
       d.push(['','','','','','','+ 0.4% =',inv.subsidy.p1]);
       d.push(['','','','','','','+ 0.2% =',inv.subsidy.p2]);
     });});
-    d.push([]);d.push(['','','','','','','CARTON:',gC]);d.push(['','','','','','','0.4%:',gP1]);d.push(['','','','','','','0.2%:',gP2]);
+    // Column footer: invoice total under AMOUNT (col D, index 3), CN sum under CN (col E, index 4).
+    d.push(['','','TOTAL:',gT,totalCn?-totalCn:0,'','','']);
+    d.push([]);
+    d.push(['','','','','','','CARTON:',gC]);
+    d.push(['','','','','','','0.4%:',gP1]);
+    d.push(['','','','','','','0.2%:',gP2]);
     d.push(['','','','','','','TOTAL SUBSIDY:',gS]);
-    if(totalCn)d.push(['','','','','','','CREDIT NOTE:',-totalCn]);
-    d.push(['','','','INVOICE TOTAL:',gT]);d.push([]);
+    d.push([]);
     d.push(['','','','','TOTAL AMOUNT PAYABLE = RM'+tP.toFixed(2)]);
     const ws=XLSX.utils.aoa_to_sheet(d);
     ws['!cols']=[{wch:5},{wch:12},{wch:16},{wch:16},{wch:10},{wch:2},{wch:24},{wch:14}];
@@ -1557,7 +1561,14 @@ export default function InvoiceExtractor() {
 
                 return <React.Fragment key={inv.id}>{rows}</React.Fragment>;
               })}
-              {/* SUMMARY BOX — aligned with table columns above */}
+              {/* COLUMN FOOTER — invoice-total under AMOUNT column, credit-note under CN column */}
+              <tr>
+                <td colSpan={3} style={{border:'none'}}/>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
+                <td colSpan={2} style={{border:'none'}}/>
+              </tr>
+              {/* SUMMARY BOX — right-aligned subsidy breakdown */}
               <tr><td colSpan={7} style={{padding:6,border:'none'}}/></tr>
               <tr>
                 <td colSpan={5} style={{border:'none'}}/>
@@ -1578,16 +1589,6 @@ export default function InvoiceExtractor() {
                 <td colSpan={5} style={{border:'none'}}/>
                 <td style={{...T.bxL,borderTop:'1px solid #aaa',fontWeight:700}}>TOTAL SUBSIDY:</td>
                 <td style={{...T.bxR,borderTop:'1px solid #aaa',fontWeight:700}}>{fmt(gS)}</td>
-              </tr>
-              <tr>
-                <td colSpan={5} style={{border:'none'}}/>
-                <td style={T.bxL}>CREDIT NOTE:</td>
-                <td style={T.bxR}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
-              </tr>
-              <tr>
-                <td colSpan={5} style={{border:'none'}}/>
-                <td style={{...T.bxL,borderTop:'2px solid #000'}}>INVOICE TOTAL:</td>
-                <td style={{...T.bxR,borderTop:'2px solid #000',background:'#ffe600',fontSize:18}}>{fmt(gT)}</td>
               </tr>
             </tbody>
           </table>
