@@ -6,16 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   },
-"dependencies": {
-     "react": "^18.x.x",
-     "react-dom": "^18.x.x",
-     "xlsx": "^0.18.5",
-     "pdfjs-dist": "^4.0.379"
-   },
+  "dependencies": {
+    "pdfjs-dist": "^4.0.379",
+    "react": "^18.x.x",
+    "react-dom": "^18.x.x",
+    "xlsx": "^0.18.5"
+  },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^4.1.9"
   }
 }

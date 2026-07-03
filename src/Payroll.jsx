@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 // SOCSO Category 1 — Under 60, Updated June 2026
 // [maxWage, employer, employee_invalidity, employee_non_emp_injury]
 // Includes Lindung 24 Jam (Non-Employment Injury Scheme) — employee-only contribution
-const SOCSO_CAT1 = [
+export const SOCSO_CAT1 = [
   [30,0.40,0.10,0.20],[50,0.70,0.20,0.30],[70,1.10,0.30,0.50],[100,1.50,0.40,0.65],
   [140,2.10,0.60,0.90],[200,2.95,0.85,1.25],[300,4.35,1.25,1.85],[400,6.15,1.75,2.65],
   [500,7.85,2.25,3.35],[600,9.65,2.75,4.15],[700,11.35,3.25,4.85],[800,13.15,3.75,5.65],
@@ -24,7 +24,7 @@ const SOCSO_CAT1 = [
   [5700,98.85,28.25,42.35],[5800,100.65,28.75,43.15],[5900,102.35,29.25,43.85],
   [6000,104.65,29.90,44.55],[Infinity,104.65,29.90,44.55]
 ];
-const SOCSO_CAT2 = [
+export const SOCSO_CAT2 = [
   [30,0.30],[50,0.50],[70,0.80],[100,1.10],[140,1.50],[200,2.10],
   [300,3.10],[400,4.40],[500,5.60],[600,6.90],[700,8.10],[800,9.40],
   [900,10.60],[1000,11.90],[1100,13.10],[1200,14.40],[1300,15.60],
@@ -34,7 +34,7 @@ const SOCSO_CAT2 = [
   [4800,59.40],[5000,61.90],[5300,65.60],[5600,69.40],[5900,73.10],
   [6000,74.40],[Infinity,74.40]
 ];
-const EIS_TABLE = [
+export const EIS_TABLE = [
   [30,0.05],[50,0.10],[100,0.20],[200,0.30],[300,0.50],[400,0.70],
   [500,0.90],[600,1.10],[700,1.30],[800,1.50],[900,1.70],[1000,1.90],
   [1100,2.10],[1200,2.30],[1300,2.50],[1400,2.70],[1500,2.90],
@@ -48,7 +48,7 @@ const EIS_TABLE = [
   [5200,10.30],[5400,10.70],[5600,11.10],[5800,11.50],
   [6000,11.90],[Infinity,11.90]
 ];
-function getAgeFromIC(ic, refDate) {
+export function getAgeFromIC(ic, refDate) {
   if (!ic || ic.length < 6) return null;
   const c = ic.replace(/-/g, '');
   const yy = parseInt(c.substring(0,2));
@@ -61,7 +61,7 @@ function getAgeFromIC(ic, refDate) {
   let age = ref.getFullYear()-dob.getFullYear(); const m = ref.getMonth()-dob.getMonth();
   if (m<0||(m===0&&ref.getDate()<dob.getDate())) age--; return age;
 }
-function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[t.length-1];}
+export function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[t.length-1];}
 // EPF — KWSP Jadual Ketiga (Third Schedule).
 // For monthly wages up to RM5,000, contributions are calculated using RM20 wage bands.
 // Within each band, the contribution is calculated on the UPPER EDGE of the band and
@@ -70,7 +70,7 @@ function lookupBand(t,w){for(const r of t){if(w<=r[0])return r;}return t[t.lengt
 // Above RM5,000, percentage applies directly without banding.
 // Note: for age 60+ Malaysian citizens, KWSP changed rates in 2024 to 0% employee /
 // 4% employer. Old rate (6.5/5.5) preserved here — verify with accountant before relying.
-function calcEPF(s, a){
+export function calcEPF(s, a){
   // Defensive guard: invalid/blank/negative wages → zero deductions.
   // Without this, NaN/undefined would propagate or produce nonsense values.
   if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0 };
@@ -94,7 +94,7 @@ function calcEPF(s, a){
     employee: Math.ceil(banded * 0.11),
   };
 }
-function calcSOCSO(s,a){
+export function calcSOCSO(s,a){
   // Defensive guard: invalid/blank/negative wages → zero deductions.
   // Critical: without this, NaN/undefined would fall through lookupBand's loop
   // and return the LAST band (max contribution at RM6,000 ceiling), silently
@@ -105,13 +105,20 @@ function calcSOCSO(s,a){
   // b[1]=employer, b[2]=employee invalidity, b[3]=employee non-employment injury
   return{employer:b[1],employee:Math.round((b[2]+b[3])*100)/100,employeeInv:b[2],employeeNEI:b[3]};
 }
-function calcEIS(s,a){
+export function calcEIS(s,a){
   // Defensive guard: invalid/blank/negative wages → zero deductions.
   // Same falls-through-to-max-band issue as SOCSO without this guard.
   if (!s || !isFinite(s) || s <= 0) return { employer: 0, employee: 0 };
   if(a<18||a>=60)return{employer:0,employee:0};
   const b=lookupBand(EIS_TABLE,s);
   return{employer:b[1],employee:b[1]};
+}
+// Format a number as Malaysian-style currency (e.g. 1,489.10).
+// Defensive: null/undefined/NaN/non-finite values render as "0.00" rather than
+// crashing the whole row.
+export function fmt(n){
+  if(n==null || !isFinite(n)) return '0.00';
+  return n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 const LS_S='cjk_payroll_staff',LS_P='cjk_payroll_data';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
@@ -417,14 +424,6 @@ export default function Payroll(){
     // Close the FT edit form if it was open
     setEid(null);
     setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
-  };
-  // Format a number as Malaysian-style currency (e.g. 1,489.10).
-  // Defensive: null/undefined/NaN/non-finite values render as "0.00" rather than
-  // crashing the whole row. Without this, a single corrupted value in localStorage
-  // could break the entire payroll table render.
-  const fmt=n=>{
-    if(n==null || !isFinite(n)) return '0.00';
-    return n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   };
   // EditableCell — uncontrolled input that holds local state during typing,
   // commits to global state only on blur/Enter so focus never jumps
