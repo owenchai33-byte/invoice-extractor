@@ -120,34 +120,39 @@ export function fmt(n){
   if(n==null || !isFinite(n)) return '0.00';
   return n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-const LS_S='cjk_payroll_staff',LS_P='cjk_payroll_data';
+// LS_S / LS_PT bumped to _v2 in the 2026-07 update to force existing users
+// onto the refreshed SAMPLE_STAFF (new salaries, positions, and 2 new staff).
+// LS_P kept as-is so per-month advance/incentive/bonus history is preserved.
+const LS_S='cjk_payroll_staff_v2',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 const SAMPLE_STAFF=[
-  {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:1700,method:'bank',status:'permanent'},
-  {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:1700,method:'bank',status:'permanent'},
-  {id:'s3',name:'LO HUI TIN',ic:'961122-13-5142',position:'PJ EXEC. OPERATIONS SUPERVISOR',salary:1700,method:'bank',status:'permanent'},
-  {id:'s4',name:'JEE SUK HUI',ic:'981109-13-5330',position:'KC MERCHANDISER',salary:1700,method:'bank',status:'permanent'},
-  {id:'s5',name:'VOON SUK YIN',ic:'001028-13-1446',position:'GENERAL CLERK',salary:1700,method:'cash',status:'permanent'},
-  {id:'s6',name:'CHAI WAN NEE',ic:'011227-13-0648',position:'HEAD CASHIER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s7',name:'SIMON ANG TECK HOCK',ic:'740202-13-5485',position:'DRIVER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s8',name:'BONG SOON SIONG',ic:'840805-13-5159',position:'DRIVER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s9',name:'BONG SOON LEONG',ic:'000407-13-0385',position:'DRIVER ASSISTANT',salary:1700,method:'cash',status:'permanent'},
-  {id:'s10',name:'LEE KIAN HOW',ic:'020812-13-0555',position:'DRIVER ASSISTANT',salary:1700,method:'cash',status:'permanent'},
-  {id:'s11',name:"JAMBLIN ANAK E'IEH",ic:'841130-13-5189',position:'STOREKEEPER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s12',name:'HII KING HUI',ic:'840927-13-5595',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s13',name:'TAN SIAW CHIANG',ic:'841016-13-5505',position:'DRIVER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s14',name:'MUHAMMAD HAZIQ AKMAL BIN MARIKAN',ic:'001005-13-0467',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s15',name:'RALLY ANAK WILLIAM',ic:'020707-13-0721',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s16',name:'HAM KING PING',ic:'950110-13-5707',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s17',name:'MUHAMMAD RAMDZANI BIN WET',ic:'031118-13-0145',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s18',name:'KUA JAK HUN',ic:'790127-13-5746',position:'MERCHANDISER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s19',name:'AZNAN BIN ZAHIDI',ic:'870907-13-5413',position:'DRIVER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s20',name:'DANIELL SHAH RIEZAL BIN ROSLI',ic:'080705-13-0773',position:'GENERAL WORKER',salary:1700,method:'cash',status:'probationary'},
-  {id:'s21',name:'JEE SWEE EN',ic:'060310-13-0180',position:'CASHIER',salary:1700,method:'cash',status:'probationary'},
-  {id:'s22',name:'JANET SOON PEI YEE',ic:'020627-13-0836',position:'CASHIER',salary:1700,method:'cash',status:'probationary'},
+  {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:2450,method:'bank',status:'permanent'},
+  {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:2250,method:'bank',status:'permanent'},
+  {id:'s3',name:'LO HUI TIN',ic:'961122-13-5142',position:'PJ EXEC. OPERATIONS SUPERVISOR',salary:2450,method:'bank',status:'permanent'},
+  {id:'s4',name:'JEE SUK HUI',ic:'981109-13-5330',position:'KC ASST. SUPERVISOR',salary:2000,method:'bank',status:'permanent'},
+  {id:'s5',name:'VOON SUK YIN',ic:'001028-13-1446',position:'INVOICING CLERK',salary:1950,method:'cash',status:'permanent'},
+  {id:'s6',name:'CHAI WAN NEE',ic:'011227-13-0648',position:'ASST. CASHIER SUPERVISOR',salary:1950,method:'cash',status:'permanent'},
+  {id:'s7',name:'SIMON ANG TECK HOCK',ic:'740202-13-5485',position:'DRIVER',salary:2250,method:'cash',status:'permanent'},
+  {id:'s8',name:'BONG SOON SIONG',ic:'840805-13-5159',position:'DRIVER',salary:2200,method:'cash',status:'permanent'},
+  {id:'s9',name:'BONG SOON LEONG',ic:'000407-13-0385',position:'DRIVER ASSISTANT',salary:1850,method:'cash',status:'permanent'},
+  {id:'s10',name:'LEE KIAN HOW',ic:'020812-13-0555',position:'DRIVER ASSISTANT',salary:1850,method:'cash',status:'permanent'},
+  {id:'s11',name:"JAMBLIN ANAK E'IEH",ic:'841130-13-5189',position:'STOREKEEPER',salary:1800,method:'cash',status:'permanent'},
+  {id:'s12',name:'HII KING HUI',ic:'840927-13-5595',position:'GENERAL WORKER',salary:1800,method:'cash',status:'permanent'},
+  {id:'s13',name:'TAN SIAW CHIANG',ic:'841016-13-5505',position:'DRIVER',salary:1850,method:'cash',status:'permanent'},
+  {id:'s14',name:'MUHAMMAD HAZIQ AKMAL BIN MARIKAN',ic:'001005-13-0467',position:'GENERAL WORKER',salary:1725,method:'cash',status:'permanent'},
+  {id:'s15',name:'RALLY ANAK WILLIAM',ic:'020707-13-0721',position:'GENERAL WORKER',salary:1725,method:'cash',status:'permanent'},
+  {id:'s16',name:'HAM KING PING',ic:'950110-13-5707',position:'GENERAL WORKER',salary:1750,method:'cash',status:'permanent'},
+  {id:'s17',name:'MUHAMMAD RAMDZANI BIN WET',ic:'031118-13-0145',position:'GENERAL WORKER',salary:1725,method:'cash',status:'permanent'},
+  {id:'s18',name:'KUA JAK HUN',ic:'790127-13-5746',position:'MERCHANDISER',salary:1800,method:'cash',status:'permanent'},
+  {id:'s19',name:'AZNAN BIN ZAHIDI',ic:'870907-13-5413',position:'DRIVER',salary:1825,method:'cash',status:'permanent'},
+  {id:'s20',name:'DANIELL SHAH RIEZAL BIN ROSLI',ic:'080705-13-0773',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
+  {id:'s21',name:'JEE SWEE EN',ic:'060310-13-0180',position:'CASHIER',salary:1700,method:'cash',status:'permanent'},
+  {id:'s22',name:'JANET SOON PEI YEE',ic:'020627-13-0836',position:'CASHIER',salary:1700,method:'cash',status:'permanent'},
+  {id:'s23',name:'TAN WEI HOW',ic:'071210-13-0507',position:'GENERAL WORKER',salary:1700,method:'cash',status:'probationary'},
+  {id:'s24',name:'ERRA ERYCA NORY ANAK LASU',ic:'980125-13-6128',position:'ADMIN CLERK',salary:1800,method:'cash',status:'probationary'},
 ];
-const SAMPLE_PT=[{id:'p1',name:'TAN WEI HOW',ic:'071210-13-0507',position:'',wagePerDay:0,status:'part-time'}];
+const SAMPLE_PT=[];
 const MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 async function loadXLSX(){if(window.XLSX)return window.XLSX;return new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';s.onload=()=>r(window.XLSX);s.onerror=j;document.head.appendChild(s);});}
@@ -302,7 +307,7 @@ export default function Payroll(){
   const now=new Date();
   const[mo,setMo]=useState(now.getMonth()),[yr,setYr]=useState(now.getFullYear());
   const[staff,setStaff]=useState(()=>loadJ(LS_S,SAMPLE_STAFF));
-  const[pt,setPt]=useState(()=>loadJ('cjk_pt',SAMPLE_PT));
+  const[pt,setPt]=useState(()=>loadJ(LS_PT,SAMPLE_PT));
   const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
   const[bl,setBl]=useState('GAWAI BONUS');
   const[pan,setPan]=useState(false),[eid,setEid]=useState(null);
@@ -312,7 +317,7 @@ export default function Payroll(){
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
   const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
-  useEffect(()=>{saveJ('cjk_pt',pt);},[pt]);
+  useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
