@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import InvoiceExtractor from './InvoiceExtractor';
+import InvoicesWorkspace from './InvoicesWorkspace';
 import Payroll from './Payroll';
 
 const FEATURES = [
@@ -183,7 +183,7 @@ export default function App() {
 
       {/* ─── Content ─── */}
       <main>
-        {active === 'invoice' && <InvoiceExtractor />}
+        {active === 'invoice' && <InvoicesWorkspace />}
         {active === 'payroll' && <Payroll />}
       </main>
 
