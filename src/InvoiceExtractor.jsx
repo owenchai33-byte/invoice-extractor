@@ -459,21 +459,28 @@ Before returning your JSON, verify:
 Return ONLY the JSON object. Nothing else.`;
 
 // =============================================================
-// AI PROVIDER CONFIG — Groq Llama 4 Scout (vision + JSON mode)
+// AI PROVIDER CONFIG — Google Gemini 2.5 Flash (vision + JSON mode)
 // =============================================================
-// Switched back to Scout because:
-//   1) Gemini blocks browser-direct API calls via CORS (needs a backend proxy)
-//   2) Qwen 3.6's 8K TPM free tier is too tight for vision requests
-//   3) Scout's 30K TPM free tier comfortably handles full-resolution invoice images
-// Scout was officially deprecated June 17, 2026, but is still functional on Groq's
-// vision endpoint as of today. Groq deprecation announcements typically allow months
-// of continued access. When Scout actually goes dark, options will be:
-//   A) Switch to qwen/qwen3.6-27b + aggressive image downsizing (works but slow)
-//   B) Add a Vercel API route to proxy Gemini calls (best long-term — solves CORS once)
-//   C) Add a credit card to Groq for the 10x Developer tier limits (no minimum spend)
-export const AI_PROVIDER = 'groq';
-const GROQ_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';  // 30K TPM, vision + JSON, working today
-const GEMINI_MODEL = 'gemini-2.5-flash';                          // BLOCKED by CORS from browser — needs proxy
+// Switched from Groq to Gemini on 11 July 2026 because Groq decommissioned
+// Llama 4 Scout (our vision model) on 17 July 2026, and Groq's only free
+// vision replacement (qwen/qwen3.6-27b) sits on a tight ~6K TPM free tier that
+// rate-limits a single full invoice request. Groq has now decommissioned four
+// models on us in weeks — not a reliable base.
+//
+// Gemini 2.5 Flash free tier is the reliable free option:
+//   - 1,500 requests/day, 250K tokens/min, 15 RPM — no credit card, doesn't expire
+//   - Strong vision OCR + native JSON mode (responseMimeType: application/json)
+//   - Browser-direct calls WORK: as of July 2026 the generativelanguage endpoint
+//     returns proper CORS headers (verified — a bad key returns 400 JSON, not a
+//     CORS TypeError), so NO backend proxy is needed. Just paste a key in ⚙ API.
+//
+// PRIVACY NOTE: Google's *free* tier may use prompts/responses to improve their
+// models. These are supplier purchase invoices (amounts, product codes) — if that
+// ever becomes a concern, a paid Gemini key disables training, or switch back to a
+// provider that doesn't train on API data. Flip AI_PROVIDER below to change.
+export const AI_PROVIDER = 'gemini';
+const GROQ_MODEL = 'qwen/qwen3.6-27b';       // Groq fallback vision model (Scout decommissioned 17 Jul 2026)
+const GEMINI_MODEL = 'gemini-2.5-flash';     // free tier: 1500 rpd / 250K tpm / 15 rpm, vision + JSON
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
@@ -496,9 +503,9 @@ const PROVIDERS = {
 };
 export const AI_CFG = PROVIDERS[AI_PROVIDER];
 
-// Delay between invoice API calls. Images downsized to 1280px before send (~2K tokens each),
-// plus prompt (~1.5K) + response budget (~4K) = ~7.5K per call. Under Qwen 3.6 free tier's
-// 8K TPM, so we can pace ~6-7 calls/min comfortably without triggering the cap.
+// Delay between invoice API calls, paced to the provider's requests-per-minute cap.
+// Gemini free tier is 15 RPM → 5000ms (12/min) stays comfortably under. Groq
+// fallback keeps the wider 10s spacing for its tighter token-per-minute window.
 export const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 5000 : 10000;
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
