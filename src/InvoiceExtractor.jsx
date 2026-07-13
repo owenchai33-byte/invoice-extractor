@@ -479,8 +479,13 @@ Return ONLY the JSON object. Nothing else.`;
 // ever becomes a concern, a paid Gemini key disables training, or switch back to a
 // provider that doesn't train on API data. Flip AI_PROVIDER below to change.
 export const AI_PROVIDER = 'gemini';
-const GROQ_MODEL = 'qwen/qwen3.6-27b';       // Groq fallback vision model (Scout decommissioned 17 Jul 2026)
-const GEMINI_MODEL = 'gemini-2.5-flash';     // free tier: 1500 rpd / 250K tpm / 15 rpm, vision + JSON
+const GROQ_MODEL = 'qwen/qwen3.6-27b';        // Groq fallback vision model (Scout decommissioned 17 Jul 2026)
+// Flash-Lite is Google's fastest/lowest-latency 2.5 model — they explicitly
+// recommend it for "simple data extraction" and low-latency workflows, which is
+// exactly what invoice OCR is. Thinking is off by default on Lite. Free tier is
+// 30 RPM / 1000 RPD. If a messy scan ever reads worse, bump back to
+// 'gemini-2.5-flash' (more accurate, ~half the speed).
+const GEMINI_MODEL = 'gemini-2.5-flash-lite'; // free tier: 1000 rpd / 30 rpm, vision + JSON, fastest
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
@@ -508,7 +513,7 @@ export const AI_CFG = PROVIDERS[AI_PROVIDER];
 // 3000ms gap the effective rate lands near ~10/min — comfortably under the cap
 // while cutting the between-invoice wait almost in half vs the old 5s. Groq
 // fallback keeps the wider 10s spacing for its tighter token-per-minute window.
-export const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 3000 : 10000;
+export const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 2500 : 10000;
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
 
