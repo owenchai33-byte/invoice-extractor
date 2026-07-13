@@ -989,6 +989,7 @@ export default function InvoiceExtractor() {
               if(BACKOFF_MS[attempt]>0) await new Promise(r=>setTimeout(r,BACKOFF_MS[attempt]));
               let txt;
               try {
+                const _t0 = performance.now();
                 const result = await callAI({
                   provider: AI_PROVIDER,
                   apiKey,
@@ -996,6 +997,7 @@ export default function InvoiceExtractor() {
                   imageDataUrl: optimizedImage,
                   prompt: PROMPT,
                 });
+                console.log(`[Invoice] ${file.name}: ${AI_CFG.model} responded in ${Math.round(performance.now()-_t0)}ms (attempt ${attempt+1})`);
                 txt = (result.text||'').trim().replace(/```json|```/g,'').trim();
               } catch(apiErr) {
                 if(apiErr.code === 'rate_limit'){

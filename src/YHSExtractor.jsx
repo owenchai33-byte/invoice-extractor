@@ -249,7 +249,9 @@ export default function YHSExtractor() {
               if (BACKOFF_MS[attempt] > 0) await new Promise(r => setTimeout(r, BACKOFF_MS[attempt]));
               let txt;
               try {
+                const _t0 = performance.now();
                 const result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: optimizedImage, prompt: YHS_PROMPT });
+                console.log(`[YHS] ${file.name}: ${AI_CFG.model} responded in ${Math.round(performance.now() - _t0)}ms (attempt ${attempt + 1})`);
                 txt = (result.text || '').trim().replace(/```json|```/g, '').trim();
               } catch (apiErr) {
                 if (apiErr.code === 'rate_limit') {
@@ -477,7 +479,7 @@ export default function YHSExtractor() {
             </div>
             <div style={{ fontSize: 12, color: '#999', marginTop: 5 }}>
               Free at <a href={AI_CFG.consoleUrl} target="_blank" rel="noreferrer" style={{ color: '#0056b3' }}>{AI_CFG.consoleName}</a>
-              <span style={{ marginLeft: 8, color: '#bbb' }}>· Shares the same {AI_CFG.label} key as the Choon Hua tab</span>
+              <span style={{ marginLeft: 8, color: '#bbb' }}>· Using model: <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 2, fontSize: 11 }}>{AI_CFG.model}</code></span>
             </div>
           </div>
         )}
