@@ -4,7 +4,7 @@ import {
   LOGO, CO, fmt, normalizeDate, formatVolUnit,
   EditableAmount, EditableText,
   pdfToImageFiles, downsizeBase64ToJPEG, callAI,
-  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, runPool,
+  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, BATCH_MIN_GAP_MS, runPool,
 } from './InvoiceExtractor';
 
 const F = 'Calibri, "Segoe UI", Arial, sans-serif';
@@ -256,7 +256,7 @@ export default function YHSExtractor() {
               } catch (apiErr) {
                 if (apiErr.code === 'rate_limit') {
                   lastErr = attempt === BACKOFF_MS.length - 1
-                    ? new Error('Rate limit hit even after retries. Wait a minute and try again.')
+                    ? new Error('Google Gemini rate limit hit (429). The free tier caps requests per minute/day. Wait a minute and try a smaller batch — or enable billing on your Gemini key for far higher limits (cents at your volume, and it stops Google training on your data).')
                     : apiErr;
                   continue;
                 }
@@ -334,7 +334,7 @@ export default function YHSExtractor() {
     let done = 0;
     const settled = await runPool(imageFiles, BATCH_CONCURRENCY, f => processSingleFile(f), () => {
       done++; setProcessingCount({ done, total: imageFiles.length });
-    });
+    }, BATCH_MIN_GAP_MS);
     const results = settled.filter(s => s.ok).map(s => s.value);
     settled.filter(s => !s.ok).forEach(s => {
       setError(prev => (prev ? prev + '\n' : '') + `Failed: ${s.item.name} — ${s.error.message}`);

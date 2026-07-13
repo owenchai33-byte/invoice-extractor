@@ -59,6 +59,18 @@ describe('runPool — concurrent batch executor', () => {
     const out = await runPool([], 5, async n => n);
     expect(out).toEqual([]);
   });
+
+  it('throttles request starts to at least minGapMs apart', async () => {
+    const starts = [];
+    const t0 = Date.now();
+    // 4 items, concurrency 2, 40ms min gap → starts pace out even though 2 can overlap.
+    await runPool([1, 2, 3, 4], 2, async () => { starts.push(Date.now() - t0); await delay(5); }, null, 40);
+    starts.sort((a, b) => a - b);
+    // Each consecutive start should be ~>=40ms after the previous (allow scheduler slack).
+    for (let i = 1; i < starts.length; i++) {
+      expect(starts[i] - starts[i - 1]).toBeGreaterThanOrEqual(30);
+    }
+  });
 });
 
 // Choon Hua rate config — pulled straight from the SUPPLIERS export so the

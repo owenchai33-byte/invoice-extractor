@@ -513,24 +513,35 @@ export const AI_CFG = PROVIDERS[AI_PROVIDER];
 // 3000ms gap the effective rate lands near ~10/min — comfortably under the cap
 // while cutting the between-invoice wait almost in half vs the old 5s. Groq
 // fallback keeps the wider 10s spacing for its tighter token-per-minute window.
-// How many invoices to extract concurrently. The old code ran the whole batch
-// strictly one-at-a-time, so 7 invoices meant 7 sequential round-trips — the
-// single biggest cause of a slow batch. Gemini free tier is 30 RPM and a typical
-// batch is a handful of invoices, so a small pool turns that crawl into 1-2
-// parallel waves. Rate-limit retries in processSingleFile absorb the rare case
-// of a very large batch briefly exceeding the per-minute budget. Groq's tighter
-// token-per-minute window keeps a smaller pool.
-export const BATCH_CONCURRENCY = AI_PROVIDER === 'gemini' ? 5 : 2;
+// Batch pacing. The Gemini FREE tier is tightly rate-limited (per-minute request
+// cap). Bursting the whole batch at once trips 429s, which then trigger long
+// retry backoffs — the app ends up SLOWER than if it had just paced itself. So we
+// keep concurrency low AND throttle how often a new request may START, staying
+// under the free-tier RPM. A paid Gemini key lifts the limit dramatically; there
+// the throttle is harmless (calls just aren't the bottleneck). Groq keeps its own
+// tight pacing.
+export const BATCH_CONCURRENCY = AI_PROVIDER === 'gemini' ? 2 : 1;
+// Minimum gap between request STARTS (ms). ~3s ≈ 20 requests/min — under even a
+// conservative free-tier cap — so we rarely hit a 429 in the first place.
+export const BATCH_MIN_GAP_MS = AI_PROVIDER === 'gemini' ? 3000 : 8000;
 
-// Run `worker` over `items` with at most `limit` in flight at once. Never throws —
-// each slot's outcome is captured as {ok:true,value} or {ok:false,error,item}, in
-// the original item order. `onSettled` fires after each item finishes (for progress).
-export async function runPool(items, limit, worker, onSettled){
+// Run `worker` over `items` with at most `limit` in flight at once, and no two
+// starts closer than `minGapMs`. Never throws — each slot's outcome is captured
+// as {ok:true,value} or {ok:false,error,item}, in the original item order.
+// `onSettled` fires after each item finishes (for progress).
+export async function runPool(items, limit, worker, onSettled, minGapMs = 0){
   const results = new Array(items.length);
   let next = 0;
+  let nextStart = 0;  // earliest timestamp the next request may start
   const runner = async () => {
     while(next < items.length){
       const i = next++;
+      if(minGapMs > 0){
+        const now = Date.now();
+        const wait = Math.max(0, nextStart - now);
+        nextStart = Math.max(now, nextStart) + minGapMs;
+        if(wait > 0) await new Promise(r => setTimeout(r, wait));
+      }
       try { results[i] = {ok:true, value: await worker(items[i], i)}; }
       catch(e){ results[i] = {ok:false, error:e, item:items[i]}; }
       if(onSettled) onSettled();
@@ -1003,7 +1014,7 @@ export default function InvoiceExtractor() {
                 if(apiErr.code === 'rate_limit'){
                   // Final attempt — surface a helpful message, not "retrying..."
                   if(attempt === BACKOFF_MS.length - 1){
-                    lastErr = new Error('Rate limit hit even after retries. Wait a minute, or add a credit card to Groq (console.groq.com/settings/billing) for 10x higher limits — costs $0 if you stay under free quota.');
+                    lastErr = new Error('Google Gemini rate limit hit (429). The free tier caps requests per minute/day. Wait a minute and try a smaller batch — or enable billing on your Gemini key (aistudio.google.com → your key → Google Cloud project → billing) for far higher limits. At your volume it costs cents, and a paid key also stops Google training on your data.');
                   } else {
                     lastErr = apiErr;
                   }
@@ -1175,7 +1186,7 @@ export default function InvoiceExtractor() {
     let done=0;
     const settled=await runPool(imageFiles, BATCH_CONCURRENCY, f=>processSingleFile(f), ()=>{
       done++; setProcessingCount({done, total:imageFiles.length});
-    });
+    }, BATCH_MIN_GAP_MS);
     const results=settled.filter(s=>s.ok).map(s=>s.value);
     settled.filter(s=>!s.ok).forEach(s=>{
       console.error('Error processing',s.item.name,s.error);
