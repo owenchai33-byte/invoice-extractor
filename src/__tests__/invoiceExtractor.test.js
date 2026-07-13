@@ -11,7 +11,36 @@ import {
   computeIssues,
   fmt,
   runPool,
+  parseAIJson,
 } from '../InvoiceExtractor.jsx';
+
+describe('parseAIJson — tolerant JSON extractor for AI output', () => {
+  it('parses a plain object', () => {
+    expect(parseAIJson('{"a":1,"b":2}')).toEqual({ a: 1, b: 2 });
+  });
+  it('parses a plain array (batched multi-image response)', () => {
+    expect(parseAIJson('[{"n":1},{"n":2}]')).toEqual([{ n: 1 }, { n: 2 }]);
+  });
+  it('strips ```json fences', () => {
+    expect(parseAIJson('```json\n[{"x":1}]\n```')).toEqual([{ x: 1 }]);
+  });
+  it('strips prose before/after the JSON', () => {
+    expect(parseAIJson('Here you go: {"ok":true} — done')).toEqual({ ok: true });
+  });
+  it('picks the array when it comes before any object brace', () => {
+    expect(parseAIJson('[{"a":1},{"a":2}]')).toHaveLength(2);
+  });
+  it('tolerates trailing commas', () => {
+    expect(parseAIJson('{"a":1,}')).toEqual({ a: 1 });
+    expect(parseAIJson('[1,2,3,]')).toEqual([1, 2, 3]);
+  });
+  it('repairs unquoted keys', () => {
+    expect(parseAIJson('{total_amount: 6548.76, qty: 60}')).toEqual({ total_amount: 6548.76, qty: 60 });
+  });
+  it('throws on unrecoverable garbage', () => {
+    expect(() => parseAIJson('not json at all')).toThrow();
+  });
+});
 
 describe('runPool — concurrent batch executor', () => {
   const delay = (ms, v) => new Promise(r => setTimeout(() => r(v), ms));

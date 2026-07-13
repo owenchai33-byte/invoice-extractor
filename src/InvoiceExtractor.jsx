@@ -556,34 +556,37 @@ const F='Calibri, "Segoe UI", Arial, sans-serif';
 // =============================================================
 // API CALL DISPATCH — provider-agnostic vision + JSON extraction
 // =============================================================
-// Returns { text, status } or throws Error with .code in
+// Accepts EITHER a single `imageDataUrl` or an array `images` (multiple invoice
+// photos in one request — the key trick for staying under free-tier rate limits:
+// N invoices become 1 API call instead of N). `maxOutputTokens` scales with the
+// number of images. Returns { text } or throws Error with .code in
 // { 'rate_limit', 'auth', 'malformed', 'other' } for the retry loop to handle.
-export async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
+export async function callAI({provider, apiKey, model, imageDataUrl, images, prompt, maxOutputTokens}){
+  const imgs = (images && images.length) ? images : [imageDataUrl];
+  const maxTok = maxOutputTokens || 6000;
+
   if(provider === 'gemini'){
-    // Gemini wants base64 separated from the data URL prefix.
-    const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(imageDataUrl);
-    if(!m) throw Object.assign(new Error('Bad image data URL'), {code:'malformed'});
-    const [, mimeType, base64Data] = m;
+    const parts = [{text: prompt}];
+    for(const dataUrl of imgs){
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
+      if(!m) throw Object.assign(new Error('Bad image data URL'), {code:'malformed'});
+      parts.push({inline_data: {mime_type: m[1], data: m[2]}});
+    }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
     const res = await fetch(url, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        contents:[{
-          parts:[
-            {text: prompt},
-            {inline_data: {mime_type: mimeType, data: base64Data}},
-          ],
-        }],
+        contents:[{ parts }],
         generationConfig:{
           temperature: 0.1,
-          maxOutputTokens: 6000,  // long invoices have 20+ line items; 2000 caused JSON truncation
+          maxOutputTokens: maxTok,
           responseMimeType: 'application/json',
           // Disable Gemini 2.5's default "thinking" pass. It's pure latency for a
           // structured-extraction task (we're reading, not reasoning), and on 2.5
           // it also burns the output-token budget. Setting the budget to 0 makes
-          // Flash respond ~2-3x faster with no accuracy loss for OCR.
+          // Flash respond faster with no accuracy loss for OCR.
           thinkingConfig:{ thinkingBudget: 0 },
         },
       }),
@@ -606,16 +609,15 @@ export async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
   }
 
   // Groq fallback (OpenAI-compatible API)
+  const content = imgs.map(url => ({type:'image_url', image_url:{url}}));
+  content.push({type:'text', text: prompt});
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method:'POST',
     headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}`},
     body: JSON.stringify({
       model,
-      messages:[{role:'user', content:[
-        {type:'image_url', image_url:{url: imageDataUrl}},
-        {type:'text', text: prompt},
-      ]}],
-      max_tokens:4000, temperature:0.1,  // shrunk image leaves room for response; 4000 fits 25+ line items
+      messages:[{role:'user', content}],
+      max_tokens: maxTok, temperature:0.1,
     }),
   });
   const data = await res.json();
@@ -631,6 +633,25 @@ export async function callAI({provider, apiKey, model, imageDataUrl, prompt}){
   }
   const text = (data.choices?.[0]?.message?.content || '').trim();
   return {text};
+}
+
+// Strip markdown fences / prose and parse a JSON value (object or array),
+// with a light repair pass for unquoted keys and trailing commas. Throws on
+// unrecoverable output. Shared by the single- and multi-image extract paths.
+export function parseAIJson(raw){
+  let txt = (raw||'').trim().replace(/```json|```/g,'').trim();
+  const firstObj = txt.indexOf('{'), firstArr = txt.indexOf('[');
+  const start = (firstArr !== -1 && (firstObj === -1 || firstArr < firstObj)) ? firstArr : firstObj;
+  if(start > 0) txt = txt.substring(start);
+  const lastObj = txt.lastIndexOf('}'), lastArr = txt.lastIndexOf(']');
+  const end = Math.max(lastObj, lastArr);
+  if(end !== -1 && end < txt.length-1) txt = txt.substring(0, end+1);
+  txt = txt.replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+  try { return JSON.parse(txt); }
+  catch {
+    const repaired = txt.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+    return JSON.parse(repaired);  // let caller catch a hard failure
+  }
 }
 
 // ============================================================

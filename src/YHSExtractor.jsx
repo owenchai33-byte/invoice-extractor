@@ -3,8 +3,8 @@ import * as XLSX from 'xlsx';
 import {
   LOGO, CO, fmt, normalizeDate, formatVolUnit,
   EditableAmount, EditableText,
-  pdfToImageFiles, downsizeBase64ToJPEG, callAI,
-  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, BATCH_MIN_GAP_MS, runPool,
+  pdfToImageFiles, downsizeBase64ToJPEG, callAI, parseAIJson,
+  AI_PROVIDER, AI_CFG, BATCH_MIN_GAP_MS, runPool,
 } from './InvoiceExtractor';
 
 const F = 'Calibri, "Segoe UI", Arial, sans-serif';
@@ -115,6 +115,33 @@ EXTRACTION RULES:
 SELF-CHECK: sum of volumes[].ctn should be ≤ total_qty. Every digit in invoice_no and total_amount must be one you'd bet on, else flag it.
 
 Return ONLY the JSON object. Nothing else.`;
+
+// How many invoice images to send in a single API call. Batching is the key to
+// speed on a rate-limited free tier: N invoices become ceil(N/CHUNK) requests
+// instead of N. Kept small (4) so the model reliably keeps each invoice's data
+// separate — larger chunks raise the risk of mixing invoices up.
+const YHS_CHUNK = 4;
+
+const RATE_MSG = 'Google Gemini rate limit hit (429). The free tier caps requests per minute/day. Wait a minute and try again — or enable billing on your Gemini key for far higher limits (cents at your volume, and it stops Google training on your data).';
+
+// Multi-image prompt: same extraction rules, but return an ordered array with
+// exactly one object per image so we can map results back by position.
+const yhsMultiPrompt = (n) => `You are given ${n} Yeo Hiap Seng invoice images, in order. Extract each one INDEPENDENTLY and return a JSON ARRAY of EXACTLY ${n} objects — one per image, in the SAME ORDER as the images. Respond with ONLY the JSON array — no markdown, no backticks, no explanation.
+
+Each array element MUST be this exact object shape:
+{"invoice_no":"the document number","invoice_date":"DD/MM/YYYY","total_amount":6548.76,"total_qty":360,"volumes":[{"volume_ml":250,"ctn":360}],"uncertain_fields":[]}
+
+CRITICAL: Do NOT mix data between invoices. Each object describes ONLY its own image. Never carry an amount, invoice number, or carton count from one image into another. If you can read K images clearly but not all, still return exactly ${n} objects — flag the unclear ones in their own uncertain_fields.
+
+Per-object rules (apply to each image separately):
+- invoice_no: the "Document No" / "Invoice No". Read each digit; flag if unclear.
+- invoice_date: DD/MM/YYYY with leading zeros; flag if unclear.
+- total_amount: the final "Total Amount Due" / "Grand Total" (NOT subtotal). Read each digit exactly, no rounding; flag if unclear.
+- total_qty: total CARTON (CTN) count on that invoice.
+- volumes: array of {volume_ml, ctn} for each distinct volume ON THAT invoice (250ML, 300ML, 320ML, 1L=1000, 1.5L=1500, etc.). Include only volumes present; omit others. Sum of ctn should be ≤ total_qty.
+- uncertain_fields: array of field names you had any doubt about; be liberal.
+
+Return ONLY the JSON array of ${n} objects. Nothing else.`;
 
 // Small click-to-edit integer cell.
 function EditableInt({ value, onCommit, placeholder = '0', width = 60 }) {
@@ -233,84 +260,105 @@ export default function YHSExtractor() {
     if (fileRef.current) fileRef.current.value = '';
   };
 
+  // Read a File into a data URL.
+  const readDataUrl = (file) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(new Error('Failed to read file'));
+    r.readAsDataURL(file);
+  });
+
+  // Build one invoice record from a parsed JSON object + its preview image.
+  const mkInvoice = (parsed, image) => {
+    const p = parsed || {};
+    const dc = normalizeDate(p.invoice_date);
+    const vols = {};
+    if (Array.isArray(p.volumes)) p.volumes.forEach(v => {
+      const ml = Number(v.volume_ml), ctn = Number(v.ctn) || 0;
+      if (ml > 0 && ctn) vols[ml] = (vols[ml] || 0) + ctn;
+    });
+    return {
+      id: 'yhs_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+      invoice_no: p.invoice_no || '',
+      invoice_date: dc.ok ? dc.date : (p.invoice_date || ''),
+      supplier: p.supplier || YHS_SUPPLIER,
+      amount: Number(p.total_amount) || 0,
+      qty: Number(p.total_qty) || 0,
+      vols,
+      uncertain: Array.isArray(p.uncertain_fields) ? p.uncertain_fields : [],
+      image,
+    };
+  };
+
+  // Extract ONE invoice from one file — the reliable per-image path, also used as
+  // the fallback when a batched call doesn't return one object per image.
   const processSingleFile = useCallback(async (file) => {
     if (!file?.type.startsWith('image/')) throw new Error('Not an image file: ' + file.name);
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async () => {
+    const raw = await readDataUrl(file);
+    let optimized; try { optimized = await downsizeBase64ToJPEG(raw, 1280, 0.75); } catch { optimized = raw; }
+    const BACKOFF_MS = [0, 15000, 20000, 30000, 30000];
+    let lastErr = null;
+    for (let attempt = 0; attempt < BACKOFF_MS.length; attempt++) {
+      try {
+        if (BACKOFF_MS[attempt] > 0) await new Promise(r => setTimeout(r, BACKOFF_MS[attempt]));
+        let result;
         try {
-          let optimizedImage;
-          try { optimizedImage = await downsizeBase64ToJPEG(reader.result, 1280, 0.75); }
-          catch { optimizedImage = reader.result; }
-          const BACKOFF_MS = [0, 15000, 20000, 30000, 30000];
-          let lastErr = null;
-          for (let attempt = 0; attempt < BACKOFF_MS.length; attempt++) {
-            try {
-              if (BACKOFF_MS[attempt] > 0) await new Promise(r => setTimeout(r, BACKOFF_MS[attempt]));
-              let txt;
-              try {
-                const _t0 = performance.now();
-                const result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: optimizedImage, prompt: YHS_PROMPT });
-                console.log(`[YHS] ${file.name}: ${AI_CFG.model} responded in ${Math.round(performance.now() - _t0)}ms (attempt ${attempt + 1})`);
-                txt = (result.text || '').trim().replace(/```json|```/g, '').trim();
-              } catch (apiErr) {
-                if (apiErr.code === 'rate_limit') {
-                  lastErr = attempt === BACKOFF_MS.length - 1
-                    ? new Error('Google Gemini rate limit hit (429). The free tier caps requests per minute/day. Wait a minute and try a smaller batch — or enable billing on your Gemini key for far higher limits (cents at your volume, and it stops Google training on your data).')
-                    : apiErr;
-                  continue;
-                }
-                throw apiErr;
-              }
-              if (!txt.startsWith('{')) txt = txt.substring(txt.indexOf('{'));
-              if (!txt.endsWith('}')) txt = txt.substring(0, txt.lastIndexOf('}') + 1);
-              txt = txt.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
-              let parsed;
-              try { parsed = JSON.parse(txt); }
-              catch (parseErr) {
-                const repaired = txt.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
-                try { parsed = JSON.parse(repaired); }
-                catch {
-                  const isTruncated = /Unexpected end/i.test(parseErr.message);
-                  throw new Error(`AI returned malformed data for "${file.name}". ${isTruncated ? 'Response cut off — try a clearer photo.' : 'Try re-uploading a sharper photo.'}`);
-                }
-              }
-              const dc = normalizeDate(parsed.invoice_date);
-              if (dc.ok) parsed.invoice_date = dc.date;
-
-              // Convert the volumes array → a { [ml]: ctn } map (only volumes present).
-              const vols = {};
-              if (Array.isArray(parsed.volumes)) {
-                parsed.volumes.forEach(v => {
-                  const ml = Number(v.volume_ml), ctn = Number(v.ctn) || 0;
-                  if (ml > 0 && ctn) vols[ml] = (vols[ml] || 0) + ctn;
-                });
-              }
-
-              let imagePreview = null;
-              try { imagePreview = await downsizeBase64ToJPEG(reader.result, 1024, 0.7); } catch {}
-
-              resolve({
-                id: 'yhs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-                invoice_no: parsed.invoice_no || '',
-                invoice_date: parsed.invoice_date || '',
-                supplier: parsed.supplier || YHS_SUPPLIER,
-                amount: Number(parsed.total_amount) || 0,
-                qty: Number(parsed.total_qty) || 0,
-                vols,
-                uncertain: Array.isArray(parsed.uncertain_fields) ? parsed.uncertain_fields : [],
-                image: imagePreview,
-              });
-              return;
-            } catch (inner) { lastErr = inner; }
-          }
-          reject(lastErr || new Error('Failed after retries'));
-        } catch (e) { reject(e); }
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
+          const _t0 = performance.now();
+          result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: optimized, prompt: YHS_PROMPT });
+          console.log(`[YHS] ${file.name}: ${AI_CFG.model} in ${Math.round(performance.now() - _t0)}ms`);
+        } catch (apiErr) {
+          if (apiErr.code === 'rate_limit') { lastErr = attempt === BACKOFF_MS.length - 1 ? new Error(RATE_MSG) : apiErr; continue; }
+          throw apiErr;
+        }
+        const parsed = parseAIJson(result.text);
+        let preview = null; try { preview = await downsizeBase64ToJPEG(raw, 1024, 0.7); } catch {}
+        return mkInvoice(parsed, preview);
+      } catch (inner) { lastErr = inner; }
+    }
+    throw lastErr || new Error('Failed after retries');
   }, [apiKey]);
+
+  // Extract a CHUNK of invoices in ONE API call (the speed win — fewer requests
+  // means we stay under the free-tier rate limit). If the model doesn't return
+  // exactly one object per image, fall back to per-image extraction so we never
+  // lose or misalign an invoice.
+  const processChunk = useCallback(async (files, onOne) => {
+    const raws = await Promise.all(files.map(readDataUrl));
+    const optimized = await Promise.all(raws.map(r => downsizeBase64ToJPEG(r, 1280, 0.75).catch(() => r)));
+    const previews = await Promise.all(raws.map(r => downsizeBase64ToJPEG(r, 1024, 0.7).catch(() => null)));
+
+    const BACKOFF_MS = [0, 15000, 20000];
+    let lastErr = null;
+    for (let attempt = 0; attempt < BACKOFF_MS.length; attempt++) {
+      try {
+        if (BACKOFF_MS[attempt] > 0) await new Promise(r => setTimeout(r, BACKOFF_MS[attempt]));
+        let result;
+        try {
+          const _t0 = performance.now();
+          result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, images: optimized, prompt: yhsMultiPrompt(files.length), maxOutputTokens: 2000 + files.length * 1000 });
+          console.log(`[YHS] batch×${files.length}: ${AI_CFG.model} in ${Math.round(performance.now() - _t0)}ms`);
+        } catch (apiErr) {
+          if (apiErr.code === 'rate_limit') { lastErr = attempt === BACKOFF_MS.length - 1 ? new Error(RATE_MSG) : apiErr; continue; }
+          throw apiErr;
+        }
+        const parsed = parseAIJson(result.text);
+        const arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.invoices) ? parsed.invoices : null);
+        if (!arr || arr.length !== files.length) { lastErr = new Error('batch returned ' + (arr ? arr.length : 'non-array') + ' for ' + files.length + ' images'); break; }
+        const invs = arr.map((p, i) => mkInvoice(p, previews[i]));
+        invs.forEach(() => onOne && onOne());
+        return invs;
+      } catch (inner) {
+        if (inner.code === 'rate_limit') { lastErr = inner; continue; }
+        lastErr = inner; break; // parse / count-mismatch / other → fall back to per-image
+      }
+    }
+    // Fallback: per-image extraction (reliable). If this was a rate-limit, the
+    // per-image path surfaces the actionable 429 message.
+    console.warn('[YHS] batch call fell back to per-image:', lastErr?.message);
+    const out = [];
+    for (const f of files) { out.push(await processSingleFile(f)); onOne && onOne(); }
+    return out;
+  }, [apiKey, processSingleFile]);
 
   const processFiles = useCallback(async (files) => {
     if (!apiKey) { setError(`Set your ${AI_CFG.label} API key first`); setShowSettings(true); return; }
@@ -332,17 +380,22 @@ export default function YHSExtractor() {
 
     setProcessingCount({ done: 0, total: imageFiles.length });
     let done = 0;
-    const settled = await runPool(imageFiles, BATCH_CONCURRENCY, f => processSingleFile(f), () => {
-      done++; setProcessingCount({ done, total: imageFiles.length });
-    }, BATCH_MIN_GAP_MS);
-    const results = settled.filter(s => s.ok).map(s => s.value);
-    settled.filter(s => !s.ok).forEach(s => {
-      setError(prev => (prev ? prev + '\n' : '') + `Failed: ${s.item.name} — ${s.error.message}`);
+    const onOne = () => { done++; setProcessingCount({ done, total: imageFiles.length }); };
+
+    // Split into chunks → one API call per chunk (the batching speed win).
+    const chunks = [];
+    for (let i = 0; i < imageFiles.length; i += YHS_CHUNK) chunks.push(imageFiles.slice(i, i + YHS_CHUNK));
+
+    const settled = await runPool(chunks, 2, ch => processChunk(ch, onOne), null, BATCH_MIN_GAP_MS);
+    const results = [];
+    settled.forEach((s, ci) => {
+      if (s.ok) results.push(...s.value);
+      else setError(prev => (prev ? prev + '\n' : '') + `Failed batch ${ci + 1}: ${s.error.message}`);
     });
     if (results.length > 0) setInvoices(prev => [...prev, ...results]);
     setUploading(false); setProcessing(false);
     if (fileRef.current) fileRef.current.value = '';
-  }, [processSingleFile, apiKey]);
+  }, [processChunk, apiKey]);
 
   const calc = calcYHS({ invoices, rate, otherDiscount, creditNote });
   const showUpload = invoices.length === 0 || uploading;
