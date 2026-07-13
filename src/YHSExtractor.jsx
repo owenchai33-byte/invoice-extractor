@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import {
   LOGO, CO, fmt, normalizeDate, formatVolUnit,
@@ -16,41 +16,35 @@ const B = '1px solid #000';
 // Flat model (not cascading like Choon Hua):
 //   - 2% discount on the whole invoice total
 //   - Transport subsidy: every carton earns RM0.30 + RM0.20 on TOTAL cartons
-//   - Product volume bonus: cartons of a given volume earn a per-volume rate
-//     (RM/CTN). Volumes and their rates are CONFIGURABLE — see volCats. The
-//     original deal had 250ML & 300ML at RM0.50; other volumes (320ML, 1L,
-//     1.5L, …) are added as they appear on invoices, each with its own editable
-//     rate (defaults to RM0.50 — VERIFY against the YHS agreement).
+//   - Product volume bonus: every carton that has a volume earns a flat
+//     RM0.50/CTN (all volumes share the same rate). The volume breakdown is
+//     recorded PER INVOICE — each invoice lists only the volumes it actually
+//     carries (250ML, 300ML, 320ML, 1L, 1.5L, …), not a fixed global grid.
 //   - Other discount + credit note (manual)
 // TOTAL PAYABLE = invoice total − 2% − transport(0.30) − transport(0.20)
-//                 − Σ(volume bonuses) − other discount − credit note.
+//                 − Σ(all volume cartons × rate) − other discount − credit note.
 const YHS_RATE_2PCT = 0.02;
 const YHS_TRANSPORT_1 = 0.30;
 const YHS_TRANSPORT_2 = 0.20;
 const YHS_DEFAULT_RATE = 0.50;
 const YHS_SUPPLIER = 'YEO HIAP SENG TRADING SDN BHD';
 
-// Default configurable volume categories. Each is {ml, rate}; the display label
-// is derived from ml via formatVolUnit (250→"250ML", 1000→"1L", 1500→"1.5L").
-const DEFAULT_VOLCATS = [
-  { ml: 250, rate: YHS_DEFAULT_RATE },
-  { ml: 300, rate: YHS_DEFAULT_RATE },
-  { ml: 320, rate: YHS_DEFAULT_RATE },
-  { ml: 1000, rate: YHS_DEFAULT_RATE },
-  { ml: 1500, rate: YHS_DEFAULT_RATE },
-];
+// Volumes offered in the per-invoice "add volume" picker (ml). Owen can still
+// type any other volume via the custom option.
+const COMMON_VOLS = [250, 300, 320, 500, 1000, 1500];
 
 export function volLabel(ml) {
   return formatVolUnit(ml) || `${ml}ML`;
 }
 
 // Pure calc — exported so the test suite can lock it against the source Excel.
-// Round to 4 dp to kill float noise while preserving the spreadsheet's precision
-// (the 2% line is not rounded to sen, e.g. 61004.69 × 2% = 1220.0938).
-// Each invoice carries `vols`: a { [ml]: cartonCount } map. `volCats` defines
-// which volumes earn a bonus and at what rate.
-export function calcYHS({ invoices = [], volCats = [], otherDiscount = 0, creditNote = 0 }) {
+// Round to 4 dp to kill float noise while preserving the sheet's precision (the
+// 2% line is not rounded to sen, e.g. 61004.69 × 2% = 1220.0938). Volumes are
+// aggregated from each invoice's `vols` map ({ [ml]: cartonCount }); every
+// volume earns the same flat `rate`.
+export function calcYHS({ invoices = [], rate = YHS_DEFAULT_RATE, otherDiscount = 0, creditNote = 0 }) {
   const r4 = v => Math.round(v * 10000) / 10000;
+  const rt = Number(rate) || 0;
   const totalAmount = invoices.reduce((s, i) => s + (Number(i.amount) || 0), 0);
   const totalCtn = invoices.reduce((s, i) => s + (Number(i.qty) || 0), 0);
 
@@ -58,12 +52,21 @@ export function calcYHS({ invoices = [], volCats = [], otherDiscount = 0, credit
   const transport1 = r4(totalCtn * YHS_TRANSPORT_1);
   const transport2 = r4(totalCtn * YHS_TRANSPORT_2);
 
-  // Per-volume totals and bonuses.
-  const volumes = volCats.map(vc => {
-    const ctn = invoices.reduce((s, i) => s + (Number(i.vols?.[vc.ml]) || 0), 0);
-    const rate = Number(vc.rate) || 0;
-    return { ml: vc.ml, label: volLabel(vc.ml), rate, ctn, bonus: r4(ctn * rate) };
+  // Aggregate carton counts per volume across every invoice.
+  const volMap = {};
+  invoices.forEach(i => {
+    const vols = i.vols || {};
+    Object.keys(vols).forEach(ml => {
+      const m = Number(ml), c = Number(vols[ml]) || 0;
+      if (m > 0 && c) volMap[m] = (volMap[m] || 0) + c;
+    });
   });
+  const volumes = Object.keys(volMap)
+    .map(ml => {
+      const m = Number(ml), ctn = volMap[ml];
+      return { ml: m, label: volLabel(m), rate: rt, ctn, bonus: r4(ctn * rt) };
+    })
+    .sort((a, b) => a.ml - b.ml);
   const totalBonus = r4(volumes.reduce((s, v) => s + v.bonus, 0));
 
   const od = Number(otherDiscount) || 0;
@@ -73,7 +76,7 @@ export function calcYHS({ invoices = [], volCats = [], otherDiscount = 0, credit
   );
 
   return {
-    totalAmount: r4(totalAmount), totalCtn,
+    totalAmount: r4(totalAmount), totalCtn, rate: rt,
     discount2, transport1, transport2,
     volumes, totalBonus,
     otherDiscount: r4(od), creditNote: r4(cn), payable,
@@ -81,10 +84,9 @@ export function calcYHS({ invoices = [], volCats = [], otherDiscount = 0, credit
 }
 
 // AI prompt — extracts per-invoice totals plus a per-volume carton breakdown.
-// The model detects each line item's volume (in ml) and sums cartons by volume.
 const YHS_PROMPT = `You are an invoice data extractor for Yeo Hiap Seng, a Malaysian beverage distributor. Analyze this invoice image carefully and extract data into this EXACT JSON format. Respond with ONLY valid JSON — no markdown, no backticks, no explanation.
 
-{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","total_amount":6548.76,"total_qty":360,"volumes":[{"volume_ml":250,"ctn":360},{"volume_ml":1500,"ctn":0}],"uncertain_fields":[]}
+{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","total_amount":6548.76,"total_qty":360,"volumes":[{"volume_ml":250,"ctn":360}],"uncertain_fields":[]}
 
 ============================================================
 ABSOLUTE TRUTHFULNESS — MOST IMPORTANT:
@@ -101,11 +103,11 @@ EXTRACTION RULES:
 2. invoice_date: From "Invoice Date" / "Document Date". Output STRICTLY DD/MM/YYYY with leading zeros. Flag if unclear.
 3. total_amount: The final "Total Amount Due" / "Grand Total" (bottom-line MYR amount, NOT subtotal before tax). Read each digit. Flag if unclear.
 4. total_qty: Total number of CARTONS (CTN) on the whole invoice — the "PRODUCT TOTAL" / "TOTAL QTY" carton count. A carton count, not a piece count.
-5. volumes: An ARRAY breaking the cartons down by product VOLUME. For each distinct volume on the invoice, output {"volume_ml": <volume in millilitres>, "ctn": <total cartons of that volume>}.
+5. volumes: An ARRAY breaking the cartons down by product VOLUME. Include ONLY volumes that actually appear on THIS invoice — do not pad with zero-carton volumes. For each distinct volume present, output {"volume_ml": <volume in millilitres>, "ctn": <total cartons of that volume>}.
    - Read the volume from each line item's description (e.g. "250ML", "300ML", "320ML", "1L", "1.5L").
    - Convert litres to millilitres: 1L → 1000, 1.5L → 1500, 2L → 2000.
    - Sum the carton quantities of all line items that share the same volume.
-   - Common YHS volumes: 250ML, 300ML, 320ML, 1000ML (1L), 1500ML (1.5L). There may be others — include every volume you see.
+   - Common YHS volumes: 250ML, 300ML, 320ML, 1000ML (1L), 1500ML (1.5L). Include every volume you see; omit volumes not on this invoice.
    - The sum of all volumes[].ctn should equal total_qty. If some cartons have no readable volume, still count them in total_qty but you may omit them from volumes.
 6. supplier: From the TOP HEADER (the company that ISSUED the invoice), usually "YEO HIAP SENG".
 7. uncertain_fields: ARRAY of field names you had ANY doubt about. Possible: "invoice_no","invoice_date","total_amount","total_qty","volumes". BE LIBERAL.
@@ -114,8 +116,8 @@ SELF-CHECK: sum of volumes[].ctn should be ≤ total_qty. Every digit in invoice
 
 Return ONLY the JSON object. Nothing else.`;
 
-// Small click-to-edit integer cell for the CTN columns.
-function EditableInt({ value, onCommit, placeholder = '0' }) {
+// Small click-to-edit integer cell.
+function EditableInt({ value, onCommit, placeholder = '0', width = 60 }) {
   const [editing, setEditing] = useState(false);
   const [local, setLocal] = useState(String(value ?? ''));
   const ref = useRef(null);
@@ -133,40 +135,12 @@ function EditableInt({ value, onCommit, placeholder = '0' }) {
       onBlur={commit}
       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setLocal(String(value ?? '')); setEditing(false); } }}
       className="noP"
-      style={{ width: '100%', border: '1px solid #2563eb', borderRadius: 3, padding: '3px 4px', fontSize: 16, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />;
+      style={{ width, border: '1px solid #2563eb', borderRadius: 3, padding: '2px 4px', fontSize: 15, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />;
   }
   return <span onClick={() => setEditing(true)} className="editable-text"
     title="Click to edit"
-    style={{ display: 'block', cursor: 'text', padding: '3px 4px', borderRadius: 3, fontSize: 16, textAlign: 'center', color: (value ? '#000' : '#bbb') }}>
+    style={{ display: 'inline-block', minWidth: 34, cursor: 'text', padding: '2px 4px', borderRadius: 3, fontSize: 15, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: (value ? '#000' : '#bbb') }}>
     {value ? value : placeholder}
-  </span>;
-}
-
-// Click-to-edit rate cell (RM/CTN) for the volume-subsidy table.
-function EditableRate({ value, onCommit }) {
-  const [editing, setEditing] = useState(false);
-  const [local, setLocal] = useState(String(value ?? ''));
-  const ref = useRef(null);
-  useEffect(() => { if (!editing) setLocal(value == null ? '' : String(value)); }, [value, editing]);
-  useEffect(() => { if (editing && ref.current) { ref.current.focus(); ref.current.select(); } }, [editing]);
-  const commit = () => {
-    const n = parseFloat(local);
-    const clean = isNaN(n) || n < 0 ? 0 : n;
-    if (clean !== value) onCommit(clean);
-    setEditing(false);
-  };
-  if (editing) {
-    return <input ref={ref} type="number" step="0.01" value={local}
-      onChange={e => setLocal(e.target.value)}
-      onBlur={commit}
-      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setLocal(String(value ?? '')); setEditing(false); } }}
-      className="noP"
-      style={{ width: '100%', border: '1px solid #2563eb', borderRadius: 3, padding: '3px 4px', fontSize: 15, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />;
-  }
-  return <span onClick={() => setEditing(true)} className="editable-text"
-    title="Click to edit rate (RM per carton)"
-    style={{ display: 'block', cursor: 'text', padding: '3px 4px', borderRadius: 3, fontSize: 15, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
-    RM{Number(value || 0).toFixed(2)}
   </span>;
 }
 
@@ -180,28 +154,15 @@ const T = {
 const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '1px solid #aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: p ? '#111' : '#fff', color: p ? '#fff' : '#333', fontFamily: F });
 
 const LS_YHS = 'yhs_invoices';
-const LS_VOLCATS = 'yhs_volcats_v1';
-
-// Keep volume categories sorted ascending by ml, de-duplicated.
-function normalizeVolCats(list) {
-  const seen = new Map();
-  list.forEach(vc => {
-    const ml = Number(vc.ml);
-    if (!ml || ml <= 0) return;
-    if (!seen.has(ml)) seen.set(ml, { ml, rate: Number(vc.rate) || 0 });
-  });
-  return [...seen.values()].sort((a, b) => a.ml - b.ml);
-}
+const LS_RATE = 'yhs_rate';
 
 export default function YHSExtractor() {
   const [invoices, setInvoices] = useState(() => {
     try { return JSON.parse(localStorage.getItem(LS_YHS)) || []; } catch { return []; }
   });
-  const [volCats, setVolCats] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(LS_VOLCATS));
-      return Array.isArray(saved) && saved.length ? normalizeVolCats(saved) : normalizeVolCats(DEFAULT_VOLCATS);
-    } catch { return normalizeVolCats(DEFAULT_VOLCATS); }
+  const [rate, setRate] = useState(() => {
+    try { const r = parseFloat(localStorage.getItem(LS_RATE)); return isNaN(r) ? YHS_DEFAULT_RATE : r; }
+    catch { return YHS_DEFAULT_RATE; }
   });
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -214,12 +175,12 @@ export default function YHSExtractor() {
   const [otherDiscount, setOtherDiscount] = useState(0);
   const [creditNote, setCreditNote] = useState(0);
   const [previewId, setPreviewId] = useState(null);
-  const [newVolMl, setNewVolMl] = useState('');
+  const [volAdd, setVolAdd] = useState({}); // { [invId]: { ml, custom, ctn } }
   const fileRef = useRef(null);
   const uploadAreaRef = useRef(null);
 
   useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices]);
-  useEffect(() => { try { localStorage.setItem(LS_VOLCATS, JSON.stringify(volCats)); } catch {} }, [volCats]);
+  useEffect(() => { try { localStorage.setItem(LS_RATE, String(rate)); } catch {} }, [rate]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {
@@ -245,24 +206,30 @@ export default function YHSExtractor() {
   const updateField = (id, field, val) =>
     setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, [field]: val } : inv));
 
-  const updateVol = (id, ml, ctn) =>
+  // Per-invoice volume edits.
+  const setInvVol = (id, ml, ctn) =>
     setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, vols: { ...inv.vols, [ml]: ctn } } : inv));
-
-  const removeInvoice = id => setInvoices(prev => prev.filter(i => i.id !== id));
-
-  // Volume-category management.
-  const setRate = (ml, rate) => setVolCats(prev => prev.map(vc => vc.ml === ml ? { ...vc, rate } : vc));
-  const removeVolCat = ml => setVolCats(prev => prev.filter(vc => vc.ml !== ml));
-  const addVolCat = () => {
-    const ml = parseInt(newVolMl, 10);
-    if (!ml || ml <= 0) return;
-    setVolCats(prev => normalizeVolCats([...prev, { ml, rate: YHS_DEFAULT_RATE }]));
-    setNewVolMl('');
+  const removeInvVol = (id, ml) =>
+    setInvoices(prev => prev.map(inv => {
+      if (inv.id !== id) return inv;
+      const vols = { ...inv.vols }; delete vols[ml];
+      return { ...inv, vols };
+    }));
+  const addInvVol = (id) => {
+    const entry = volAdd[id] || {};
+    const ml = entry.ml === 'custom' ? parseInt(entry.custom, 10) : parseInt(entry.ml, 10);
+    const ctn = parseInt(entry.ctn, 10);
+    if (!ml || ml <= 0 || !ctn || ctn <= 0) return;
+    setInvoices(prev => prev.map(inv => inv.id === id
+      ? { ...inv, vols: { ...inv.vols, [ml]: (Number(inv.vols?.[ml]) || 0) + ctn } }
+      : inv));
+    setVolAdd(prev => ({ ...prev, [id]: { ml: String(COMMON_VOLS[0]), custom: '', ctn: '' } }));
   };
 
+  const removeInvoice = id => setInvoices(prev => prev.filter(i => i.id !== id));
   const reset = () => {
     setInvoices([]); setUploading(false); setProcessing(false); setError(null);
-    setOtherDiscount(0); setCreditNote(0); setPreviewId(null);
+    setOtherDiscount(0); setCreditNote(0); setPreviewId(null); setVolAdd({});
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -309,12 +276,11 @@ export default function YHSExtractor() {
               const dc = normalizeDate(parsed.invoice_date);
               if (dc.ok) parsed.invoice_date = dc.date;
 
-              // Convert the volumes array → a { [ml]: ctn } map.
+              // Convert the volumes array → a { [ml]: ctn } map (only volumes present).
               const vols = {};
               if (Array.isArray(parsed.volumes)) {
                 parsed.volumes.forEach(v => {
-                  const ml = Number(v.volume_ml);
-                  const ctn = Number(v.ctn) || 0;
+                  const ml = Number(v.volume_ml), ctn = Number(v.ctn) || 0;
                   if (ml > 0 && ctn) vols[ml] = (vols[ml] || 0) + ctn;
                 });
               }
@@ -373,82 +339,114 @@ export default function YHSExtractor() {
         setError(prev => (prev ? prev + '\n' : '') + `Failed: ${imageFiles[i].name} — ${e.message}`);
       }
     }
-    if (results.length > 0) {
-      setInvoices(prev => [...prev, ...results]);
-      // Auto-add any volumes the AI detected that aren't configured yet, at the
-      // default rate — so a new volume slots straight in as its own column.
-      const detected = new Set();
-      results.forEach(r => Object.keys(r.vols || {}).forEach(ml => detected.add(Number(ml))));
-      setVolCats(prev => {
-        const known = new Set(prev.map(vc => vc.ml));
-        const additions = [...detected].filter(ml => !known.has(ml)).map(ml => ({ ml, rate: YHS_DEFAULT_RATE }));
-        return additions.length ? normalizeVolCats([...prev, ...additions]) : prev;
-      });
-    }
+    if (results.length > 0) setInvoices(prev => [...prev, ...results]);
     setUploading(false); setProcessing(false);
     if (fileRef.current) fileRef.current.value = '';
   }, [processSingleFile, apiKey]);
 
-  const calc = calcYHS({ invoices, volCats, otherDiscount, creditNote });
+  const calc = calcYHS({ invoices, rate, otherDiscount, creditNote });
   const showUpload = invoices.length === 0 || uploading;
-  const nCols = 5 + volCats.length; // NO,DATE,INVOICE,AMOUNT,QTY + volume columns
 
   const downloadExcel = () => {
     const wb = XLSX.utils.book_new(), d = [];
     d.push([CO.name + ' ' + CO.reg]); d.push([CO.addr]); d.push(['Tel: ' + CO.tel + '    E-mail: ' + CO.email]);
     d.push([]); d.push(['PAYMENT SUMMARY']); d.push(['SUPPLIER: ' + YHS_SUPPLIER]); d.push([]);
-    const head = ['NO.', 'DATE', 'INVOICE NO.', 'AMOUNT', 'QUANTITY (CTN)', ...volCats.map(vc => volLabel(vc.ml) + ' (CTN)')];
-    d.push(head);
+    d.push(['NO.', 'DATE', 'INVOICE NO.', 'AMOUNT', 'QUANTITY (CTN)', 'VOLUME BREAKDOWN (CTN)']);
     invoices.forEach((inv, i) => {
-      d.push([i + 1, inv.invoice_date, inv.invoice_no, inv.amount, inv.qty, ...volCats.map(vc => inv.vols?.[vc.ml] || '')]);
+      const volStr = Object.keys(inv.vols || {})
+        .map(Number).sort((a, b) => a - b)
+        .filter(ml => inv.vols[ml])
+        .map(ml => `${volLabel(ml)}: ${inv.vols[ml]}`).join(', ');
+      d.push([i + 1, inv.invoice_date, inv.invoice_no, inv.amount, inv.qty, volStr]);
     });
-    d.push(['TOTAL:', '', '', calc.totalAmount, calc.totalCtn, ...calc.volumes.map(v => v.ctn)]);
+    d.push(['TOTAL:', '', '', calc.totalAmount, calc.totalCtn, '']);
     d.push([]);
     d.push(['', 'TOTAL INVOICE AMOUNT:', '', '', calc.totalAmount]);
     d.push(['', '2% DISCOUNT:', '', '-', calc.discount2]);
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.30):`, '', '-', calc.transport1]);
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`, '', '-', calc.transport2]);
-    calc.volumes.filter(v => v.ctn > 0).forEach(v => {
+    calc.volumes.forEach(v => {
       d.push(['', `${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
     });
     d.push(['', 'OTHER DISCOUNT:', '', calc.otherDiscount ? '-' : '', calc.otherDiscount || '']);
     d.push(['', 'CREDIT NOTE:', '', calc.creditNote ? '-' : '', calc.creditNote || '']);
     d.push(['', 'TOTAL AMOUNT PAYABLE:', '', '', calc.payable]);
     const ws = XLSX.utils.aoa_to_sheet(d);
-    ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 16 }, { wch: 14 }, { wch: 15 }, ...volCats.map(() => ({ wch: 12 }))];
+    ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 16 }, { wch: 14 }, { wch: 15 }, { wch: 34 }];
     XLSX.utils.book_append_sheet(wb, ws, 'YHS');
     XLSX.writeFile(wb, 'Payment_Summary_YHS.xlsx');
   };
 
-  // A summary row: label (right-aligned), minus sign, value.
   const SumRow = ({ label, value, sign = '-', bold = false, highlight = false, topBorder = false }) => (
     <tr>
-      <td colSpan={3} style={{ border: 'none' }} />
+      <td colSpan={2} style={{ border: 'none' }} />
       <td style={{ ...T.bxL, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(bold ? { fontSize: 16 } : {}) }}>{label}</td>
       <td style={{ ...T.bxM, ...(topBorder ? { borderTop: '2px solid #000' } : {}) }}>{sign}</td>
       <td style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}) }}>{fmt(value)}</td>
     </tr>
   );
 
+  // Per-invoice volume breakdown cell (only the volumes this invoice carries).
+  const VolCell = ({ inv }) => {
+    const entries = Object.keys(inv.vols || {}).map(Number).sort((a, b) => a - b).filter(ml => inv.vols[ml] != null);
+    const add = volAdd[inv.id] || { ml: String(COMMON_VOLS[0]), custom: '', ctn: '' };
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch' }}>
+        {entries.length === 0 && <span className="printOnly" style={{ color: '#bbb', fontSize: 13 }}>—</span>}
+        {entries.map(ml => (
+          <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+            <span style={{ fontWeight: 700, minWidth: 52, textAlign: 'right' }}>{volLabel(ml)}</span>
+            <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
+            <span style={{ color: '#888', fontSize: 12 }}>CTN</span>
+            <button className="noP" onClick={() => removeInvVol(inv.id, ml)} title="Remove volume"
+              style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
+          </div>
+        ))}
+        {/* add-volume control (screen only) */}
+        <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginTop: 2 }}>
+          <select value={add.ml}
+            onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ml: e.target.value } }))}
+            style={{ fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }}>
+            {COMMON_VOLS.map(ml => <option key={ml} value={String(ml)}>{volLabel(ml)}</option>)}
+            <option value="custom">custom…</option>
+          </select>
+          {add.ml === 'custom' && (
+            <input type="number" value={add.custom} placeholder="ml"
+              onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, custom: e.target.value } }))}
+              style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
+          )}
+          <input type="number" value={add.ctn} placeholder="CTN"
+            onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ctn: e.target.value } }))}
+            onKeyDown={e => e.key === 'Enter' && addInvVol(inv.id)}
+            style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
+          <button onClick={() => addInvVol(inv.id)}
+            style={{ fontSize: 12, padding: '2px 8px', background: '#111', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontWeight: 600 }}>+ add</button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ fontFamily: F, fontSize: 16, background: '#fff', color: '#000', minHeight: '100vh' }}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         .editable-text:hover{background:#f0f9ff;outline:1px dashed #93c5fd;outline-offset:-1px}
+        .printOnly{display:none}
         @media print{
           .noP{display:none!important}
+          .printOnly{display:inline!important}
           body,html{margin:0;padding:0;background:#fff}
-          @page{size:A4 landscape;margin:8mm 8mm}
+          @page{size:A4 portrait;margin:8mm 8mm}
           .wrap{max-width:100%!important;padding:0!important}
-          .print-area{font-size:11px!important}
-          .print-area table{font-size:10px!important}
-          .print-area td,.print-area th{padding:3px 5px!important}
-          .print-area img{max-height:70px!important}
+          .print-area{font-size:12px!important}
+          .print-area table{font-size:11px!important}
+          .print-area td,.print-area th{padding:4px 6px!important}
+          .print-area img{max-height:80px!important}
           .print-area table{page-break-inside:avoid}
         }
       `}</style>
 
-      <div className="wrap print-area" style={{ maxWidth: 980, margin: '0 auto', padding: '20px' }}>
+      <div className="wrap print-area" style={{ maxWidth: 860, margin: '0 auto', padding: '20px' }}>
         {/* HEADER */}
         <div style={{ position: 'relative', textAlign: 'center', paddingBottom: 8, borderBottom: '2px solid #000', minHeight: 90 }}>
           <img src={LOGO} alt="CJK" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: 85, maxWidth: 95, objectFit: 'contain' }} />
@@ -500,17 +498,11 @@ export default function YHSExtractor() {
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
             <thead><tr>
               <th style={{ ...T.th, width: 32 }}>NO.</th>
-              <th style={{ ...T.th, width: 78 }}>DATE</th>
-              <th style={{ ...T.th, width: 118 }}>INVOICE NO.</th>
-              <th style={{ ...T.th, width: 100 }}>AMOUNT</th>
+              <th style={{ ...T.th, width: 82 }}>DATE</th>
+              <th style={{ ...T.th, width: 122 }}>INVOICE NO.</th>
+              <th style={{ ...T.th, width: 104 }}>AMOUNT</th>
               <th style={{ ...T.th, width: 78 }}>QUANTITY (CTN)</th>
-              {volCats.map(vc => (
-                <th key={vc.ml} style={{ ...T.th, width: 72 }}>
-                  {volLabel(vc.ml)} (CTN)
-                  <button className="noP" onClick={() => removeVolCat(vc.ml)} title={`Remove ${volLabel(vc.ml)} column`}
-                    style={{ display: 'block', margin: '2px auto 0', background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 10, padding: 0 }}>✕ remove</button>
-                </th>
-              ))}
+              <th style={T.th}>VOLUME BREAKDOWN</th>
             </tr></thead>
             <tbody>
               {invoices.map((inv, idx) => (
@@ -536,11 +528,7 @@ export default function YHSExtractor() {
                     <EditableAmount value={inv.amount} onCommit={v => updateField(inv.id, 'amount', v)} format={fmt} align="right" />
                   </td>
                   <td style={T.td}><EditableInt value={inv.qty} onCommit={v => updateField(inv.id, 'qty', v)} /></td>
-                  {volCats.map(vc => (
-                    <td key={vc.ml} style={T.td}>
-                      <EditableInt value={inv.vols?.[vc.ml] || 0} onCommit={v => updateVol(inv.id, vc.ml, v)} />
-                    </td>
-                  ))}
+                  <td style={{ ...T.td, textAlign: 'center' }}><VolCell inv={inv} /></td>
                 </tr>
               ))}
               {/* TOTAL row */}
@@ -548,72 +536,36 @@ export default function YHSExtractor() {
                 <td colSpan={3} style={{ ...T.td, fontWeight: 700, textAlign: 'right', background: '#f0f0f0' }}>TOTAL:</td>
                 <td style={{ ...T.td, fontWeight: 700, textAlign: 'right', background: '#f0f0f0' }}>{fmt(calc.totalAmount)}</td>
                 <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0' }}>{calc.totalCtn}</td>
-                {calc.volumes.map(v => (
-                  <td key={v.ml} style={{ ...T.td, fontWeight: 700, background: '#f0f0f0' }}>{v.ctn}</td>
-                ))}
+                <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0', fontSize: 13 }}>
+                  {calc.volumes.map(v => `${v.label} ${v.ctn}`).join('  ·  ')}
+                </td>
               </tr>
             </tbody>
           </table>
 
-          {/* VOLUME SUBSIDY TABLE — editable rate per volume, add/remove volumes */}
-          <div style={{ marginTop: 22 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>VOLUME SUBSIDY RATES</div>
-            <table style={{ borderCollapse: 'collapse', width: 'auto', minWidth: 420 }}>
-              <thead><tr>
-                <th style={{ ...T.th, width: 110 }}>VOLUME</th>
-                <th style={{ ...T.th, width: 100 }}>TOTAL CTN</th>
-                <th style={{ ...T.th, width: 120 }}>RATE (RM/CTN)</th>
-                <th style={{ ...T.th, width: 120 }}>SUBSIDY</th>
-                <th className="noP" style={{ ...T.th, width: 40, border: 'none', background: 'none' }}></th>
-              </tr></thead>
-              <tbody>
-                {calc.volumes.map(v => (
-                  <tr key={v.ml}>
-                    <td style={{ ...T.td, fontWeight: 700 }}>{v.label}</td>
-                    <td style={T.td}>{v.ctn}</td>
-                    <td style={T.td}><EditableRate value={v.rate} onCommit={r => setRate(v.ml, r)} /></td>
-                    <td style={{ ...T.td, fontWeight: 700, textAlign: 'right' }}>{fmt(v.bonus)}</td>
-                    <td className="noP" style={{ border: 'none', textAlign: 'center' }}>
-                      <button onClick={() => removeVolCat(v.ml)} title="Remove volume"
-                        style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 14 }}>✕</button>
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0', textAlign: 'right' }}>TOTAL:</td>
-                  <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0' }}>{calc.volumes.reduce((s, v) => s + v.ctn, 0)}</td>
-                  <td style={{ ...T.td, background: '#f0f0f0' }}></td>
-                  <td style={{ ...T.td, fontWeight: 700, textAlign: 'right', background: '#f0f0f0' }}>{fmt(calc.totalBonus)}</td>
-                  <td className="noP" style={{ border: 'none' }}></td>
-                </tr>
-              </tbody>
-            </table>
-            <div className="noP" style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 8 }}>
-              <span style={{ fontSize: 13, color: '#666' }}>Add volume:</span>
-              <input type="number" value={newVolMl} placeholder="e.g. 500 (ml)"
-                onChange={e => setNewVolMl(e.target.value)} onKeyDown={e => e.key === 'Enter' && addVolCat()}
-                style={{ width: 130, padding: '4px 8px', fontSize: 13, border: '1px solid #aaa', borderRadius: 4, fontFamily: F }} />
-              <button onClick={addVolCat} disabled={!newVolMl}
-                style={{ padding: '4px 12px', fontSize: 13, background: newVolMl ? '#111' : '#ddd', color: '#fff', border: 'none', borderRadius: 4, cursor: newVolMl ? 'pointer' : 'not-allowed', fontWeight: 600 }}>
-                + Add
-              </button>
-              <span style={{ fontSize: 12, color: '#999' }}>enter volume in ml — 1L = 1000, 1.5L = 1500. New volumes default to RM0.50/CTN — verify the rate.</span>
-            </div>
+          {/* Single flat volume rate */}
+          <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Volume subsidy rate:</span>
+            <span style={{ fontSize: 13 }}>RM</span>
+            <input type="number" step="0.01" value={rate}
+              onChange={e => setRate(parseFloat(e.target.value) || 0)}
+              style={{ width: 70, padding: '4px 6px', fontSize: 13, border: '1px solid #aaa', borderRadius: 4, fontFamily: F, textAlign: 'right' }} />
+            <span style={{ fontSize: 13, color: '#666' }}>/ CTN — applies to every volume</span>
           </div>
 
           {/* SUMMARY DEDUCTIONS */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 22 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
             <tbody>
               <SumRow label="TOTAL INVOICE AMOUNT:" value={calc.totalAmount} sign="" bold />
               <SumRow label="2% DISCOUNT:" value={calc.discount2} />
               <SumRow label={`TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.30):`} value={calc.transport1} />
               <SumRow label={`TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`} value={calc.transport2} />
-              {calc.volumes.filter(v => v.ctn > 0).map(v => (
+              {calc.volumes.map(v => (
                 <SumRow key={v.ml} label={`${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>
-                <td colSpan={3} style={{ border: 'none' }} />
+                <td colSpan={2} style={{ border: 'none' }} />
                 <td style={T.bxL}>OTHER DISCOUNT:</td>
                 <td style={T.bxM}>{otherDiscount ? '-' : ''}</td>
                 <td style={T.bxR}>
@@ -624,7 +576,7 @@ export default function YHSExtractor() {
               </tr>
               {/* CREDIT NOTE — editable */}
               <tr>
-                <td colSpan={3} style={{ border: 'none' }} />
+                <td colSpan={2} style={{ border: 'none' }} />
                 <td style={T.bxL}>CREDIT NOTE:</td>
                 <td style={T.bxM}>{creditNote ? '-' : ''}</td>
                 <td style={T.bxR}>
@@ -703,13 +655,9 @@ export default function YHSExtractor() {
                 <EditableAmount value={previewInv.amount} onCommit={v => updateField(previewInv.id, 'amount', v)} format={fmt} align="left" />
                 <div style={{ color: '#6b7280' }}>Total CTN</div>
                 <EditableInt value={previewInv.qty} onCommit={v => updateField(previewInv.id, 'qty', v)} />
-                {volCats.map(vc => (
-                  <Fragment key={vc.ml}>
-                    <div style={{ color: '#6b7280' }}>{volLabel(vc.ml)} CTN</div>
-                    <EditableInt value={previewInv.vols?.[vc.ml] || 0} onCommit={v => updateVol(previewInv.id, vc.ml, v)} />
-                  </Fragment>
-                ))}
               </div>
+              <div style={{ marginTop: 16, fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Volume breakdown</div>
+              <div style={{ marginTop: 6 }}><VolCell inv={previewInv} /></div>
             </div>
           </div>
         </div>
