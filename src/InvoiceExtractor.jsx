@@ -513,7 +513,32 @@ export const AI_CFG = PROVIDERS[AI_PROVIDER];
 // 3000ms gap the effective rate lands near ~10/min — comfortably under the cap
 // while cutting the between-invoice wait almost in half vs the old 5s. Groq
 // fallback keeps the wider 10s spacing for its tighter token-per-minute window.
-export const BATCH_DELAY_MS = AI_PROVIDER === 'gemini' ? 2500 : 10000;
+// How many invoices to extract concurrently. The old code ran the whole batch
+// strictly one-at-a-time, so 7 invoices meant 7 sequential round-trips — the
+// single biggest cause of a slow batch. Gemini free tier is 30 RPM and a typical
+// batch is a handful of invoices, so a small pool turns that crawl into 1-2
+// parallel waves. Rate-limit retries in processSingleFile absorb the rare case
+// of a very large batch briefly exceeding the per-minute budget. Groq's tighter
+// token-per-minute window keeps a smaller pool.
+export const BATCH_CONCURRENCY = AI_PROVIDER === 'gemini' ? 5 : 2;
+
+// Run `worker` over `items` with at most `limit` in flight at once. Never throws —
+// each slot's outcome is captured as {ok:true,value} or {ok:false,error,item}, in
+// the original item order. `onSettled` fires after each item finishes (for progress).
+export async function runPool(items, limit, worker, onSettled){
+  const results = new Array(items.length);
+  let next = 0;
+  const runner = async () => {
+    while(next < items.length){
+      const i = next++;
+      try { results[i] = {ok:true, value: await worker(items[i], i)}; }
+      catch(e){ results[i] = {ok:false, error:e, item:items[i]}; }
+      if(onSettled) onSettled();
+    }
+  };
+  await Promise.all(Array.from({length: Math.min(limit, items.length)}, runner));
+  return results;
+}
 const B='1px solid #000';
 const F='Calibri, "Segoe UI", Arial, sans-serif';
 
@@ -1145,18 +1170,15 @@ export default function InvoiceExtractor() {
     }
 
     setProcessingCount({done:0,total:imageFiles.length});
-    const results=[];
-    for(let i=0;i<imageFiles.length;i++){
-      try{
-        if(i>0) await new Promise(r=>setTimeout(r,BATCH_DELAY_MS));
-        const inv=await processSingleFile(imageFiles[i]);
-        results.push(inv);
-        setProcessingCount(prev=>({...prev,done:prev.done+1}));
-      }catch(e){
-        console.error('Error processing',imageFiles[i].name,e);
-        setError(prev=>(prev?prev+'\n':'')+`Failed: ${imageFiles[i].name} — ${e.message}`);
-      }
-    }
+    let done=0;
+    const settled=await runPool(imageFiles, BATCH_CONCURRENCY, f=>processSingleFile(f), ()=>{
+      done++; setProcessingCount({done, total:imageFiles.length});
+    });
+    const results=settled.filter(s=>s.ok).map(s=>s.value);
+    settled.filter(s=>!s.ok).forEach(s=>{
+      console.error('Error processing',s.item.name,s.error);
+      setError(prev=>(prev?prev+'\n':'')+`Failed: ${s.item.name} — ${s.error.message}`);
+    });
     if(results.length>0){
       // PATCH 6b — merge new results, then recompute issues for everything (catches dups within batch + against existing)
       setInvoices(prev => {

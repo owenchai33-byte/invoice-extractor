@@ -4,7 +4,7 @@ import {
   LOGO, CO, fmt, normalizeDate, formatVolUnit,
   EditableAmount, EditableText,
   pdfToImageFiles, downsizeBase64ToJPEG, callAI,
-  AI_PROVIDER, AI_CFG, BATCH_DELAY_MS,
+  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, runPool,
 } from './InvoiceExtractor';
 
 const F = 'Calibri, "Segoe UI", Arial, sans-serif';
@@ -329,16 +329,14 @@ export default function YHSExtractor() {
     if (imageFiles.length === 0) { setError('No valid image or PDF files selected'); setProcessing(false); return; }
 
     setProcessingCount({ done: 0, total: imageFiles.length });
-    const results = [];
-    for (let i = 0; i < imageFiles.length; i++) {
-      try {
-        if (i > 0) await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
-        results.push(await processSingleFile(imageFiles[i]));
-        setProcessingCount(prev => ({ ...prev, done: prev.done + 1 }));
-      } catch (e) {
-        setError(prev => (prev ? prev + '\n' : '') + `Failed: ${imageFiles[i].name} — ${e.message}`);
-      }
-    }
+    let done = 0;
+    const settled = await runPool(imageFiles, BATCH_CONCURRENCY, f => processSingleFile(f), () => {
+      done++; setProcessingCount({ done, total: imageFiles.length });
+    });
+    const results = settled.filter(s => s.ok).map(s => s.value);
+    settled.filter(s => !s.ok).forEach(s => {
+      setError(prev => (prev ? prev + '\n' : '') + `Failed: ${s.item.name} — ${s.error.message}`);
+    });
     if (results.length > 0) setInvoices(prev => [...prev, ...results]);
     setUploading(false); setProcessing(false);
     if (fileRef.current) fileRef.current.value = '';

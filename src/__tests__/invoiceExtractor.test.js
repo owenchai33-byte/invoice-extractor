@@ -10,7 +10,56 @@ import {
   calcSub,
   computeIssues,
   fmt,
+  runPool,
 } from '../InvoiceExtractor.jsx';
+
+describe('runPool — concurrent batch executor', () => {
+  const delay = (ms, v) => new Promise(r => setTimeout(() => r(v), ms));
+
+  it('returns results in original item order', async () => {
+    // Later items resolve sooner, but results must stay index-aligned.
+    const items = [30, 10, 20, 5];
+    const out = await runPool(items, 2, async n => { await delay(n); return n * 10; });
+    expect(out.map(o => o.value)).toEqual([300, 100, 200, 50]);
+  });
+
+  it('captures per-item success and failure without throwing', async () => {
+    const items = [1, 2, 3, 4];
+    const out = await runPool(items, 3, async n => {
+      if (n % 2 === 0) throw new Error('boom ' + n);
+      return n;
+    });
+    expect(out[0]).toEqual({ ok: true, value: 1 });
+    expect(out[1].ok).toBe(false);
+    expect(out[1].error.message).toBe('boom 2');
+    expect(out[1].item).toBe(2);
+    expect(out[2]).toEqual({ ok: true, value: 3 });
+    expect(out[3].ok).toBe(false);
+  });
+
+  it('never exceeds the concurrency limit', async () => {
+    let active = 0, peak = 0;
+    const items = Array.from({ length: 12 }, (_, i) => i);
+    await runPool(items, 4, async () => {
+      active++; peak = Math.max(peak, active);
+      await delay(5);
+      active--;
+    });
+    expect(peak).toBeLessThanOrEqual(4);
+    expect(peak).toBe(4); // with 12 items and limit 4, the cap is actually reached
+  });
+
+  it('calls onSettled once per item', async () => {
+    let settled = 0;
+    await runPool([1, 2, 3], 2, async n => n, () => { settled++; });
+    expect(settled).toBe(3);
+  });
+
+  it('handles an empty batch', async () => {
+    const out = await runPool([], 5, async n => n);
+    expect(out).toEqual([]);
+  });
+});
 
 // Choon Hua rate config — pulled straight from the SUPPLIERS export so the
 // tests are always run against whatever is in source.
