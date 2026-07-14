@@ -68,6 +68,42 @@ describe('calcYHS — per-volume rates (some products get no discount)', () => {
   });
 });
 
+describe('calcYHS — per-volume subsidy-qty override (only part of a volume qualifies)', () => {
+  const invoices = [{ amount: 1000, qty: 100, vols: { 300: 100 } }];
+
+  it('without an override, the full carton count earns the bonus', () => {
+    const r = calcYHS({ invoices, rates: { 300: 0.50 } });
+    const v = r.volumes.find(x => x.ml === 300);
+    expect(v.ctn).toBe(100);
+    expect(v.subsidyCtn).toBe(100);
+    expect(v.overridden).toBe(false);
+    expect(v.bonus).toBe(50); // 100 × 0.50
+  });
+
+  it('an override applies the rate to only the overridden qty; ctn stays the real total', () => {
+    // 100 CTN total but only 60 qualify for the RM0.50 bonus (rest are no-discount).
+    const r = calcYHS({ invoices, rates: { 300: 0.50 }, ctnOverrides: { 300: 60 } });
+    const v = r.volumes.find(x => x.ml === 300);
+    expect(v.ctn).toBe(100);        // real aggregate unchanged
+    expect(v.subsidyCtn).toBe(60);  // qty that earns the bonus
+    expect(v.overridden).toBe(true);
+    expect(v.bonus).toBe(30);       // 60 × 0.50
+    expect(r.totalBonus).toBe(30);
+  });
+
+  it('override does not change transport (still based on the real total cartons)', () => {
+    const base = calcYHS({ invoices, rates: { 300: 0.50 } });
+    const withOv = calcYHS({ invoices, rates: { 300: 0.50 }, ctnOverrides: { 300: 60 } });
+    expect(withOv.transport1).toBe(base.transport1); // 100 × 0.30
+    expect(withOv.transport2).toBe(base.transport2); // 100 × 0.20
+  });
+
+  it('an override of 0 zeroes the bonus for that volume', () => {
+    const r = calcYHS({ invoices, rates: { 300: 0.50 }, ctnOverrides: { 300: 0 } });
+    expect(r.volumes.find(v => v.ml === 300).bonus).toBe(0);
+  });
+});
+
 describe('calcYHS — volumes aggregate across invoices and stay sorted', () => {
   const invoices = [
     { amount: 1000, qty: 100, vols: { 1500: 30, 250: 40 } },

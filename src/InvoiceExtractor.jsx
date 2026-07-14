@@ -1336,7 +1336,7 @@ export default function InvoiceExtractor() {
   const showUpload=invoices.length===0||uploading;
 
   return(
-    <div style={{fontFamily:F,fontSize:16,background:'#fff',color:'#000',minHeight:'100vh'}}>
+    <div className="ext-root" style={{fontFamily:F,fontSize:16,background:'#fff',color:'#000',minHeight:'100vh'}}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         .editable-text:hover{background:#f0f9ff;outline:1px dashed #93c5fd;outline-offset:-1px}
@@ -1345,16 +1345,19 @@ export default function InvoiceExtractor() {
           .noP{display:none!important}
           .screenOnly{display:none!important;visibility:hidden!important;width:0!important;height:0!important;overflow:hidden!important;position:absolute!important}
           .printOnly{display:inline!important;visibility:visible!important}
-          body,html{margin:0;padding:0;background:#fff}
-          @page{size:A4 portrait;margin:8mm 8mm}
+          html,body{margin:0!important;padding:0!important;background:#fff}
+          /* Flatten the 100vh root so it can't push a blank page in print. */
+          .ext-root{min-height:0!important}
+          @page{size:A4 portrait;margin:7mm 8mm}
           .wrap{max-width:100%!important;padding:0!important}
-          .print-area{font-size:12px!important}
-          .print-area h1,.print-area h2,.print-area h3{font-size:14px!important;margin:4px 0!important}
-          .print-area table{font-size:11px!important}
-          .print-area td,.print-area th{padding:4px 6px!important}
-          .print-area .total-payable{font-size:18px!important;margin-top:10px!important}
-          .print-area img{max-height:80px!important}
-          .print-area,.print-area table{page-break-inside:avoid}
+          .print-area{font-size:11px!important}
+          .print-area h1,.print-area h2,.print-area h3{font-size:13px!important;margin:3px 0!important}
+          .print-area table{font-size:10.5px!important}
+          .print-area td,.print-area th{padding:3px 6px!important}
+          .print-area .total-payable{font-size:16px!important;margin-top:8px!important}
+          .print-area img{max-height:64px!important}
+          /* Keep individual rows/tables from splitting, but NEVER avoid-break the
+             whole print-area — that pushes the entire block to a blank page 2. */
           .print-area tr{page-break-inside:avoid}
         }
       `}</style>

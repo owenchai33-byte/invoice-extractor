@@ -43,8 +43,10 @@ export function volLabel(ml) {
 // aggregated from each invoice's `vols` map ({ [ml]: cartonCount }). Each volume
 // earns a PER-VOLUME rate from `rates` ({ [ml]: RM/CTN }); volumes without an
 // explicit rate fall back to `defaultRate`. Set a volume's rate to 0 for products
-// that get no discount.
-export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, otherDiscount = 0, creditNote = 0 }) {
+// that get no discount. `ctnOverrides` ({ [ml]: cartons }) lets the qty that earns
+// the bonus differ from the actual total — e.g. only part of the 300ML cartons get
+// a discount. The bonus uses the override; transport still uses the real total.
+export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, ctnOverrides = {}, otherDiscount = 0, creditNote = 0 }) {
   const r4 = v => Math.round(v * 10000) / 10000;
   const dRate = Number(defaultRate) || 0;
   const rateFor = ml => (rates && rates[ml] != null) ? (Number(rates[ml]) || 0) : dRate;
@@ -67,7 +69,9 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
   const volumes = Object.keys(volMap)
     .map(ml => {
       const m = Number(ml), ctn = volMap[ml], r = rateFor(m);
-      return { ml: m, label: volLabel(m), rate: r, ctn, bonus: r4(ctn * r) };
+      const ov = (ctnOverrides && ctnOverrides[m] != null) ? Math.max(0, Number(ctnOverrides[m]) || 0) : null;
+      const subsidyCtn = ov != null ? ov : ctn;
+      return { ml: m, label: volLabel(m), rate: r, ctn, subsidyCtn, overridden: ov != null, bonus: r4(subsidyCtn * r) };
     })
     .sort((a, b) => a.ml - b.ml);
   const totalBonus = r4(volumes.reduce((s, v) => s + v.bonus, 0));
@@ -309,6 +313,7 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
 
 const LS_YHS = 'yhs_invoices';
 const LS_RATES = 'yhs_volrates_v2';
+const LS_VOLCTN = 'yhs_volctn_v1';
 
 export default function YHSExtractor() {
   const [invoices, setInvoices] = useState(() => {
@@ -320,6 +325,14 @@ export default function YHSExtractor() {
     try { return JSON.parse(localStorage.getItem(LS_RATES)) || {}; } catch { return {}; }
   });
   const setVolRate = (ml, r) => setVolRates(prev => ({ ...prev, [ml]: r }));
+  // Per-volume subsidy-qty overrides: { [ml]: cartons }. When set, only this many
+  // cartons of that volume earn the bonus (e.g. some 300ML products get no discount).
+  // Absent → the full aggregated carton count is used.
+  const [volCtn, setVolCtn] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_VOLCTN)) || {}; } catch { return {}; }
+  });
+  const setVolCtnOverride = (ml, n) => setVolCtn(prev => ({ ...prev, [ml]: Math.max(0, parseInt(n, 10) || 0) }));
+  const clearVolCtnOverride = (ml) => setVolCtn(prev => { const c = { ...prev }; delete c[ml]; return c; });
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingCount, setProcessingCount] = useState({ done: 0, total: 0 });
@@ -337,6 +350,7 @@ export default function YHSExtractor() {
 
   useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices]);
   useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
+  useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {
@@ -545,7 +559,7 @@ export default function YHSExtractor() {
   }, [processChunk, apiKey]);
 
   // defaultRate 0 → a volume earns no subsidy until Owen sets its rate below.
-  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, otherDiscount, creditNote });
+  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, ctnOverrides: volCtn, otherDiscount, creditNote });
   const showUpload = invoices.length === 0 || uploading;
 
   const downloadExcel = () => {
@@ -567,7 +581,7 @@ export default function YHSExtractor() {
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.30):`, '', '-', calc.transport1]);
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`, '', '-', calc.transport2]);
     calc.volumes.filter(v => v.bonus > 0).forEach(v => {
-      d.push(['', `${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
+      d.push(['', `${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
     });
     d.push(['', 'OTHER DISCOUNT:', '', calc.otherDiscount ? '-' : '', calc.otherDiscount || '']);
     d.push(['', 'CREDIT NOTE:', '', calc.creditNote ? '-' : '', calc.creditNote || '']);
@@ -579,7 +593,7 @@ export default function YHSExtractor() {
   };
 
   return (
-    <div style={{ fontFamily: F, fontSize: 16, background: '#fff', color: '#000', minHeight: '100vh' }}>
+    <div className="ext-root" style={{ fontFamily: F, fontSize: 16, background: '#fff', color: '#000', minHeight: '100vh' }}>
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         .editable-text:hover{background:#f0f9ff;outline:1px dashed #93c5fd;outline-offset:-1px}
@@ -587,14 +601,18 @@ export default function YHSExtractor() {
         @media print{
           .noP{display:none!important}
           .printOnly{display:inline!important}
-          body,html{margin:0;padding:0;background:#fff}
-          @page{size:A4 portrait;margin:8mm 8mm}
+          html,body{margin:0!important;padding:0!important;background:#fff}
+          /* Flatten the 100vh root so it can't push a blank page in print. */
+          .ext-root{min-height:0!important}
+          @page{size:A4 portrait;margin:7mm 8mm}
           .wrap{max-width:100%!important;padding:0!important}
-          .print-area{font-size:12px!important}
-          .print-area table{font-size:11px!important}
-          .print-area td,.print-area th{padding:4px 6px!important}
-          .print-area img{max-height:80px!important}
-          .print-area table{page-break-inside:avoid}
+          .print-area{font-size:11px!important}
+          .print-area table{font-size:10.5px!important}
+          .print-area td,.print-area th{padding:3px 6px!important}
+          .print-area img{max-height:64px!important}
+          /* Keep rows together, but never avoid-break the whole block/table —
+             that pushes the entire summary onto a blank second page. */
+          .print-area tr{page-break-inside:avoid}
         }
       `}</style>
 
@@ -706,13 +724,13 @@ export default function YHSExtractor() {
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
                 VOLUME SUBSIDY RATES
                 <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
-                  set RM/CTN per volume — leave blank for products that get no discount
+                  set RM/CTN per volume — leave blank for no discount, and edit the CTN if only part of it qualifies
                 </span>
               </div>
-              <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 470 }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 500 }}>
                 <thead><tr>
                   <th style={{ ...T.th, textAlign: 'left', padding: '6px 10px' }}>VOLUME</th>
-                  <th style={{ ...T.th, padding: '6px 10px' }}>TOTAL CTN</th>
+                  <th style={{ ...T.th, padding: '6px 10px' }}>CTN</th>
                   <th style={{ ...T.th, padding: '6px 10px' }}>RATE (RM/CTN)</th>
                   <th style={{ ...T.th, padding: '6px 10px' }}>SUBSIDY</th>
                 </tr></thead>
@@ -720,7 +738,16 @@ export default function YHSExtractor() {
                   {calc.volumes.map(v => (
                     <tr key={v.ml}>
                       <td style={{ ...T.td, textAlign: 'left', fontWeight: 700 }}>{v.label}</td>
-                      <td style={T.td}>{v.ctn}</td>
+                      <td style={T.td}>
+                        <EditableInt value={v.subsidyCtn} onCommit={n => setVolCtnOverride(v.ml, n)} />
+                        {v.overridden && v.subsidyCtn !== v.ctn && (
+                          <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                            of {v.ctn}
+                            <span onClick={() => clearVolCtnOverride(v.ml)} title="Reset to the full carton count"
+                              style={{ cursor: 'pointer', color: '#2563eb', marginLeft: 4 }}>↺</span>
+                          </div>
+                        )}
+                      </td>
                       <td style={T.td}>
                         <NumberField value={v.rate} onCommit={r => setVolRate(v.ml, r)}
                           style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
@@ -743,7 +770,7 @@ export default function YHSExtractor() {
               {/* Confirmed per-volume subsidies — only volumes given a rate above.
                   Read-only here; the rate is set in the VOLUME SUBSIDY RATES table. */}
               {calc.volumes.filter(v => v.bonus > 0).map(v => (
-                <SumRow key={v.ml} label={`${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
+                <SumRow key={v.ml} label={`${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>

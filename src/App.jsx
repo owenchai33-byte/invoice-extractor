@@ -29,7 +29,7 @@ export default function App() {
   const dateStr = time.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
-    <div style={{
+    <div className="app-shell" style={{
       minHeight: '100vh',
       background: '#fafaf9',
       fontFamily: FONT_STACK,
@@ -190,6 +190,9 @@ export default function App() {
       <style>{`
         @media print {
           .sabrina-nav { display: none !important; }
+          /* vh units resolve to full page height in print; on nested 100vh roots
+             that overflows the printable area and spawns blank pages. Flatten them. */
+          .app-shell, .app-shell main { min-height: 0 !important; }
         }
         /* Subtle scrollbar refinement */
         ::-webkit-scrollbar { width: 10px; height: 10px; }
