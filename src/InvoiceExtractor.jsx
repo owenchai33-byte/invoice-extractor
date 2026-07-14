@@ -768,7 +768,7 @@ function EditableCtn({value,onCommit}){
 }
 
 // Click-to-edit Text component (PATCH 3) — generic text field for invoice_no, invoice_date
-export function EditableText({value,onCommit,placeholder='—',invalid=false}){
+export function EditableText({value,onCommit,placeholder='—',invalid=false,align='center'}){
   const [editing,setEditing]=useState(false);
   const [local,setLocal]=useState(String(value||''));
   const ref=useRef(null);
@@ -785,7 +785,7 @@ export function EditableText({value,onCommit,placeholder='—',invalid=false}){
       onBlur={commit}
       onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape'){setLocal(String(value||''));setEditing(false);} }}
       className="noP"
-      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:'center',boxSizing:'border-box',background:'#fff'}}/>;
+      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:align,boxSizing:'border-box',background:'#fff'}}/>;
   }
   return <span
     onClick={()=>setEditing(true)}
@@ -912,6 +912,17 @@ export default function InvoiceExtractor() {
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
     });
+  };
+
+  // Manually edit a group's volume label (e.g. the real volume differs from the
+  // detected one). The label is display/Excel only — it does not change the RM
+  // rate, which stays on the "CTN x RM..." line below it.
+  const updateGroupLabel=(invId,rateId,newLabel)=>{
+    setInvoices(prev=>prev.map(inv=>{
+      if(inv.id!==invId) return inv;
+      const groups=inv.groups.map(g=>g.id===rateId?{...g,label:newLabel}:g);
+      return {...inv,groups};
+    }));
   };
 
   // Manually edit total_amount on an invoice
@@ -1588,7 +1599,14 @@ export default function InvoiceExtractor() {
                       background:'#f9fafb',
                       textAlign:'left',
                       fontFamily:F,
-                    }}>{g.label}</td>
+                    }}>
+                      <EditableText
+                        value={g.label}
+                        onCommit={v=>updateGroupLabel(inv.id,g.id,v)}
+                        align="left"
+                        placeholder="volume e.g. 300ML x 12"
+                      />
+                    </td>
                   </tr>);
 
                   // ROW 2 — CTN x RM = subtotal
