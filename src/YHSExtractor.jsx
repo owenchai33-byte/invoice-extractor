@@ -193,6 +193,78 @@ const T = {
 };
 const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '1px solid #aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: p ? '#111' : '#fff', color: p ? '#fff' : '#333', fontFamily: F });
 
+// Numeric field that keeps exactly what you type (so decimals and multi-digit
+// entry work) while committing the parsed value live. Binding an <input> straight
+// to a parsed number wipes a trailing "." and blocks decimals — this fixes that.
+// A blank field commits 0.
+function NumberField({ value, onCommit, placeholder = '0.00', style = {} }) {
+  const [local, setLocal] = useState(value ? String(value) : '');
+  const [focused, setFocused] = useState(false);
+  useEffect(() => { if (!focused) setLocal(value ? String(value) : ''); }, [value, focused]);
+  return (
+    <input type="number" step="0.01" min="0" inputMode="decimal" className="noP"
+      value={local} placeholder={placeholder}
+      onFocus={() => setFocused(true)}
+      onChange={e => { setLocal(e.target.value); onCommit(Math.max(0, parseFloat(e.target.value) || 0)); }}
+      onBlur={() => setFocused(false)}
+      style={style} />
+  );
+}
+
+// Read-only summary line in the deductions table.
+function SumRow({ label, value, sign = '-', bold = false, highlight = false, topBorder = false }) {
+  return (
+    <tr>
+      <td colSpan={2} style={{ border: 'none' }} />
+      <td style={{ ...T.bxL, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(bold ? { fontSize: 16 } : {}) }}>{label}</td>
+      <td style={{ ...T.bxM, ...(topBorder ? { borderTop: '2px solid #000' } : {}) }}>{sign}</td>
+      <td style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}) }}>{fmt(value)}</td>
+    </tr>
+  );
+}
+
+// Per-invoice volume breakdown cell (only the volumes this invoice carries).
+// Defined at module scope so typing in the add-volume inputs doesn't remount it
+// (an inner component definition would drop focus after a single keystroke).
+function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol }) {
+  const entries = Object.keys(inv.vols || {}).map(Number).sort((a, b) => a - b).filter(ml => inv.vols[ml] != null);
+  const add = volAdd[inv.id] || { ml: String(COMMON_VOLS[0]), custom: '', ctn: '' };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch' }}>
+      {entries.length === 0 && <span className="printOnly" style={{ color: '#bbb', fontSize: 13 }}>—</span>}
+      {entries.map(ml => (
+        <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+          <span style={{ fontWeight: 700, minWidth: 52, textAlign: 'right' }}>{volLabel(ml)}</span>
+          <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
+          <span style={{ color: '#888', fontSize: 12 }}>CTN</span>
+          <button className="noP" onClick={() => removeInvVol(inv.id, ml)} title="Remove volume"
+            style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
+        </div>
+      ))}
+      {/* add-volume control (screen only) */}
+      <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginTop: 2 }}>
+        <select value={add.ml}
+          onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ml: e.target.value } }))}
+          style={{ fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }}>
+          {COMMON_VOLS.map(ml => <option key={ml} value={String(ml)}>{volLabel(ml)}</option>)}
+          <option value="custom">custom…</option>
+        </select>
+        {add.ml === 'custom' && (
+          <input type="number" value={add.custom} placeholder="ml"
+            onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, custom: e.target.value } }))}
+            style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
+        )}
+        <input type="number" value={add.ctn} placeholder="CTN"
+          onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ctn: e.target.value } }))}
+          onKeyDown={e => e.key === 'Enter' && addInvVol(inv.id)}
+          style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
+        <button onClick={() => addInvVol(inv.id)}
+          style={{ fontSize: 12, padding: '2px 8px', background: '#111', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontWeight: 600 }}>+ add</button>
+      </div>
+    </div>
+  );
+}
+
 const LS_YHS = 'yhs_invoices';
 const LS_RATES = 'yhs_volrates_v2';
 
@@ -416,7 +488,8 @@ export default function YHSExtractor() {
     if (fileRef.current) fileRef.current.value = '';
   }, [processChunk, apiKey]);
 
-  const calc = calcYHS({ invoices, rates: volRates, otherDiscount, creditNote });
+  // defaultRate 0 → a volume earns no subsidy until Owen sets its rate below.
+  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, otherDiscount, creditNote });
   const showUpload = invoices.length === 0 || uploading;
 
   const downloadExcel = () => {
@@ -437,7 +510,7 @@ export default function YHSExtractor() {
     d.push(['', '2% DISCOUNT:', '', '-', calc.discount2]);
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.30):`, '', '-', calc.transport1]);
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`, '', '-', calc.transport2]);
-    calc.volumes.forEach(v => {
+    calc.volumes.filter(v => v.bonus > 0).forEach(v => {
       d.push(['', `${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
     });
     d.push(['', 'OTHER DISCOUNT:', '', calc.otherDiscount ? '-' : '', calc.otherDiscount || '']);
@@ -447,55 +520,6 @@ export default function YHSExtractor() {
     ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 16 }, { wch: 14 }, { wch: 15 }, { wch: 34 }];
     XLSX.utils.book_append_sheet(wb, ws, 'YHS');
     XLSX.writeFile(wb, 'Payment_Summary_YHS.xlsx');
-  };
-
-  const SumRow = ({ label, value, sign = '-', bold = false, highlight = false, topBorder = false }) => (
-    <tr>
-      <td colSpan={2} style={{ border: 'none' }} />
-      <td style={{ ...T.bxL, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(bold ? { fontSize: 16 } : {}) }}>{label}</td>
-      <td style={{ ...T.bxM, ...(topBorder ? { borderTop: '2px solid #000' } : {}) }}>{sign}</td>
-      <td style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}) }}>{fmt(value)}</td>
-    </tr>
-  );
-
-  // Per-invoice volume breakdown cell (only the volumes this invoice carries).
-  const VolCell = ({ inv }) => {
-    const entries = Object.keys(inv.vols || {}).map(Number).sort((a, b) => a - b).filter(ml => inv.vols[ml] != null);
-    const add = volAdd[inv.id] || { ml: String(COMMON_VOLS[0]), custom: '', ctn: '' };
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch' }}>
-        {entries.length === 0 && <span className="printOnly" style={{ color: '#bbb', fontSize: 13 }}>—</span>}
-        {entries.map(ml => (
-          <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-            <span style={{ fontWeight: 700, minWidth: 52, textAlign: 'right' }}>{volLabel(ml)}</span>
-            <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
-            <span style={{ color: '#888', fontSize: 12 }}>CTN</span>
-            <button className="noP" onClick={() => removeInvVol(inv.id, ml)} title="Remove volume"
-              style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
-          </div>
-        ))}
-        {/* add-volume control (screen only) */}
-        <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginTop: 2 }}>
-          <select value={add.ml}
-            onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ml: e.target.value } }))}
-            style={{ fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }}>
-            {COMMON_VOLS.map(ml => <option key={ml} value={String(ml)}>{volLabel(ml)}</option>)}
-            <option value="custom">custom…</option>
-          </select>
-          {add.ml === 'custom' && (
-            <input type="number" value={add.custom} placeholder="ml"
-              onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, custom: e.target.value } }))}
-              style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
-          )}
-          <input type="number" value={add.ctn} placeholder="CTN"
-            onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ctn: e.target.value } }))}
-            onKeyDown={e => e.key === 'Enter' && addInvVol(inv.id)}
-            style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
-          <button onClick={() => addInvVol(inv.id)}
-            style={{ fontSize: 12, padding: '2px 8px', background: '#111', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontWeight: 600 }}>+ add</button>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -600,7 +624,10 @@ export default function YHSExtractor() {
                     <EditableAmount value={inv.amount} onCommit={v => updateField(inv.id, 'amount', v)} format={fmt} align="right" />
                   </td>
                   <td style={T.td}><EditableInt value={inv.qty} onCommit={v => updateField(inv.id, 'qty', v)} /></td>
-                  <td style={{ ...T.td, textAlign: 'center' }}><VolCell inv={inv} /></td>
+                  <td style={{ ...T.td, textAlign: 'center' }}>
+                    <VolCell inv={inv} volAdd={volAdd} setVolAdd={setVolAdd}
+                      setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} />
+                  </td>
                 </tr>
               ))}
               {/* TOTAL row */}
@@ -615,9 +642,40 @@ export default function YHSExtractor() {
             </tbody>
           </table>
 
-          <div className="noP" style={{ fontSize: 12, color: '#888', marginTop: 10, textAlign: 'right' }}>
-            Each volume's subsidy rate is editable below — set it to <strong>0.00</strong> for products that get no discount.
-          </div>
+          {/* VOLUME SUBSIDY RATES — set each volume's RM/CTN here (screen only).
+              A volume with no rate earns no subsidy and is left out of the total
+              below; once you set a rate, its line appears in the deductions. */}
+          {calc.volumes.length > 0 && (
+            <div className="noP" style={{ marginTop: 18 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+                VOLUME SUBSIDY RATES
+                <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
+                  set RM/CTN per volume — leave blank for products that get no discount
+                </span>
+              </div>
+              <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 470 }}>
+                <thead><tr>
+                  <th style={{ ...T.th, textAlign: 'left', padding: '6px 10px' }}>VOLUME</th>
+                  <th style={{ ...T.th, padding: '6px 10px' }}>TOTAL CTN</th>
+                  <th style={{ ...T.th, padding: '6px 10px' }}>RATE (RM/CTN)</th>
+                  <th style={{ ...T.th, padding: '6px 10px' }}>SUBSIDY</th>
+                </tr></thead>
+                <tbody>
+                  {calc.volumes.map(v => (
+                    <tr key={v.ml}>
+                      <td style={{ ...T.td, textAlign: 'left', fontWeight: 700 }}>{v.label}</td>
+                      <td style={T.td}>{v.ctn}</td>
+                      <td style={T.td}>
+                        <NumberField value={v.rate} onCommit={r => setVolRate(v.ml, r)}
+                          style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ ...T.td, textAlign: 'right', color: v.bonus ? '#000' : '#bbb' }}>{fmt(v.bonus)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* SUMMARY DEDUCTIONS */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
@@ -626,23 +684,10 @@ export default function YHSExtractor() {
               <SumRow label="2% DISCOUNT:" value={calc.discount2} />
               <SumRow label={`TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.30):`} value={calc.transport1} />
               <SumRow label={`TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`} value={calc.transport2} />
-              {/* Per-volume bonus lines — the RM rate is editable per volume */}
-              {calc.volumes.map(v => (
-                <tr key={v.ml}>
-                  <td colSpan={2} style={{ border: 'none' }} />
-                  <td style={T.bxL}>
-                    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3, justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
-                      {v.label} ({v.ctn} x RM
-                      <input className="noP" type="number" step="0.01" min="0" value={v.rate}
-                        onChange={e => setVolRate(v.ml, Math.max(0, parseFloat(e.target.value) || 0))}
-                        style={{ width: 56, padding: '2px 4px', fontSize: 14, border: '1px solid #bbb', borderRadius: 3, fontFamily: F, textAlign: 'right' }} />
-                      <span className="printOnly">{v.rate.toFixed(2)}</span>
-                      ):
-                    </span>
-                  </td>
-                  <td style={T.bxM}>{v.bonus ? '-' : ''}</td>
-                  <td style={T.bxR}>{fmt(v.bonus)}</td>
-                </tr>
+              {/* Confirmed per-volume subsidies — only volumes given a rate above.
+                  Read-only here; the rate is set in the VOLUME SUBSIDY RATES table. */}
+              {calc.volumes.filter(v => v.bonus > 0).map(v => (
+                <SumRow key={v.ml} label={`${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>
@@ -650,9 +695,9 @@ export default function YHSExtractor() {
                 <td style={T.bxL}>OTHER DISCOUNT:</td>
                 <td style={T.bxM}>{otherDiscount ? '-' : ''}</td>
                 <td style={T.bxR}>
-                  <input className="noP" type="number" step="0.01" value={otherDiscount || ''} placeholder="0.00"
-                    onChange={e => setOtherDiscount(parseFloat(e.target.value) || 0)}
+                  <NumberField value={otherDiscount} onCommit={setOtherDiscount}
                     style={{ width: '100%', border: '1px solid #ccc', borderRadius: 3, padding: '3px 4px', fontSize: 15, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                  <span className="printOnly">{otherDiscount ? fmt(otherDiscount) : ''}</span>
                 </td>
               </tr>
               {/* CREDIT NOTE — editable */}
@@ -661,9 +706,9 @@ export default function YHSExtractor() {
                 <td style={T.bxL}>CREDIT NOTE:</td>
                 <td style={T.bxM}>{creditNote ? '-' : ''}</td>
                 <td style={T.bxR}>
-                  <input className="noP" type="number" step="0.01" value={creditNote || ''} placeholder="0.00"
-                    onChange={e => setCreditNote(parseFloat(e.target.value) || 0)}
+                  <NumberField value={creditNote} onCommit={setCreditNote}
                     style={{ width: '100%', border: '1px solid #ccc', borderRadius: 3, padding: '3px 4px', fontSize: 15, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                  <span className="printOnly">{creditNote ? fmt(creditNote) : ''}</span>
                 </td>
               </tr>
               <SumRow label="TOTAL AMOUNT PAYABLE:" value={calc.payable} sign="" bold highlight topBorder />
@@ -738,7 +783,10 @@ export default function YHSExtractor() {
                 <EditableInt value={previewInv.qty} onCommit={v => updateField(previewInv.id, 'qty', v)} />
               </div>
               <div style={{ marginTop: 16, fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Volume breakdown</div>
-              <div style={{ marginTop: 6 }}><VolCell inv={previewInv} /></div>
+              <div style={{ marginTop: 6 }}>
+                <VolCell inv={previewInv} volAdd={volAdd} setVolAdd={setVolAdd}
+                  setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} />
+              </div>
             </div>
           </div>
         </div>
