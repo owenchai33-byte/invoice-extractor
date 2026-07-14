@@ -4,7 +4,7 @@ import {
   LOGO, CO, fmt, normalizeDate, formatVolUnit,
   EditableAmount, EditableText,
   pdfToImageFiles, downsizeBase64ToJPEG, callAI, parseAIJson,
-  AI_PROVIDER, AI_CFG, BATCH_MIN_GAP_MS, runPool,
+  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, BATCH_MIN_GAP_MS, runPool,
 } from './InvoiceExtractor';
 
 const F = 'Calibri, "Segoe UI", Arial, sans-serif';
@@ -116,11 +116,12 @@ SELF-CHECK: sum of volumes[].ctn should be ≤ total_qty. Every digit in invoice
 
 Return ONLY the JSON object. Nothing else.`;
 
-// How many invoice images to send in a single API call. Batching is the key to
-// speed on a rate-limited free tier: N invoices become ceil(N/CHUNK) requests
-// instead of N. Kept small (4) so the model reliably keeps each invoice's data
-// separate — larger chunks raise the risk of mixing invoices up.
-const YHS_CHUNK = 4;
+// How many invoice images to send in a single API call. On a rate-limited FREE
+// tier, batching (4 per call) is what keeps a batch under the per-minute cap. On
+// the paid Anthropic tier there's no such pressure, so we send ONE invoice per
+// call — the most reliable option, with zero risk of the model mixing two
+// invoices' data together — and rely on parallelism for speed.
+const YHS_CHUNK = AI_PROVIDER === 'anthropic' ? 1 : 4;
 
 const RATE_MSG = 'Google Gemini rate limit hit (429). The free tier caps requests per minute/day. Wait a minute and try again — or enable billing on your Gemini key for far higher limits (cents at your volume, and it stops Google training on your data).';
 
@@ -386,7 +387,7 @@ export default function YHSExtractor() {
     const chunks = [];
     for (let i = 0; i < imageFiles.length; i += YHS_CHUNK) chunks.push(imageFiles.slice(i, i + YHS_CHUNK));
 
-    const settled = await runPool(chunks, 2, ch => processChunk(ch, onOne), null, BATCH_MIN_GAP_MS);
+    const settled = await runPool(chunks, BATCH_CONCURRENCY, ch => processChunk(ch, onOne), null, BATCH_MIN_GAP_MS);
     const results = [];
     settled.forEach((s, ci) => {
       if (s.ok) results.push(...s.value);

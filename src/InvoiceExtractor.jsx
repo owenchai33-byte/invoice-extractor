@@ -478,17 +478,30 @@ Return ONLY the JSON object. Nothing else.`;
 // models. These are supplier purchase invoices (amounts, product codes) — if that
 // ever becomes a concern, a paid Gemini key disables training, or switch back to a
 // provider that doesn't train on API data. Flip AI_PROVIDER below to change.
-export const AI_PROVIDER = 'gemini';
-const GROQ_MODEL = 'qwen/qwen3.6-27b';        // Groq fallback vision model (Scout decommissioned 17 Jul 2026)
-// Flash-Lite is Google's fastest/lowest-latency 2.5 model — they explicitly
-// recommend it for "simple data extraction" and low-latency workflows, which is
-// exactly what invoice OCR is. Thinking is off by default on Lite. Free tier is
-// 30 RPM / 1000 RPD. If a messy scan ever reads worse, bump back to
-// 'gemini-2.5-flash' (more accurate, ~half the speed).
-const GEMINI_MODEL = 'gemini-2.5-flash-lite'; // free tier: 1000 rpd / 30 rpm, vision + JSON, fastest
+// Switched to Anthropic Claude (Haiku 4.5) on 2026-07-14. The free Gemini/Groq
+// tiers are rate-limited (the 429 pain), and free tiers may train on the data.
+// A paid Anthropic key removes both: high rate limits (fast, no 429), and
+// paid-tier data is not used for training. Haiku 4.5 is Anthropic's cheapest,
+// fastest model — recommended for exactly this "simple data extraction" — so
+// cost stays around cents/month at CJK's volume. Browser-direct calls work with
+// the anthropic-dangerous-direct-browser-access header, so no backend proxy.
+// For higher accuracy on messy scans, switch ANTHROPIC_MODEL to 'claude-sonnet-5'
+// (~3x cost) — a one-line change.
+export const AI_PROVIDER = 'anthropic';
+const GROQ_MODEL = 'qwen/qwen3.6-27b';         // free fallback vision model (Groq)
+const GEMINI_MODEL = 'gemini-2.5-flash-lite';  // free fallback vision model (Google)
+const ANTHROPIC_MODEL = 'claude-haiku-4-5';    // paid: cheapest/fastest Claude, vision, ~cents/mo at this volume
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
+  anthropic: {
+    label: 'Anthropic Claude',
+    storageKey: 'anthropic_api_key',
+    placeholder: 'sk-ant-...',
+    consoleUrl: 'https://console.anthropic.com/settings/keys',
+    consoleName: 'console.anthropic.com',
+    model: ANTHROPIC_MODEL,
+  },
   gemini: {
     label: 'Google Gemini',
     storageKey: 'gemini_api_key',
@@ -508,22 +521,17 @@ const PROVIDERS = {
 };
 export const AI_CFG = PROVIDERS[AI_PROVIDER];
 
-// Delay between invoice API calls, paced to the provider's requests-per-minute cap.
-// Gemini free Flash is 15 RPM. Each call itself takes a few seconds, so with a
-// 3000ms gap the effective rate lands near ~10/min — comfortably under the cap
-// while cutting the between-invoice wait almost in half vs the old 5s. Groq
-// fallback keeps the wider 10s spacing for its tighter token-per-minute window.
-// Batch pacing. The Gemini FREE tier is tightly rate-limited (per-minute request
-// cap). Bursting the whole batch at once trips 429s, which then trigger long
-// retry backoffs — the app ends up SLOWER than if it had just paced itself. So we
-// keep concurrency low AND throttle how often a new request may START, staying
-// under the free-tier RPM. A paid Gemini key lifts the limit dramatically; there
-// the throttle is harmless (calls just aren't the bottleneck). Groq keeps its own
-// tight pacing.
-export const BATCH_CONCURRENCY = AI_PROVIDER === 'gemini' ? 2 : 1;
-// Minimum gap between request STARTS (ms). ~3s ≈ 20 requests/min — under even a
-// conservative free-tier cap — so we rarely hit a 429 in the first place.
-export const BATCH_MIN_GAP_MS = AI_PROVIDER === 'gemini' ? 3000 : 8000;
+// Batch pacing, tuned per provider's rate limits.
+// - Anthropic (paid): even the entry tier is ~50 RPM, comfortably above a normal
+//   batch, so process several in parallel with no artificial gap — fast.
+// - Gemini (free): tightly rate-limited per minute. Bursting trips 429s that then
+//   trigger long retry backoffs, making it SLOWER — so keep concurrency low and
+//   throttle request starts to stay under the cap.
+// - Groq (free): tighter token-per-minute window — slowest pacing.
+export const BATCH_CONCURRENCY = AI_PROVIDER === 'anthropic' ? 4 : AI_PROVIDER === 'gemini' ? 2 : 1;
+// Minimum gap between request STARTS (ms). Anthropic paid tier needs none; the
+// free tiers throttle to stay under their per-minute request cap.
+export const BATCH_MIN_GAP_MS = AI_PROVIDER === 'anthropic' ? 0 : AI_PROVIDER === 'gemini' ? 3000 : 8000;
 
 // Run `worker` over `items` with at most `limit` in flight at once, and no two
 // starts closer than `minGapMs`. Never throws — each slot's outcome is captured
@@ -564,6 +572,51 @@ const F='Calibri, "Segoe UI", Arial, sans-serif';
 export async function callAI({provider, apiKey, model, imageDataUrl, images, prompt, maxOutputTokens}){
   const imgs = (images && images.length) ? images : [imageDataUrl];
   const maxTok = maxOutputTokens || 6000;
+
+  if(provider === 'anthropic'){
+    // Browser-direct call to the Anthropic Messages API. The
+    // anthropic-dangerous-direct-browser-access header is what enables CORS from
+    // the browser (the key lives in the user's localStorage, same as Gemini/Groq).
+    const content = [];
+    for(const dataUrl of imgs){
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
+      if(!m) throw Object.assign(new Error('Bad image data URL'), {code:'malformed'});
+      content.push({type:'image', source:{type:'base64', media_type:m[1], data:m[2]}});
+    }
+    content.push({type:'text', text: prompt});
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTok,
+        // Haiku 4.5 has no thinking by default (thinking is a 4.6+ feature) — plain
+        // extraction, no thinking overhead. JSON is enforced by the prompt + parseAIJson.
+        messages:[{role:'user', content}],
+      }),
+    });
+    if(res.status === 429){
+      throw Object.assign(new Error('Rate limit — retrying...'), {code:'rate_limit'});
+    }
+    if(res.status === 401 || res.status === 403){
+      throw Object.assign(new Error('API key rejected — check your Anthropic key in settings'), {code:'auth'});
+    }
+    const data = await res.json();
+    if(data.error){
+      const msg = data.error.message || JSON.stringify(data.error);
+      if(res.status === 529 || /rate|overloaded/i.test(msg)) throw Object.assign(new Error('Rate limit — retrying...'), {code:'rate_limit'});
+      throw Object.assign(new Error(msg), {code:'other'});
+    }
+    const textBlock = Array.isArray(data.content) ? data.content.find(b => b.type === 'text') : null;
+    const text = textBlock?.text || '';
+    if(!text) throw Object.assign(new Error('Claude returned empty response'), {code:'malformed'});
+    return {text};
+  }
 
   if(provider === 'gemini'){
     const parts = [{text: prompt}];
