@@ -40,11 +40,14 @@ export function volLabel(ml) {
 // Pure calc — exported so the test suite can lock it against the source Excel.
 // Round to 4 dp to kill float noise while preserving the sheet's precision (the
 // 2% line is not rounded to sen, e.g. 61004.69 × 2% = 1220.0938). Volumes are
-// aggregated from each invoice's `vols` map ({ [ml]: cartonCount }); every
-// volume earns the same flat `rate`.
-export function calcYHS({ invoices = [], rate = YHS_DEFAULT_RATE, otherDiscount = 0, creditNote = 0 }) {
+// aggregated from each invoice's `vols` map ({ [ml]: cartonCount }). Each volume
+// earns a PER-VOLUME rate from `rates` ({ [ml]: RM/CTN }); volumes without an
+// explicit rate fall back to `defaultRate`. Set a volume's rate to 0 for products
+// that get no discount.
+export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, otherDiscount = 0, creditNote = 0 }) {
   const r4 = v => Math.round(v * 10000) / 10000;
-  const rt = Number(rate) || 0;
+  const dRate = Number(defaultRate) || 0;
+  const rateFor = ml => (rates && rates[ml] != null) ? (Number(rates[ml]) || 0) : dRate;
   const totalAmount = invoices.reduce((s, i) => s + (Number(i.amount) || 0), 0);
   const totalCtn = invoices.reduce((s, i) => s + (Number(i.qty) || 0), 0);
 
@@ -63,8 +66,8 @@ export function calcYHS({ invoices = [], rate = YHS_DEFAULT_RATE, otherDiscount 
   });
   const volumes = Object.keys(volMap)
     .map(ml => {
-      const m = Number(ml), ctn = volMap[ml];
-      return { ml: m, label: volLabel(m), rate: rt, ctn, bonus: r4(ctn * rt) };
+      const m = Number(ml), ctn = volMap[ml], r = rateFor(m);
+      return { ml: m, label: volLabel(m), rate: r, ctn, bonus: r4(ctn * r) };
     })
     .sort((a, b) => a.ml - b.ml);
   const totalBonus = r4(volumes.reduce((s, v) => s + v.bonus, 0));
@@ -76,7 +79,7 @@ export function calcYHS({ invoices = [], rate = YHS_DEFAULT_RATE, otherDiscount 
   );
 
   return {
-    totalAmount: r4(totalAmount), totalCtn, rate: rt,
+    totalAmount: r4(totalAmount), totalCtn,
     discount2, transport1, transport2,
     volumes, totalBonus,
     otherDiscount: r4(od), creditNote: r4(cn), payable,
@@ -102,17 +105,25 @@ EXTRACTION RULES:
 1. invoice_no: From "Document No" / "Invoice No" field. Read each digit individually. Flag if unclear.
 2. invoice_date: From "Invoice Date" / "Document Date". Output STRICTLY DD/MM/YYYY with leading zeros. Flag if unclear.
 3. total_amount: The final "Total Amount Due" / "Grand Total" (bottom-line MYR amount, NOT subtotal before tax). Read each digit. Flag if unclear.
-4. total_qty: Total number of CARTONS (CTN) on the whole invoice — the "PRODUCT TOTAL" / "TOTAL QTY" carton count. A carton count, not a piece count.
-5. volumes: An ARRAY breaking the cartons down by product VOLUME. Include ONLY volumes that actually appear on THIS invoice — do not pad with zero-carton volumes. For each distinct volume present, output {"volume_ml": <volume in millilitres>, "ctn": <total cartons of that volume>}.
-   - Read the volume from each line item's description (e.g. "250ML", "300ML", "320ML", "1L", "1.5L").
-   - Convert litres to millilitres: 1L → 1000, 1.5L → 1500, 2L → 2000.
-   - Sum the carton quantities of all line items that share the same volume.
-   - Common YHS volumes: 250ML, 300ML, 320ML, 1000ML (1L), 1500ML (1.5L). Include every volume you see; omit volumes not on this invoice.
-   - The sum of all volumes[].ctn should equal total_qty. If some cartons have no readable volume, still count them in total_qty but you may omit them from volumes.
-6. supplier: From the TOP HEADER (the company that ISSUED the invoice), usually "YEO HIAP SENG".
-7. uncertain_fields: ARRAY of field names you had ANY doubt about. Possible: "invoice_no","invoice_date","total_amount","total_qty","volumes". BE LIBERAL.
+4. total_qty: Total number of CARTONS (CTN) on the whole invoice — the "TOTAL QTY" / "TOTAL OTHERS" / "TOTAL CAN" carton count. A carton count, not a piece count.
+5. volumes: An ARRAY breaking the cartons down by product VOLUME. Include ONLY volumes that actually appear on THIS invoice.
+   - READ THE VOLUME LITERALLY FROM EACH LINE ITEM'S DESCRIPTION TEXT. The volume is the number+unit written at the START of the description, e.g.:
+       "1L COMBI YEOS JASMINE GT 1X12"        -> volume_ml 1000   (1L = 1000ml)
+       "300ML CAN YEOS SOY BEAN MILK X24"     -> volume_ml 300
+       "250ML PET YEOS ..."                   -> volume_ml 250
+       "320ML ..."                            -> volume_ml 320
+       "1.5L ..."                             -> volume_ml 1500
+       "500ML ..."                            -> volume_ml 500
+   - Convert litres to millilitres: 1L→1000, 1.2L→1200, 1.25L→1250, 1.5L→1500, 2L→2000.
+   - NEVER substitute a volume that is not written in the description. If a line says "1L", the volume is 1000 — it is NOT 320, NOT 300, NOT any other number. Do NOT pick from a list of "typical" volumes; read what is actually printed.
+   - Sum the carton (QTY / CAR) counts of all line items that share the same volume.
+   - If you genuinely cannot read a line's volume, add "volumes" to uncertain_fields rather than guessing a value.
+   - The sum of all volumes[].ctn should equal total_qty.
+6. CONTINUATION / FOOTER PAGES: Some invoices span multiple pages (marked "PAGE 1/2", "PAGE 2/2", etc.). A page that shows only the header and payment footer with NO product line-item table and NO grand total is a continuation page — for it, return total_amount 0, total_qty 0, volumes []. Do NOT invent products for it. (The full invoice totals live on the page that has the product table.)
+7. supplier: From the TOP HEADER (the company that ISSUED the invoice), usually "YEO HIAP SENG".
+8. uncertain_fields: ARRAY of field names you had ANY doubt about. Possible: "invoice_no","invoice_date","total_amount","total_qty","volumes". BE LIBERAL.
 
-SELF-CHECK: sum of volumes[].ctn should be ≤ total_qty. Every digit in invoice_no and total_amount must be one you'd bet on, else flag it.
+SELF-CHECK: sum of volumes[].ctn should be ≤ total_qty. Every volume you output must be written verbatim in a line-item description on THIS image. Every digit in invoice_no and total_amount must be one you'd bet on, else flag it.
 
 Return ONLY the JSON object. Nothing else.`;
 
@@ -139,7 +150,8 @@ Per-object rules (apply to each image separately):
 - invoice_date: DD/MM/YYYY with leading zeros; flag if unclear.
 - total_amount: the final "Total Amount Due" / "Grand Total" (NOT subtotal). Read each digit exactly, no rounding; flag if unclear.
 - total_qty: total CARTON (CTN) count on that invoice.
-- volumes: array of {volume_ml, ctn} for each distinct volume ON THAT invoice (250ML, 300ML, 320ML, 1L=1000, 1.5L=1500, etc.). Include only volumes present; omit others. Sum of ctn should be ≤ total_qty.
+- volumes: array of {volume_ml, ctn}, ONE entry per distinct volume ON THAT invoice. READ THE VOLUME LITERALLY from the start of each line-item description ("1L COMBI..." -> 1000, "300ML CAN..." -> 300, "320ML..." -> 320, "1.5L..." -> 1500). Convert litres to ml (1L=1000, 1.2L=1200, 1.5L=1500). NEVER substitute a volume not written in the description — if it says 1L it is 1000, never 320. If a line's volume is unreadable, flag "volumes" instead of guessing. Include only volumes actually present. Sum of ctn should be ≤ total_qty.
+- CONTINUATION PAGES: if an image shows only a header + payment footer with NO product line-item table and no grand total (e.g. a "PAGE 2/2"), return total_amount 0, total_qty 0, volumes [] for it — do not invent products.
 - uncertain_fields: array of field names you had any doubt about; be liberal.
 
 Return ONLY the JSON array of ${n} objects. Nothing else.`;
@@ -182,16 +194,18 @@ const T = {
 const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '1px solid #aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: p ? '#111' : '#fff', color: p ? '#fff' : '#333', fontFamily: F });
 
 const LS_YHS = 'yhs_invoices';
-const LS_RATE = 'yhs_rate';
+const LS_RATES = 'yhs_volrates_v2';
 
 export default function YHSExtractor() {
   const [invoices, setInvoices] = useState(() => {
     try { return JSON.parse(localStorage.getItem(LS_YHS)) || []; } catch { return []; }
   });
-  const [rate, setRate] = useState(() => {
-    try { const r = parseFloat(localStorage.getItem(LS_RATE)); return isNaN(r) ? YHS_DEFAULT_RATE : r; }
-    catch { return YHS_DEFAULT_RATE; }
+  // Per-volume subsidy rates: { [ml]: RM/CTN }. A volume not in the map falls back
+  // to YHS_DEFAULT_RATE (0.50). Set a volume to 0 for products with no discount.
+  const [volRates, setVolRates] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_RATES)) || {}; } catch { return {}; }
   });
+  const setVolRate = (ml, r) => setVolRates(prev => ({ ...prev, [ml]: r }));
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingCount, setProcessingCount] = useState({ done: 0, total: 0 });
@@ -208,7 +222,7 @@ export default function YHSExtractor() {
   const uploadAreaRef = useRef(null);
 
   useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices]);
-  useEffect(() => { try { localStorage.setItem(LS_RATE, String(rate)); } catch {} }, [rate]);
+  useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {
@@ -393,12 +407,16 @@ export default function YHSExtractor() {
       if (s.ok) results.push(...s.value);
       else setError(prev => (prev ? prev + '\n' : '') + `Failed batch ${ci + 1}: ${s.error.message}`);
     });
-    if (results.length > 0) setInvoices(prev => [...prev, ...results]);
+    // Drop empty continuation/footer pages (a multi-page invoice's "PAGE 2/2" with
+    // no product table extracts to amount 0 + qty 0 + no volumes). A real invoice —
+    // even an FOC one — always has qty > 0, so this only removes blank pages.
+    const kept = results.filter(r => !(r.amount === 0 && r.qty === 0 && Object.keys(r.vols || {}).length === 0));
+    if (kept.length > 0) setInvoices(prev => [...prev, ...kept]);
     setUploading(false); setProcessing(false);
     if (fileRef.current) fileRef.current.value = '';
   }, [processChunk, apiKey]);
 
-  const calc = calcYHS({ invoices, rate, otherDiscount, creditNote });
+  const calc = calcYHS({ invoices, rates: volRates, otherDiscount, creditNote });
   const showUpload = invoices.length === 0 || uploading;
 
   const downloadExcel = () => {
@@ -597,25 +615,34 @@ export default function YHSExtractor() {
             </tbody>
           </table>
 
-          {/* Single flat volume rate */}
-          <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Volume subsidy rate:</span>
-            <span style={{ fontSize: 13 }}>RM</span>
-            <input type="number" step="0.01" value={rate}
-              onChange={e => setRate(parseFloat(e.target.value) || 0)}
-              style={{ width: 70, padding: '4px 6px', fontSize: 13, border: '1px solid #aaa', borderRadius: 4, fontFamily: F, textAlign: 'right' }} />
-            <span style={{ fontSize: 13, color: '#666' }}>/ CTN — applies to every volume</span>
+          <div className="noP" style={{ fontSize: 12, color: '#888', marginTop: 10, textAlign: 'right' }}>
+            Each volume's subsidy rate is editable below — set it to <strong>0.00</strong> for products that get no discount.
           </div>
 
           {/* SUMMARY DEDUCTIONS */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
             <tbody>
               <SumRow label="TOTAL INVOICE AMOUNT:" value={calc.totalAmount} sign="" bold />
               <SumRow label="2% DISCOUNT:" value={calc.discount2} />
               <SumRow label={`TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.30):`} value={calc.transport1} />
               <SumRow label={`TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`} value={calc.transport2} />
+              {/* Per-volume bonus lines — the RM rate is editable per volume */}
               {calc.volumes.map(v => (
-                <SumRow key={v.ml} label={`${v.label} (${v.ctn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
+                <tr key={v.ml}>
+                  <td colSpan={2} style={{ border: 'none' }} />
+                  <td style={T.bxL}>
+                    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3, justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
+                      {v.label} ({v.ctn} x RM
+                      <input className="noP" type="number" step="0.01" min="0" value={v.rate}
+                        onChange={e => setVolRate(v.ml, Math.max(0, parseFloat(e.target.value) || 0))}
+                        style={{ width: 56, padding: '2px 4px', fontSize: 14, border: '1px solid #bbb', borderRadius: 3, fontFamily: F, textAlign: 'right' }} />
+                      <span className="printOnly">{v.rate.toFixed(2)}</span>
+                      ):
+                    </span>
+                  </td>
+                  <td style={T.bxM}>{v.bonus ? '-' : ''}</td>
+                  <td style={T.bxR}>{fmt(v.bonus)}</td>
+                </tr>
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>

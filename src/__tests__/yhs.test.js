@@ -4,7 +4,7 @@ import { calcYHS, volLabel } from '../YHSExtractor.jsx';
 // The 7-invoice sample batch from the YHS Excel Owen provided (1.xlsx). Each
 // invoice carries only the volumes it actually has (per-invoice breakdown).
 // 250ML=360 (inv1), 300ML=990 (inv3/4/6); the rest are other volumes that earn
-// transport subsidy only. Flat rate RM0.50 for every volume.
+// transport subsidy only. Default rate RM0.50 for every volume.
 const SAMPLE = [
   { amount: 6548.76, qty: 360, vols: { 250: 360 } },
   { amount: 5193.77, qty: 60, vols: {} },
@@ -16,7 +16,8 @@ const SAMPLE = [
 ];
 
 describe('calcYHS — sample Excel batch (1.xlsx) reproduces the sheet exactly', () => {
-  const r = calcYHS({ invoices: SAMPLE, rate: 0.50, otherDiscount: 0, creditNote: 606.27 });
+  // No explicit rates → every volume falls back to the 0.50 default.
+  const r = calcYHS({ invoices: SAMPLE, rates: {}, otherDiscount: 0, creditNote: 606.27 });
 
   it('TOTAL INVOICE AMOUNT = 61004.69', () => expect(r.totalAmount).toBe(61004.69));
   it('total cartons = 2040', () => expect(r.totalCtn).toBe(2040));
@@ -42,12 +43,37 @@ describe('calcYHS — sample Excel batch (1.xlsx) reproduces the sheet exactly',
   it('TOTAL AMOUNT PAYABLE = 57483.3262 (matches sheet exactly)', () => expect(r.payable).toBe(57483.3262));
 });
 
+describe('calcYHS — per-volume rates (some products get no discount)', () => {
+  const invoices = [{ amount: 1000, qty: 100, vols: { 300: 40, 1000: 30, 1500: 30 } }];
+
+  it('a volume with rate 0 earns no bonus; others use their own rate', () => {
+    // 300ML @ 0.50, 1L @ 0 (no discount), 1.5L @ 0.80
+    const r = calcYHS({ invoices, rates: { 300: 0.50, 1000: 0, 1500: 0.80 } });
+    expect(r.volumes.find(v => v.ml === 300).bonus).toBe(20);  // 40 × 0.50
+    expect(r.volumes.find(v => v.ml === 1000).bonus).toBe(0);  // 30 × 0
+    expect(r.volumes.find(v => v.ml === 1500).bonus).toBe(24); // 30 × 0.80
+    expect(r.totalBonus).toBe(44);
+  });
+
+  it('volumes without an explicit rate fall back to the 0.50 default', () => {
+    const r = calcYHS({ invoices, rates: { 1500: 0.80 } });
+    expect(r.volumes.find(v => v.ml === 300).rate).toBe(0.50);  // default
+    expect(r.volumes.find(v => v.ml === 1000).rate).toBe(0.50); // default
+    expect(r.volumes.find(v => v.ml === 1500).rate).toBe(0.80); // explicit
+  });
+
+  it('custom defaultRate applies to unspecified volumes', () => {
+    const r = calcYHS({ invoices, rates: {}, defaultRate: 0.30 });
+    expect(r.volumes.every(v => v.rate === 0.30)).toBe(true);
+  });
+});
+
 describe('calcYHS — volumes aggregate across invoices and stay sorted', () => {
   const invoices = [
     { amount: 1000, qty: 100, vols: { 1500: 30, 250: 40 } },
     { amount: 500, qty: 60, vols: { 250: 20, 320: 40 } },
   ];
-  const r = calcYHS({ invoices, rate: 0.50 });
+  const r = calcYHS({ invoices, rates: {} });
 
   it('distinct volumes sorted ascending by ml', () => {
     expect(r.volumes.map(v => v.ml)).toEqual([250, 320, 1500]);
@@ -55,31 +81,15 @@ describe('calcYHS — volumes aggregate across invoices and stay sorted', () => 
   it('250ML aggregates across both invoices (40 + 20 = 60)', () => {
     expect(r.volumes.find(v => v.ml === 250).ctn).toBe(60);
   });
-  it('bonus = ctn × flat rate', () => {
+  it('bonus = ctn × default rate', () => {
     expect(r.volumes.find(v => v.ml === 250).bonus).toBe(30);  // 60 × 0.50
-    expect(r.volumes.find(v => v.ml === 320).bonus).toBe(20);  // 40 × 0.50
-    expect(r.volumes.find(v => v.ml === 1500).bonus).toBe(15); // 30 × 0.50
     expect(r.totalBonus).toBe(65);
-  });
-});
-
-describe('calcYHS — the flat rate applies to every volume', () => {
-  const invoices = [{ amount: 1000, qty: 100, vols: { 320: 40, 1000: 30, 1500: 30 } }];
-  it('rate 0.50 → total bonus 50, payable 880', () => {
-    const r = calcYHS({ invoices, rate: 0.50 });
-    expect(r.totalBonus).toBe(50);
-    // 1000 − 20 (2%) − 30 (0.30) − 20 (0.20) − 50 (volume) = 880
-    expect(r.payable).toBe(880);
-  });
-  it('a different flat rate scales all volumes together', () => {
-    const r = calcYHS({ invoices, rate: 0.80 });
-    expect(r.totalBonus).toBe(80); // 100 × 0.80
   });
 });
 
 describe('calcYHS — cartons with no volume earn transport only', () => {
   const invoices = [{ amount: 1000, qty: 100, vols: {} }];
-  const r = calcYHS({ invoices, rate: 0.50 });
+  const r = calcYHS({ invoices, rates: {} });
   it('no volumes → zero bonus, transport still applies', () => {
     expect(r.volumes).toEqual([]);
     expect(r.totalBonus).toBe(0);
@@ -91,27 +101,26 @@ describe('calcYHS — cartons with no volume earn transport only', () => {
 
 describe('calcYHS — OTHER DISCOUNT is subtracted', () => {
   it('an other discount reduces the payable by exactly that amount', () => {
-    const base = calcYHS({ invoices: SAMPLE, rate: 0.50, creditNote: 606.27 });
-    const withOD = calcYHS({ invoices: SAMPLE, rate: 0.50, otherDiscount: 100, creditNote: 606.27 });
+    const base = calcYHS({ invoices: SAMPLE, rates: {}, creditNote: 606.27 });
+    const withOD = calcYHS({ invoices: SAMPLE, rates: {}, otherDiscount: 100, creditNote: 606.27 });
     expect(withOD.payable).toBe(Math.round((base.payable - 100) * 10000) / 10000);
   });
 });
 
 describe('calcYHS — edge cases', () => {
   it('empty batch → all zeros', () => {
-    const r = calcYHS({ invoices: [], rate: 0.50 });
+    const r = calcYHS({ invoices: [], rates: {} });
     expect(r.totalAmount).toBe(0);
     expect(r.totalCtn).toBe(0);
     expect(r.totalBonus).toBe(0);
     expect(r.payable).toBe(0);
   });
-  it('missing args default safely (rate defaults to 0.50)', () => {
+  it('missing args default safely', () => {
     expect(() => calcYHS({})).not.toThrow();
     expect(calcYHS({}).payable).toBe(0);
-    expect(calcYHS({}).rate).toBe(0.50);
   });
   it('non-numeric fields coerce to 0', () => {
-    const r = calcYHS({ invoices: [{ amount: '500', qty: '50', vols: { 250: '25' } }], rate: 0.50 });
+    const r = calcYHS({ invoices: [{ amount: '500', qty: '50', vols: { 250: '25' } }], rates: {} });
     expect(r.totalAmount).toBe(500);
     expect(r.totalCtn).toBe(50);
     expect(r.volumes.find(v => v.ml === 250).ctn).toBe(25);
@@ -124,4 +133,5 @@ describe('volLabel', () => {
   it('320 → 320ML', () => expect(volLabel(320)).toBe('320ML'));
   it('1000 → 1L', () => expect(volLabel(1000)).toBe('1L'));
   it('1500 → 1.5L', () => expect(volLabel(1500)).toBe('1.5L'));
+  it('1200 → 1.2L', () => expect(volLabel(1200)).toBe('1.2L'));
 });
