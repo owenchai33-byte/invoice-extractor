@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcYHS, volLabel } from '../YHSExtractor.jsx';
+import { calcYHS, volLabel, parseVolInput } from '../YHSExtractor.jsx';
 
 // The 7-invoice sample batch from the YHS Excel Owen provided (1.xlsx). Each
 // invoice carries only the volumes it actually has (per-invoice breakdown).
@@ -124,6 +124,37 @@ describe('calcYHS — edge cases', () => {
     expect(r.totalAmount).toBe(500);
     expect(r.totalCtn).toBe(50);
     expect(r.volumes.find(v => v.ml === 250).ctn).toBe(25);
+  });
+});
+
+describe('parseVolInput — friendly volume string → ml', () => {
+  it('reads ML suffix', () => {
+    expect(parseVolInput('320ML')).toBe(320);
+    expect(parseVolInput('300ml')).toBe(300);
+    expect(parseVolInput(' 500 ML ')).toBe(500);
+  });
+  it('reads L suffix and converts to ml', () => {
+    expect(parseVolInput('1L')).toBe(1000);
+    expect(parseVolInput('1.5L')).toBe(1500);
+    expect(parseVolInput('1.2l')).toBe(1200);
+    expect(parseVolInput('2L')).toBe(2000);
+  });
+  it('bare number ≤ 10 is read as litres', () => {
+    expect(parseVolInput('1')).toBe(1000);
+    expect(parseVolInput('1.5')).toBe(1500);
+    expect(parseVolInput('1.25')).toBe(1250);
+  });
+  it('bare number > 10 is read as ml', () => {
+    expect(parseVolInput('320')).toBe(320);
+    expect(parseVolInput('500')).toBe(500);
+    expect(parseVolInput('1000')).toBe(1000);
+  });
+  it('returns null for unreadable input so the old value is kept', () => {
+    expect(parseVolInput('abc')).toBeNull();
+    expect(parseVolInput('')).toBeNull();
+    expect(parseVolInput(null)).toBeNull();
+    expect(parseVolInput('0')).toBeNull();
+    expect(parseVolInput('-5')).toBeNull();
   });
 });
 
