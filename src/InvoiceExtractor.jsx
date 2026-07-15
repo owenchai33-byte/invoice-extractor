@@ -718,25 +718,32 @@ export function FlappyLoader({ label }) {
       <style>{`
         @keyframes fbFly{0%{transform:translateY(0) rotate(-9deg)}22%{transform:translateY(-15px) rotate(-16deg)}52%{transform:translateY(3px) rotate(9deg)}82%{transform:translateY(13px) rotate(15deg)}100%{transform:translateY(0) rotate(-9deg)}}
         @keyframes fbFlap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.78)}}
-        @keyframes fbShadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.22}50%{transform:translateX(-50%) scaleX(.66);opacity:.1}}
-        @keyframes fbClouds{from{background-position:0 10px,120px 34px}to{background-position:-280px 10px,-160px 34px}}
-        @keyframes fbGround{from{background-position:0 0}to{background-position:-32px 0}}
+        @keyframes fbShadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.2}50%{transform:translateX(-50%) scaleX(.66);opacity:.09}}
+        /* clouds tile every 160px → scroll exactly one tile for a seamless loop */
+        @keyframes fbClouds{from{background-position:0 0,0 0}to{background-position:-160px 0,-160px 0}}
+        /* a 45° stripe with 18px period repeats horizontally every 18*sqrt(2)=25.456px;
+           scrolling exactly that distance removes the per-loop jump (the choppiness) */
+        @keyframes fbGround{from{background-position:0 0}to{background-position:-25.456px 0}}
       `}</style>
-      <div style={{ position: 'relative', width: 236, height: 148, margin: '0 auto 16px', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(#70c5ce 0 68%, #73bf2e 68% 73%, #ded895 73% 100%)', boxShadow: '0 6px 16px rgba(0,0,0,.14), inset 0 0 0 3px rgba(255,255,255,.35)' }}>
-        {/* drifting clouds */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 28px 0, #fff 15px, transparent 16px), radial-gradient(circle at 78px 0, #fff 11px, transparent 12px)', backgroundRepeat: 'repeat-x', animation: 'fbClouds 7s linear infinite', opacity: .9 }} />
-        {/* scrolling ground */}
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '27%', backgroundImage: 'repeating-linear-gradient(45deg,#ded895 0 9px,#d4cd7f 9px 18px)', animation: 'fbGround 1s linear infinite' }} />
-        {/* bird shadow on the ground */}
-        <div style={{ position: 'absolute', left: '50%', bottom: '19%', width: 48, height: 9, background: '#000', borderRadius: '50%', filter: 'blur(2px)', animation: 'fbShadow 1.15s ease-in-out infinite' }} />
-        {/* the bird — bob (fly) on the wrapper, wing-flap (scaleY) on the image */}
-        <div style={{ position: 'absolute', left: '50%', top: '42%', transform: 'translateX(-50%)' }}>
-          <div style={{ animation: 'fbFly 1.15s ease-in-out infinite' }}>
-            <img src="/favicon.png" alt="" style={{ width: 56, height: 'auto', display: 'block', animation: 'fbFlap .26s ease-in-out infinite', transformOrigin: '50% 62%', filter: 'drop-shadow(0 2px 1px rgba(0,0,0,.2))' }} />
+      <div style={{ position: 'relative', width: 240, height: 150, margin: '0 auto 14px' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(#a7dfe4 0%, #83cdd4 66%, #7ec53a 66%, #7ec53a 71%, #e4dea4 71%, #e4dea4 100%)' }}>
+          {/* drifting clouds — fixed 160px tile so repeat-x scrolls seamlessly */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 34px 26px,#fff 15px,transparent 16px),radial-gradient(circle at 104px 40px,#fff 10px,transparent 11px)', backgroundSize: '160px 100%, 160px 100%', backgroundRepeat: 'repeat-x', animation: 'fbClouds 10s linear infinite', opacity: .82 }} />
+          {/* scrolling ground — softened stripe contrast + seamless tile scroll */}
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '29%', backgroundImage: 'repeating-linear-gradient(45deg,#e4dea4 0 9px,#dad484 9px 18px)', animation: 'fbGround 1.15s linear infinite' }} />
+          {/* bird shadow on the ground */}
+          <div style={{ position: 'absolute', left: '50%', bottom: '19%', width: 46, height: 9, background: '#000', borderRadius: '50%', filter: 'blur(2px)', animation: 'fbShadow 1.15s ease-in-out infinite' }} />
+          {/* the bird — bob (fly) on the wrapper, wing-flap (scaleY) on the image */}
+          <div style={{ position: 'absolute', left: '50%', top: '42%', transform: 'translateX(-50%)' }}>
+            <div style={{ animation: 'fbFly 1.15s ease-in-out infinite' }}>
+              <img src="/favicon.png" alt="" style={{ width: 56, height: 'auto', display: 'block', animation: 'fbFlap .26s ease-in-out infinite', transformOrigin: '50% 62%', filter: 'drop-shadow(0 2px 1px rgba(0,0,0,.2))' }} />
+            </div>
           </div>
         </div>
+        {/* soft white vignette so the scene melts into the page instead of sitting in a hard box */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 20, pointerEvents: 'none', background: 'radial-gradient(125% 135% at 50% 46%, rgba(255,255,255,0) 64%, #fff 100%)' }} />
       </div>
-      {label && <div style={{ fontSize: 14, color: '#666', fontWeight: 600 }}>{label}</div>}
+      {label && <div style={{ fontSize: 14, color: '#888', fontWeight: 600 }}>{label}</div>}
     </div>
   );
 }
