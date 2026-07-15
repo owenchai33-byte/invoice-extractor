@@ -760,8 +760,16 @@ export default function YHSExtractor() {
             </div>
           )}
 
-          {/* SUMMARY DEDUCTIONS */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 6 }}>
+          {/* SUMMARY DEDUCTIONS — right-aligned totals box (empty left is borderless),
+              fixed columns so the block sits neatly under the invoice table's right side. */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8, tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '11%' }} />
+              <col />
+              <col style={{ width: '4%' }} />
+              <col style={{ width: '22%' }} />
+            </colgroup>
             <tbody>
               <SumRow label="TOTAL INVOICE AMOUNT:" value={calc.totalAmount} sign="" bold />
               <SumRow label="2% DISCOUNT:" value={calc.discount2} />
