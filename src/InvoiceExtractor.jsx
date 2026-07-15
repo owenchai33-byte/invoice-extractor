@@ -716,14 +716,15 @@ export function FlappyLoader({ label }) {
   return (
     <div className="noP" style={{ textAlign: 'center', padding: '40px 20px' }}>
       <style>{`
-        @keyframes fbFly{0%{transform:translateY(0) rotate(-9deg)}22%{transform:translateY(-15px) rotate(-16deg)}52%{transform:translateY(3px) rotate(9deg)}82%{transform:translateY(13px) rotate(15deg)}100%{transform:translateY(0) rotate(-9deg)}}
-        @keyframes fbFlap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.78)}}
-        @keyframes fbShadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.2}50%{transform:translateX(-50%) scaleX(.66);opacity:.09}}
+        @keyframes fbFly{0%{transform:translateY(0) rotate(-9deg)}22%{transform:translateY(-16px) rotate(-16deg)}52%{transform:translateY(4px) rotate(9deg)}82%{transform:translateY(14px) rotate(15deg)}100%{transform:translateY(0) rotate(-9deg)}}
+        @keyframes fbWing{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(34deg)}}
+        @keyframes fbShadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.2}50%{transform:translateX(-50%) scaleX(.64);opacity:.09}}
         /* clouds tile every 160px → scroll exactly one tile for a seamless loop */
         @keyframes fbClouds{from{background-position:0 0,0 0}to{background-position:-160px 0,-160px 0}}
         /* a 45° stripe with 18px period repeats horizontally every 18*sqrt(2)=25.456px;
            scrolling exactly that distance removes the per-loop jump (the choppiness) */
         @keyframes fbGround{from{background-position:0 0}to{background-position:-25.456px 0}}
+        .fb-wing{animation:fbWing .26s ease-in-out infinite;transform-box:fill-box;transform-origin:32% 18%}
       `}</style>
       <div style={{ position: 'relative', width: 240, height: 150, margin: '0 auto 14px' }}>
         <div style={{ position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(#a7dfe4 0%, #83cdd4 66%, #7ec53a 66%, #7ec53a 71%, #e4dea4 71%, #e4dea4 100%)' }}>
@@ -733,15 +734,27 @@ export function FlappyLoader({ label }) {
           <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '29%', backgroundImage: 'repeating-linear-gradient(45deg,#e4dea4 0 9px,#dad484 9px 18px)', animation: 'fbGround 1.15s linear infinite' }} />
           {/* bird shadow on the ground */}
           <div style={{ position: 'absolute', left: '50%', bottom: '19%', width: 46, height: 9, background: '#000', borderRadius: '50%', filter: 'blur(2px)', animation: 'fbShadow 1.15s ease-in-out infinite' }} />
-          {/* the bird — bob (fly) on the wrapper, wing-flap (scaleY) on the image */}
+          {/* the bird — self-contained SVG (no external image) so it always renders.
+              bob (fly) on the wrapper, wing-flap (rotate) on the wing group */}
           <div style={{ position: 'absolute', left: '50%', top: '42%', transform: 'translateX(-50%)' }}>
             <div style={{ animation: 'fbFly 1.15s ease-in-out infinite' }}>
-              <img src="/favicon.png" alt="" style={{ width: 56, height: 'auto', display: 'block', animation: 'fbFlap .26s ease-in-out infinite', transformOrigin: '50% 62%', filter: 'drop-shadow(0 2px 1px rgba(0,0,0,.2))' }} />
+              <svg width="70" height="52" viewBox="0 0 84 62" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', filter: 'drop-shadow(0 2px 1px rgba(0,0,0,.2))' }}>
+                <path d="M15 31 L2 22 L13 31 L2 40 Z" fill="#111" />
+                <path d="M17 24 L6 18 L16 27 Z" fill="#111" />
+                <ellipse cx="42" cy="32" rx="29" ry="24" fill="#FFC61A" stroke="#111" strokeWidth="3" />
+                <path d="M18 37 Q42 58 66 37 Q42 49 18 37 Z" fill="#F5901E" />
+                <g className="fb-wing">
+                  <path d="M33 27 Q19 31 27 43 Q36 36 46 37 Q39 29 33 27 Z" fill="#FFE08A" stroke="#111" strokeWidth="2.5" strokeLinejoin="round" />
+                </g>
+                <circle cx="57" cy="24" r="11" fill="#fff" stroke="#111" strokeWidth="2.5" />
+                <circle cx="60" cy="25" r="5" fill="#111" />
+                <path d="M67 29 L83 26 L67 35 Z" fill="#F5641E" stroke="#111" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
             </div>
           </div>
         </div>
-        {/* soft white vignette so the scene melts into the page instead of sitting in a hard box */}
-        <div style={{ position: 'absolute', inset: 0, borderRadius: 20, pointerEvents: 'none', background: 'radial-gradient(125% 135% at 50% 46%, rgba(255,255,255,0) 64%, #fff 100%)' }} />
+        {/* even all-edge white feather so the scene melts into the white page */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 20, pointerEvents: 'none', boxShadow: 'inset 0 0 16px 9px #fff' }} />
       </div>
       {label && <div style={{ fontSize: 14, color: '#888', fontWeight: 600 }}>{label}</div>}
     </div>
