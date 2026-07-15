@@ -708,6 +708,40 @@ export function parseAIJson(raw){
 }
 
 // ============================================================
+// FLAPPY-BIRD LOADER — shown while the AI reads invoices
+// ============================================================
+// A little Flappy-Bird scene: the app's bird bobs + flaps over a sky/ground
+// backdrop. Reuses /favicon.png and is animated purely in CSS (self-contained).
+export function FlappyLoader({ label }) {
+  return (
+    <div className="noP" style={{ textAlign: 'center', padding: '40px 20px' }}>
+      <style>{`
+        @keyframes fbFly{0%{transform:translateY(0) rotate(-9deg)}22%{transform:translateY(-15px) rotate(-16deg)}52%{transform:translateY(3px) rotate(9deg)}82%{transform:translateY(13px) rotate(15deg)}100%{transform:translateY(0) rotate(-9deg)}}
+        @keyframes fbFlap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.78)}}
+        @keyframes fbShadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.22}50%{transform:translateX(-50%) scaleX(.66);opacity:.1}}
+        @keyframes fbClouds{from{background-position:0 10px,120px 34px}to{background-position:-280px 10px,-160px 34px}}
+        @keyframes fbGround{from{background-position:0 0}to{background-position:-32px 0}}
+      `}</style>
+      <div style={{ position: 'relative', width: 236, height: 148, margin: '0 auto 16px', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(#70c5ce 0 68%, #73bf2e 68% 73%, #ded895 73% 100%)', boxShadow: '0 6px 16px rgba(0,0,0,.14), inset 0 0 0 3px rgba(255,255,255,.35)' }}>
+        {/* drifting clouds */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 28px 0, #fff 15px, transparent 16px), radial-gradient(circle at 78px 0, #fff 11px, transparent 12px)', backgroundRepeat: 'repeat-x', animation: 'fbClouds 7s linear infinite', opacity: .9 }} />
+        {/* scrolling ground */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '27%', backgroundImage: 'repeating-linear-gradient(45deg,#ded895 0 9px,#d4cd7f 9px 18px)', animation: 'fbGround 1s linear infinite' }} />
+        {/* bird shadow on the ground */}
+        <div style={{ position: 'absolute', left: '50%', bottom: '19%', width: 48, height: 9, background: '#000', borderRadius: '50%', filter: 'blur(2px)', animation: 'fbShadow 1.15s ease-in-out infinite' }} />
+        {/* the bird — bob (fly) on the wrapper, wing-flap (scaleY) on the image */}
+        <div style={{ position: 'absolute', left: '50%', top: '42%', transform: 'translateX(-50%)' }}>
+          <div style={{ animation: 'fbFly 1.15s ease-in-out infinite' }}>
+            <img src="/favicon.png" alt="" style={{ width: 56, height: 'auto', display: 'block', animation: 'fbFlap .26s ease-in-out infinite', transformOrigin: '50% 62%', filter: 'drop-shadow(0 2px 1px rgba(0,0,0,.2))' }} />
+          </div>
+        </div>
+      </div>
+      {label && <div style={{ fontSize: 14, color: '#666', fontWeight: 600 }}>{label}</div>}
+    </div>
+  );
+}
+
+// ============================================================
 // CLICK-TO-EDIT COMPONENTS
 // ============================================================
 
@@ -1787,12 +1821,7 @@ export default function InvoiceExtractor() {
         )}
 
         {processing&&(
-          <div className="noP" style={{textAlign:'center',padding:'60px 20px'}}>
-            <div style={{width:32,height:32,border:'3px solid #eee',borderTop:'3px solid #000',borderRadius:'50%',margin:'0 auto 12px',animation:'spin .7s linear infinite'}}/>
-            <div style={{fontSize:14,color:'#888'}}>
-              Extracting with {AI_CFG.label}...{processingCount.total>1&&` (${processingCount.done}/${processingCount.total})`}
-            </div>
-          </div>
+          <FlappyLoader label={`Extracting with ${AI_CFG.label}…${processingCount.total>1?` (${processingCount.done}/${processingCount.total})`:''}`} />
         )}
       </div>
 

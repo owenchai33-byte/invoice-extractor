@@ -4,7 +4,7 @@ import {
   LOGO, CO, fmt, normalizeDate, formatVolUnit,
   EditableAmount, EditableText,
   pdfToImageFiles, downsizeBase64ToJPEG, callAI, parseAIJson,
-  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, BATCH_MIN_GAP_MS, runPool,
+  AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, BATCH_MIN_GAP_MS, runPool, FlappyLoader,
 } from './InvoiceExtractor';
 
 const F = 'Calibri, "Segoe UI", Arial, sans-serif';
@@ -833,12 +833,7 @@ export default function YHSExtractor() {
         )}
 
         {processing && (
-          <div className="noP" style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ width: 32, height: 32, border: '3px solid #eee', borderTop: '3px solid #000', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin .7s linear infinite' }} />
-            <div style={{ fontSize: 14, color: '#888' }}>
-              Extracting with {AI_CFG.label}...{processingCount.total > 1 && ` (${processingCount.done}/${processingCount.total})`}
-            </div>
-          </div>
+          <FlappyLoader label={`Extracting with ${AI_CFG.label}…${processingCount.total > 1 ? ` (${processingCount.done}/${processingCount.total})` : ''}`} />
         )}
       </div>
 
