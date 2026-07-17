@@ -412,8 +412,10 @@ export default function YHSExtractor() {
 
   const removeInvoice = id => setInvoices(prev => prev.filter(i => i.id !== id));
   const reset = () => {
+    // Clears the whole list for a fresh delivery. Per-volume RM rates persist
+    // (they're product-stable), but the batch-specific CTN overrides are cleared.
     setInvoices([]); setUploading(false); setProcessing(false); setError(null);
-    setOtherDiscount(0); setCreditNote(0); setPreviewId(null); setVolAdd({});
+    setOtherDiscount(0); setCreditNote(0); setPreviewId(null); setVolAdd({}); setVolCtn({});
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -810,7 +812,8 @@ export default function YHSExtractor() {
             <button style={btn(0)} onClick={() => setUploading(true)}>+ Add Invoice</button>
             <button style={btn(1)} onClick={() => window.print()}>🖨 Print / Save PDF</button>
             <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
-            <button style={{ ...btn(0), color: '#aaa', borderColor: '#ddd' }} onClick={reset}>Reset</button>
+            <button style={{ ...btn(0), color: '#c0392b', borderColor: '#e6bcbc' }}
+              onClick={() => { if (window.confirm(`Clear all ${invoices.length} invoice(s) and start a new list?`)) reset(); }}>🗑 Clear all</button>
           </div>
         </>)}
 

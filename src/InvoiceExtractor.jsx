@@ -441,7 +441,14 @@ EXTRACTION RULES:
 
 10. is_foc: true ONLY if list_price=0.00 AND amount=0.00. FOC items still count for total_qty.
 
-11. total_amount: Final "Total Amount Due" / "Grand Total" value (the absolute bottom-line MYR amount, NOT the subtotal before tax). READ EACH DIGIT — do not approximate or round. If even one digit is unclear, flag as uncertain.
+11. total_amount: The FINAL amount payable — the value on the "Total Amount Due" line (or "Total Amount Payable"), which is the very LAST money line in the totals box at the bottom, AFTER promo discount, cash discount, voucher, and rounding.
+    - Do NOT use the "Total" line — that is the GROSS figure before discounts. The Choon Hua totals box typically reads, top to bottom:
+        Total ................ 4,414.00   <- NOT this (gross, before discount)
+        Total Promo Discount . -150.00
+        Total Amt ............ 4,264.00
+        Total Amount Payable . 4,264.00
+        Total Amount Due ..... 4,264.00   <- THIS is total_amount (the final payable)
+    - Whenever "Total" and "Total Amount Due" differ, ALWAYS take the lower "Total Amount Due" (post-discount). READ EACH DIGIT — do not approximate or round. If even one digit is unclear, flag as uncertain.
 
 12. supplier: From the TOP HEADER of the invoice (the company that ISSUED the invoice), NOT "Ship To" / "Bill To" / customer address blocks. If unsure, the supplier is usually the largest/most prominent company name at the top.
 
@@ -451,7 +458,7 @@ EXTRACTION RULES:
 SELF-CHECK BEFORE RESPONDING:
 ============================================================
 Before returning your JSON, verify:
-- Does the sum of items[].amount roughly equal total_amount? (Allow for small discounts/rounding.) If wildly off (e.g. 10x off), you likely misread a decimal — re-scan.
+- total_amount is the FINAL "Total Amount Due" AFTER discounts, so it is normally LESS than the sum of items[].amount when a promo/cash discount applies — that gap is EXPECTED; do NOT raise total_amount to match the line-item sum (that would wrongly grab the "Total" line). Only re-scan if total_amount is ~10x off from the line-item sum (a misread decimal point).
 - Does the sum of items[].qty equal total_qty? If not, you missed a row or invented one — re-scan.
 - Is every digit in invoice_no something you'd bet on? If not, add it to uncertain_fields.
 - Is every digit in total_amount something you'd bet on? If not, add it to uncertain_fields.
@@ -1521,13 +1528,22 @@ export default function InvoiceExtractor() {
             <div style={{fontWeight:700,fontSize:16,marginTop:2}}>SUPPLIER: {config.name}</div>
           </div>
 
-          <table style={{width:'100%',borderCollapse:'collapse',marginTop:14}}>
+          <table style={{width:'100%',borderCollapse:'collapse',marginTop:14,tableLayout:'fixed'}}>
+            <colgroup>
+              <col style={{width:'5%'}}/>
+              <col style={{width:'11%'}}/>
+              <col style={{width:'16%'}}/>
+              <col style={{width:'15%'}}/>
+              <col style={{width:'15%'}}/>
+              <col style={{width:'25%'}}/>
+              <col style={{width:'13%'}}/>
+            </colgroup>
             <thead><tr>
               <th style={{...T.th,width:36}}>NO.</th>
               <th style={{...T.th,width:86}}>DATE</th>
               <th style={{...T.th,width:120}}>INVOICE NO.</th>
               <th style={{...T.th,width:88}}>AMOUNT</th>
-              <th style={{...T.th,width:60}}>CN</th>
+              <th style={{...T.th,width:88}}>CN</th>
               <th style={T.th} colSpan={2}>TRANSPORT SUBSIDY</th>
             </tr></thead>
             <tbody>
@@ -1810,7 +1826,8 @@ export default function InvoiceExtractor() {
             <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
             <button style={btn(1)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
             <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
-            <button style={{...btn(0),color:'#aaa',borderColor:'#ddd'}} onClick={reset}>Reset</button>
+            <button style={{...btn(0),color:'#c0392b',borderColor:'#e6bcbc'}}
+              onClick={()=>{ if(window.confirm(`Clear all ${invoices.length} invoice(s) and start a new list?`)) reset(); }}>🗑 Clear all</button>
           </div>
         </>)}
 
