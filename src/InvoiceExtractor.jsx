@@ -308,6 +308,7 @@ export function computeIssues({parsed, items, groups, declaredTotal, duplicateIn
     issues.push({
       kind: 'ai_uncertain',
       severity: 'warn',
+      fields: parsed.uncertain_fields,
       msg: `AI flagged ${parsed.uncertain_fields.length} field(s) as unclear in the source image: ${parsed.uncertain_fields.join(', ')}. Verify against the source — click 👁 to view.`,
     });
   }
@@ -773,7 +774,7 @@ export function FlappyLoader({ label }) {
 // ============================================================
 
 // Click-to-edit Amount component — always displays formatted RM value, switches to input when clicked
-export function EditableAmount({value,onCommit,format,align='center'}){
+export function EditableAmount({value,onCommit,format,align='center',invalid=false}){
   const [editing,setEditing]=useState(false);
   const [local,setLocal]=useState(String(value));
   const ref=useRef(null);
@@ -794,9 +795,9 @@ export function EditableAmount({value,onCommit,format,align='center'}){
   }
   return <span
     onClick={()=>setEditing(true)}
-    className="editable-text"
-    title="Click to edit amount"
-    style={{display:'block',cursor:'text',padding:'3px 4px',borderRadius:3,fontSize:16,fontWeight:700,textAlign:align,fontVariantNumeric:'tabular-nums'}}
+    className={"editable-text"+(invalid?" flag-uncertain":"")}
+    title={invalid?"⚠ Claude wasn't sure about this amount — check it against the invoice":"Click to edit amount"}
+    style={{display:'block',cursor:'text',padding:'3px 4px',borderRadius:3,fontSize:16,fontWeight:700,textAlign:align,fontVariantNumeric:'tabular-nums',...(invalid?{background:'#fff7ed',boxShadow:'inset 0 0 0 1.5px #f59e0b',color:'#b45309'}:{})}}
   >{format(value)}</span>;
 }
 
@@ -850,15 +851,16 @@ export function EditableText({value,onCommit,placeholder='—',invalid=false,ali
   }
   return <span
     onClick={()=>setEditing(true)}
-    className="editable-text"
-    title="Click to edit"
+    className={"editable-text"+(invalid?" flag-uncertain":"")}
+    title={invalid?"⚠ Claude wasn't sure about this — check it against the invoice":"Click to edit"}
     style={{
       display:'inline-block',
       cursor:'text',
       padding:'2px 4px',
       borderRadius:3,
+      ...(invalid?{background:'#fff7ed',boxShadow:'inset 0 0 0 1.5px #f59e0b',color:'#b45309'}:{}),
     }}
-  >{value || placeholder}</span>;
+  >{invalid&&<span className="noP" aria-hidden="true" style={{marginRight:3}}>⚠</span>}{value || placeholder}</span>;
 }
 
 // Inline editor for the side-by-side comparison modal — always-visible input field
@@ -1404,6 +1406,7 @@ export default function InvoiceExtractor() {
         .printOnly{display:none}
         @media print{
           .noP{display:none!important}
+          .flag-uncertain{background:transparent!important;box-shadow:none!important;color:#000!important}
           .screenOnly{display:none!important;visibility:hidden!important;width:0!important;height:0!important;overflow:hidden!important;position:absolute!important}
           .printOnly{display:inline!important;visibility:visible!important}
           html,body{margin:0!important;padding:0!important;background:#fff}
@@ -1553,8 +1556,10 @@ export default function InvoiceExtractor() {
                 const displayNum=idx+1;
                 const rows=[];
 
-                const dateInvalid = inv.issues?.some(i=>i.kind==='date' && !inv._issuesDismissed);
-                const invNoInvalid = inv.issues?.some(i=>(i.kind==='invoice_no'||i.kind==='duplicate') && !inv._issuesDismissed);
+                const aiUnsure = field => inv.issues?.some(i=>i.kind==='ai_uncertain' && i.fields?.includes(field) && !inv._issuesDismissed);
+                const dateInvalid = inv.issues?.some(i=>i.kind==='date' && !inv._issuesDismissed) || aiUnsure('invoice_date');
+                const invNoInvalid = inv.issues?.some(i=>(i.kind==='invoice_no'||i.kind==='duplicate') && !inv._issuesDismissed) || aiUnsure('invoice_no');
+                const amtInvalid = inv.issues?.some(i=>i.kind==='amount_sanity' && !inv._issuesDismissed) || aiUnsure('total_amount');
 
                 if(inv.groups.length===0){
                   const me=manualEntry[inv.id]||{rateId:'',ctn:''};
@@ -1591,6 +1596,7 @@ export default function InvoiceExtractor() {
                         onCommit={v=>updateInvoiceAmount(inv.id,v)}
                         format={fmt}
                         align="right"
+                        invalid={amtInvalid}
                       />
                     </td>
                     <td style={{...T.td,padding:4}}>
@@ -1655,6 +1661,7 @@ export default function InvoiceExtractor() {
                         onCommit={v=>updateInvoiceAmount(inv.id,v)}
                         format={fmt}
                         align="right"
+                        invalid={amtInvalid}
                       />
                     </td>}
                     {gi===0&&<td style={{...T.td,padding:4}} rowSpan={rc}>

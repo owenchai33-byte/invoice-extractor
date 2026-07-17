@@ -602,6 +602,7 @@ export default function YHSExtractor() {
         .printOnly{display:none}
         @media print{
           .noP{display:none!important}
+          .flag-uncertain{background:transparent!important;box-shadow:none!important;color:#000!important}
           .printOnly{display:inline!important}
           html,body{margin:0!important;padding:0!important;background:#fff}
           /* Flatten the 100vh root so it can't push a blank page in print. */
@@ -697,7 +698,7 @@ export default function YHSExtractor() {
                     </div>
                   </td>
                   <td style={{ ...T.td, fontWeight: 700, textAlign: 'left' }}>
-                    <EditableAmount value={inv.amount} onCommit={v => updateField(inv.id, 'amount', v)} format={fmt} align="left" />
+                    <EditableAmount value={inv.amount} onCommit={v => updateField(inv.id, 'amount', v)} format={fmt} align="left" invalid={inv.uncertain?.includes('total_amount')} />
                   </td>
                   <td style={T.td}><EditableInt value={inv.qty} onCommit={v => updateField(inv.id, 'qty', v)} /></td>
                   <td style={{ ...T.td, textAlign: 'center' }}>
