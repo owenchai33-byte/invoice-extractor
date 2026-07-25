@@ -904,14 +904,18 @@ function ModalInput({value, onCommit, placeholder, type='text', step, mono=false
 // MAIN COMPONENT
 // ============================================================
 
-export default function InvoiceExtractor() {
-  const [invoices,setInvoices]=useState([]);
+export default function InvoiceExtractor({ batchId = 'default' }) {
+  // Per-batch persistence: each Chrome-style tab keeps its own list alive in
+  // localStorage, namespaced by batchId. (Choon Hua previously didn't persist at all.)
+  const LS_INV = `choonhua_invoices__${batchId}`;
+  const LS_CN  = `choonhua_cn__${batchId}`;
+  const [invoices,setInvoices]=useState(()=>{ try{ return JSON.parse(localStorage.getItem(LS_INV))||[] }catch{ return [] } });
   const [uploading,setUploading]=useState(false);
   const [processing,setProcessing]=useState(false);
   const [processingCount,setProcessingCount]=useState({done:0,total:0});
   const [error,setError]=useState(null);
   const [drag,setDrag]=useState(false);
-  const [cnValues,setCnValues]=useState({});
+  const [cnValues,setCnValues]=useState(()=>{ try{ return JSON.parse(localStorage.getItem(LS_CN))||{} }catch{ return {} } });
   const [apiKey,setApiKey]=useState('');
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
@@ -931,6 +935,13 @@ export default function InvoiceExtractor() {
       }, 50);
     }
   },[uploading, invoices.length]);
+
+  // Keep this batch's invoices + credit-note values alive across Chrome-tab
+  // switches and reloads. Each batch writes to its own namespaced keys, so
+  // opening a new tab never touches another tab's stored data.
+  useEffect(()=>{ try{ localStorage.setItem(LS_INV, JSON.stringify(invoices)) }catch{} },[invoices,LS_INV]);
+  useEffect(()=>{ try{ localStorage.setItem(LS_CN, JSON.stringify(cnValues)) }catch{} },[cnValues,LS_CN]);
+
   const config=SUPPLIERS['CHOON HUA'];
 
   // The live invoice being previewed (lookup ensures it stays in sync with edits)
@@ -1416,7 +1427,8 @@ export default function InvoiceExtractor() {
           .wrap{max-width:100%!important;padding:0!important}
           .print-area{font-size:11px!important}
           .print-area h1,.print-area h2,.print-area h3{font-size:13px!important;margin:3px 0!important}
-          .print-area table{font-size:10.5px!important}
+          .print-area table{font-size:10.5px!important;min-width:0!important}
+          .print-area .table-scroll{overflow:visible!important}
           .print-area td,.print-area th{padding:3px 6px!important}
           .print-area .total-payable{font-size:16px!important;margin-top:8px!important}
           .print-area img{max-height:64px!important}
@@ -1531,13 +1543,17 @@ export default function InvoiceExtractor() {
             <div style={{fontWeight:700,fontSize:16,marginTop:2}}>SUPPLIER: {config.name}</div>
           </div>
 
-          <table style={{width:'100%',borderCollapse:'collapse',marginTop:14,tableLayout:'fixed'}}>
+          {/* Scroll wrapper: on narrow screens (phones) the table keeps its minWidth
+              and scrolls horizontally instead of crushing columns (which made the DATE
+              overflow its cell). Reset to full-width + no min-width in print (@media print). */}
+          <div className="table-scroll" style={{overflowX:'auto',marginTop:14}}>
+          <table style={{width:'100%',minWidth:760,borderCollapse:'collapse',tableLayout:'fixed'}}>
             <colgroup>
-              <col style={{width:'5%'}}/>
-              <col style={{width:'11%'}}/>
+              <col style={{width:'4%'}}/>
               <col style={{width:'16%'}}/>
               <col style={{width:'15%'}}/>
-              <col style={{width:'15%'}}/>
+              <col style={{width:'14%'}}/>
+              <col style={{width:'13%'}}/>
               <col style={{width:'25%'}}/>
               <col style={{width:'13%'}}/>
             </colgroup>
@@ -1565,7 +1581,7 @@ export default function InvoiceExtractor() {
                   const me=manualEntry[inv.id]||{rateId:'',ctn:''};
                   rows.push(<tr key={inv.id+'-empty'}>
                     <td style={T.td}>{displayNum}</td>
-                    <td style={T.td}>
+                    <td style={{...T.td,whiteSpace:'nowrap'}}>
                       <EditableText
                         value={inv.raw.invoice_date}
                         onCommit={v=>updateInvoiceField(inv.id,'invoice_date',v)}
@@ -1630,7 +1646,7 @@ export default function InvoiceExtractor() {
                   // ROW 1 — VOLUME LABEL (rowSpan metadata cells live here, on the first row of the group)
                   rows.push(<tr key={inv.id+'-'+gi+'-lbl'}>
                     {gi===0&&<td style={T.td} rowSpan={rc}>{displayNum}</td>}
-                    {gi===0&&<td style={T.td} rowSpan={rc}>
+                    {gi===0&&<td style={{...T.td,whiteSpace:'nowrap'}} rowSpan={rc}>
                       <EditableText
                         value={inv.raw.invoice_date}
                         onCommit={v=>updateInvoiceField(inv.id,'invoice_date',v)}
@@ -1820,6 +1836,7 @@ export default function InvoiceExtractor() {
               </tr>
             </tbody>
           </table>
+          </div>
 
           {/* TOTAL AMOUNT PAYABLE */}
           <div className="total-payable" style={{marginTop:16,textAlign:'right'}}>

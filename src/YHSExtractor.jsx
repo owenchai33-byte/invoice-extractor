@@ -311,14 +311,24 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
   );
 }
 
-const LS_YHS = 'yhs_invoices';
+// Per-volume RM rates are GLOBAL across batches (product-stable) — one shared key.
+// Invoices + per-batch overrides/discounts are namespaced by batch id (see below).
 const LS_RATES = 'yhs_volrates_v2';
-const LS_VOLCTN = 'yhs_volctn_v1';
 
-export default function YHSExtractor() {
-  const [invoices, setInvoices] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(LS_YHS)) || []; } catch { return []; }
-  });
+export default function YHSExtractor({ batchId = 'default' }) {
+  // Per-batch persistence — each Chrome tab keeps its own invoices/overrides/discounts
+  // alive under keys namespaced by batchId. Legacy single-list data (the old un-namespaced
+  // keys) is migrated into the first ('default') batch so nothing is lost on upgrade.
+  const LS_YHS    = `yhs_invoices__${batchId}`;
+  const LS_VOLCTN = `yhs_volctn__${batchId}`;
+  const LS_META   = `yhs_meta__${batchId}`;   // { otherDiscount, creditNote }
+  const isDefault = batchId === 'default';
+  const loadLS = (key, legacy, fallback) => {
+    try { const v = localStorage.getItem(key); if (v != null) return JSON.parse(v); } catch {}
+    if (legacy) { try { const v = localStorage.getItem(legacy); if (v != null) return JSON.parse(v); } catch {} }
+    return fallback;
+  };
+  const [invoices, setInvoices] = useState(() => loadLS(LS_YHS, isDefault ? 'yhs_invoices' : null, []));
   // Per-volume subsidy rates: { [ml]: RM/CTN }. A volume not in the map falls back
   // to YHS_DEFAULT_RATE (0.50). Set a volume to 0 for products with no discount.
   const [volRates, setVolRates] = useState(() => {
@@ -328,9 +338,7 @@ export default function YHSExtractor() {
   // Per-volume subsidy-qty overrides: { [ml]: cartons }. When set, only this many
   // cartons of that volume earn the bonus (e.g. some 300ML products get no discount).
   // Absent → the full aggregated carton count is used.
-  const [volCtn, setVolCtn] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(LS_VOLCTN)) || {}; } catch { return {}; }
-  });
+  const [volCtn, setVolCtn] = useState(() => loadLS(LS_VOLCTN, isDefault ? 'yhs_volctn_v1' : null, {}));
   const setVolCtnOverride = (ml, n) => setVolCtn(prev => ({ ...prev, [ml]: Math.max(0, parseInt(n, 10) || 0) }));
   const clearVolCtnOverride = (ml) => setVolCtn(prev => { const c = { ...prev }; delete c[ml]; return c; });
   const [uploading, setUploading] = useState(false);
@@ -341,16 +349,17 @@ export default function YHSExtractor() {
   const [apiKey, setApiKey] = useState('');
   const [keyInput, setKeyInput] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [otherDiscount, setOtherDiscount] = useState(0);
-  const [creditNote, setCreditNote] = useState(0);
+  const [otherDiscount, setOtherDiscount] = useState(() => loadLS(LS_META, null, {}).otherDiscount || 0);
+  const [creditNote, setCreditNote] = useState(() => loadLS(LS_META, null, {}).creditNote || 0);
   const [previewId, setPreviewId] = useState(null);
   const [volAdd, setVolAdd] = useState({}); // { [invId]: { ml, custom, ctn } }
   const fileRef = useRef(null);
   const uploadAreaRef = useRef(null);
 
-  useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices]);
+  useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices, LS_YHS]);
   useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
-  useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn]);
+  useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn, LS_VOLCTN]);
+  useEffect(() => { try { localStorage.setItem(LS_META, JSON.stringify({ otherDiscount, creditNote })); } catch {} }, [otherDiscount, creditNote, LS_META]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {
@@ -712,9 +721,7 @@ export default function YHSExtractor() {
                 <td colSpan={3} style={{ ...T.td, fontWeight: 700, textAlign: 'right', background: '#f0f0f0' }}>TOTAL:</td>
                 <td style={{ ...T.td, fontWeight: 700, textAlign: 'left', background: '#f0f0f0', paddingLeft: 12 }}>{fmt(calc.totalAmount)}</td>
                 <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0' }}>{calc.totalCtn}</td>
-                <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0', fontSize: 13 }}>
-                  {calc.volumes.map(v => `${v.label} ${v.ctn}`).join('  ·  ')}
-                </td>
+                <td style={{ ...T.td, background: '#f0f0f0' }}></td>
               </tr>
             </tbody>
           </table>
