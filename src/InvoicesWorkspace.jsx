@@ -53,7 +53,6 @@ function BatchedSupplier({ ns, Extractor }) {
 
   const closeBatch = (id) => {
     const b = batches.find(x => x.id === id);
-    if (!window.confirm(`Close "${b?.name || 'this batch'}"? Its invoices will be permanently deleted.`)) return;
     // Wipe every stored key belonging to this batch (all end with `__<id>`).
     try {
       Object.keys(localStorage).forEach(k => { if (k.endsWith('__' + id)) localStorage.removeItem(k); });

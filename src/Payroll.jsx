@@ -384,7 +384,7 @@ export default function Payroll(){
   }),[bS,cS]);
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
-  const delS=id=>{if(confirm('Remove this staff?'))setStaff(p=>p.filter(s=>s.id!==id));};
+  const delS=id=>{setStaff(p=>p.filter(s=>s.id!==id));};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
   // Reorder staff via drag and drop
@@ -402,7 +402,7 @@ export default function Payroll(){
   };
   const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
   const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);setEidPT(null);};
-  const delPT=id=>{if(confirm('Remove?'))setPt(p=>p.filter(s=>s.id!==id));};
+  const delPT=id=>{setPt(p=>p.filter(s=>s.id!==id));};
 
   // Edit existing part-time staff — opens the PT form prefilled.
   const edPT=s=>{setEidPT(s.id);setPtfm({name:s.name,ic:s.ic,wagePerDay:s.wagePerDay||0});setPtf(true);};
@@ -419,7 +419,6 @@ export default function Payroll(){
   // Creates a new FT record with defaults (salary 1700, cash, permanent) and opens the FT edit form
   // so the user can fix salary/method/etc immediately.
   const convertPTtoFT=s=>{
-    if(!confirm(`Move ${s.name} to Full-Time?\n\nDefaults: Salary RM1,700, Cash payment, Permanent status. You can edit these right after.`))return;
     const newFT={
       id:'s'+Date.now(),
       name:s.name,
@@ -443,7 +442,6 @@ export default function Payroll(){
   // Convert a full-time staff member to part-time.
   // Drops salary/method/status and adds wagePerDay=0; opens the PT edit form.
   const convertFTtoPT=s=>{
-    if(!confirm(`Move ${s.name} to Part-Time?\n\nFull-time salary and defaults will be removed. You'll set wages per day in the part-time form.`))return;
     const newPT={
       id:'p'+Date.now(),
       name:s.name,

@@ -821,7 +821,7 @@ export default function YHSExtractor({ batchId = 'default' }) {
             <button style={btn(1)} onClick={() => window.print()}>🖨 Print / Save PDF</button>
             <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
             <button style={{ ...btn(0), color: '#c0392b', borderColor: '#e6bcbc' }}
-              onClick={() => { if (window.confirm(`Clear all ${invoices.length} invoice(s) and start a new list?`)) reset(); }}>🗑 Clear all</button>
+              onClick={() => { reset(); }}>🗑 Clear all</button>
           </div>
         </>)}
 
