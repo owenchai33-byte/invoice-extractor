@@ -636,7 +636,7 @@ export default function Payroll(){
           <div className="st"><div className="stl">Net Payroll</div><div className="stv">RM {fmt(gT[16]||0)}</div></div>
         </div>
         <div className="po" style={{textAlign:'center',marginBottom:12}}>
-          <div style={{fontSize:16,fontWeight:700}}>C.J.K. CHAI JEE KIONG TRADING SDN BHD</div>
+          <div style={{fontSize:16,fontWeight:700,fontStyle:'italic'}}>C.J.K. CHAI JEE KIONG TRADING SDN BHD</div>
           <div style={{fontSize:14,fontWeight:600}}>HQ STAFF PAYROLL {MONTHS[mo]} {yr}</div>
         </div>
         <div className="sec">
