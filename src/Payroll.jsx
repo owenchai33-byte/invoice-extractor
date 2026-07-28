@@ -413,7 +413,10 @@ export default function Payroll(){
   const delS=id=>{setStaff(p=>p.filter(s=>s.id!==id));};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
-  // Reorder staff via drag and drop
+  // Reorder staff via drag and drop.
+  // Dragging a probationary member onto a non-probationary (upper-section) row
+  // promotes them to permanent — the PROB tag drops and they join the permanent
+  // list at that spot. Payroll doesn't track the 3-month rule; promotion is manual.
   const reorderStaff=(fromId,toId)=>{
     if(fromId===toId) return;
     setStaff(p=>{
@@ -421,7 +424,10 @@ export default function Payroll(){
       const fromIdx=arr.findIndex(s=>s.id===fromId);
       const toIdx=arr.findIndex(s=>s.id===toId);
       if(fromIdx<0||toIdx<0) return p;
-      const[moved]=arr.splice(fromIdx,1);
+      const target=arr[toIdx];
+      const[picked]=arr.splice(fromIdx,1);
+      const moved=(picked.status==='probationary'&&target.status!=='probationary')
+        ?{...picked,status:'permanent'}:picked;
       arr.splice(toIdx,0,moved);
       return arr;
     });
