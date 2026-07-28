@@ -305,7 +305,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t:not(.nb) col:nth-child(1){width:1.8%!important}   /* # */
   .t:not(.nb) col:nth-child(2){width:19%!important}    /* Name */
   .t:not(.nb) col:nth-child(3){width:7%!important}   /* IC */
-  .t:not(.nb) col:nth-child(4){width:11%!important}    /* Position */
+  .t:not(.nb) col:nth-child(4){width:12%!important}    /* Position */
   .t:not(.nb) col:nth-child(5){width:5%!important}     /* Salary */
   .t:not(.nb) col:nth-child(6){width:4%!important}     /* Incent */
   .t:not(.nb) col:nth-child(7){width:4%!important}     /* Bonus */
@@ -323,7 +323,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(1){width:1.8%!important}   /* # */
   .t.nb col:nth-child(2){width:19%!important}    /* Name */
   .t.nb col:nth-child(3){width:7%!important}   /* IC */
-  .t.nb col:nth-child(4){width:11%!important}    /* Position */
+  .t.nb col:nth-child(4){width:12%!important}    /* Position */
   .t.nb col:nth-child(5){width:5%!important}     /* Salary */
   .t.nb col:nth-child(6){width:4%!important}     /* Incent */
   .t.nb col:nth-child(7){width:4.3%!important}   /* EPF(M) */
@@ -657,9 +657,9 @@ export default function Payroll(){
             <table className={sb?"t":"t nb"}>
               <colgroup>
                 <col style={{width:'2.5%'}}/>
-                <col style={{width:'22%'}}/>
+                <col style={{width:'20%'}}/>
                 <col style={{width:'7%'}}/>
-                <col style={{width:'10%'}}/>
+                <col style={{width:'11%'}}/>
                 <col style={{width:'5.5%'}}/>
                 <col style={{width:'4.5%'}}/>
                 {sb&&<col style={{width:'4.5%'}}/>}
