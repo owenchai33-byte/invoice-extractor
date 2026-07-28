@@ -594,7 +594,7 @@ export default function Payroll(){
       <td className="r" style={{color:'#000'}}>{fmt(r.socsoM)}</td>
       <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.socsoP)}</td>
       <td className="r" style={{color:'#000'}}>{fmt(r.socsoM+r.socsoP)}</td>
-      <td className="r" style={{color:'#000'}}>{fmt(r.eisE)}</td>
+      <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.eisE)}</td>
       <td className="r" style={{color:'#000'}}>{fmt(r.eisE*2)}</td>
       <td className="r" style={{color:'#000'}}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td>
       <td className="r" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}}>{fmt(r.netPay)}</td>
