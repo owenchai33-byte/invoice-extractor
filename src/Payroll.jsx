@@ -150,7 +150,7 @@ export function fmt(n){
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2';
+const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // defIncentive per staff seeded from the June 2026 Excel — recurring monthly
@@ -187,28 +187,33 @@ const SAMPLE_PT=[];
 const MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 async function loadXLSX(){if(window.XLSX)return window.XLSX;return new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';s.onload=()=>r(window.XLSX);s.onerror=j;document.head.appendChild(s);});}
-async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL){
+async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   const X=await loadXLSX(),wb=X.utils.book_new(),ws={},mg=[];const mn=MONTHS[mo];
-  function sc(r,c,v){ws[X.utils.encode_cell({r,c})]={v,t:typeof v==='number'?'n':'s'};}
-  sc(0,0,'C.J.K. CHAI JEE KIONG TRADING SDN BHD');mg.push({s:{r:0,c:0},e:{r:0,c:16}});
-  sc(1,0,`HQ STAFF PAYROLL ${mn} ${yr}`);mg.push({s:{r:1,c:0},e:{r:1,c:16}});
-  sc(2,0,'FULL-TIME STAFF');mg.push({s:{r:2,c:0},e:{r:2,c:16}});
-  sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:7},e:{r:3,c:15}});
-  sc(3,16,'NET PAY');mg.push({s:{r:3,c:16},e:{r:4,c:16}});
+  // When the bonus column is hidden (sb=false) it is dropped from logical col 6
+  // and every column to its right shifts one to the left. mc() maps a logical
+  // column (the always-with-bonus layout) to its physical position; L is net pay.
+  const mc=c=>sb?c:(c>6?c-1:c),L=mc(16);
+  function sc(r,c,v){if(!sb&&c===6)return;ws[X.utils.encode_cell({r,c:mc(c)})]={v,t:typeof v==='number'?'n':'s'};}
+  sc(0,0,'C.J.K. CHAI JEE KIONG TRADING SDN BHD');mg.push({s:{r:0,c:0},e:{r:0,c:L}});
+  sc(1,0,`HQ STAFF PAYROLL ${mn} ${yr}`);mg.push({s:{r:1,c:0},e:{r:1,c:L}});
+  sc(2,0,'FULL-TIME STAFF');mg.push({s:{r:2,c:0},e:{r:2,c:L}});
+  sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:mc(7)},e:{r:3,c:mc(15)}});
+  sc(3,16,'NET PAY');mg.push({s:{r:3,c:L},e:{r:4,c:L}});
   ['NO','NAME','IC NO','POSITION','BASIC SALARY','INCENTIVE',bL,'EPF (M)','EPF (P)','JUMLAH EPF','SOCSO (M)','SOCSO (P)','JUMLAH SOCSO','EIS (M/P)','JUMLAH EIS','ADVANCE'].forEach((h,i)=>sc(4,i,h));
   let row=5,sn=1;
   const wR=rows=>{rows.forEach(s=>{sc(row,0,sn);sc(row,1,s.name);sc(row,2,s.ic);sc(row,3,s.position);sc(row,4,s.salary);sc(row,5,s.incentive||0);sc(row,6,s.bonus||0);sc(row,7,s.epfM);sc(row,8,s.epfP);sc(row,9,s.epfM+s.epfP);sc(row,10,s.socsoM);sc(row,11,s.socsoP);sc(row,12,s.socsoM+s.socsoP);sc(row,13,s.eisE);sc(row,14,s.eisE*2);sc(row,15,s.advance||0);sc(row,16,s.netPay);sn++;row++;});};
   const tR=(l,t)=>{sc(row,0,l);mg.push({s:{r:row,c:0},e:{r:row,c:3}});[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>sc(row,c,t[c]||0));row++;};
   wR(bR);tR('BANK TRANSFER:',bT);const pc=cR.filter(s=>s.status==='permanent'),pb=cR.filter(s=>s.status==='probationary');
-  wR(pc);if(pb.length){sc(row,0,'PROBATIONARY > PERMANENT');mg.push({s:{r:row,c:0},e:{r:row,c:16}});row++;wR(pb);}
+  wR(pc);if(pb.length){sc(row,0,'PROBATIONARY > PERMANENT');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}
   tR('CASH:',cT);tR('TOTAL:',gT);
-  notes.forEach(n=>{sc(row,0,n);mg.push({s:{r:row,c:0},e:{r:row,c:16}});row++;});
-  row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:16}});row++;
+  notes.forEach(n=>{sc(row,0,n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
+  row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;
   sc(row,4,'WAGES/ DAY');sc(row,5,'DAY');sc(row,15,'ADVANCE');sc(row,16,'NET PAY');row++;
   ptR.forEach((s,i)=>{sc(row,0,i+1);sc(row,1,s.name);sc(row,2,s.ic);sc(row,4,s.wagePerDay||0);sc(row,5,s.daysWorked||0);sc(row,15,s.advance||0);sc(row,16,s.netPay||0);row++;});
   sc(row,0,'TOTAL:');mg.push({s:{r:row,c:0},e:{r:row,c:3}});sc(row,15,ptT.advance||0);sc(row,16,ptT.netPay||0);
-  ws['!ref']=X.utils.encode_range({s:{r:0,c:0},e:{r:row,c:16}});ws['!merges']=mg;
-  ws['!cols']=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12].map(w=>({wch:w}));
+  ws['!ref']=X.utils.encode_range({s:{r:0,c:0},e:{r:row,c:L}});ws['!merges']=mg;
+  const cols=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12];if(!sb)cols.splice(6,1);
+  ws['!cols']=cols.map(w=>({wch:w}));
   X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ_STAFF_PAYROLL_${yr}_${mn}.xlsx`);
 }
 // ═══════════════════════════════════════════════════════════════
@@ -294,24 +299,41 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .sht{font-size:10pt;font-weight:700}
   .stats{display:none!important}
   .t{font-size:6.5pt;table-layout:fixed!important;width:100%}
-  /* Explicit print column widths — sum = 100% */
-  .t col:nth-child(1){width:1.8%!important}   /* # */
-  .t col:nth-child(2){width:15%!important}    /* Name */
-  .t col:nth-child(3){width:9.5%!important}   /* IC */
-  .t col:nth-child(4){width:12%!important}    /* Position */
-  .t col:nth-child(5){width:5%!important}     /* Salary */
-  .t col:nth-child(6){width:4%!important}     /* Incent */
-  .t col:nth-child(7){width:4%!important}     /* Bonus */
-  .t col:nth-child(8){width:4.3%!important}   /* EPF(M) */
-  .t col:nth-child(9){width:4.3%!important}   /* EPF(P) */
-  .t col:nth-child(10){width:4.5%!important}  /* Jml EPF */
-  .t col:nth-child(11){width:4.3%!important}  /* SOC(M) */
-  .t col:nth-child(12){width:4.3%!important}  /* SOC(P) */
-  .t col:nth-child(13){width:4.5%!important}  /* Jml SOC */
-  .t col:nth-child(14){width:3.5%!important}  /* EIS */
-  .t col:nth-child(15){width:4%!important}    /* Jml EIS */
-  .t col:nth-child(16){width:4%!important}    /* Adv */
-  .t col:nth-child(17){width:6%!important}    /* Net Pay */
+  /* Explicit print column widths — sum = 100%. With bonus column (17 cols). */
+  .t:not(.nb) col:nth-child(1){width:1.8%!important}   /* # */
+  .t:not(.nb) col:nth-child(2){width:15%!important}    /* Name */
+  .t:not(.nb) col:nth-child(3){width:9.5%!important}   /* IC */
+  .t:not(.nb) col:nth-child(4){width:12%!important}    /* Position */
+  .t:not(.nb) col:nth-child(5){width:5%!important}     /* Salary */
+  .t:not(.nb) col:nth-child(6){width:4%!important}     /* Incent */
+  .t:not(.nb) col:nth-child(7){width:4%!important}     /* Bonus */
+  .t:not(.nb) col:nth-child(8){width:4.3%!important}   /* EPF(M) */
+  .t:not(.nb) col:nth-child(9){width:4.3%!important}   /* EPF(P) */
+  .t:not(.nb) col:nth-child(10){width:4.5%!important}  /* Jml EPF */
+  .t:not(.nb) col:nth-child(11){width:4.3%!important}  /* SOC(M) */
+  .t:not(.nb) col:nth-child(12){width:4.3%!important}  /* SOC(P) */
+  .t:not(.nb) col:nth-child(13){width:4.5%!important}  /* Jml SOC */
+  .t:not(.nb) col:nth-child(14){width:3.5%!important}  /* EIS */
+  .t:not(.nb) col:nth-child(15){width:4%!important}    /* Jml EIS */
+  .t:not(.nb) col:nth-child(16){width:4%!important}    /* Adv */
+  .t:not(.nb) col:nth-child(17){width:6%!important}    /* Net Pay */
+  /* Same widths with the bonus column hidden (16 cols) — everything after Incent shifts left one. */
+  .t.nb col:nth-child(1){width:1.8%!important}   /* # */
+  .t.nb col:nth-child(2){width:15%!important}    /* Name */
+  .t.nb col:nth-child(3){width:9.5%!important}   /* IC */
+  .t.nb col:nth-child(4){width:12%!important}    /* Position */
+  .t.nb col:nth-child(5){width:5%!important}     /* Salary */
+  .t.nb col:nth-child(6){width:4%!important}     /* Incent */
+  .t.nb col:nth-child(7){width:4.3%!important}   /* EPF(M) */
+  .t.nb col:nth-child(8){width:4.3%!important}   /* EPF(P) */
+  .t.nb col:nth-child(9){width:4.5%!important}   /* Jml EPF */
+  .t.nb col:nth-child(10){width:4.3%!important}  /* SOC(M) */
+  .t.nb col:nth-child(11){width:4.3%!important}  /* SOC(P) */
+  .t.nb col:nth-child(12){width:4.5%!important}  /* Jml SOC */
+  .t.nb col:nth-child(13){width:3.5%!important}  /* EIS */
+  .t.nb col:nth-child(14){width:4%!important}    /* Jml EIS */
+  .t.nb col:nth-child(15){width:4%!important}    /* Adv */
+  .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:3px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
   .t td{padding:2px 2px;font-size:6.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Allow name, IC, position to wrap so nothing gets cut off */
@@ -341,6 +363,9 @@ export default function Payroll(){
   const[pt,setPt]=useState(()=>loadJ(LS_PT,SAMPLE_PT));
   const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
   const[bl,setBl]=useState('GAWAI BONUS');
+  // Show/hide the bonus column. Defaults ON (preserves prior behavior); when OFF
+  // the column is dropped everywhere and bonus is treated as 0 in EPF/net.
+  const[sb,setSb]=useState(()=>{try{const v=localStorage.getItem(LS_SB);return v===null?true:JSON.parse(v);}catch{return true;}});
   const[pan,setPan]=useState(false),[eid,setEid]=useState(null);
   const[dragId,setDragId]=useState(null);
   const[dragOverId,setDragOverId]=useState(null);
@@ -350,6 +375,7 @@ export default function Payroll(){
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
+  useEffect(()=>{saveJ(LS_SB,sb);},[sb]);
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
@@ -358,7 +384,7 @@ export default function Payroll(){
     // Use monthly override if exists, otherwise fall back to staff default
     const hasMonthly = pd[mk]?.[s.id];
     const inc = hasMonthly && 'incentive' in hasMonthly ? (m.incentive||0) : (s.defIncentive||0);
-    const bon = hasMonthly && 'bonus' in hasMonthly ? (m.bonus||0) : (s.defBonus||0);
+    const bon = sb ? (hasMonthly && 'bonus' in hasMonthly ? (m.bonus||0) : (s.defBonus||0)) : 0;
     const adv = hasMonthly && 'advance' in hasMonthly ? (m.advance||0) : (s.defAdvance||0);
     // Per KWSP/PERKESO 2026 guidelines:
     // - Incentive is treated as wages → subject to EPF + SOCSO + EIS (recalc bands)
@@ -370,7 +396,7 @@ export default function Payroll(){
     const eis=calcEIS(socsoEisWage,a);
     const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
     return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
-  },[ref,gM,pd,mk]);
+  },[ref,gM,pd,mk,sb]);
   const bS=useMemo(()=>staff.filter(s=>s.method==='bank').map(comp),[staff,comp]);
   const cS=useMemo(()=>staff.filter(s=>s.method==='cash').map(comp),[staff,comp]);
   const ptR=useMemo(()=>pt.map(s=>{const m=gM(s.id),w=m.wagePerDay||s.wagePerDay||0,d=m.daysWorked||0,a=m.advance||0;return{...s,wagePerDay:w,daysWorked:d,advance:a,netPay:Math.round((w*d-a)*100)/100};}),[pt,gM]);
@@ -553,7 +579,7 @@ export default function Payroll(){
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
       <td className="r" style={{color:'#000'}}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60}/></td>
       <td className="r" style={{color:'#000'}}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)}/></td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>
+      {sb&&<td className="r" style={{color:'#000'}}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>}
       <td className="r" style={{color:'#000'}}>{fmt(r.epfM)}</td>
       <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.epfP)}</td>
       <td className="r" style={{color:'#000'}}>{fmt(r.epfM+r.epfP)}</td>
@@ -569,7 +595,7 @@ export default function Payroll(){
   const TR=({l,t,c})=>(
     <tr className={c}>
       <td colSpan={4} style={{fontWeight:700}}>{l}</td>
-      <td className="r tcell">{fmt(t[4])}</td><td className="r tcell">{fmt(t[5])}</td><td className="r tcell">{fmt(t[6])}</td>
+      <td className="r tcell">{fmt(t[4])}</td><td className="r tcell">{fmt(t[5])}</td>{sb&&<td className="r tcell">{fmt(t[6])}</td>}
       <td className="r tcell">{fmt(t[7])}</td><td className="r tcell">{fmt(t[8])}</td><td className="r tcell">{fmt(t[9])}</td>
       <td className="r tcell">{fmt(t[10])}</td><td className="r tcell">{fmt(t[11])}</td><td className="r tcell">{fmt(t[12])}</td>
       <td className="r tcell">{fmt(t[13])}</td><td className="r tcell">{fmt(t[14])}</td><td className="r tcell">{fmt(t[15])}</td>
@@ -590,7 +616,7 @@ export default function Payroll(){
         </div>
         <div className="acts">
           <button className="b bo" onClick={()=>setPan(true)}>Manage Staff</button>
-          <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,notes,bl)}>Download Excel</button>
+          <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,notes,bl,sb)}>Download Excel</button>
           <button className="b bo" onClick={()=>window.print()}>Print</button>
         </div>
       </div>
@@ -608,13 +634,19 @@ export default function Payroll(){
         <div className="sec">
           <div className="sh np">
             <div className="sht">Full-Time Staff</div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:11,color:'#a1a1aa'}}>Bonus label:</span>
-              <input value={bl} onChange={e=>setBl(e.target.value.toUpperCase())} style={{width:120,fontSize:12,border:'1px solid #e4e4e7',borderRadius:4,padding:'4px 8px',textAlign:'center',fontWeight:600}}/>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <label className="np" style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'#71717a',cursor:'pointer',userSelect:'none'}}>
+                <input type="checkbox" checked={sb} onChange={e=>setSb(e.target.checked)}/>
+                Show bonus column
+              </label>
+              {sb&&<div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:11,color:'#a1a1aa'}}>Bonus label:</span>
+                <input value={bl} onChange={e=>setBl(e.target.value.toUpperCase())} style={{width:120,fontSize:12,border:'1px solid #e4e4e7',borderRadius:4,padding:'4px 8px',textAlign:'center',fontWeight:600}}/>
+              </div>}
             </div>
           </div>
           <div className="tw">
-            <table className="t">
+            <table className={sb?"t":"t nb"}>
               <colgroup>
                 <col style={{width:'2.5%'}}/>
                 <col style={{width:'14%'}}/>
@@ -622,7 +654,7 @@ export default function Payroll(){
                 <col style={{width:'11%'}}/>
                 <col style={{width:'5.5%'}}/>
                 <col style={{width:'4.5%'}}/>
-                <col style={{width:'4.5%'}}/>
+                {sb&&<col style={{width:'4.5%'}}/>}
                 <col style={{width:'4%'}}/>
                 <col style={{width:'4%'}}/>
                 <col style={{width:'4.5%'}}/>
@@ -637,13 +669,13 @@ export default function Payroll(){
               <thead>
                 <tr>
                   <th colSpan={4}></th>
-                  <th colSpan={3} className="eh" style={{textAlign:'center'}}>EARNINGS (+)</th>
+                  <th colSpan={sb?3:2} className="eh" style={{textAlign:'center'}}>EARNINGS (+)</th>
                   <th colSpan={9} className="dh" style={{textAlign:'center'}}>DEDUCTIONS (-)</th>
                   <th className="nh" style={{textAlign:'center'}}>NET PAY</th>
                 </tr>
                 <tr>
                   <th className="r">#</th><th className="l">Name</th><th className="l">IC No</th><th className="l">Position</th>
-                  <th className="r eh">Salary</th><th className="r eh">Incentive</th><th className="r eh">{bl}</th>
+                  <th className="r eh">Salary</th><th className="r eh">Incentive</th>{sb&&<th className="r eh">{bl}</th>}
                   <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jumlah EPF</th>
                   <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jumlah SOCSO</th>
                   <th className="r dh">EIS</th><th className="r dh">Jumlah EIS</th><th className="r dh">Advance</th>
@@ -651,12 +683,12 @@ export default function Payroll(){
                 </tr>
               </thead>
               <tbody>
-                <tr className="gh"><td colSpan={17}>Bank Transfer</td></tr>
+                <tr className="gh"><td colSpan={sb?17:16}>Bank Transfer</td></tr>
                 {bS.map(r=><Row key={r.id} r={r}/>)}
                 <TR l="Bank Transfer" t={bT} c="tr"/>
-                <tr className="gh"><td colSpan={17}>Cash</td></tr>
+                <tr className="gh"><td colSpan={sb?17:16}>Cash</td></tr>
                 {pc.map(r=><Row key={r.id} r={r}/>)}
-                {pb.length>0&&<><tr className="ph"><td colSpan={17}>Probationary &rarr; Permanent</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
+                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>Probationary &rarr; Permanent</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
                 <TR l="Cash" t={cT} c="tr"/>
                 <TR l="TOTAL" t={gT} c="gr"/>
               </tbody>
