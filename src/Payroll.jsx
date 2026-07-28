@@ -181,7 +181,7 @@ const SAMPLE_STAFF=[
   {id:'s21',name:'JEE SWEE EN',ic:'060310-13-0180',position:'CASHIER',salary:1700,method:'cash',status:'permanent'},
   {id:'s22',name:'JANET SOON PEI YEE',ic:'020627-13-0836',position:'CASHIER',salary:1700,method:'cash',status:'permanent'},
   {id:'s23',name:'TAN WEI HOW',ic:'071210-13-0507',position:'GENERAL WORKER',salary:1700,method:'cash',status:'probationary'},
-  {id:'s24',name:'ERRA ERYCA NORY ANAK LASU',ic:'980125-13-6128',position:'ADMIN CLERK',salary:1800,method:'cash',status:'probationary'},
+  {id:'s24',name:'ERRA ERYCA NORY ANAK LASUMDER @ LASUNDER JUING',ic:'980125-13-6128',position:'ADMIN CLERK',salary:1800,method:'cash',status:'probationary'},
 ];
 const SAMPLE_PT=[];
 const MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
@@ -249,6 +249,8 @@ const CSS=`
 .t th.r{text-align:center}
 .t th.l{text-align:left}
 .t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Name / IC / Position wrap on screen too (like print) so long names aren't cut off */
+.t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal;word-break:break-word;line-height:1.2}
 .t td.r{text-align:center}
 .t tr:hover{background:#fafafa}
 .t .gh{background:#e5e7eb;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
