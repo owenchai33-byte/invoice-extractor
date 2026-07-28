@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { LOGO } from './InvoiceExtractor';
+import { useState, useEffect, useRef } from 'react';
+import { LOGO, callAI, parseAIJson, downsizeBase64ToJPEG, AI_PROVIDER, AI_CFG } from './InvoiceExtractor';
 
 // Employment Contract template (CJK). The five yellow-highlighted fields on the
 // PDF are the per-employee variables; everything else is fixed boilerplate.
@@ -10,6 +10,21 @@ const LS_KEY = 'contract_data_v1';
 const BLANK = { name: '', nric: '', address: '', position: '', effectiveDate: '' };
 const F = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
 const SERIF = `Georgia, "Times New Roman", Times, serif`;
+
+// Prompt for reading a Malaysian IC (MyKad) / ID photo to auto-fill the contract.
+const ID_PROMPT = `You are reading a photo of a Malaysian identity card (MyKad / NRIC) or a similar ID document, to help fill an employment contract.
+
+Extract ONLY what is clearly printed on the card:
+- "name": the person's FULL NAME exactly as printed (usually capital letters).
+- "nric": the IC / NRIC number as 000000-00-0000 (12 digits, keep the two dashes). Read EACH DIGIT carefully — 0/6/8, 1/7, 3/5 are easy to confuse.
+- "address": the residential address if visible (it is on the BACK of a MyKad). Put it on one line.
+
+ABSOLUTE RULES:
+- NEVER guess or invent. If a field is not clearly visible or you are unsure, return null for it and add its name to "uncertain_fields".
+- Do NOT output a position or any dates — those are not on an ID.
+
+Respond with ONLY this JSON and nothing else:
+{"name": null, "nric": null, "address": null, "uncertain_fields": []}`;
 
 // Inline editable variable — yellow highlight on screen, plain text in print.
 function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
@@ -48,6 +63,31 @@ export default function ContractGenerator() {
   const set = (k) => (v) => setData(d => ({ ...d, [k]: v }));
   const clearAll = () => { if (window.confirm('Clear all contract fields?')) setData({ ...BLANK }); };
 
+  // ── AI auto-fill from an IC / ID photo (reuses the invoice-side vision plumbing) ──
+  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem(AI_CFG.storageKey) || ''; } catch { return ''; } });
+  const [keyInput, setKeyInput] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const [drag, setDrag] = useState(false);
+  const fileRef = useRef(null);
+  const saveKey = () => { const k = keyInput.trim(); if (!k) return; try { localStorage.setItem(AI_CFG.storageKey, k); } catch {} setApiKey(k); setKeyInput(''); };
+  const readDataUrl = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Failed to read file')); r.readAsDataURL(file); });
+  const readID = async (file) => {
+    if (!apiKey) { setError('Enter your Anthropic API key first (box on the right).'); return; }
+    if (!file || !file.type?.startsWith('image/')) { setError('Please drop an image of the IC / ID.'); return; }
+    setError(null); setProcessing(true);
+    try {
+      const raw = await readDataUrl(file);
+      let img; try { img = await downsizeBase64ToJPEG(raw, 1280, 0.75); } catch { img = raw; }
+      const result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: img, prompt: ID_PROMPT });
+      const p = parseAIJson(result.text) || {};
+      setData(d => ({ ...d, name: p.name || d.name, nric: p.nric || d.nric, address: p.address || d.address }));
+      if (!p.name && !p.nric && !p.address) setError('Couldn’t read any fields — try a clearer, straight-on photo.');
+    } catch (e) {
+      setError(e?.message || 'Could not read the ID. Try a clearer photo.');
+    } finally { setProcessing(false); }
+  };
+
   const pageStyle = {
     background: '#fff',
     width: '210mm',
@@ -73,12 +113,41 @@ export default function ContractGenerator() {
     <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '18px 12px 60px', fontFamily: F }}>
 
       {/* ── Controls (screen only) ── */}
-      <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 16px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>Employment Contract</div>
-        <span style={{ fontSize: 12, color: '#6b7280' }}>Fill the yellow fields → Print / Save PDF. (Scan-a-list auto-fill coming soon.)</span>
-        <div style={{ flex: 1 }} />
-        <button onClick={() => window.print()} style={{ padding: '8px 16px', fontSize: 14, fontWeight: 600, background: '#111', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: F }}>🖨 Print / Save PDF</button>
-        <button onClick={clearAll} style={{ padding: '8px 14px', fontSize: 14, fontWeight: 600, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc', borderRadius: 6, cursor: 'pointer', fontFamily: F }}>🗑 Clear</button>
+      <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 16px' }}>
+        {/* Row 1 — title + actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>Employment Contract</div>
+          <span style={{ fontSize: 12, color: '#6b7280' }}>Upload an IC/ID photo to auto-fill, or type the yellow fields → Print / Save PDF.</span>
+          <div style={{ flex: 1 }} />
+          <button onClick={() => window.print()} style={{ padding: '8px 16px', fontSize: 14, fontWeight: 600, background: '#111', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: F }}>🖨 Print / Save PDF</button>
+          <button onClick={clearAll} style={{ padding: '8px 14px', fontSize: 14, fontWeight: 600, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc', borderRadius: 6, cursor: 'pointer', fontFamily: F }}>🗑 Clear</button>
+        </div>
+
+        {/* Row 2 — upload + AI key */}
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div
+            onClick={() => !processing && fileRef.current?.click()}
+            onDragOver={e => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) readID(f); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', border: '2px dashed ' + (drag ? '#c87b00' : '#c4c4c8'), borderRadius: 8, background: drag ? '#fffbeb' : '#fff', cursor: processing ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }}
+          >
+            📷 {processing ? 'Reading ID…' : 'Upload IC / ID photo → auto-fill'}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) readID(f); e.target.value = ''; }} />
+
+          {!apiKey && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input type="password" placeholder={AI_CFG.placeholder} value={keyInput} onChange={e => setKeyInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveKey(); }}
+                style={{ width: 170, padding: '7px 10px', fontSize: 13, border: '1px solid #d1d5db', borderRadius: 6, fontFamily: F }} />
+              <button onClick={saveKey} style={{ padding: '7px 12px', fontSize: 13, fontWeight: 600, background: '#111', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: F }}>Save key</button>
+            </div>
+          )}
+          {apiKey && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>✓ AI ready</span>}
+          {error && <span style={{ fontSize: 12, color: '#c0392b' }}>{error}</span>}
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>Reads Name, NRIC &amp; address from the IC — position &amp; date you fill in. Always double-check.</span>
+        </div>
       </div>
 
       <div className="contract-print">
