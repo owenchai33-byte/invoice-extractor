@@ -256,7 +256,7 @@ const CSS=`
 .t .gh{background:#e5e7eb;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
 .t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
 .t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
-.t .tr td{font-weight:700;background:#f0fdf4;border-top:2px solid #18181b;border-bottom:2px solid #18181b}
+.t .tr td{font-weight:700;background:#f0fdf4;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
 .t .gr td{font-weight:700;background:#fef9c3;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
 .t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
 .drag-handle:hover{background:#f4f4f5}
@@ -344,7 +344,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t .gh td{padding:2px 4px;font-size:7pt;font-weight:700;overflow:visible}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
-  .t .tr td{background:#f0fdf4!important;font-size:6.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .tr td{background:#f0fdf4!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .gr td{background:#fef9c3!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -495,14 +495,16 @@ export default function Payroll(){
   };
   // EditableCell — uncontrolled input that holds local state during typing,
   // commits to global state only on blur/Enter so focus never jumps
-  const EditableCell = ({value, onCommit, placeholder='0', width=50}) => {
+  const EditableCell = ({value, onCommit, placeholder='0', width=50, dec=false}) => {
     const ref = useRef(null);
-    const [local, setLocal] = useState(value ? String(value) : '');
+    // dec: display with 2 decimals when not being edited (salary/incentive), like the other money columns
+    const disp = v => v ? (dec ? Number(v).toFixed(2) : String(v)) : '';
+    const [local, setLocal] = useState(disp(value));
     const lastExternal = useRef(value);
     // Sync from external only when external changes AND user isn't typing
     useEffect(() => {
       if (lastExternal.current !== value && document.activeElement !== ref.current) {
-        setLocal(value ? String(value) : '');
+        setLocal(disp(value));
       }
       lastExternal.current = value;
     }, [value]);
@@ -516,7 +518,7 @@ export default function Payroll(){
         onBlur={commit}
         onKeyDown={e => {
           if (e.key === 'Enter') { e.preventDefault(); commit(); ref.current?.blur(); }
-          if (e.key === 'Escape') { setLocal(value ? String(value) : ''); ref.current?.blur(); }
+          if (e.key === 'Escape') { setLocal(disp(value)); ref.current?.blur(); }
         }}
         style={{width}}
       />
@@ -585,8 +587,8 @@ export default function Payroll(){
       <td style={{fontWeight:600,color:'#000'}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60}/></td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)}/></td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/></td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/></td>
       {sb&&<td className="r" style={{color:'#000'}}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>}
       <td className="r" style={{color:'#000'}}>{fmt(r.epfM)}</td>
       <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.epfP)}</td>
