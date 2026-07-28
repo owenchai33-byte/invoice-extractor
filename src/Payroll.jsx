@@ -410,8 +410,8 @@ export default function Payroll(){
     const firstName = (r.name||'(unnamed)').split(' ')[0];
     return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;
   }),[bS,cS]);
-  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
-  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
+  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
+  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
   const delS=id=>{setStaff(p=>p.filter(s=>s.id!==id));};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
@@ -435,7 +435,7 @@ export default function Payroll(){
     });
   };
   const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
-  const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);setEidPT(null);};
+  const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,name:(ptfm.name||'').toUpperCase(),status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);setEidPT(null);};
   const delPT=id=>{setPt(p=>p.filter(s=>s.id!==id));};
 
   // Edit existing part-time staff — opens the PT form prefilled.
@@ -443,7 +443,7 @@ export default function Payroll(){
 
   // Save edits to existing part-time staff.
   const updPT=()=>{
-    setPt(p=>p.map(s=>s.id===eidPT?{...s,name:ptfm.name,ic:ptfm.ic,wagePerDay:ptfm.wagePerDay}:s));
+    setPt(p=>p.map(s=>s.id===eidPT?{...s,name:(ptfm.name||'').toUpperCase(),ic:ptfm.ic,wagePerDay:ptfm.wagePerDay}:s));
     setEidPT(null);
     setPtfm({name:'',ic:'',wagePerDay:0});
     setPtf(false);
@@ -649,7 +649,7 @@ export default function Payroll(){
               </label>
               {sb&&<div style={{display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:11,color:'#a1a1aa'}}>Bonus label:</span>
-                <input value={bl} onChange={e=>setBl(e.target.value.toUpperCase())} style={{width:120,fontSize:12,border:'1px solid #e4e4e7',borderRadius:4,padding:'4px 8px',textAlign:'center',fontWeight:600}}/>
+                <input value={bl} onChange={e=>setBl(e.target.value)} onBlur={()=>setBl(b=>(b||'').toUpperCase())} style={{width:120,fontSize:12,border:'1px solid #e4e4e7',borderRadius:4,padding:'4px 8px',textAlign:'center',fontWeight:600,textTransform:'uppercase'}}/>
               </div>}
             </div>
           </div>
@@ -725,10 +725,10 @@ export default function Payroll(){
             <div style={{background:'#fafafa',borderRadius:8,padding:16,marginBottom:20,border:'1px solid #e4e4e7'}}>
               <div style={{fontSize:12,fontWeight:700,marginBottom:12,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>{eid?'Edit Staff':'Add New Staff'}</div>
               <div className="fg">
-                <div className="ff"><label className="fl">Full Name</label><input className="fi" value={fm.name} onChange={e=>setFm(f=>({...f,name:e.target.value.toUpperCase()}))} placeholder="FULL NAME"/></div>
+                <div className="ff"><label className="fl">Full Name</label><input className="fi" style={{textTransform:'uppercase'}} value={fm.name} onChange={e=>setFm(f=>({...f,name:e.target.value}))} onBlur={()=>setFm(f=>({...f,name:(f.name||'').toUpperCase()}))} placeholder="FULL NAME"/></div>
                 <div><label className="fl">IC Number</label><input className="fi" value={fm.ic} onChange={e=>setFm(f=>({...f,ic:e.target.value}))} placeholder="YYMMDD-SS-NNNN"/></div>
                 <div><label className="fl">Salary (RM)</label><input className="fi" type="number" value={fm.salary} onChange={e=>setFm(f=>({...f,salary:parseFloat(e.target.value)||0}))}/></div>
-                <div className="ff"><label className="fl">Position</label><input className="fi" value={fm.position} onChange={e=>setFm(f=>({...f,position:e.target.value.toUpperCase()}))} placeholder="JOB TITLE"/></div>
+                <div className="ff"><label className="fl">Position</label><input className="fi" style={{textTransform:'uppercase'}} value={fm.position} onChange={e=>setFm(f=>({...f,position:e.target.value}))} onBlur={()=>setFm(f=>({...f,position:(f.position||'').toUpperCase()}))} placeholder="JOB TITLE"/></div>
                 <div><label className="fl">Payment</label><select className="fs" value={fm.method} onChange={e=>setFm(f=>({...f,method:e.target.value}))}><option value="bank">Bank Transfer</option><option value="cash">Cash</option></select></div>
                 <div><label className="fl">Status</label><select className="fs" value={fm.status} onChange={e=>setFm(f=>({...f,status:e.target.value}))}><option value="permanent">Permanent</option><option value="probationary">Probationary</option></select></div>
                 <div className="ff" style={{borderTop:'1px solid #e4e4e7',paddingTop:12,marginTop:4}}>
@@ -751,7 +751,7 @@ export default function Payroll(){
             {ptf&&<div style={{background:'#fafafa',borderRadius:8,padding:12,marginBottom:12,border:'1px solid #e4e4e7'}}>
               <div style={{fontSize:11,fontWeight:700,marginBottom:10,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>{eidPT?'Edit Part-Time':'Add Part-Time'}</div>
               <div className="fg">
-                <div><label className="fl">Name</label><input className="fi" value={ptfm.name} onChange={e=>setPtfm(f=>({...f,name:e.target.value.toUpperCase()}))}/></div>
+                <div><label className="fl">Name</label><input className="fi" style={{textTransform:'uppercase'}} value={ptfm.name} onChange={e=>setPtfm(f=>({...f,name:e.target.value}))} onBlur={()=>setPtfm(f=>({...f,name:(f.name||'').toUpperCase()}))}/></div>
                 <div><label className="fl">IC</label><input className="fi" value={ptfm.ic} onChange={e=>setPtfm(f=>({...f,ic:e.target.value}))}/></div>
                 <div className="ff"><label className="fl">Default Wage/Day (RM)</label><input className="fi" type="number" value={ptfm.wagePerDay||''} placeholder="0" onChange={e=>setPtfm(f=>({...f,wagePerDay:parseFloat(e.target.value)||0}))}/></div>
               </div>
