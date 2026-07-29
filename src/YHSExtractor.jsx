@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import {
-  LOGO, CO, fmt, normalizeDate, formatVolUnit,
+  LOGO, CO, CJK_LETTERHEAD, fmt, normalizeDate, formatVolUnit,
   EditableAmount, EditableText,
   pdfToImageFiles, downsizeBase64ToJPEG, callAI, parseAIJson,
   AI_PROVIDER, AI_CFG, BATCH_CONCURRENCY, BATCH_MIN_GAP_MS, runPool, FlappyLoader,
@@ -631,15 +631,8 @@ export default function YHSExtractor({ batchId = 'default' }) {
       <div className="wrap print-area" style={{ maxWidth: 860, margin: '0 auto', padding: '20px' }}>
         {/* HEADER */}
         <div style={{ position: 'relative', textAlign: 'center', paddingBottom: 8, borderBottom: '2px solid #000', minHeight: 90 }}>
-          <img src={LOGO} alt="CJK" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: 85, maxWidth: 95, objectFit: 'contain' }} />
-          <div style={{ padding: '2px 105px 0', lineHeight: 1.3 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0.3, whiteSpace: 'nowrap' }}>{CO.name}</div>
-            <div style={{ fontSize: 12, opacity: 0.75, whiteSpace: 'nowrap' }}>{CO.reg}</div>
-            <div style={{ fontSize: 12, marginTop: 5, whiteSpace: 'nowrap' }}>{CO.addr}</div>
-            <div style={{ fontSize: 12, marginTop: 1, whiteSpace: 'nowrap' }}>
-              Tel: {CO.tel} &nbsp;&nbsp;&nbsp; E-mail: <a href={'mailto:' + CO.email} style={{ color: '#0056b3' }}>{CO.email}</a>
-            </div>
-          </div>
+          {/* Company letterhead — same clean C.J.K. header as the employment contract */}
+          <img src={CJK_LETTERHEAD} alt={CO.name} style={{ width: '151mm', maxWidth: '100%', display: 'block', margin: '0 auto' }} />
           <button className="noP" onClick={() => setShowSettings(!showSettings)}
             style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'none', border: '1px solid #ccc', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: '#888' }}>
             ⚙ API
