@@ -11,7 +11,7 @@ import cjkLetterhead from './cjk_letterhead.png';   // exact letterhead lifted f
 const LS_KEY = 'contract_data_v2';       // { HQ:[...], KC:[...], ST:[...], TH:[...] }
 const LS_OUTLET = 'contract_outlet_v1';
 const F = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
-const SERIF = `Georgia, "Times New Roman", Times, serif`;
+const SERIF = `"Times New Roman", Times, serif`;
 
 // ── Per-outlet variables. Everything else in the contract is identical. ──
 const OUTLETS = {
@@ -99,13 +99,14 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
   );
 }
 
+// Sized to match the source PDF: US Letter, Times New Roman ~12pt, ~13mm margins.
 const pageStyle = {
-  background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '296mm',
-  margin: '0 auto 22px', padding: '16mm 17mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
-  boxSizing: 'border-box', fontFamily: SERIF, fontSize: 12, lineHeight: 1.5, color: '#111',
+  background: '#fff', width: '215.9mm', maxWidth: '100%', minHeight: '279.4mm',
+  margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
+  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '12pt', lineHeight: 1.25, color: '#111',
   position: 'relative', textAlign: 'justify',
 };
-const foot = { position: 'absolute', bottom: '9mm', left: '17mm', right: '17mm', display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#111' };
+const foot = { position: 'absolute', bottom: '8mm', left: '13mm', right: '13mm', display: 'flex', justifyContent: 'space-between', fontSize: '9pt', color: '#111' };
 const h = { fontWeight: 700, margin: '12px 0 4px', textAlign: 'left' };
 const li = { margin: '2px 0' };
 const ctr = { textAlign: 'center' };
@@ -455,7 +456,7 @@ export default function ContractGenerator() {
             page-break-after: always;
           }
           .contract-page:last-child { page-break-after: auto; }
-          @page { size: A4 portrait; margin: 13mm 15mm; }
+          @page { size: letter portrait; margin: 15mm 13mm 13mm 13mm; }
           body { background: #fff !important; }
         }
       `}</style>
