@@ -93,6 +93,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
         margin: '0 1px',
         outline: 'none',
         borderRadius: 2,
+        fieldSizing: 'content',   // input hugs its text exactly (no trailing slack before the next word)
       }}
     />
   );
