@@ -488,9 +488,10 @@ export default function ContractGenerator() {
             margin: 0 !important;
             width: 210mm !important;
             /* Every page box is the SAME height so the footer lands at the identical
-               spot on all pages. 285mm fills most of the sheet but stays under the
-               printable area so nothing spills to a blank 5th sheet. */
-            min-height: 285mm !important;
+               spot on all pages. 280mm is confirmed under the printable area (no blank
+               5th sheet), and at 1.15 line-height every page's content clears it, so all
+               four boxes settle at exactly 280mm. */
+            min-height: 280mm !important;
             padding: 15mm 13mm 13mm 13mm !important;
             box-sizing: border-box !important;
             /* Break BEFORE each page (the very first is ignored by the browser) and
