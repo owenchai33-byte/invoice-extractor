@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
-import { LOGO, callAI, parseAIJson, downsizeBase64ToJPEG, AI_PROVIDER, AI_CFG } from './InvoiceExtractor';
+import { callAI, parseAIJson, downsizeBase64ToJPEG, AI_PROVIDER, AI_CFG } from './InvoiceExtractor';
+import cjkLetterhead from './cjk_letterhead.png';   // exact letterhead lifted from the official CJK contract PDF
 
 // Employment Contract generator (CJK). Four outlets (HQ/KC/ST/TH) share one 4-page
 // contract body; only the workplace address and the witness signatory differ per
@@ -115,13 +116,8 @@ function ContractDoc({ c, outlet, onField }) {
     <>
       {/* ═══════════════ PAGE 1 ═══════════════ */}
       <div className="contract-page" style={pageStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, borderBottom: '2px solid #111', paddingBottom: 8, marginBottom: 14 }}>
-          <img src={LOGO} alt="CJK" style={{ height: 46 }} />
-          <div style={{ textAlign: 'center', fontFamily: F }}>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>CHAI JEE KIONG TRADING SDN. BHD. (200901034210)</div>
-            <div style={{ fontSize: 11 }}>No. 19, 21, 23, 25, 27, Jalan Petanak, 93100, Kuching, Sarawak.</div>
-            <div style={{ fontSize: 11 }}>Tel: 082-427630&nbsp;&nbsp;&nbsp;E-mail: chaijeekionghq@gmail.com</div>
-          </div>
+        <div style={{ borderBottom: '2px solid #111', paddingBottom: 8, marginBottom: 14 }}>
+          <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD. (200901034210) — No. 19-27, Jalan Petanak, 93100, Kuching, Sarawak. Tel: 082-427630  E-mail: chaijeekionghq@gmail.com" style={{ width: '100%', display: 'block' }} />
         </div>
 
         <div style={{ ...ctr, fontWeight: 700, fontSize: 16, letterSpacing: 1, margin: '6px 0' }}>EMPLOYMENT CONTRACT</div>
