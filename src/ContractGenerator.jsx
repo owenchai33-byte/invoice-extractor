@@ -454,7 +454,10 @@ export default function ContractGenerator() {
             box-shadow: none !important;
             margin: 0 !important;
             width: 100% !important;
-            min-height: 0 !important;
+            /* Fill the printable A4 area (297 - 15 top - 13 bottom margins) so the
+               absolutely-positioned footer anchors to the bottom of each sheet,
+               even on the short last page. */
+            min-height: 265mm !important;
             padding: 0 !important;
             page-break-after: always;
           }
