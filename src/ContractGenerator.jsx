@@ -241,13 +241,13 @@ function ContractDoc({ c, outlet, onField }) {
 
         <div style={h}>7. Termination</div>
         <p style={li}>7.1 Either party may terminate this Agreement by giving written notice, subject to the Company-Specific Notice Periods:</p>
-        <table style={{ width: '100%', borderCollapse: 'collapse', margin: '6px 0', fontSize: 'inherit' }}>
-          <thead><tr><th style={{ border: '1px solid #111', padding: '4px 6px', textAlign: 'left' }}>Position</th><th style={{ border: '1px solid #111', padding: '4px 6px', textAlign: 'left', width: '22%' }}>Notice Period</th></tr></thead>
+        <table style={{ width: '100%', borderCollapse: 'collapse', margin: '6px 0', fontSize: '9.5pt' }}>
+          <thead><tr><th style={{ border: '1px solid #111', padding: '2px 5px', textAlign: 'left' }}>Position</th><th style={{ border: '1px solid #111', padding: '2px 5px', textAlign: 'left', width: '16%' }}>Notice Period</th></tr></thead>
           <tbody>
-            <tr><td style={{ border: '1px solid #111', padding: '4px 6px' }}>Probationary General or Junior Roles (e.g. Cashier, Merchandiser, General Worker, Driver etc.)</td><td style={{ border: '1px solid #111', padding: '4px 6px' }}>7 days</td></tr>
-            <tr><td style={{ border: '1px solid #111', padding: '4px 6px' }}>Probationary Administrative or Senior Roles (e.g. Clerk, Supervisor, Assistant Supervisor, Executive etc.)</td><td style={{ border: '1px solid #111', padding: '4px 6px' }}>1 month</td></tr>
-            <tr><td style={{ border: '1px solid #111', padding: '4px 6px' }}>Confirmed General or Junior Roles (e.g. Cashier, Merchandiser, General Worker, Driver etc.)</td><td style={{ border: '1px solid #111', padding: '4px 6px' }}>1 month</td></tr>
-            <tr><td style={{ border: '1px solid #111', padding: '4px 6px' }}>Confirmed Administrative or Senior Roles (e.g. Clerk, Supervisor, Assistant Supervisor, Executive etc.)</td><td style={{ border: '1px solid #111', padding: '4px 6px' }}>3 months</td></tr>
+            <tr><td style={{ border: '1px solid #111', padding: '2px 5px' }}>Probationary General or Junior Roles (e.g. Cashier, Merchandiser, General Worker, Driver etc.)</td><td style={{ border: '1px solid #111', padding: '2px 5px' }}>7 days</td></tr>
+            <tr><td style={{ border: '1px solid #111', padding: '2px 5px' }}>Probationary Administrative or Senior Roles (e.g. Clerk, Supervisor, Assistant Supervisor, Executive etc.)</td><td style={{ border: '1px solid #111', padding: '2px 5px' }}>1 month</td></tr>
+            <tr><td style={{ border: '1px solid #111', padding: '2px 5px' }}>Confirmed General or Junior Roles (e.g. Cashier, Merchandiser, General Worker, Driver etc.)</td><td style={{ border: '1px solid #111', padding: '2px 5px' }}>1 month</td></tr>
+            <tr><td style={{ border: '1px solid #111', padding: '2px 5px' }}>Confirmed Administrative or Senior Roles (e.g. Clerk, Supervisor, Assistant Supervisor, Executive etc.)</td><td style={{ border: '1px solid #111', padding: '2px 5px' }}>3 months</td></tr>
           </tbody>
         </table>
         <p style={li}>7.2 <b>Payment in Lieu of Notice:</b> Either party may terminate the employment without serving the full notice period by paying wages equivalent to the unserved portion. If the Employee resigns without notice or fails to serve it, the Employer may deduct the equivalent amount from the final salary or recover it through legal means.</p>
