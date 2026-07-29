@@ -186,24 +186,24 @@ function ContractDoc({ c, outlet, onField }) {
         <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.1 EPF (Retirement Savings), SOCSO (Accident &amp; Health Protection), and EIS (Job Loss Support)</p>
         <p style={li}>The Employee’s portion will be deducted from their monthly salary, while the Employer will contribute the required amount as per statutory rates.</p>
         <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.2 Annual Leave</p>
-        <p style={li}>6.2.1 Entitlement: Upon completing 12 months of continuous service.</p>
+        <p style={li}>6.2.1 <b>Entitlement:</b> Upon completing 12 months of continuous service.</p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>Service under 2 years: 8 days per year</li>
           <li>Service of 2–5 years: 12 days per year</li>
           <li>Service over 5 years: 16 days per year</li>
         </ul>
-        <p style={li}>6.2.2 Conditions: Must be utilized within 12 months and is renewed annually.</p>
-        <p style={li}>6.2.3 Application: Must be applied at least 7 days in advance, subject to managerial approval.</p>
+        <p style={li}>6.2.2 <b>Conditions:</b> Must be utilized within 12 months and is renewed annually.</p>
+        <p style={li}>6.2.3 <b>Application:</b> Must be applied at least 7 days in advance, subject to managerial approval.</p>
         <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.3 Medical Leave</p>
-        <p style={li}>6.3.1 Entitlement:</p>
+        <p style={li}>6.3.1 <b>Entitlement:</b></p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>Service under 2 years: 14 days per year</li>
           <li>Service of 2–5 years: 18 days per year</li>
           <li>Service over 5 years: 22 days per year</li>
           <li>Hospitalization: Up to 60 days per year (shall be calculated separately)</li>
         </ul>
-        <p style={li}>6.3.2 Conditions: Must be supported by a valid medical certificate issued by a registered medical practitioner.</p>
-        <p style={li}>6.3.3 Application: Shall notify as soon as reasonably practicable.</p>
+        <p style={li}>6.3.2 <b>Conditions:</b> Must be supported by a valid medical certificate issued by a registered medical practitioner.</p>
+        <p style={li}>6.3.3 <b>Application:</b> Shall notify as soon as reasonably practicable.</p>
 
         <div style={foot}><span><i>C.J.K.</i> Employment Contract&nbsp;&nbsp;Page 2 of 4</span><span>Employee’s Initials: ____________</span></div>
       </div>
@@ -211,8 +211,8 @@ function ContractDoc({ c, outlet, onField }) {
       {/* ═══════════════ PAGE 3 ═══════════════ */}
       <div className="contract-page" style={pageStyle}>
         <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.4 Maternity Leave (for Female Employees)</p>
-        <p style={li}>6.4.1 Entitlement: 98 consecutive days of leave (including rest days and public holidays) per confinement, limited to 5 confinements.</p>
-        <p style={li}>6.4.2 Conditions:</p>
+        <p style={li}>6.4.1 <b>Entitlement:</b> 98 consecutive days of leave (including rest days and public holidays) per confinement, limited to 5 confinements.</p>
+        <p style={li}>6.4.2 <b>Conditions:</b></p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>Must satisfy one of the following:
             <ul style={{ margin: '2px 0 0 18px', listStyleType: 'circle' }}>
@@ -223,21 +223,21 @@ function ContractDoc({ c, outlet, onField }) {
           <li>Applies only if the pregnancy reaches 22 weeks; miscarriage or premature birth before 22 weeks is treated as medical leave.</li>
           <li>Must be supported by a medical certificate and child’s birth certificate.</li>
         </ul>
-        <p style={li}>6.4.3 Application: Must be applied at least 60 days before the expected confinement date.</p>
-        <p style={li}>6.4.4 Leave Duration:</p>
+        <p style={li}>6.4.3 <b>Application:</b> Must be applied at least 60 days before the expected confinement date.</p>
+        <p style={li}>6.4.4 <b>Leave Duration:</b></p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>May begin up to 30 days before the expected confinement date.</li>
           <li>Early return shall be subject to medical certification and mutual agreement.</li>
         </ul>
         <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.5 Paternity Leave (for Married Male Employees)</p>
-        <p style={li}>6.5.1 Entitlement: 7 consecutive days of leave (including rest days and public holidays) per confinement, for up to 5 births.</p>
-        <p style={li}>6.5.2 Conditions:</p>
+        <p style={li}>6.5.1 <b>Entitlement:</b> 7 consecutive days of leave (including rest days and public holidays) per confinement, for up to 5 births.</p>
+        <p style={li}>6.5.2 <b>Conditions:</b></p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>Must have been employed for at least 12 consecutive months immediately before the leave commencement.</li>
           <li>Must be supported by a marriage certificate and child’s birth certificate.</li>
         </ul>
-        <p style={li}>6.5.3 Application: Must be applied at least 30 days before the expected confinement date.</p>
-        <p style={li}>6.5.4 Leave Duration: Must commence on the actual date of childbirth.</p>
+        <p style={li}>6.5.3 <b>Application:</b> Must be applied at least 30 days before the expected confinement date.</p>
+        <p style={li}>6.5.4 <b>Leave Duration:</b> Must commence on the actual date of childbirth.</p>
 
         <div style={h}>7. Termination</div>
         <p style={li}>7.1 Either party may terminate this Agreement by giving written notice, subject to the Company-Specific Notice Periods:</p>
