@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { callAI, parseAIJson, downsizeBase64ToJPEG, pdfToImageFiles, AI_PROVIDER, AI_CFG } from './InvoiceExtractor';
 import cjkLetterhead from './cjk_letterhead.png';   // exact letterhead lifted from the official CJK contract PDF
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import JSZip from 'jszip';
 
 // Employment Contract generator (CJK). Four outlets (HQ/KC/ST/TH) share one 4-page
 // contract body; only the workplace address and the witness signatory differ per
@@ -317,6 +320,8 @@ export default function ContractGenerator() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [printOne, setPrintOne] = useState(false);   // 'This batch' — print only the shown contract
   const [saveQueue, setSaveQueue] = useState(null);  // 'Save all separately' — index currently being printed
+  const [zipping, setZipping] = useState(false);     // 'Save all as ZIP' in progress
+  const [zipMsg, setZipMsg] = useState('');
   const origTitleRef = useRef(null);
   // During a save-all run, the shown contract follows the queue so each prints on its own.
   const active = (saveQueue != null && saveQueue < contracts.length) ? saveQueue : Math.min(activeIdx, contracts.length - 1);
@@ -346,6 +351,49 @@ export default function ContractGenerator() {
     window.print();
     return () => window.removeEventListener('afterprint', next);
   }, [saveQueue]);
+
+  // 'Save all as ZIP' — render each contract to its own PDF (client-side) and bundle
+  // them into a single .zip so it's one download. PDFs are page images (raster).
+  const cleanName = (s) => (s || '').replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+  const saveAllZip = async () => {
+    if (!contracts.length || zipping) return;
+    setError(null); setZipping(true); setZipMsg('Preparing…');
+    await new Promise(r => setTimeout(r, 60));   // let every contract render (zipping shows them all)
+    try {
+      const zip = new JSZip();
+      const blocks = document.querySelectorAll('.contract-print .contract-block');
+      for (let i = 0; i < contracts.length; i++) {
+        setZipMsg(`Rendering ${i + 1}/${contracts.length}…`);
+        const pages = blocks[i] ? blocks[i].querySelectorAll('.contract-page') : [];
+        const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+        for (let p = 0; p < pages.length; p++) {
+          const canvas = await html2canvas(pages[p], {
+            scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+            onclone: (doc) => {
+              doc.querySelectorAll('.cfield').forEach(el => { el.style.background = 'transparent'; el.style.borderBottom = 'none'; });
+              doc.querySelectorAll('.contract-noP').forEach(el => { el.style.display = 'none'; });
+              doc.querySelectorAll('.contract-page').forEach(el => { el.style.boxShadow = 'none'; el.style.margin = '0'; });
+            },
+          });
+          if (p > 0) pdf.addPage();
+          pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
+        }
+        const nm = cleanName(contracts[i]?.name) || `Contract ${i + 1}`;
+        zip.file(`${nm}.pdf`, pdf.output('blob'));
+      }
+      setZipMsg('Zipping…');
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `CJK_Contracts_${outlet}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) {
+      setError('Couldn’t build the ZIP: ' + (e?.message || e));
+    } finally {
+      setZipping(false); setZipMsg('');
+    }
+  };
   const setCur = (updater) => setByOutlet(m => ({ ...m, [outlet]: updater(m[outlet] || [BLANK()]) }));
   const onField = (id, k, v) => setCur(cs => cs.map(c => c.id === id ? { ...c, [k]: v } : c));
   const addBlank = () => setCur(cs => [...cs, BLANK()]);
@@ -437,7 +485,8 @@ export default function ContractGenerator() {
           <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
           <div style={{ flex: 1 }} />
           <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
-          <button onClick={() => { if (contracts.length) setSaveQueue(0); }} style={{ ...btn, background: '#111', color: '#fff' }} title="Steps through each contract so you can Save each as its own PDF (named per employee)">🖨 Save all (separate PDFs)</button>
+          <button onClick={() => { if (contracts.length) setSaveQueue(0); }} style={{ ...btn, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }} title="Steps through each contract so you can Save each as its own PDF (named per employee)">🖨 Save each</button>
+          <button onClick={saveAllZip} disabled={zipping} style={{ ...btn, background: zipping ? '#9ca3af' : '#111', color: '#fff', cursor: zipping ? 'wait' : 'pointer' }} title="Build one .zip containing a separate PDF per contract — a single download">{zipping ? (zipMsg || 'Building…') : '⬇ Save all (ZIP)'}</button>
           <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
         </div>
 
@@ -499,7 +548,7 @@ export default function ContractGenerator() {
       {/* ── Contracts ── (screen shows only the active batch; print shows all) */}
       <div className={'contract-print' + (printSolo ? ' print-one' : '')}>
         {contracts.map((c, i) => (
-          <div key={c.id} className={'contract-block' + (i === active ? ' is-active' : '')} style={{ display: i === active ? 'block' : 'none' }}>
+          <div key={c.id} className={'contract-block' + (i === active ? ' is-active' : '')} style={{ display: (zipping || i === active) ? 'block' : 'none' }}>
             <ContractDoc c={c} outlet={OUTLETS[outlet]} onField={onField} />
           </div>
         ))}
