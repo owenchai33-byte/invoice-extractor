@@ -106,7 +106,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
 const pageStyle = {
   background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '297mm',
   margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
-  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.2, color: '#111',
+  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.15, color: '#111',
   position: 'relative', textAlign: 'justify',
 };
 const foot = { position: 'absolute', bottom: '8mm', left: '13mm', right: '13mm', display: 'flex', justifyContent: 'space-between', fontSize: '9pt', color: '#111' };
@@ -487,7 +487,10 @@ export default function ContractGenerator() {
             box-shadow: none !important;
             margin: 0 !important;
             width: 210mm !important;
-            min-height: 280mm !important;   /* fill most of the A4 sheet (footer near bottom) but safely under the printable area so the last page can't spill a blank 5th sheet */
+            /* Every page box is the SAME height so the footer lands at the identical
+               spot on all pages. 285mm fills most of the sheet but stays under the
+               printable area so nothing spills to a blank 5th sheet. */
+            min-height: 285mm !important;
             padding: 15mm 13mm 13mm 13mm !important;
             box-sizing: border-box !important;
             /* Break BEFORE each page (the very first is ignored by the browser) and
