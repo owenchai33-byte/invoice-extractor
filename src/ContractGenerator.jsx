@@ -277,7 +277,7 @@ function ContractDoc({ c, outlet, onField }) {
             <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: Chai Chee Choi</div>
             <div>NRIC No.: 720115-13-5825</div>
-            <div>Designation: Managing Director</div>
+            <div>Designation: Director</div>
 
             <div style={{ fontWeight: 600, marginTop: 34 }}>Signed by the Employee:</div>
             <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
