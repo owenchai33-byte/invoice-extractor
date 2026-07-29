@@ -106,7 +106,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
 const pageStyle = {
   background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '297mm',
   margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
-  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '12pt', lineHeight: 1.25, color: '#111',
+  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.25, color: '#111',
   position: 'relative', textAlign: 'justify',
 };
 const foot = { position: 'absolute', bottom: '8mm', left: '13mm', right: '13mm', display: 'flex', justifyContent: 'space-between', fontSize: '9pt', color: '#111' };
@@ -136,18 +136,18 @@ function ContractDoc({ c, outlet, onField }) {
         <div style={{ ...ctr, fontWeight: 700, fontSize: 15 }}>
           <CField value={c.name} onChange={set('name')} placeholder="EMPLOYEE NAME" bold center min={18} />
         </div>
-        <div style={{ ...ctr, marginTop: 6 }}>[NRIC No.: <CField value={c.nric} onChange={set('nric')} placeholder="000000-00-0000" center min={14} />]</div>
+        <div style={{ ...ctr, marginTop: 6 }}>[NRIC No.: <CField value={c.nric} onChange={set('nric')} placeholder="000000-00-0000" bold center min={14} />]</div>
         <div style={{ ...ctr, marginTop: 6 }}>residing at <CField value={c.address} onChange={set('address')} placeholder="residential address" center min={30} />,</div>
-        <div style={{ ...ctr, marginTop: 10 }}>holding the position of <CField value={c.position} onChange={set('position')} placeholder="position" center min={12} />,</div>
+        <div style={{ ...ctr, marginTop: 10 }}>holding the position of <CField value={c.position} onChange={set('position')} placeholder="position" bold center min={12} />,</div>
         <div style={{ ...ctr, marginTop: 6 }}>with the workplace at<br />{outlet.workplace}</div>
         <div style={{ ...ctr, marginTop: 8 }}>hereinafter referred to as “the Employee”.</div>
-        <div style={{ ...ctr, marginTop: 10 }}>Dated this <CField value={c.effectiveDate} onChange={set('effectiveDate')} placeholder="DD Month YYYY" center min={14} /> <b>(the “Effective Date”).</b></div>
+        <div style={{ ...ctr, marginTop: 10 }}>Dated this <CField value={c.effectiveDate} onChange={set('effectiveDate')} placeholder="DD Month YYYY" bold center min={14} /> <b>(the “Effective Date”).</b></div>
 
         <hr style={{ border: 'none', borderTop: '1px dashed #999', margin: '12px 0' }} />
 
         <div style={h}>1. Commencement, Probation &amp; Confirmation</div>
         <p style={li}>1.1 The Employer agrees to employ the Employee, and the Employee agrees to serve the Employer, in the position stated on the top half of Page 1 of this Agreement.</p>
-        <p style={li}>1.2 The Employee’s employment commencement date is <CField value={c.effectiveDate} onChange={set('effectiveDate')} placeholder="DD Month YYYY" min={14} />. This Agreement, effective from the Effective Date specified at the top of this page, governs the terms and conditions of employment. The Employee’s period of service shall be recognised for statutory benefits, leave entitlement, and seniority in accordance with applicable laws.</p>
+        <p style={li}>1.2 The Employee’s employment commencement date is <CField value={c.effectiveDate} onChange={set('effectiveDate')} placeholder="DD Month YYYY" bold min={14} />. This Agreement, effective from the Effective Date specified at the top of this page, governs the terms and conditions of employment. The Employee’s period of service shall be recognised for statutory benefits, leave entitlement, and seniority in accordance with applicable laws.</p>
         <p style={li}>1.3 The probationary period shall be up to 3 months, which may be shortened at the Company’s discretion should the Employee’s performance be satisfactory. Upon successful completion of probation, the Employee shall be confirmed as permanent staff.</p>
 
         <div style={h}>2. Conduct &amp; Duties</div>
@@ -183,9 +183,9 @@ function ContractDoc({ c, outlet, onField }) {
         <p style={li}>5.2 Payment, if any, for a monthly incentive shall be made on the 11th of each month, or the next working day if it falls on a non-working day. The bonus, if any, shall be granted once a year in accordance with 1 main festive occasion observed by the Employee. The Company may determine the amount, timing, and eligibility of such benefits, or withdraw them with reasonable notice.</p>
 
         <div style={h}>6. Benefits &amp; Leave</div>
-        <p style={{ ...li, textDecoration: 'underline', fontWeight: 600 }}>6.1 EPF (Retirement Savings), SOCSO (Accident &amp; Health Protection), and EIS (Job Loss Support)</p>
+        <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.1 EPF (Retirement Savings), SOCSO (Accident &amp; Health Protection), and EIS (Job Loss Support)</p>
         <p style={li}>The Employee’s portion will be deducted from their monthly salary, while the Employer will contribute the required amount as per statutory rates.</p>
-        <p style={{ ...li, textDecoration: 'underline', fontWeight: 600 }}>6.2 Annual Leave</p>
+        <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.2 Annual Leave</p>
         <p style={li}>6.2.1 Entitlement: Upon completing 12 months of continuous service.</p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>Service under 2 years: 8 days per year</li>
@@ -194,7 +194,7 @@ function ContractDoc({ c, outlet, onField }) {
         </ul>
         <p style={li}>6.2.2 Conditions: Must be utilized within 12 months and is renewed annually.</p>
         <p style={li}>6.2.3 Application: Must be applied at least 7 days in advance, subject to managerial approval.</p>
-        <p style={{ ...li, textDecoration: 'underline', fontWeight: 600 }}>6.3 Medical Leave</p>
+        <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.3 Medical Leave</p>
         <p style={li}>6.3.1 Entitlement:</p>
         <ul style={{ margin: '2px 0 0 18px' }}>
           <li>Service under 2 years: 14 days per year</li>
@@ -210,7 +210,7 @@ function ContractDoc({ c, outlet, onField }) {
 
       {/* ═══════════════ PAGE 3 ═══════════════ */}
       <div className="contract-page" style={pageStyle}>
-        <p style={{ ...li, textDecoration: 'underline', fontWeight: 600 }}>6.4 Maternity Leave (for Female Employees)</p>
+        <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.4 Maternity Leave (for Female Employees)</p>
         <p style={li}>6.4.1 Entitlement: 98 consecutive days of leave (including rest days and public holidays) per confinement, limited to 5 confinements.</p>
         <p style={li}>6.4.2 Conditions:</p>
         <ul style={{ margin: '2px 0 0 18px' }}>
@@ -229,7 +229,7 @@ function ContractDoc({ c, outlet, onField }) {
           <li>May begin up to 30 days before the expected confinement date.</li>
           <li>Early return shall be subject to medical certification and mutual agreement.</li>
         </ul>
-        <p style={{ ...li, textDecoration: 'underline', fontWeight: 600 }}>6.5 Paternity Leave (for Married Male Employees)</p>
+        <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.5 Paternity Leave (for Married Male Employees)</p>
         <p style={li}>6.5.1 Entitlement: 7 consecutive days of leave (including rest days and public holidays) per confinement, for up to 5 births.</p>
         <p style={li}>6.5.2 Conditions:</p>
         <ul style={{ margin: '2px 0 0 18px' }}>
@@ -241,7 +241,7 @@ function ContractDoc({ c, outlet, onField }) {
 
         <div style={h}>7. Termination</div>
         <p style={li}>7.1 Either party may terminate this Agreement by giving written notice, subject to the Company-Specific Notice Periods:</p>
-        <table style={{ width: '100%', borderCollapse: 'collapse', margin: '6px 0', fontSize: 11 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', margin: '6px 0', fontSize: 'inherit' }}>
           <thead><tr><th style={{ border: '1px solid #111', padding: '4px 6px', textAlign: 'left' }}>Position</th><th style={{ border: '1px solid #111', padding: '4px 6px', textAlign: 'left', width: '22%' }}>Notice Period</th></tr></thead>
           <tbody>
             <tr><td style={{ border: '1px solid #111', padding: '4px 6px' }}>Probationary General or Junior Roles (e.g. Cashier, Merchandiser, General Worker, Driver etc.)</td><td style={{ border: '1px solid #111', padding: '4px 6px' }}>7 days</td></tr>
@@ -272,7 +272,7 @@ function ContractDoc({ c, outlet, onField }) {
 
         <div style={{ display: 'flex', gap: 40, marginTop: 26 }}>
           {/* Left column: Employer Representative, then Employee below (matches the PDF) */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600 }}>Signed by the Employer Representative:</div>
             <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: Chai Chee Choi</div>
@@ -285,7 +285,7 @@ function ContractDoc({ c, outlet, onField }) {
             <div>NRIC No.: {c.nric || ''}</div>
           </div>
           {/* Right column: Witness */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600 }}>In the presence of, as witness:</div>
             <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: {outlet.witness.name}</div>
