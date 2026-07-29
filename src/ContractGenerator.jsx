@@ -79,7 +79,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
       value={value}
       placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
-      size={value ? value.length + 1 : Math.max(shown.length + 1, min)}
+      size={value ? value.length + 1 : Math.max(shown.length + 2, min)}
       style={{
         background: '#fff59d',
         border: 'none',
@@ -130,7 +130,7 @@ function ContractDoc({ c, outlet, onField }) {
         <div style={{ ...ctr, margin: '10px 0' }}>AND</div>
 
         <div style={{ ...ctr, fontWeight: 700, fontSize: 15 }}>
-          <CField value={c.name} onChange={set('name')} placeholder="EMPLOYEE NAME" bold center min={14} />
+          <CField value={c.name} onChange={set('name')} placeholder="EMPLOYEE NAME" bold center min={18} />
         </div>
         <div style={{ ...ctr, marginTop: 6 }}>[NRIC No.: <CField value={c.nric} onChange={set('nric')} placeholder="000000-00-0000" center min={14} />]</div>
         <div style={{ ...ctr, marginTop: 6 }}>residing at <CField value={c.address} onChange={set('address')} placeholder="residential address" center min={30} />,</div>
