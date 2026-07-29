@@ -247,7 +247,7 @@ const CSS=`
 .t{width:100%;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums;table-layout:fixed}
 /* Full-time payroll table keeps a readable minimum width and scrolls sideways in
    narrow / half-screen windows, instead of shrinking the figures to fit. */
-.t.ft{min-width:1100px}
+.t.ft{min-width:1320px}
 .t th{padding:5px 3px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:break-word;line-height:1.15;vertical-align:bottom}
 .t th.r{text-align:center}
 .t th.l{text-align:left}
