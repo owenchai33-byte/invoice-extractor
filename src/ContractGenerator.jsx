@@ -122,7 +122,7 @@ function ContractDoc({ c, outlet, onField }) {
       {/* ═══════════════ PAGE 1 ═══════════════ */}
       <div className="contract-page" style={pageStyle}>
         <div style={{ paddingBottom: 4, marginBottom: 12 }}>
-          <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD. (200901034210) — No. 19-27, Jalan Petanak, 93100, Kuching, Sarawak. Tel: 082-427630  E-mail: chaijeekionghq@gmail.com" style={{ width: '151mm', maxWidth: '100%', display: 'block' }} />
+          <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD. (200901034210) — No. 19-27, Jalan Petanak, 93100, Kuching, Sarawak. Tel: 082-427630  E-mail: chaijeekionghq@gmail.com" style={{ width: '151mm', maxWidth: '100%', display: 'block', margin: '0 auto' }} />
         </div>
 
         <div style={{ ...ctr, fontWeight: 700, fontSize: '15pt', letterSpacing: 1, margin: '6px 0' }}>EMPLOYMENT CONTRACT</div>
