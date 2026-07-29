@@ -79,7 +79,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
       value={value}
       placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
-      size={Math.max(shown.length + 1, min)}
+      size={value ? value.length + 1 : Math.max(shown.length + 1, min)}
       style={{
         background: '#fff59d',
         border: 'none',
@@ -116,7 +116,7 @@ function ContractDoc({ c, outlet, onField }) {
     <>
       {/* ═══════════════ PAGE 1 ═══════════════ */}
       <div className="contract-page" style={pageStyle}>
-        <div style={{ borderBottom: '2px solid #111', paddingBottom: 8, marginBottom: 14 }}>
+        <div style={{ paddingBottom: 4, marginBottom: 12 }}>
           <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD. (200901034210) — No. 19-27, Jalan Petanak, 93100, Kuching, Sarawak. Tel: 082-427630  E-mail: chaijeekionghq@gmail.com" style={{ width: '100%', display: 'block' }} />
         </div>
 
