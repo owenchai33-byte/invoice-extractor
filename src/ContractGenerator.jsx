@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
-import { callAI, parseAIJson, downsizeBase64ToJPEG, AI_PROVIDER, AI_CFG } from './InvoiceExtractor';
+import { callAI, parseAIJson, downsizeBase64ToJPEG, pdfToImageFiles, AI_PROVIDER, AI_CFG } from './InvoiceExtractor';
 import cjkLetterhead from './cjk_letterhead.png';   // exact letterhead lifted from the official CJK contract PDF
 
 // Employment Contract generator (CJK). Four outlets (HQ/KC/ST/TH) share one 4-page
@@ -333,20 +333,40 @@ export default function ContractGenerator() {
   const saveKey = () => { const k = keyInput.trim(); if (!k) return; try { localStorage.setItem(AI_CFG.storageKey, k); } catch {} setApiKey(k); setKeyInput(''); };
   const readDataUrl = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Failed to read file')); r.readAsDataURL(file); });
 
+  const isPdf = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
+  // One uploaded file -> the image data-URL(s) to OCR. A PDF becomes one image per page.
+  const toDataUrls = async (f) => {
+    const srcFiles = isPdf(f) ? await pdfToImageFiles(f) : [f];
+    const urls = [];
+    for (const sf of srcFiles) {
+      const raw = await readDataUrl(sf);
+      let d; try { d = await downsizeBase64ToJPEG(raw, 1280, 0.75); } catch { d = raw; }
+      urls.push(d);
+    }
+    return urls;
+  };
   const readBatch = async (fileList) => {
-    const files = Array.from(fileList || []).filter(f => f.type?.startsWith('image/'));
-    if (!files.length) { setError('Please choose image file(s) of the IC / ID.'); return; }
+    const files = Array.from(fileList || []).filter(f => f.type?.startsWith('image/') || isPdf(f));
+    if (!files.length) { setError('Please choose JPG/PNG images or PDF files of the IC / ID.'); return; }
     if (!apiKey) { setError('Enter your Anthropic API key first (box on the right).'); return; }
     setError(null); setProcessing(true); setProg({ done: 0, total: files.length });
     try {
+      // One file = one contract. For a multi-page PDF (e.g. front+back), OCR each page
+      // and merge, so name/NRIC (front) and address (back) end up on the same record.
       const results = await pool(files, async (f) => {
         try {
-          const raw = await readDataUrl(f);
-          let img; try { img = await downsizeBase64ToJPEG(raw, 1280, 0.75); } catch { img = raw; }
-          const r = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: img, prompt: ID_PROMPT });
-          const p = parseAIJson(r.text) || {};
+          const urls = await toDataUrls(f);
+          const merged = { name: '', nric: '', address: '' };
+          for (const img of urls) {
+            const r = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: img, prompt: ID_PROMPT });
+            const p = parseAIJson(r.text) || {};
+            merged.name = merged.name || p.name || '';
+            merged.nric = merged.nric || p.nric || '';
+            merged.address = merged.address || p.address || '';
+            if (merged.name && merged.nric && merged.address) break;
+          }
           setProg(s => ({ ...s, done: s.done + 1 }));
-          return { name: p.name || '', nric: p.nric || '', address: p.address || '' };
+          return merged;
         } catch {
           setProg(s => ({ ...s, done: s.done + 1 }));
           return { name: '', nric: '', address: '', _err: true };
@@ -357,7 +377,7 @@ export default function ContractGenerator() {
         const base = (cs.length === 1 && isBlank(cs[0])) ? [] : cs;
         return [...base, ...results.map(r => ({ id: uid(), name: r.name, nric: r.nric, address: r.address, position: '', effectiveDate: '' }))];
       });
-      if (failed) setError(`${failed} of ${files.length} IC(s) couldn’t be read — those contracts are blank, fill them in manually.`);
+      if (failed) setError(`${failed} of ${files.length} file(s) couldn’t be read — those contracts are blank, fill them in manually.`);
     } finally { setProcessing(false); }
   };
 
@@ -400,9 +420,9 @@ export default function ContractGenerator() {
             onDrop={e => { e.preventDefault(); setDrag(false); readBatch(e.dataTransfer.files); }}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', border: '2px dashed ' + (drag ? '#c87b00' : '#c4c4c8'), borderRadius: 8, background: drag ? '#fffbeb' : '#fff', cursor: processing ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }}
           >
-            📷 {processing ? `Reading ${prog.done}/${prog.total} IC${prog.total > 1 ? 's' : ''}…` : 'Upload IC / ID photos → one contract each (select several)'}
+            📷 {processing ? `Reading ${prog.done}/${prog.total} IC${prog.total > 1 ? 's' : ''}…` : 'Upload IC / ID — JPG, PNG or PDF → one contract each (select several)'}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { readBatch(e.target.files); e.target.value = ''; }} />
+          <input ref={fileRef} type="file" accept="image/*,application/pdf,.pdf" multiple style={{ display: 'none' }} onChange={e => { readBatch(e.target.files); e.target.value = ''; }} />
 
           {!apiKey && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
