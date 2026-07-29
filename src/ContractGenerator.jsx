@@ -470,19 +470,19 @@ export default function ContractGenerator() {
         @media print {
           .contract-noP { display: none !important; }
           .cfield { background: transparent !important; border: none !important; box-shadow: none !important; }
+          /* margin:0 stops Chrome from printing its date/URL/page-number in the margins.
+             The real page margins are applied as padding on each .contract-page instead. */
+          @page { size: A4 portrait; margin: 0; }
           .contract-page {
             box-shadow: none !important;
             margin: 0 !important;
-            width: 100% !important;
-            /* Fill the printable A4 area (297 - 15 top - 13 bottom margins) so the
-               absolutely-positioned footer anchors to the bottom of each sheet,
-               even on the short last page. */
-            min-height: 265mm !important;
-            padding: 0 !important;
+            width: 210mm !important;
+            min-height: 290mm !important;   /* nearly a full A4 sheet, under 297 to avoid a blank overflow page */
+            padding: 15mm 13mm 13mm 13mm !important;
+            box-sizing: border-box !important;
             page-break-after: always;
           }
           .contract-page:last-child { page-break-after: auto; }
-          @page { size: A4 portrait; margin: 15mm 13mm 13mm 13mm; }
           body { background: #fff !important; }
         }
       `}</style>
