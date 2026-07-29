@@ -161,7 +161,7 @@ function ContractDoc({ c, outlet, onField }) {
           <li>Not disclose or misuse any confidential or proprietary information (including but not limited to trade secrets, client data, and internal processes) during employment or after its termination.</li>
         </ul>
 
-        <div style={foot}><span>C.J.K. Employment Contract&nbsp;&nbsp;Page 1 of 4</span><span>Employee’s Initials: ____________</span></div>
+        <div style={foot}><span><i>C.J.K.</i> Employment Contract&nbsp;&nbsp;Page 1 of 4</span><span>Employee’s Initials: ____________</span></div>
       </div>
 
       {/* ═══════════════ PAGE 2 ═══════════════ */}
@@ -205,7 +205,7 @@ function ContractDoc({ c, outlet, onField }) {
         <p style={li}>6.3.2 Conditions: Must be supported by a valid medical certificate issued by a registered medical practitioner.</p>
         <p style={li}>6.3.3 Application: Shall notify as soon as reasonably practicable.</p>
 
-        <div style={foot}><span>C.J.K. Employment Contract&nbsp;&nbsp;Page 2 of 4</span><span>Employee’s Initials: ____________</span></div>
+        <div style={foot}><span><i>C.J.K.</i> Employment Contract&nbsp;&nbsp;Page 2 of 4</span><span>Employee’s Initials: ____________</span></div>
       </div>
 
       {/* ═══════════════ PAGE 3 ═══════════════ */}
@@ -257,7 +257,7 @@ function ContractDoc({ c, outlet, onField }) {
         <p style={li}>7.6 <b>Effect of Termination:</b> Once notice is served or payment in lieu is made, the employment shall end. Post-termination obligations including final salary payment and all final statutory contributions such as EPF, SOCSO and EIS, shall remain, and duties relating to confidentiality shall continue to apply.</p>
         <p style={li}>7.7 <b>Retirement:</b> The Company’s mandatory retirement age is 62 years old. Upon the Employee reaching the age of 62, this Agreement shall automatically terminate without the need for notice or compensation, unless both parties mutually agree in writing to extend the employment.</p>
 
-        <div style={foot}><span>C.J.K. Employment Contract&nbsp;&nbsp;Page 3 of 4</span><span>Employee’s Initials: ____________</span></div>
+        <div style={foot}><span><i>C.J.K.</i> Employment Contract&nbsp;&nbsp;Page 3 of 4</span><span>Employee’s Initials: ____________</span></div>
       </div>
 
       {/* ═══════════════ PAGE 4 ═══════════════ */}
@@ -294,7 +294,7 @@ function ContractDoc({ c, outlet, onField }) {
           </div>
         </div>
 
-        <div style={foot}><span>C.J.K. Employment Contract&nbsp;&nbsp;Page 4 of 4</span><span>Employee’s Initials: ____________</span></div>
+        <div style={foot}><span><i>C.J.K.</i> Employment Contract&nbsp;&nbsp;Page 4 of 4</span><span>Employee’s Initials: ____________</span></div>
       </div>
     </>
   );
