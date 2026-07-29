@@ -313,6 +313,9 @@ export default function ContractGenerator() {
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(byOutlet)); } catch {} }, [byOutlet]);
 
   const contracts = byOutlet[outlet] || [BLANK()];
+  // Which contract (batch) is shown on screen. Print always renders all of them.
+  const [activeIdx, setActiveIdx] = useState(0);
+  const active = Math.min(activeIdx, contracts.length - 1);
   const setCur = (updater) => setByOutlet(m => ({ ...m, [outlet]: updater(m[outlet] || [BLANK()]) }));
   const onField = (id, k, v) => setCur(cs => cs.map(c => c.id === id ? { ...c, [k]: v } : c));
   const addBlank = () => setCur(cs => [...cs, BLANK()]);
@@ -446,24 +449,25 @@ export default function ContractGenerator() {
         </div>
       </div>
 
-      {/* Jump-between-contracts bar (batch navigation, like the Choon Hua list) */}
+      {/* Batch tabs — click to SHOW that contract on screen (like the Choon Hua list).
+          Print still renders every contract. */}
       {contracts.length > 1 && (
         <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 12px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>Jump to:</span>
+          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>Batches:</span>
           {contracts.map((c, i) => (
-            <button key={c.id} onClick={() => document.getElementById('ct' + i)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              style={{ ...btn, padding: '4px 10px', fontSize: 12, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }}>
+            <button key={c.id} onClick={() => setActiveIdx(i)}
+              style={{ ...btn, padding: '5px 12px', fontSize: 12, background: i === active ? '#111' : '#fff', color: i === active ? '#fff' : '#374151', border: '1px solid ' + (i === active ? '#111' : '#d1d5db') }}>
               {i + 1}{c.name ? ' · ' + c.name.split(' ')[0] : ''}
             </button>
           ))}
         </div>
       )}
 
-      {/* ── Contracts ── */}
+      {/* ── Contracts ── (screen shows only the active batch; print shows all) */}
       <div className="contract-print">
         {contracts.map((c, i) => (
-          <Fragment key={c.id}>
-            <div id={'ct' + i} className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 6px', display: 'flex', alignItems: 'center', gap: 10, scrollMarginTop: 12 }}>
+          <div key={c.id} className="contract-block" style={{ display: i === active ? 'block' : 'none' }}>
+            <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>Contract {i + 1} of {contracts.length}</span>
               <span style={{ fontSize: 13, color: '#374151' }}>{c.name || <em style={{ color: '#9ca3af' }}>unnamed</em>} · {outlet}</span>
               <div style={{ flex: 1 }} />
@@ -472,13 +476,14 @@ export default function ContractGenerator() {
               )}
             </div>
             <ContractDoc c={c} outlet={OUTLETS[outlet]} onField={onField} />
-          </Fragment>
+          </div>
         ))}
       </div>
 
       <style>{`
         @media print {
           .contract-noP { display: none !important; }
+          .contract-block { display: block !important; }   /* print every contract, not just the active tab */
           .cfield { background: transparent !important; border: none !important; box-shadow: none !important; }
           /* margin:0 stops Chrome from printing its date/URL/page-number in the margins.
              The real page margins are applied as padding on each .contract-page instead. */
