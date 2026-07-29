@@ -316,6 +316,15 @@ export default function ContractGenerator() {
   // Which contract (batch) is shown on screen. Print always renders all of them.
   const [activeIdx, setActiveIdx] = useState(0);
   const active = Math.min(activeIdx, contracts.length - 1);
+  // When true, only the active contract prints (so each can be saved as its own PDF).
+  const [printOne, setPrintOne] = useState(false);
+  useEffect(() => {
+    if (!printOne) return;
+    const done = () => setPrintOne(false);
+    window.addEventListener('afterprint', done, { once: true });
+    window.print();
+    return () => window.removeEventListener('afterprint', done);
+  }, [printOne]);
   const setCur = (updater) => setByOutlet(m => ({ ...m, [outlet]: updater(m[outlet] || [BLANK()]) }));
   const onField = (id, k, v) => setCur(cs => cs.map(c => c.id === id ? { ...c, [k]: v } : c));
   const addBlank = () => setCur(cs => [...cs, BLANK()]);
@@ -406,7 +415,8 @@ export default function ContractGenerator() {
           <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>Employment Contracts — {outlet}</div>
           <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
           <div style={{ flex: 1 }} />
-          <button onClick={() => window.print()} style={{ ...btn, background: '#111', color: '#fff' }}>🖨 Print / Save PDF (all)</button>
+          <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
+          <button onClick={() => window.print()} style={{ ...btn, background: '#111', color: '#fff' }}>🖨 All (one PDF)</button>
           <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
         </div>
 
@@ -466,9 +476,9 @@ export default function ContractGenerator() {
       </div>
 
       {/* ── Contracts ── (screen shows only the active batch; print shows all) */}
-      <div className="contract-print">
+      <div className={'contract-print' + (printOne ? ' print-one' : '')}>
         {contracts.map((c, i) => (
-          <div key={c.id} className="contract-block" style={{ display: i === active ? 'block' : 'none' }}>
+          <div key={c.id} className={'contract-block' + (i === active ? ' is-active' : '')} style={{ display: i === active ? 'block' : 'none' }}>
             <ContractDoc c={c} outlet={OUTLETS[outlet]} onField={onField} />
           </div>
         ))}
@@ -477,7 +487,10 @@ export default function ContractGenerator() {
       <style>{`
         @media print {
           .contract-noP { display: none !important; }
-          .contract-block { display: block !important; }   /* print every contract, not just the active tab */
+          .contract-block { display: block !important; }   /* print every contract by default */
+          /* 'This batch' print: only the active contract prints, so it saves as its own PDF */
+          .contract-print.print-one .contract-block { display: none !important; }
+          .contract-print.print-one .contract-block.is-active { display: block !important; }
           .cfield { background: transparent !important; border: none !important; box-shadow: none !important; }
           /* margin:0 stops Chrome from printing its date/URL/page-number in the margins.
              The real page margins are applied as padding on each .contract-page instead. */
