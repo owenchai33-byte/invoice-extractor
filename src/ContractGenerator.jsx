@@ -106,7 +106,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
 const pageStyle = {
   background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '297mm',
   margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
-  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '10.5pt', lineHeight: 1.05, color: '#111',
+  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.1, color: '#111',
   position: 'relative', textAlign: 'justify',
 };
 const foot = { position: 'absolute', bottom: '8mm', left: '13mm', right: '13mm', display: 'flex', justifyContent: 'space-between', fontSize: '9pt', color: '#111' };
