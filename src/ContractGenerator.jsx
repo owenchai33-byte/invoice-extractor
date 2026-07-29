@@ -106,12 +106,12 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
 const pageStyle = {
   background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '297mm',
   margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
-  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.1, color: '#111',
+  boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.05, color: '#111',
   position: 'relative', textAlign: 'justify',
 };
 const foot = { position: 'absolute', bottom: '8mm', left: '13mm', right: '13mm', display: 'flex', justifyContent: 'space-between', fontSize: '9pt', color: '#111' };
 const h = { fontWeight: 700, margin: '6px 0 3px', textAlign: 'left' };
-const li = { margin: '2px 0' };
+const li = { margin: '1px 0' };
 const ctr = { textAlign: 'center' };
 
 // ── One full 4-page contract for a single employee under a chosen outlet ──
@@ -272,7 +272,7 @@ function ContractDoc({ c, outlet, onField }) {
 
         <div style={{ display: 'flex', gap: 40, marginTop: 26 }}>
           {/* Left column: Employer Representative, then Employee below (matches the PDF) */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <div style={{ fontWeight: 600 }}>Signed by the Employer Representative:</div>
             <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: Chai Chee Choi</div>
@@ -285,7 +285,7 @@ function ContractDoc({ c, outlet, onField }) {
             <div>NRIC No.: {c.nric || ''}</div>
           </div>
           {/* Right column: Witness */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <div style={{ fontWeight: 600 }}>In the presence of, as witness:</div>
             <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: {outlet.witness.name}</div>
