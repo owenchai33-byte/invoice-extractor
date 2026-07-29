@@ -137,7 +137,7 @@ function ContractDoc({ c, outlet, onField }) {
           <CField value={c.name} onChange={set('name')} placeholder="EMPLOYEE NAME" bold center min={18} />
         </div>
         <div style={{ ...ctr, marginTop: 6 }}>[NRIC No.: <CField value={c.nric} onChange={set('nric')} placeholder="000000-00-0000" bold center min={14} />]</div>
-        <div style={{ ...ctr, marginTop: 6 }}>residing at <CField value={c.address} onChange={set('address')} placeholder="residential address" center min={30} />,</div>
+        <div style={{ ...ctr, marginTop: 6 }}>residing at<br /><CField value={c.address} onChange={set('address')} placeholder="residential address" center min={30} />,</div>
         <div style={{ ...ctr, marginTop: 10 }}>holding the position of <CField value={c.position} onChange={set('position')} placeholder="position" bold center min={12} />,</div>
         <div style={{ ...ctr, marginTop: 6 }}>with the workplace at<br />{outlet.workplace}</div>
         <div style={{ ...ctr, marginTop: 8 }}>hereinafter referred to as “the Employee”.</div>
@@ -375,7 +375,7 @@ export default function ContractGenerator() {
       const failed = results.filter(r => r._err).length;
       setCur(cs => {
         const base = (cs.length === 1 && isBlank(cs[0])) ? [] : cs;
-        return [...base, ...results.map(r => ({ id: uid(), name: r.name, nric: r.nric, address: r.address, position: '', effectiveDate: '' }))];
+        return [...base, ...results.map(r => ({ id: uid(), name: r.name, nric: r.nric, address: titleCase(r.address), position: '', effectiveDate: '' }))];
       });
       if (failed) setError(`${failed} of ${files.length} file(s) couldn’t be read — those contracts are blank, fill them in manually.`);
     } finally { setProcessing(false); }
