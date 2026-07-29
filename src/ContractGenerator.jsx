@@ -274,20 +274,20 @@ function ContractDoc({ c, outlet, onField }) {
           {/* Left column: Employer Representative, then Employee below (matches the PDF) */}
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600 }}>Signed by the Employer Representative:</div>
-            <div style={{ borderBottom: '1px solid #111', height: 60, marginTop: 6 }} />
+            <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: Chai Chee Choi</div>
             <div>NRIC No.: 720115-13-5825</div>
             <div>Designation: Managing Director</div>
 
             <div style={{ fontWeight: 600, marginTop: 34 }}>Signed by the Employee:</div>
-            <div style={{ borderBottom: '1px solid #111', height: 60, marginTop: 6 }} />
+            <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: {titleCase(c.name)}</div>
             <div>NRIC No.: {c.nric || ''}</div>
           </div>
           {/* Right column: Witness */}
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600 }}>In the presence of, as witness:</div>
-            <div style={{ borderBottom: '1px solid #111', height: 60, marginTop: 6 }} />
+            <div style={{ borderBottom: '1px solid #111', height: 130, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: {outlet.witness.name}</div>
             <div>NRIC No.: {outlet.witness.nric}</div>
             <div>Designation: {outlet.witness.designation}</div>
