@@ -406,7 +406,6 @@ export default function ContractGenerator() {
           <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>Employment Contracts — {outlet}</div>
           <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
           <div style={{ flex: 1 }} />
-          <button onClick={addBlank} style={{ ...btn, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }}>＋ Add blank</button>
           <button onClick={() => window.print()} style={{ ...btn, background: '#111', color: '#fff' }}>🖨 Print / Save PDF (all)</button>
           <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
         </div>
@@ -449,32 +448,27 @@ export default function ContractGenerator() {
         </div>
       </div>
 
-      {/* Batch tabs — click to SHOW that contract on screen (like the Choon Hua list).
-          Print still renders every contract. */}
-      {contracts.length > 1 && (
-        <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 12px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>Batches:</span>
-          {contracts.map((c, i) => (
-            <button key={c.id} onClick={() => setActiveIdx(i)}
-              style={{ ...btn, padding: '5px 12px', fontSize: 12, background: i === active ? '#111' : '#fff', color: i === active ? '#fff' : '#374151', border: '1px solid ' + (i === active ? '#111' : '#d1d5db') }}>
-              {i + 1}{c.name ? ' · ' + c.name.split(' ')[0] : ''}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Batch tabs like the Choon Hua list — click to show that contract, ✕ to remove,
+          ＋ to add a blank one. Print renders every contract regardless. */}
+      <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 12px', display: 'flex', alignItems: 'flex-end', gap: 6, flexWrap: 'wrap' }}>
+        {contracts.map((c, i) => (
+          <div key={c.id} onClick={() => setActiveIdx(i)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: '6px 6px 0 0', border: '1px solid #d1d5db', borderBottom: i === active ? '2px solid #fff' : '1px solid #d1d5db', background: i === active ? '#fff' : '#f3f4f6', color: i === active ? '#111' : '#6b7280', boxShadow: i === active ? '0 -1px 4px rgba(0,0,0,0.06)' : 'none' }}>
+            <span>Batch {i + 1}{c.name ? ' · ' + c.name.split(' ')[0] : ''}</span>
+            {contracts.length > 1 && (
+              <span onClick={e => { e.stopPropagation(); removeContract(c.id); setActiveIdx(a => (a > i ? a - 1 : a)); }}
+                style={{ color: '#9ca3af', fontWeight: 700 }} title="Remove this contract">✕</span>
+            )}
+          </div>
+        ))}
+        <button onClick={() => { addBlank(); setActiveIdx(contracts.length); }}
+          style={{ ...btn, padding: '6px 13px', fontSize: 15, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }} title="Add a blank contract">＋</button>
+      </div>
 
       {/* ── Contracts ── (screen shows only the active batch; print shows all) */}
       <div className="contract-print">
         {contracts.map((c, i) => (
           <div key={c.id} className="contract-block" style={{ display: i === active ? 'block' : 'none' }}>
-            <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>Contract {i + 1} of {contracts.length}</span>
-              <span style={{ fontSize: 13, color: '#374151' }}>{c.name || <em style={{ color: '#9ca3af' }}>unnamed</em>} · {outlet}</span>
-              <div style={{ flex: 1 }} />
-              {contracts.length > 1 && (
-                <button onClick={() => removeContract(c.id)} style={{ ...btn, padding: '4px 10px', fontSize: 12, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>✕ Remove</button>
-              )}
-            </div>
             <ContractDoc c={c} outlet={OUTLETS[outlet]} onField={onField} />
           </div>
         ))}
