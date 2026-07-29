@@ -487,7 +487,7 @@ export default function ContractGenerator() {
             box-shadow: none !important;
             margin: 0 !important;
             width: 210mm !important;
-            min-height: 292mm !important;   /* fill the A4 sheet so the footer sits at the bottom (like on screen); under 297 to avoid tipping to a 2nd sheet */
+            min-height: 280mm !important;   /* fill most of the A4 sheet (footer near bottom) but safely under the printable area so the last page can't spill a blank 5th sheet */
             padding: 15mm 13mm 13mm 13mm !important;
             box-sizing: border-box !important;
             /* Break BEFORE each page (the very first is ignored by the browser) and
