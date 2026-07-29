@@ -125,7 +125,7 @@ function ContractDoc({ c, outlet, onField }) {
           <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD. (200901034210) — No. 19-27, Jalan Petanak, 93100, Kuching, Sarawak. Tel: 082-427630  E-mail: chaijeekionghq@gmail.com" style={{ width: '100%', display: 'block' }} />
         </div>
 
-        <div style={{ ...ctr, fontWeight: 700, fontSize: 16, letterSpacing: 1, margin: '6px 0' }}>EMPLOYMENT CONTRACT</div>
+        <div style={{ ...ctr, fontWeight: 700, fontSize: '15pt', letterSpacing: 1, margin: '6px 0' }}>EMPLOYMENT CONTRACT</div>
         <div style={ctr}>BETWEEN</div>
         <div style={{ ...ctr, fontWeight: 700, marginTop: 8 }}>CHAI JEE KIONG TRADING SDN. BHD.</div>
         <div style={ctr}>[Company Registration No. 200901034210]</div>
