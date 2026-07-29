@@ -313,11 +313,15 @@ export default function ContractGenerator() {
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(byOutlet)); } catch {} }, [byOutlet]);
 
   const contracts = byOutlet[outlet] || [BLANK()];
-  // Which contract (batch) is shown on screen. Print always renders all of them.
+  // Which contract (batch) is shown on screen.
   const [activeIdx, setActiveIdx] = useState(0);
-  const active = Math.min(activeIdx, contracts.length - 1);
-  // When true, only the active contract prints (so each can be saved as its own PDF).
-  const [printOne, setPrintOne] = useState(false);
+  const [printOne, setPrintOne] = useState(false);   // 'This batch' — print only the shown contract
+  const [saveQueue, setSaveQueue] = useState(null);  // 'Save all separately' — index currently being printed
+  const origTitleRef = useRef(null);
+  // During a save-all run, the shown contract follows the queue so each prints on its own.
+  const active = (saveQueue != null && saveQueue < contracts.length) ? saveQueue : Math.min(activeIdx, contracts.length - 1);
+  const printSolo = printOne || saveQueue != null;   // print CSS shows only the active contract
+  // 'This batch' — print just the active contract, then reset.
   useEffect(() => {
     if (!printOne) return;
     const done = () => setPrintOne(false);
@@ -325,6 +329,23 @@ export default function ContractGenerator() {
     window.print();
     return () => window.removeEventListener('afterprint', done);
   }, [printOne]);
+  // 'Save all separately' — print each contract on its own (one Save-as-PDF per person,
+  // named after the employee) by walking the queue on each afterprint.
+  useEffect(() => {
+    if (saveQueue == null) return;
+    if (saveQueue >= contracts.length) {
+      setSaveQueue(null);
+      if (origTitleRef.current != null) { document.title = origTitleRef.current; origTitleRef.current = null; }
+      return;
+    }
+    if (origTitleRef.current == null) origTitleRef.current = document.title;
+    const c = contracts[saveQueue];
+    document.title = (c && c.name ? c.name : 'Contract ' + (saveQueue + 1)) + ' - ' + outlet;
+    const next = () => setSaveQueue(q => (q == null ? null : q + 1));
+    window.addEventListener('afterprint', next, { once: true });
+    window.print();
+    return () => window.removeEventListener('afterprint', next);
+  }, [saveQueue]);
   const setCur = (updater) => setByOutlet(m => ({ ...m, [outlet]: updater(m[outlet] || [BLANK()]) }));
   const onField = (id, k, v) => setCur(cs => cs.map(c => c.id === id ? { ...c, [k]: v } : c));
   const addBlank = () => setCur(cs => [...cs, BLANK()]);
@@ -416,7 +437,7 @@ export default function ContractGenerator() {
           <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
           <div style={{ flex: 1 }} />
           <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
-          <button onClick={() => window.print()} style={{ ...btn, background: '#111', color: '#fff' }}>🖨 All (one PDF)</button>
+          <button onClick={() => { if (contracts.length) setSaveQueue(0); }} style={{ ...btn, background: '#111', color: '#fff' }} title="Steps through each contract so you can Save each as its own PDF (named per employee)">🖨 Save all (separate PDFs)</button>
           <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
         </div>
 
@@ -476,7 +497,7 @@ export default function ContractGenerator() {
       </div>
 
       {/* ── Contracts ── (screen shows only the active batch; print shows all) */}
-      <div className={'contract-print' + (printOne ? ' print-one' : '')}>
+      <div className={'contract-print' + (printSolo ? ' print-one' : '')}>
         {contracts.map((c, i) => (
           <div key={c.id} className={'contract-block' + (i === active ? ' is-active' : '')} style={{ display: i === active ? 'block' : 'none' }}>
             <ContractDoc c={c} outlet={OUTLETS[outlet]} onField={onField} />
