@@ -40,6 +40,8 @@ const OUTLETS = {
   },
 };
 const OUTLET_ORDER = ['HQ', 'KC', 'ST', 'TH'];
+// Preset positions for the dropdown; the field still accepts any typed value.
+const POSITIONS = ['General Worker', 'Cashier', 'Merchandiser', 'Driver', 'Supervisor', 'Assistant Supervisor'];
 
 let _seq = 0;
 function uid() { return 'c' + Date.now().toString(36) + (_seq++).toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -76,11 +78,12 @@ Respond with ONLY this JSON and nothing else:
 {"name": null, "nric": null, "address": null, "uncertain_fields": []}`;
 
 // Inline editable variable — yellow highlight on screen, plain text in print.
-function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
+function CField({ value, onChange, placeholder, bold, center, min = 8, list }) {
   const shown = value || placeholder || '';
   return (
     <input
       className="cfield"
+      list={list}
       value={value}
       placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
@@ -141,7 +144,7 @@ function ContractDoc({ c, outlet, onField }) {
         </div>
         <div style={{ ...ctr, marginTop: 6 }}>[NRIC No.: <CField value={c.nric} onChange={set('nric')} placeholder="000000-00-0000" bold center min={14} />]</div>
         <div style={{ ...ctr, marginTop: 6 }}>residing at<br /><CField value={c.address} onChange={set('address')} placeholder="residential address" center min={30} />,</div>
-        <div style={{ ...ctr, marginTop: 10 }}>holding the position of <CField value={c.position} onChange={set('position')} placeholder="position" bold center min={12} />,</div>
+        <div style={{ ...ctr, marginTop: 10 }}>holding the position of <CField value={c.position} onChange={set('position')} placeholder="position" bold center min={12} list="cf-positions" />,</div>
         <div style={{ ...ctr, marginTop: 6 }}>with the workplace at<br />{outlet.workplace}</div>
         <div style={{ ...ctr, marginTop: 8 }}>hereinafter referred to as “the Employee”.</div>
         <div style={{ ...ctr, marginTop: 10 }}>Dated this <CField value={c.effectiveDate} onChange={set('effectiveDate')} placeholder="DD Month YYYY" bold center min={14} /> <b>(the “Effective Date”).</b></div>
@@ -463,6 +466,8 @@ export default function ContractGenerator() {
 
   return (
     <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '18px 12px 60px', fontFamily: F }}>
+      {/* Position suggestions — the field still accepts any typed value */}
+      <datalist id="cf-positions">{POSITIONS.map(p => <option key={p} value={p} />)}</datalist>
 
       {/* ── Controls (screen only) ── */}
       <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 16px' }}>
