@@ -487,12 +487,14 @@ export default function ContractGenerator() {
             box-shadow: none !important;
             margin: 0 !important;
             width: 210mm !important;
-            min-height: 290mm !important;   /* nearly a full A4 sheet, under 297 to avoid a blank overflow page */
+            min-height: 275mm !important;   /* well under 297 so it never tips a div onto a second sheet */
             padding: 15mm 13mm 13mm 13mm !important;
             box-sizing: border-box !important;
-            page-break-after: always;
+            /* Break BEFORE each page (the very first is ignored by the browser) and
+               never break after — this avoids the trailing/blank extra sheet. */
+            page-break-before: always;
+            break-before: page;
           }
-          .contract-page:last-child { page-break-after: auto; }
           body { background: #fff !important; }
         }
       `}</style>
