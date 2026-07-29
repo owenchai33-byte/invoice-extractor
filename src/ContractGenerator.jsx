@@ -349,24 +349,21 @@ export default function ContractGenerator() {
     const files = Array.from(fileList || []).filter(f => f.type?.startsWith('image/') || isPdf(f));
     if (!files.length) { setError('Please choose JPG/PNG images or PDF files of the IC / ID.'); return; }
     if (!apiKey) { setError('Enter your Anthropic API key first (box on the right).'); return; }
-    setError(null); setProcessing(true); setProg({ done: 0, total: files.length });
+    setError(null); setProcessing(true); setProg({ done: 0, total: 0 });
     try {
-      // One file = one contract. For a multi-page PDF (e.g. front+back), OCR each page
-      // and merge, so name/NRIC (front) and address (back) end up on the same record.
-      const results = await pool(files, async (f) => {
+      // Expand every file into individual IC images: each photo = one IC, and each PDF
+      // PAGE = one IC. So a single PDF holding 6 ICs (one per page) makes 6 contracts.
+      const images = [];
+      for (const f of files) {
+        try { const urls = await toDataUrls(f); for (const u of urls) images.push(u); } catch { /* unreadable file — skip */ }
+      }
+      setProg({ done: 0, total: images.length });
+      const results = await pool(images, async (img) => {
         try {
-          const urls = await toDataUrls(f);
-          const merged = { name: '', nric: '', address: '' };
-          for (const img of urls) {
-            const r = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: img, prompt: ID_PROMPT });
-            const p = parseAIJson(r.text) || {};
-            merged.name = merged.name || p.name || '';
-            merged.nric = merged.nric || p.nric || '';
-            merged.address = merged.address || p.address || '';
-            if (merged.name && merged.nric && merged.address) break;
-          }
+          const r = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, imageDataUrl: img, prompt: ID_PROMPT });
+          const p = parseAIJson(r.text) || {};
           setProg(s => ({ ...s, done: s.done + 1 }));
-          return merged;
+          return { name: p.name || '', nric: p.nric || '', address: p.address || '' };
         } catch {
           setProg(s => ({ ...s, done: s.done + 1 }));
           return { name: '', nric: '', address: '', _err: true };
@@ -377,7 +374,7 @@ export default function ContractGenerator() {
         const base = (cs.length === 1 && isBlank(cs[0])) ? [] : cs;
         return [...base, ...results.map(r => ({ id: uid(), name: r.name, nric: r.nric, address: titleCase(r.address), position: '', effectiveDate: '' }))];
       });
-      if (failed) setError(`${failed} of ${files.length} file(s) couldn’t be read — those contracts are blank, fill them in manually.`);
+      if (failed) setError(`${failed} of ${images.length} IC(s) couldn’t be read — those contracts are blank, fill them in manually.`);
     } finally { setProcessing(false); }
   };
 
@@ -420,7 +417,7 @@ export default function ContractGenerator() {
             onDrop={e => { e.preventDefault(); setDrag(false); readBatch(e.dataTransfer.files); }}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', border: '2px dashed ' + (drag ? '#c87b00' : '#c4c4c8'), borderRadius: 8, background: drag ? '#fffbeb' : '#fff', cursor: processing ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600, color: '#374151' }}
           >
-            📷 {processing ? `Reading ${prog.done}/${prog.total} IC${prog.total > 1 ? 's' : ''}…` : 'Upload IC / ID — JPG, PNG or PDF → one contract each (select several)'}
+            📷 {processing ? `Reading ${prog.done}/${prog.total} IC${prog.total > 1 ? 's' : ''}…` : 'Upload IC / ID — JPG, PNG or PDF → one contract per photo / PDF page'}
           </div>
           <input ref={fileRef} type="file" accept="image/*,application/pdf,.pdf" multiple style={{ display: 'none' }} onChange={e => { readBatch(e.target.files); e.target.value = ''; }} />
 
@@ -449,11 +446,24 @@ export default function ContractGenerator() {
         </div>
       </div>
 
+      {/* Jump-between-contracts bar (batch navigation, like the Choon Hua list) */}
+      {contracts.length > 1 && (
+        <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 12px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>Jump to:</span>
+          {contracts.map((c, i) => (
+            <button key={c.id} onClick={() => document.getElementById('ct' + i)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              style={{ ...btn, padding: '4px 10px', fontSize: 12, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }}>
+              {i + 1}{c.name ? ' · ' + c.name.split(' ')[0] : ''}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Contracts ── */}
       <div className="contract-print">
         {contracts.map((c, i) => (
           <Fragment key={c.id}>
-            <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div id={'ct' + i} className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 6px', display: 'flex', alignItems: 'center', gap: 10, scrollMarginTop: 12 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>Contract {i + 1} of {contracts.length}</span>
               <span style={{ fontSize: 13, color: '#374151' }}>{c.name || <em style={{ color: '#9ca3af' }}>unnamed</em>} · {outlet}</span>
               <div style={{ flex: 1 }} />
