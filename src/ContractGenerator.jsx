@@ -63,7 +63,7 @@ const ID_PROMPT = `You are reading a photo of a Malaysian identity card (MyKad /
 Extract ONLY what is clearly printed on the card:
 - "name": the person's FULL NAME exactly as printed (usually capital letters).
 - "nric": the IC / NRIC number as 000000-00-0000 (12 digits, keep the two dashes). Read EACH DIGIT carefully — 0/6/8, 1/7, 3/5 are easy to confuse.
-- "address": the residential address if visible (it is on the BACK of a MyKad). Put it on one line.
+- "address": the FULL residential address EXACTLY as printed on the BACK of the MyKad — copy it character for character (house/lot number, street, postcode, city, state). Do NOT paraphrase, reorder, shorten, or invent any part. Put it on one line. If the address is not clearly and fully visible, return null (never guess a partial or wrong address).
 
 ABSOLUTE RULES:
 - NEVER guess or invent. If a field is not clearly visible or you are unsure, return null for it and add its name to "uncertain_fields".
