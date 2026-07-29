@@ -243,8 +243,11 @@ const CSS=`
 .sec{background:#fff;border-radius:8px;border:1px solid #e4e4e7;overflow:hidden;margin-bottom:12px}
 .sh{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f4f4f5}
 .sht{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
-.tw{overflow-x:visible}
+.tw{overflow-x:auto}
 .t{width:100%;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums;table-layout:fixed}
+/* Full-time payroll table keeps a readable minimum width and scrolls sideways in
+   narrow / half-screen windows, instead of shrinking the figures to fit. */
+.t.ft{min-width:1100px}
 .t th{padding:5px 3px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:break-word;line-height:1.15;vertical-align:bottom}
 .t th.r{text-align:center}
 .t th.l{text-align:left}
@@ -300,7 +303,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .sh{padding:4px 0;border:none}
   .sht{font-size:10pt;font-weight:700}
   .stats{display:none!important}
-  .t{font-size:6.5pt;table-layout:fixed!important;width:100%}
+  .t{font-size:6.5pt;table-layout:fixed!important;width:100%;min-width:0!important}
   /* Explicit print column widths — sum = 100%. With bonus column (17 cols). */
   .t:not(.nb) col:nth-child(1){width:1.8%!important}   /* # */
   .t:not(.nb) col:nth-child(2){width:19%!important}    /* Name */
@@ -656,7 +659,7 @@ export default function Payroll(){
             </div>
           </div>
           <div className="tw">
-            <table className={sb?"t":"t nb"}>
+            <table className={sb?"t ft":"t ft nb"}>
               <colgroup>
                 <col style={{width:'2.5%'}}/>
                 <col style={{width:'19%'}}/>
