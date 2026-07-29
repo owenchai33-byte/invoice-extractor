@@ -105,7 +105,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
 // so it prints on Malaysian A4 paper without scaling.
 const pageStyle = {
   background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '297mm',
-  margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
+  margin: '0 auto 22px', padding: '12mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
   boxSizing: 'border-box', fontFamily: SERIF, fontSize: '11pt', lineHeight: 1.15, color: '#111',
   position: 'relative', textAlign: 'justify',
 };
@@ -492,7 +492,7 @@ export default function ContractGenerator() {
                5th sheet), and at 1.15 line-height every page's content clears it, so all
                four boxes settle at exactly 280mm. */
             min-height: 280mm !important;
-            padding: 15mm 13mm 13mm 13mm !important;
+            padding: 12mm 13mm 13mm 13mm !important;
             box-sizing: border-box !important;
             /* Break BEFORE each page (the very first is ignored by the browser) and
                never break after — this avoids the trailing/blank extra sheet. */
