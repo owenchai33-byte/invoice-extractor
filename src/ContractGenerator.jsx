@@ -99,9 +99,10 @@ function CField({ value, onChange, placeholder, bold, center, min = 8 }) {
   );
 }
 
-// Sized to match the source PDF: US Letter, Times New Roman ~12pt, ~13mm margins.
+// Matches the source PDF's look (Times New Roman ~12pt, ~13mm margins) but on A4
+// so it prints on Malaysian A4 paper without scaling.
 const pageStyle = {
-  background: '#fff', width: '215.9mm', maxWidth: '100%', minHeight: '279.4mm',
+  background: '#fff', width: '210mm', maxWidth: '100%', minHeight: '297mm',
   margin: '0 auto 22px', padding: '15mm 13mm 13mm', boxShadow: '0 1px 10px rgba(0,0,0,0.12)',
   boxSizing: 'border-box', fontFamily: SERIF, fontSize: '12pt', lineHeight: 1.25, color: '#111',
   position: 'relative', textAlign: 'justify',
@@ -268,27 +269,27 @@ function ContractDoc({ c, outlet, onField }) {
         <p style={li}>I, the undersigned, hereby acknowledge and agree to the terms and conditions outlined in this document.</p>
 
         <div style={{ display: 'flex', gap: 40, marginTop: 26 }}>
+          {/* Left column: Employer Representative, then Employee below (matches the PDF) */}
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600 }}>Signed by the Employer Representative:</div>
-            <div style={{ borderBottom: '1px solid #111', height: 46, marginTop: 6 }} />
+            <div style={{ borderBottom: '1px solid #111', height: 52, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: Chai Chee Choi</div>
             <div>NRIC No.: 720115-13-5825</div>
             <div>Designation: Managing Director</div>
+
+            <div style={{ fontWeight: 600, marginTop: 34 }}>Signed by the Employee:</div>
+            <div style={{ borderBottom: '1px solid #111', height: 52, marginTop: 6 }} />
+            <div style={{ marginTop: 4 }}>Full Name:</div>
+            <div>NRIC No.:</div>
           </div>
+          {/* Right column: Witness */}
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600 }}>In the presence of, as witness:</div>
-            <div style={{ borderBottom: '1px solid #111', height: 46, marginTop: 6 }} />
+            <div style={{ borderBottom: '1px solid #111', height: 52, marginTop: 6 }} />
             <div style={{ marginTop: 4 }}>Full Name: {outlet.witness.name}</div>
             <div>NRIC No.: {outlet.witness.nric}</div>
             <div>Designation: {outlet.witness.designation}</div>
           </div>
-        </div>
-
-        <div style={{ marginTop: 30, width: '48%' }}>
-          <div style={{ fontWeight: 600 }}>Signed by the Employee:</div>
-          <div style={{ borderBottom: '1px solid #111', height: 46, marginTop: 6 }} />
-          <div style={{ marginTop: 4 }}>Full Name: {c.name || '________________________'}</div>
-          <div>NRIC No.: {c.nric || '________________________'}</div>
         </div>
 
         <div style={foot}><span>C.J.K. Employment Contract&nbsp;&nbsp;Page 4 of 4</span><span>Employee’s Initials: ____________</span></div>
@@ -456,7 +457,7 @@ export default function ContractGenerator() {
             page-break-after: always;
           }
           .contract-page:last-child { page-break-after: auto; }
-          @page { size: letter portrait; margin: 15mm 13mm 13mm 13mm; }
+          @page { size: A4 portrait; margin: 15mm 13mm 13mm 13mm; }
           body { background: #fff !important; }
         }
       `}</style>
