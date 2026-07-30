@@ -232,10 +232,10 @@ const CSS = `
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
 .slip-box .tot .cl,.slip-box .tot .ca{font-weight:700;border-top:2px solid #000}
 
-/* NET PAY row — value box on far right matching Excel */
+/* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
 .slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
-.sn-lb{flex:1}
-.sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;min-width:6em;text-align:right}
+.sn-lb{width:26%;flex-shrink:0}
+.sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:24%;text-align:right;box-sizing:border-box}
 
 /* Signature block */
 .slip-sig{display:flex;justify-content:space-between;margin-top:1.2em;font-size:.72em}
