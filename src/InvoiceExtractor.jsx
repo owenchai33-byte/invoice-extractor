@@ -1592,7 +1592,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               <th style={{...T.th,width:86}}>DATE</th>
               <th style={{...T.th,width:120}}>INVOICE NO.</th>
               <th style={{...T.th,width:88}}>AMOUNT</th>
-              <th style={{...T.th,width:88}}>CN</th>
+              <th style={{...T.th,width:120}}>CN</th>
               <th style={T.th} colSpan={2}>TRANSPORT SUBSIDY</th>
             </tr></thead>
             <tbody>
