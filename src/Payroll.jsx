@@ -477,7 +477,7 @@ export default function Payroll(){
     const socso=calcSOCSO(socsoEisWage,a);
     const eis=calcEIS(socsoEisWage,a);
     const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
-    return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
+    return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
   },[ref,gM,pd,mk,sb]);
   const bS=useMemo(()=>staff.filter(s=>s.method==='bank').map(comp),[staff,comp]);
   const cS=useMemo(()=>staff.filter(s=>s.method==='cash').map(comp),[staff,comp]);
@@ -649,7 +649,7 @@ export default function Payroll(){
       epfP:['EPF (Pekerja)',`Statutory KWSP table · EPF wage ${fmt(sal+inc+bon)}`,r.epfP],
       jepf:['Jumlah EPF',`EPF(M) + EPF(P) = ${fmt(r.epfM)} + ${fmt(r.epfP)}`,r.epfM+r.epfP],
       socsoM:['SOCSO (Majikan)',`Statutory PERKESO table · wage ${fmt(sal+inc)}`,r.socsoM],
-      socsoP:['SOCSO (Pekerja)',`Statutory PERKESO table · wage ${fmt(sal+inc)}`,r.socsoP],
+      socsoP:['SOCSO (Pekerja)',`Keilatan + SKBBK  =  ${fmt(r.socsoInv)} + ${fmt(r.socsoSkbbk)}`,r.socsoP],
       jsocso:['Jumlah SOCSO',`SOCSO(M) + SOCSO(P) = ${fmt(r.socsoM)} + ${fmt(r.socsoP)}`,r.socsoM+r.socsoP],
       eis:['EIS',`Statutory EIS table · wage ${fmt(sal+inc)} (age 18–60 only)`,r.eisE],
       jeis:['Jumlah EIS',`EIS × 2 = ${fmt(r.eisE)} × 2`,r.eisE*2],
