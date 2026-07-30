@@ -699,8 +699,8 @@ export default function YHSExtractor({ batchId = 'default' }) {
                         style={{ background: '#fff', border: '1px solid #f3c6c6', color: '#c00', borderRadius: 3, padding: '1px 6px', cursor: 'pointer', fontSize: 12, lineHeight: 1, fontFamily: F }}>✕</button>
                     </div>
                   </td>
-                  <td style={{ ...T.td, fontWeight: 700, textAlign: 'left' }}>
-                    <EditableAmount value={inv.amount} onCommit={v => updateField(inv.id, 'amount', v)} format={fmt} align="left" invalid={inv.uncertain?.includes('total_amount')} />
+                  <td style={{ ...T.td, fontWeight: 700, textAlign: 'center' }}>
+                    <EditableAmount value={inv.amount} onCommit={v => updateField(inv.id, 'amount', v)} format={fmt} align="center" invalid={inv.uncertain?.includes('total_amount')} />
                   </td>
                   <td style={T.td}><EditableInt value={inv.qty} onCommit={v => updateField(inv.id, 'qty', v)} /></td>
                   <td style={{ ...T.td, textAlign: 'center' }}>
@@ -712,7 +712,7 @@ export default function YHSExtractor({ batchId = 'default' }) {
               {/* TOTAL row */}
               <tr>
                 <td colSpan={3} style={{ ...T.td, fontWeight: 700, textAlign: 'right', background: '#f0f0f0' }}>TOTAL:</td>
-                <td style={{ ...T.td, fontWeight: 700, textAlign: 'left', background: '#f0f0f0', paddingLeft: 12 }}>{fmt(calc.totalAmount)}</td>
+                <td style={{ ...T.td, fontWeight: 700, textAlign: 'center', background: '#f0f0f0' }}>{fmt(calc.totalAmount)}</td>
                 <td style={{ ...T.td, fontWeight: 700, background: '#f0f0f0' }}>{calc.totalCtn}</td>
                 <td style={{ ...T.td, background: '#f0f0f0' }}></td>
               </tr>
