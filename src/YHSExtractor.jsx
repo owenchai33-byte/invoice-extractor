@@ -766,13 +766,13 @@ export default function YHSExtractor({ batchId = 'default' }) {
           {/* SUMMARY DEDUCTIONS — right-aligned totals box (empty left is borderless),
               fixed columns so the block sits neatly under the invoice table's right side. */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8, tableLayout: 'fixed' }}>
-            {/* Value column (last) is 48% — same as the upper table's VOLUME BREAKDOWN —
-                so the amounts line up under it. */}
+            {/* Value column (last) ~= the upper table's VOLUME BREAKDOWN width so the
+                amounts line up under VOLUME BREAKDOWN (not QUANTITY). */}
             <colgroup>
               <col style={{ width: '14%' }} />
               <col />
               <col style={{ width: '4%' }} />
-              <col style={{ width: '48%' }} />
+              <col style={{ width: '30%' }} />
             </colgroup>
             <tbody>
               <SumRow label="TOTAL INVOICE AMOUNT:" value={calc.totalAmount} sign="" bold />
