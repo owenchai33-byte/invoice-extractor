@@ -339,8 +339,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(14){width:4%!important}    /* Jml EIS */
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
-  .t th{position:static;padding:3px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
-  .t td{padding:2px 2px;font-size:6.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
+  .t td{padding:1px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Allow name, IC, position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
   .t .gh{background:#e5e7eb!important;color:#18181b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -356,7 +356,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
-  @page{size:A4 landscape;margin:6mm}
+  @page{size:A4 landscape;margin:5mm}
 }
 .po{display:none}
 @media print{.po{display:block!important;text-align:center;margin-bottom:6px}.po div:first-child{font-size:11pt!important;font-weight:700}.po div:last-child{font-size:9.5pt!important;font-weight:600}}
