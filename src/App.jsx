@@ -4,7 +4,7 @@ import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
 
 const FEATURES = [
-  { id: 'invoice',  label: 'Invoices',  hint: 'Payment summary' },
+  { id: 'invoice',  label: 'Payment Summary',  hint: 'Supplier invoices' },
   { id: 'payroll',  label: 'Payroll',   hint: 'Monthly statements' },
   { id: 'contract', label: 'Contracts', hint: 'Employment contracts' },
 ];
