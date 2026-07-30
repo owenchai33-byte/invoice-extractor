@@ -193,7 +193,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   // and every column to its right shifts one to the left. mc() maps a logical
   // column (the always-with-bonus layout) to its physical position; L is net pay.
   const mc=c=>sb?c:(c>6?c-1:c),L=mc(16);
-  function sc(r,c,v){if(!sb&&c===6)return;ws[X.utils.encode_cell({r,c:mc(c)})]={v,t:typeof v==='number'?'n':'s'};}
+  function sc(r,c,v){if(!sb&&c===6)return;const cell={v,t:typeof v==='number'?'n':'s'};if(typeof v==='number'&&c>=4)cell.z='#,##0.00';ws[X.utils.encode_cell({r,c:mc(c)})]=cell;}
   sc(0,0,'C.J.K. CHAI JEE KIONG TRADING SDN BHD');mg.push({s:{r:0,c:0},e:{r:0,c:L}});
   sc(1,0,`HQ STAFF PAYROLL ${mn} ${yr}`);mg.push({s:{r:1,c:0},e:{r:1,c:L}});
   sc(2,0,'FULL-TIME STAFF');mg.push({s:{r:2,c:0},e:{r:2,c:L}});
