@@ -1433,13 +1433,13 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
     d.push(['NO.','DATE','INVOICE NO.','AMOUNT','CN','','TRANSPORT SUBSIDY','']);
     invoices.forEach((inv,idx)=>{const cn=cnValues[inv.id]||0;const cnn=cnNums[inv.id]||'';inv.groups.forEach((g,gi)=>{
       const invNoCell=gi===0?(cnn?inv.raw.invoice_no+'\n'+cnn:inv.raw.invoice_no):'';
-      d.push([gi===0?idx+1:'',gi===0?inv.raw.invoice_date:'',invNoCell,gi===0?inv.raw.total_amount:'',gi===0&&cn?-cn:'','',g.label,'']);
+      d.push([gi===0?idx+1:'',gi===0?inv.raw.invoice_date:'',invNoCell,gi===0?inv.raw.total_amount:'',gi===0&&cn?cn:'','',g.label,'']);
       d.push(['','','','','','',g.ctn+' CTN x RM'+g.rate.toFixed(2)+' =',g.ctn*g.rate]);
       d.push(['','','','','','','+ 0.4% =',inv.subsidy.p1]);
       d.push(['','','','','','','+ 0.2% =',inv.subsidy.p2]);
     });});
     // Column footer: invoice total under AMOUNT (col D, index 3), CN sum under CN (col E, index 4).
-    d.push(['','','TOTAL:',gT,totalCn?-totalCn:0,'','','']);
+    d.push(['','','TOTAL:',gT,totalCn||0,'','','']);
     d.push([]);
     d.push(['','','','','','','CARTON:',gC]);
     d.push(['','','','','','','0.4%:',gP1]);
@@ -1637,7 +1637,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       </div>
                       <input type="text" value={cnNums[inv.id]||''} placeholder="CN no."
                         onChange={e=>setCnNums(prev=>({...prev,[inv.id]:e.target.value}))} className="noP"
-                        style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:12,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
+                        style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:14,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
                     </td>
                     <td style={{...T.td,fontWeight:700,textAlign:'right'}}>
                       <EditableAmount
@@ -1652,7 +1652,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
-                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
+                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>{fmt(cn)}</div>}
                     </td>
                     <td style={{...T.td,padding:8}} colSpan={2}>
                       <div className="noP" style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
@@ -1705,7 +1705,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       </div>
                       <input type="text" value={cnNums[inv.id]||''} placeholder="CN no."
                         onChange={e=>setCnNums(prev=>({...prev,[inv.id]:e.target.value}))} className="noP"
-                        style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:12,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
+                        style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:14,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
                     </td>}
                     {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative',textAlign:'right'}} rowSpan={rc}>
                       <EditableAmount
@@ -1720,7 +1720,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
-                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>-{fmt(cn)}</div>}
+                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>{fmt(cn)}</div>}
                     </td>}
                     <td colSpan={2} style={{
                       border:B,
@@ -1845,7 +1845,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               <tr>
                 <td colSpan={3} style={{border:'none'}}/>
                 <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:16,textAlign:'center',fontVariantNumeric:'tabular-nums'}}>{fmt(gT)}</td>
-                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,textAlign:'center',fontVariantNumeric:'tabular-nums',color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,textAlign:'center',fontVariantNumeric:'tabular-nums',color:totalCn?'#c00':'#000'}}>{totalCn?fmt(totalCn):'RM0.00'}</td>
                 <td colSpan={2} style={{border:'none'}}/>
               </tr>
               {/* SUMMARY BOX — right-aligned subsidy breakdown */}
