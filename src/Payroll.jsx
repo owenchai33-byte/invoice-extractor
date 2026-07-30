@@ -368,7 +368,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
-  .t td{padding:3px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Allow name, IC, position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
   .t .gh{background:#e5e7eb!important;color:#18181b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
