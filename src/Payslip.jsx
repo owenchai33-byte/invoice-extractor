@@ -254,10 +254,13 @@ const CSS = `
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:10pt;padding:4mm 12mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
+  .ps-page .slip{width:100%;font-size:12pt;line-height:1.6;padding:3mm 10mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
+  .ps-page .slip-box th,.ps-page .slip-box td{padding:.35em .5em}
+  .ps-page .slip-ti{margin:.5em 0 .4em}
+  .ps-page .slip-info{margin-bottom:.4em}
   .ps-page .slip-sig{flex:1}
   .ps-page .sig-bottom{margin-top:auto}
   .slip-blank{border:none!important;height:50vh}
-  @page{size:A4 portrait;margin:8mm 15mm}
+  @page{size:A4 portrait;margin:5mm 10mm}
 }
 `;
