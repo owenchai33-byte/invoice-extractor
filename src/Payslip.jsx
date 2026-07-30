@@ -232,10 +232,10 @@ const CSS = `
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
 .slip-box .tot .cl,.slip-box .tot .ca{font-weight:700;border-top:2px solid #000}
 
-/* NET PAY row — bordered box */
+/* NET PAY row — value box aligned with earnings AMOUNT column */
 .slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
-.sn-lb{flex:1}
-.sn-val{border:1.5px solid #000;padding:.25em .6em;font-variant-numeric:tabular-nums;min-width:6em;text-align:right}
+.sn-lb{width:26%;flex-shrink:0}
+.sn-val{border:1.5px solid #000;padding:.25em .6em;font-variant-numeric:tabular-nums;width:24%;text-align:right;box-sizing:border-box}
 
 /* Signature block */
 .slip-sig{display:flex;justify-content:space-between;margin-top:1.2em;font-size:.72em}
@@ -251,8 +251,8 @@ const CSS = `
   .no-print{display:none!important}
   .ps-root{background:#fff}
   .ps-print{display:block}
-  .ps-page{display:flex;flex-direction:column;gap:4mm;align-items:center;page-break-after:always;padding-top:4mm}
-  .ps-page .slip{width:170mm;font-size:9pt;padding:.8em 1.2em .6em}
+  .ps-page{display:flex;flex-direction:column;gap:4mm;page-break-after:always;padding-top:4mm}
+  .ps-page .slip{width:100%;font-size:9pt;padding:.8em 0 .6em}
   .ps-page .slip-ti{margin:.4em 0 .3em}
   .ps-page .slip-info{margin-bottom:.3em}
   .ps-page .slip-net{margin-top:.3em}
