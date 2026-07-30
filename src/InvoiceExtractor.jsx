@@ -964,11 +964,13 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
   // Recalculate 0.4%/0.2% subsidies when CN values change (percentages are on amt-cn)
   useEffect(()=>{
     setInvoices(prev=>{
+      if(!prev.length) return prev;
       let changed=false;
       const next=prev.map(inv=>{
+        if(!inv?.raw || !inv?.groups || !inv?.subsidy) return inv;
         const cn=cnValues[inv.id]||0;
         const sub=calcSub(inv.raw.total_amount-cn,inv.groups,config.pct1,config.pct2);
-        if(Math.abs(sub.p1-inv.subsidy.p1)>0.001||Math.abs(sub.p2-inv.subsidy.p2)>0.001){
+        if(Math.abs(sub.p1-(inv.subsidy.p1||0))>0.001||Math.abs(sub.p2-(inv.subsidy.p2||0))>0.001){
           changed=true;
           return {...inv,subsidy:sub};
         }
