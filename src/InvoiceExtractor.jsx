@@ -821,7 +821,7 @@ function EditableCtn({value,onCommit}){
       onBlur={commit}
       onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape'){setLocal(String(value));setEditing(false);} }}
       className="noP"
-      style={{width:50,border:'1px solid #2563eb',borderRadius:3,padding:'1px 4px',fontSize:15,fontFamily:F,textAlign:'right',fontWeight:600,verticalAlign:'baseline'}}/>;
+      style={{width:50,border:'1px solid #2563eb',borderRadius:3,padding:'1px 4px',fontSize:16,fontFamily:F,textAlign:'right',fontWeight:600,verticalAlign:'baseline'}}/>;
   }
   return <span
     onClick={()=>setEditing(true)}
@@ -849,7 +849,7 @@ export function EditableText({value,onCommit,placeholder='—',invalid=false,ali
       onBlur={commit}
       onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape'){setLocal(String(value||''));setEditing(false);} }}
       className="noP"
-      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'2px 4px',fontSize:15,fontFamily:F,textAlign:align,boxSizing:'border-box',background:'#fff'}}/>;
+      style={{width:'100%',border:'1px solid #2563eb',borderRadius:3,padding:'2px 4px',fontSize:16,fontFamily:F,textAlign:align,boxSizing:'border-box',background:'#fff'}}/>;
   }
   return <span
     onClick={()=>setEditing(true)}
@@ -1793,7 +1793,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               {/* COLUMN FOOTER — invoice-total under AMOUNT column, credit-note under CN column */}
               <tr>
                 <td colSpan={3} style={{border:'none'}}/>
-                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:18,textAlign:'center',fontVariantNumeric:'tabular-nums'}}>{fmt(gT)}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:16,textAlign:'center',fontVariantNumeric:'tabular-nums'}}>{fmt(gT)}</td>
                 <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,textAlign:'center',fontVariantNumeric:'tabular-nums',color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
                 <td colSpan={2} style={{border:'none'}}/>
               </tr>
