@@ -67,17 +67,18 @@ function Slip({ r, mo, yr }) {
         <span className="sn-val">{numFmt(r.netPay)}</span>
       </div>
 
-      {/* Signature block */}
+      {/* Signature block — labels at top, lines at bottom, gap in between */}
       <div className="slip-sig">
-        <div className="sig-left">
-          <div className="sig-label">AUTHORISED BY</div>
-          <div className="sig-line"></div>
-          <div className="sig-name">CHAI CHEE CHOI</div>
-          <div className="sig-title">DIRECTOR</div>
-        </div>
-        <div className="sig-right">
-          <div className="sig-label">RECEIVED BY</div>
-          <div className="sig-line"></div>
+        <div className="sig-labels"><span>AUTHORISED BY</span><span>RECEIVED BY</span></div>
+        <div className="sig-bottom">
+          <div className="sig-col">
+            <div className="sig-line"></div>
+            <div className="sig-name">CHAI CHEE CHOI</div>
+            <div className="sig-title">DIRECTOR</div>
+          </div>
+          <div className="sig-col">
+            <div className="sig-line"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -237,10 +238,11 @@ const CSS = `
 .sn-lb{width:26%;flex-shrink:0}
 .sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:24%;text-align:right;box-sizing:border-box}
 
-/* Signature block */
-.slip-sig{display:flex;justify-content:space-between;margin-top:1.2em;font-size:.72em}
-.sig-left,.sig-right{width:40%}
-.sig-label{margin-bottom:2em}
+/* Signature block — labels top, lines bottom, signing gap between */
+.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.72em}
+.sig-labels{display:flex;justify-content:space-between;font-weight:700}
+.sig-bottom{display:flex;justify-content:space-between;margin-top:2em}
+.sig-col{width:40%}
 .sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
 .sig-name{font-weight:700}
 .sig-title{font-weight:700}
@@ -253,8 +255,8 @@ const CSS = `
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
   .ps-page .slip{width:100%;font-size:10pt;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
-  .ps-page .slip-sig{margin-top:auto}
-  .ps-page .sig-label{margin-bottom:30mm}
+  .ps-page .slip-sig{flex:1}
+  .ps-page .sig-bottom{margin-top:auto}
   .slip-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:8mm 15mm}
 }
