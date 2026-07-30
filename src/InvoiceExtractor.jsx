@@ -387,7 +387,7 @@ function recomputeIssues(inv, allInvoices){
 // ============================================================
 const PROMPT=`You are an invoice data extractor for Malaysian wholesale distributors. Analyze this invoice image carefully and extract ALL data into this exact JSON format. Respond with ONLY valid JSON — no markdown, no backticks, no explanation.
 
-{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80,"uncertain_fields":[]}
+{"supplier":"full supplier company name from the invoice header","invoice_no":"the document number","invoice_date":"DD/MM/YYYY","doc_type":"invoice","ref_invoice_no":"","items":[{"description":"full product description exactly as printed including the product code like 320MLALSCN1X12","product_code":"product code","qty":20,"unit":"CS","list_price":42.46,"amount":849.20,"volume_ml":1500,"pack_size":12,"is_foc":false}],"total_qty":514,"total_amount":20380.80,"uncertain_fields":[]}
 
 ============================================================
 ABSOLUTE TRUTHFULNESS — THE MOST IMPORTANT RULES:
@@ -456,6 +456,14 @@ EXTRACTION RULES:
 12. supplier: From the TOP HEADER of the invoice (the company that ISSUED the invoice), NOT "Ship To" / "Bill To" / customer address blocks. If unsure, the supplier is usually the largest/most prominent company name at the top.
 
 13. uncertain_fields: ARRAY of top-level field names where you had ANY doubt about the reading. Possible values: "invoice_no", "invoice_date", "supplier", "total_amount", "total_qty". BE LIBERAL — when in doubt, FLAG IT. The human reviewer will verify and clear false flags; that's much better than letting a wrong value slip through unflagged.
+
+14. doc_type: MUST be either "invoice" or "credit_note". A CREDIT NOTE (CN) is a document that REDUCES the amount owed. Identify it by:
+   - Document number starts with "C" or "CN" (e.g. C993003240, CN12345) instead of "IN"
+   - Title/header says "Credit Note" or "Credit Memo"
+   - The total amount is NEGATIVE (shown as a minus or in brackets)
+   If it's a credit note, set doc_type to "credit_note". Otherwise set "invoice".
+
+15. ref_invoice_no: ONLY for credit notes (doc_type="credit_note"). Extract the ORIGINAL INVOICE NUMBER that this credit note refers to. Credit notes usually reference the original invoice somewhere on the document (e.g. "Ref: IN93023582", "Original Invoice: IN93023582"). If you cannot find a reference, set to empty string "". For regular invoices, always set to "".
 
 ============================================================
 SELF-CHECK BEFORE RESPONDING:
@@ -1304,7 +1312,9 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               try { imagePreview = await downsizeBase64ToJPEG(reader.result, 1024, 0.7); }
               catch(e) { console.warn('Image preview generation failed for', file.name, e); }
 
-              resolve({raw:parsed,items,groups,subsidy:sub,id,issues,declaredTotal, image: imagePreview, _issuesDismissed:false, _manuallyAssigned:false});
+              const docType = (parsed.doc_type||'').toLowerCase()==='credit_note' ? 'credit_note' : 'invoice';
+              const refInvNo = (parsed.ref_invoice_no||'').trim();
+              resolve({raw:parsed,items,groups,subsidy:sub,id,issues,declaredTotal, image: imagePreview, _issuesDismissed:false, _manuallyAssigned:false, _docType:docType, _refInvNo:refInvNo});
               return;
             }catch(inner){lastErr=inner;}
           }
@@ -1357,12 +1367,37 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
       setError(prev=>(prev?prev+'\n':'')+`Failed: ${s.item.name} — ${s.error.message}`);
     });
     if(results.length>0){
-      // PATCH 6b — merge new results, then recompute issues for everything (catches dups within batch + against existing)
+      // Separate credit notes from regular invoices
+      const newInvoices = results.filter(r => r._docType !== 'credit_note');
+      const creditNotes = results.filter(r => r._docType === 'credit_note');
+
+      // PATCH 6b — merge new invoices, then recompute issues for everything
       setInvoices(prev => {
-        const merged = [...prev, ...results];
+        const merged = [...prev, ...newInvoices];
+        // Auto-link credit notes to matching invoices
+        if(creditNotes.length > 0){
+          creditNotes.forEach(cn => {
+            const cnNo = cn.raw.invoice_no || '';
+            const cnAmt = Math.abs(cn.raw.total_amount || 0);
+            const refNo = cn._refInvNo;
+            // Try to find the referenced invoice by ref_invoice_no, else by closest match
+            let target = refNo ? merged.find(inv => inv.raw.invoice_no === refNo) : null;
+            if(!target){
+              // Fallback: find an invoice without a CN already linked
+              // (user can always manually reassign)
+            }
+            if(target){
+              setCnNums(p => ({...p, [target.id]: cnNo}));
+              setCnValues(p => ({...p, [target.id]: cnAmt}));
+            } else {
+              // No matching invoice found — add CN as a regular row so it's not lost
+              merged.push(cn);
+            }
+          });
+        }
         return merged.map(inv => ({...inv, issues: recomputeIssues(inv, merged)}));
       });
-      setCnValues(prev=>{const next={...prev};results.forEach(r=>{if(next[r.id]==null)next[r.id]=0;});return next;});
+      setCnValues(prev=>{const next={...prev};newInvoices.forEach(r=>{if(next[r.id]==null)next[r.id]=0;});return next;});
     }
     setUploading(false);setProcessing(false);
     if(fileRef.current) fileRef.current.value='';
