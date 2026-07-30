@@ -457,13 +457,19 @@ EXTRACTION RULES:
 
 13. uncertain_fields: ARRAY of top-level field names where you had ANY doubt about the reading. Possible values: "invoice_no", "invoice_date", "supplier", "total_amount", "total_qty". BE LIBERAL — when in doubt, FLAG IT. The human reviewer will verify and clear false flags; that's much better than letting a wrong value slip through unflagged.
 
-14. doc_type: MUST be either "invoice" or "credit_note". A CREDIT NOTE (CN) is a document that REDUCES the amount owed. Identify it by:
-   - Document number starts with "C" or "CN" (e.g. C993003240, CN12345) instead of "IN"
-   - Title/header says "Credit Note" or "Credit Memo"
-   - The total amount is NEGATIVE (shown as a minus or in brackets)
-   If it's a credit note, set doc_type to "credit_note". Otherwise set "invoice".
+14. doc_type: MUST be either "invoice" or "credit_note". A CREDIT NOTE (CN) is a document that REDUCES the amount owed. Identify it by ANY of:
+   - The "Document Type" field (top-right header area) says "CREDIT NOTE"
+   - Document number starts with "CN" (e.g. CN93003240) instead of "IN"
+   - The total amount is NEGATIVE (shown with a minus sign or in brackets)
+   - The footer says "Computer Generated Credit Note"
+   If ANY of these are true, set doc_type to "credit_note". Otherwise set "invoice".
+   For credit notes, invoice_no is the CN document number (e.g. "CN93003240"). For the amount, use the ABSOLUTE value (positive) — e.g. if printed as -2,502.20, set total_amount to 2502.20.
 
-15. ref_invoice_no: ONLY for credit notes (doc_type="credit_note"). Extract the ORIGINAL INVOICE NUMBER that this credit note refers to. Credit notes usually reference the original invoice somewhere on the document (e.g. "Ref: IN93023582", "Original Invoice: IN93023582"). If you cannot find a reference, set to empty string "". For regular invoices, always set to "".
+15. ref_invoice_no: ONLY for credit notes (doc_type="credit_note"). Extract the ORIGINAL INVOICE NUMBER that this credit note refers to. Look in these places (Choon Hua layout):
+   - "Ref No." field in the header table (middle row, e.g. "Ref No.: IN93023804")
+   - "Delivery Instructions" line (e.g. "Delivery Instructions: IN93023804")
+   - "RETURN REF. DOCUMENT NO" in the ADDITIONAL REMARKS section at the bottom
+   All three should match. Extract the "IN..." number. If you cannot find any reference, set to empty string "". For regular invoices, always set to "".
 
 ============================================================
 SELF-CHECK BEFORE RESPONDING:
