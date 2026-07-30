@@ -249,9 +249,14 @@ const CSS = `
   .no-print{display:none!important}
   .ps-root{background:#fff}
   .ps-print{display:block}
-  .ps-page{display:flex;flex-direction:column;gap:8mm;align-items:center;page-break-after:always;padding-top:6mm}
-  .ps-page .slip{width:170mm;font-size:10.5pt}
+  .ps-page{display:flex;flex-direction:column;gap:4mm;align-items:center;page-break-after:always;padding-top:4mm}
+  .ps-page .slip{width:170mm;font-size:9pt;padding:.8em 1.2em .6em}
+  .ps-page .slip-ti{margin:.4em 0 .3em}
+  .ps-page .slip-info{margin-bottom:.3em}
+  .ps-page .slip-net{margin-top:.3em}
+  .ps-page .slip-sig{margin-top:.6em}
+  .ps-page .sig-label{margin-bottom:1.2em}
   .slip-blank{border:none!important}
-  @page{size:A4 portrait;margin:8mm 15mm}
+  @page{size:A4 portrait;margin:6mm 12mm}
 }
 `;

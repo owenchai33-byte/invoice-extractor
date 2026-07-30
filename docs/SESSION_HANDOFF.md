@@ -9,9 +9,10 @@
 ## 0. ⚠️ MOST URGENT — the OpenClaw "Tomcat" agent is burning credit fast
 
 There's a **self-hosted OpenClaw WhatsApp agent** on this Mac that Owen built to let his
-non-technical sister request app fixes by text. It's set to **FULL-AUTO on Claude Opus 4.8**
-(the most expensive model) and has been shipping commits on its own for days. That autonomous
-Opus loop is the credit drain Owen is worried about.
+non-technical sister request app fixes by text. It's **FULL-AUTO** and has been shipping commits on
+its own for days — that autonomous Opus loop is the credit drain Owen was worried about. **As of
+2026-07-30 its model was set to `claude-cli/claude-opus-4-6` at `thinkingDefault: high`** (down from
+Opus 4.8) to rein in cost. If it's still too much, throttle further below.
 
 **To throttle / stop it (pick one):**
 ```bash
@@ -106,7 +107,7 @@ One OpenClaw gateway, **two agents** routed by `bindings` (matched by whatsapp `
   `ALLOW_DEPLOY=1 git push origin main` → tells the sister it's live. **No human approval step.**
 - **Gotcha:** an OpenClaw agent **can't message a *different* number** from within a chat (platform
   policy) — that's why an earlier "ping Owen for approval" design dead-ended; the fix was removing it.
-- Model: `claude-cli/claude-opus-4-8` → **this is the credit cost.** See §0 to change it.
+- Model (set 2026-07-30): `claude-cli/claude-opus-4-6`, `thinkingDefault: high` → **main credit cost.** See §0 to change further.
 
 ---
 
