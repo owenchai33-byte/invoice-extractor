@@ -179,11 +179,11 @@ function EditableInt({ value, onCommit, placeholder = '0', width = 60 }) {
       onBlur={commit}
       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setLocal(String(value ?? '')); setEditing(false); } }}
       className="noP"
-      style={{ width, border: '1px solid #2563eb', borderRadius: 3, padding: '2px 4px', fontSize: 15, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />;
+      style={{ width, border: '1px solid #2563eb', borderRadius: 3, padding: '2px 4px', fontSize: 16, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />;
   }
   return <span onClick={() => setEditing(true)} className="editable-text"
     title="Click to edit"
-    style={{ display: 'inline-block', minWidth: 34, cursor: 'text', padding: '2px 4px', borderRadius: 3, fontSize: 15, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: (value ? '#000' : '#bbb') }}>
+    style={{ display: 'inline-block', minWidth: 34, cursor: 'text', padding: '2px 4px', borderRadius: 3, fontSize: 16, textAlign: 'center', fontVariantNumeric: 'tabular-nums', color: (value ? '#000' : '#bbb') }}>
     {value ? value : placeholder}
   </span>;
 }
@@ -282,7 +282,7 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
         <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
           <EditableVol ml={ml} onCommit={newMl => changeInvVol(inv.id, ml, newMl)} />
           <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
-          <span style={{ color: '#888', fontSize: 12 }}>CTN</span>
+          <span style={{ color: '#888', fontSize: 16 }}>CTN</span>
           <button className="noP" onClick={() => removeInvVol(inv.id, ml)} title="Remove volume"
             style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
         </div>
