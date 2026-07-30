@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import InvoicesWorkspace from './InvoicesWorkspace';
 import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
+import Payslip from './Payslip';
 
 const FEATURES = [
   { id: 'invoice',  label: 'Payment Summary',  hint: 'Supplier invoices' },
   { id: 'payroll',  label: 'Payroll',   hint: 'Monthly statements' },
   { id: 'contract', label: 'Contracts', hint: 'Employment contracts' },
+  { id: 'payslip',  label: 'Payslip',   hint: 'Staff payslips' },
 ];
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
@@ -188,6 +190,7 @@ export default function App() {
         {active === 'invoice' && <InvoicesWorkspace />}
         {active === 'payroll' && <Payroll />}
         {active === 'contract' && <ContractGenerator />}
+        {active === 'payslip' && <Payslip />}
       </main>
 
       <style>{`
