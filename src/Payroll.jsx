@@ -261,7 +261,7 @@ const CSS=`
 .bo{background:#fff;color:#3f3f46;border:1px solid #d4d4d8}.bo:hover{background:#fafafa;border-color:#a1a1aa}
 .bg{background:transparent;color:#71717a}.bg:hover{color:#18181b;background:#f4f4f5}
 .br{color:#dc2626;background:transparent}.br:hover{background:#fef2f2}
-.body{max-width:100%;margin:0 auto;padding:12px}
+.body{max-width:100%;margin:0 auto;padding:12px;padding-bottom:30px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .st{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e4e4e7}
 .stl{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#a1a1aa;margin-bottom:3px}
@@ -394,6 +394,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .fxhint{font-size:12.5px;color:#a1a1aa}
 .fxc{cursor:pointer}
 .fxc:hover{background:#eff6ff;outline:1px solid #bfdbfe}
+/* Sticky horizontal scrollbar pinned to the viewport bottom, synced to the payroll table */
+.hbar{position:fixed;bottom:0;left:13px;right:13px;height:16px;overflow-x:auto;overflow-y:hidden;z-index:60;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -1px 3px rgba(0,0,0,.06)}
+.hbar::-webkit-scrollbar{height:14px}
+.hbar::-webkit-scrollbar-thumb{background:#c4c4cc;border-radius:7px;border:3px solid #fff}
+@media print{.hbar{display:none!important}}
 `;
 export default function Payroll(){
   const now=new Date();
@@ -412,6 +417,19 @@ export default function Payroll(){
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
   const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
   const[sel,setSel]=useState(null);      // formula-bar: currently clicked cell {who,label,formula,value}
+  // Sticky horizontal scrollbar: lets the wide payroll table scroll left/right from any
+  // vertical position, instead of forcing a scroll to the very bottom to reach the native bar.
+  const twRef=useRef(null),hbRef=useRef(null);
+  const[hbW,setHbW]=useState(0),[hbShow,setHbShow]=useState(false);
+  useEffect(()=>{
+    const el=twRef.current;if(!el)return;
+    const measure=()=>{setHbW(el.scrollWidth);setHbShow(el.scrollWidth>el.clientWidth+2);};
+    measure();window.addEventListener('resize',measure);
+    const id=setTimeout(measure,100); // re-measure after layout settles
+    return()=>{window.removeEventListener('resize',measure);clearTimeout(id);};
+  });
+  const onTwScroll=()=>{if(hbRef.current&&twRef.current)hbRef.current.scrollLeft=twRef.current.scrollLeft;};
+  const onHbScroll=()=>{if(hbRef.current&&twRef.current)twRef.current.scrollLeft=hbRef.current.scrollLeft;};
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
@@ -717,7 +735,7 @@ export default function Payroll(){
               </div>}
             </div>
           </div>
-          <div className="tw">
+          <div className="tw" ref={twRef} onScroll={onTwScroll}>
             <table className={sb?"t ft":"t ft nb"}>
               <colgroup>
                 <col style={{width:'2.5%'}}/>
@@ -768,6 +786,11 @@ export default function Payroll(){
           </div>
           {notes.length>0&&<div className="notes">{notes.map((n,i)=><p key={i}>{n}</p>)}</div>}
         </div>
+        {hbShow && (
+          <div className="hbar no-print" ref={hbRef} onScroll={onHbScroll} title="Scroll the table left / right">
+            <div style={{width:hbW,height:1}}/>
+          </div>
+        )}
         {pt.length>0 && (
         <div className="sec">
           <div className="sh"><div className="sht">Part-Time Staff</div></div>
