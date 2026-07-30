@@ -942,6 +942,12 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
   const fileRef=useRef(null);
   const uploadAreaRef=useRef(null);
 
+  // Supplier config (rate table + subsidy percentages). Constant lookup — declared
+  // up here because effects/handlers below reference `config` during render (e.g.
+  // the CN-recalc effect's dependency array). Declaring it lower down puts it in a
+  // temporal dead zone and crashes the whole component on mount.
+  const config=SUPPLIERS['CHOON HUA'];
+
   // When user clicks "+ Add Invoice", scroll the upload dropzone into view.
   // Without this, the dropzone renders below the existing invoice table — off-screen
   // since the user already scrolled down to click the button. Looks like nothing happened.
@@ -963,24 +969,27 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
 
   // Recalculate 0.4%/0.2% subsidies when CN values change (percentages are on amt-cn)
   useEffect(()=>{
-    setInvoices(prev=>{
-      if(!prev.length) return prev;
-      let changed=false;
-      const next=prev.map(inv=>{
-        if(!inv?.raw || !inv?.groups || !inv?.subsidy) return inv;
-        const cn=cnValues[inv.id]||0;
-        const sub=calcSub(inv.raw.total_amount-cn,inv.groups,config.pct1,config.pct2);
-        if(Math.abs(sub.p1-(inv.subsidy.p1||0))>0.001||Math.abs(sub.p2-(inv.subsidy.p2||0))>0.001){
-          changed=true;
-          return {...inv,subsidy:sub};
-        }
-        return inv;
+    try{
+      setInvoices(prev=>{
+        if(!prev.length) return prev;
+        let changed=false;
+        const next=prev.map(inv=>{
+          try{
+            if(!inv?.raw || !inv?.groups || !inv?.subsidy) return inv;
+            const cn=cnValues[inv.id]||0;
+            if(!cn) return inv;
+            const sub=calcSub(inv.raw.total_amount-cn,inv.groups,config.pct1,config.pct2);
+            if(Math.abs(sub.p1-(inv.subsidy.p1||0))>0.001||Math.abs(sub.p2-(inv.subsidy.p2||0))>0.001){
+              changed=true;
+              return {...inv,subsidy:sub};
+            }
+          }catch(e){ console.warn('CN recalc skip',inv?.id,e); }
+          return inv;
+        });
+        return changed?next:prev;
       });
-      return changed?next:prev;
-    });
-  },[cnValues,config]);
-
-  const config=SUPPLIERS['CHOON HUA'];
+    }catch(e){ console.error('CN recalc effect error',e); }
+  },[cnValues]);
 
   // The live invoice being previewed (lookup ensures it stays in sync with edits)
   const previewInv = previewInvId ? invoices.find(i => i.id === previewInvId) : null;
