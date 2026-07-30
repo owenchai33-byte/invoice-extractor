@@ -239,13 +239,13 @@ const CSS = `
 .sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:24%;text-align:right;box-sizing:border-box}
 
 /* Signature block — labels top, lines bottom, signing gap between */
-.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.72em}
+.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%}
 .sig-labels{display:flex;justify-content:space-between;font-weight:700}
 .sig-bottom{display:flex;justify-content:space-between;margin-top:2em}
-.sig-col{width:40%}
+.sig-col{width:28%}
 .sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
-.sig-name{font-weight:700}
-.sig-title{font-weight:700}
+.sig-name{font-weight:700;text-align:center}
+.sig-title{font-weight:700;text-align:center}
 
 /* Print: all payslips, 2 per A4 — each slip fills exactly half the page */
 .ps-print{display:none}
