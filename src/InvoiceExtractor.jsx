@@ -911,6 +911,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
   // localStorage, namespaced by batchId. (Choon Hua previously didn't persist at all.)
   const LS_INV = `choonhua_invoices__${batchId}`;
   const LS_CN  = `choonhua_cn__${batchId}`;
+  const LS_CNN = `choonhua_cnnum__${batchId}`;
   const [invoices,setInvoices]=useState(()=>{ try{ return JSON.parse(localStorage.getItem(LS_INV))||[] }catch{ return [] } });
   const [uploading,setUploading]=useState(false);
   const [processing,setProcessing]=useState(false);
@@ -918,6 +919,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
   const [error,setError]=useState(null);
   const [drag,setDrag]=useState(false);
   const [cnValues,setCnValues]=useState(()=>{ try{ return JSON.parse(localStorage.getItem(LS_CN))||{} }catch{ return {} } });
+  const [cnNums,setCnNums]=useState(()=>{ try{ return JSON.parse(localStorage.getItem(LS_CNN))||{} }catch{ return {} } });
   const [apiKey,setApiKey]=useState('');
   const [keyInput,setKeyInput]=useState('');
   const [showSettings,setShowSettings]=useState(false);
@@ -943,6 +945,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
   // opening a new tab never touches another tab's stored data.
   useEffect(()=>{ try{ localStorage.setItem(LS_INV, JSON.stringify(invoices)) }catch{} },[invoices,LS_INV]);
   useEffect(()=>{ try{ localStorage.setItem(LS_CN, JSON.stringify(cnValues)) }catch{} },[cnValues,LS_CN]);
+  useEffect(()=>{ try{ localStorage.setItem(LS_CNN, JSON.stringify(cnNums)) }catch{} },[cnNums,LS_CNN]);
 
   const config=SUPPLIERS['CHOON HUA'];
 
@@ -1387,8 +1390,9 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
     d.push([CO.name+' '+CO.reg]);d.push([CO.addr]);d.push(['Tel: '+CO.tel+'    E-mail: '+CO.email]);
     d.push([]);d.push(['PAYMENT SUMMARY']);d.push(['SUPPLIER: '+config.name]);d.push([]);
     d.push(['NO.','DATE','INVOICE NO.','AMOUNT','CN','','TRANSPORT SUBSIDY','']);
-    invoices.forEach((inv,idx)=>{const cn=cnValues[inv.id]||0;inv.groups.forEach((g,gi)=>{
-      d.push([gi===0?idx+1:'',gi===0?inv.raw.invoice_date:'',gi===0?inv.raw.invoice_no:'',gi===0?inv.raw.total_amount:'',gi===0&&cn?-cn:'','',g.label,'']);
+    invoices.forEach((inv,idx)=>{const cn=cnValues[inv.id]||0;const cnn=cnNums[inv.id]||'';inv.groups.forEach((g,gi)=>{
+      const invNoCell=gi===0?(cnn?inv.raw.invoice_no+'\n'+cnn:inv.raw.invoice_no):'';
+      d.push([gi===0?idx+1:'',gi===0?inv.raw.invoice_date:'',invNoCell,gi===0?inv.raw.total_amount:'',gi===0&&cn?-cn:'','',g.label,'']);
       d.push(['','','','','','',g.ctn+' CTN x RM'+g.rate.toFixed(2)+' =',g.ctn*g.rate]);
       d.push(['','','','','','','+ 0.4% =',inv.subsidy.p1]);
       d.push(['','','','','','','+ 0.2% =',inv.subsidy.p2]);
@@ -1408,7 +1412,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
     XLSX.writeFile(wb,'Payment_Summary_'+config.name.split(' ')[0]+'.xlsx');
   };
 
-  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setManualEntry({});setPreviewInvId(null);if(fileRef.current)fileRef.current.value='';};
+  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setCnNums({});setManualEntry({});setPreviewInvId(null);if(fileRef.current)fileRef.current.value='';};
   const showUpload=invoices.length===0||uploading;
 
   return(
@@ -1590,6 +1594,9 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                           </button>
                         )}
                       </div>
+                      <input type="text" value={cnNums[inv.id]||''} placeholder="CN no."
+                        onChange={e=>setCnNums(prev=>({...prev,[inv.id]:e.target.value}))} className="noP"
+                        style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:12,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
                     </td>
                     <td style={{...T.td,fontWeight:700,textAlign:'right'}}>
                       <EditableAmount
@@ -1655,6 +1662,9 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                           </button>
                         )}
                       </div>
+                      <input type="text" value={cnNums[inv.id]||''} placeholder="CN no."
+                        onChange={e=>setCnNums(prev=>({...prev,[inv.id]:e.target.value}))} className="noP"
+                        style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:12,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
                     </td>}
                     {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative',textAlign:'right'}} rowSpan={rc}>
                       <EditableAmount
