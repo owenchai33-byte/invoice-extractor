@@ -463,7 +463,7 @@ EXTRACTION RULES:
    - The total amount is NEGATIVE (shown with a minus sign or in brackets)
    - The footer says "Computer Generated Credit Note"
    If ANY of these are true, set doc_type to "credit_note". Otherwise set "invoice".
-   For credit notes, invoice_no is the CN document number (e.g. "CN93003240"). For the amount, use the ABSOLUTE value (positive) — e.g. if printed as -2,502.20, set total_amount to 2502.20.
+   For credit notes, invoice_no is the CN document number (e.g. "CN93003240"). For the amount, use the ABSOLUTE value (positive) of the "Total Amount Due" line — the FINAL line after rounding adjustment, NOT "Total Amount Payable". E.g. if "Total Amount Due" shows -2,502.20, set total_amount to 2502.20. Rule 11 applies to credit notes too — always take "Total Amount Due".
 
 15. ref_invoice_no: ONLY for credit notes (doc_type="credit_note"). Extract the ORIGINAL INVOICE NUMBER that this credit note refers to. Look in these places (Choon Hua layout):
    - "Ref No." field in the header table (middle row, e.g. "Ref No.: IN93023804")
