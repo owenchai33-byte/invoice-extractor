@@ -653,6 +653,13 @@ export default function Payroll(){
     };
     const m=M[key];if(m)setSel({who:r.name,label:m[0],formula:m[1],value:m[2]});
   };
+  // Formula bar for the Bank Transfer / Cash / TOTAL subtotal rows — shows the SUM.
+  const COLNM={4:'Basic Salary',5:'Incentive',6:bl||'Bonus',7:'EPF (Majikan)',8:'EPF (Pekerja)',9:'Jumlah EPF',10:'SOCSO (Majikan)',11:'SOCSO (Pekerja)',12:'Jumlah SOCSO',13:'EIS',14:'Jumlah EIS',15:'Advance',16:'Net Pay'};
+  const selSum=(l,c,v)=>{
+    const nm=COLNM[c]||'';
+    const f = /total/i.test(l) ? `Bank Transfer + Cash — ${nm} (column total)` : `SUM of every ${l} staff's ${nm}`;
+    setSel({who:l,label:nm,formula:f,value:v});
+  };
   let gn=0;
   const Row=({r})=>{gn++;const n=gn;
     const isDragging=dragId===r.id;
@@ -697,11 +704,11 @@ export default function Payroll(){
   const TR=({l,t,c})=>(
     <tr className={c}>
       <td colSpan={4} style={{fontWeight:700}}>{l}</td>
-      <td className="r tcell">{fmt(t[4])}</td><td className="r tcell">{fmt(t[5])}</td>{sb&&<td className="r tcell">{fmt(t[6])}</td>}
-      <td className="r tcell">{fmt(t[7])}</td><td className="r tcell">{fmt(t[8])}</td><td className="r tcell">{fmt(t[9])}</td>
-      <td className="r tcell">{fmt(t[10])}</td><td className="r tcell">{fmt(t[11])}</td><td className="r tcell">{fmt(t[12])}</td>
-      <td className="r tcell">{fmt(t[13])}</td><td className="r tcell">{fmt(t[14])}</td><td className="r tcell">{fmt(t[15])}</td>
-      <td className="r tcell">{fmt(t[16])}</td>
+      <td className="r tcell fxc" onClick={()=>selSum(l,4,t[4])}>{fmt(t[4])}</td><td className="r tcell fxc" onClick={()=>selSum(l,5,t[5])}>{fmt(t[5])}</td>{sb&&<td className="r tcell fxc" onClick={()=>selSum(l,6,t[6])}>{fmt(t[6])}</td>}
+      <td className="r tcell fxc" onClick={()=>selSum(l,7,t[7])}>{fmt(t[7])}</td><td className="r tcell fxc" onClick={()=>selSum(l,8,t[8])}>{fmt(t[8])}</td><td className="r tcell fxc" onClick={()=>selSum(l,9,t[9])}>{fmt(t[9])}</td>
+      <td className="r tcell fxc" onClick={()=>selSum(l,10,t[10])}>{fmt(t[10])}</td><td className="r tcell fxc" onClick={()=>selSum(l,11,t[11])}>{fmt(t[11])}</td><td className="r tcell fxc" onClick={()=>selSum(l,12,t[12])}>{fmt(t[12])}</td>
+      <td className="r tcell fxc" onClick={()=>selSum(l,13,t[13])}>{fmt(t[13])}</td><td className="r tcell fxc" onClick={()=>selSum(l,14,t[14])}>{fmt(t[14])}</td><td className="r tcell fxc" onClick={()=>selSum(l,15,t[15])}>{fmt(t[15])}</td>
+      <td className="r tcell fxc" onClick={()=>selSum(l,16,t[16])}>{fmt(t[16])}</td>
     </tr>
   );
   gn=0;
