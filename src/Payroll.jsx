@@ -323,6 +323,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .sim{font-size:11px;color:#a1a1aa}
 @media print{
   .np{display:none!important}
+  .no-print{display:none!important}
   .pr{background:#fff}
   .body{max-width:100%;padding:0;margin:0}
   .sec{border:none;border-radius:0;margin-bottom:6px;box-shadow:none}
@@ -386,6 +387,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 }
 .po{display:none}
 @media print{.po{display:block!important;text-align:center;margin-bottom:6px}.po div:first-child{font-size:11pt!important;font-weight:700}.po div:last-child{font-size:9.5pt!important;font-weight:600}}
+.fbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:22px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.fxbadge{flex:none;font-family:Georgia,serif;font-style:italic;font-weight:700;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 8px;font-size:13px}
+.fxtxt{font-size:12.5px;color:#18181b;line-height:1.4}
+.fxhint{font-size:12.5px;color:#a1a1aa}
+.fxc{cursor:pointer}
+.fxc:hover{background:#eff6ff;outline:1px solid #bfdbfe}
 `;
 export default function Payroll(){
   const now=new Date();
@@ -403,6 +410,7 @@ export default function Payroll(){
   const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
   const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
+  const[sel,setSel]=useState(null);      // formula-bar: currently clicked cell {who,label,formula,value}
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
@@ -590,6 +598,22 @@ export default function Payroll(){
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
   };
+  // Formula bar: describe a clicked full-time cell (label + human-readable formula + value)
+  const selFT=(r,key)=>{
+    const sal=r.salary||0,inc=r.incentive||0,bon=r.bonus||0,adv=r.advance||0,bn=bl||'Bonus';
+    const M={
+      epfM:['EPF (Majikan)',`Statutory KWSP table · EPF wage ${fmt(sal+inc+bon)}`,r.epfM],
+      epfP:['EPF (Pekerja)',`Statutory KWSP table · EPF wage ${fmt(sal+inc+bon)}`,r.epfP],
+      jepf:['Jumlah EPF',`EPF(M) + EPF(P) = ${fmt(r.epfM)} + ${fmt(r.epfP)}`,r.epfM+r.epfP],
+      socsoM:['SOCSO (Majikan)',`Statutory PERKESO table · wage ${fmt(sal+inc)}`,r.socsoM],
+      socsoP:['SOCSO (Pekerja)',`Statutory PERKESO table · wage ${fmt(sal+inc)}`,r.socsoP],
+      jsocso:['Jumlah SOCSO',`SOCSO(M) + SOCSO(P) = ${fmt(r.socsoM)} + ${fmt(r.socsoP)}`,r.socsoM+r.socsoP],
+      eis:['EIS',`Statutory EIS table · wage ${fmt(sal+inc)} (age 18–60 only)`,r.eisE],
+      jeis:['Jumlah EIS',`EIS × 2 = ${fmt(r.eisE)} × 2`,r.eisE*2],
+      net:['Net Pay',`Salary + Incentive${sb?' + '+bn:''} − EPF(P) − SOCSO(P) − EIS − Advance  =  ${fmt(sal)} + ${fmt(inc)}${sb?' + '+fmt(bon):''} − ${fmt(r.epfP)} − ${fmt(r.socsoP)} − ${fmt(r.eisE)} − ${fmt(adv)}`,r.netPay],
+    };
+    const m=M[key];if(m)setSel({who:r.name,label:m[0],formula:m[1],value:m[2]});
+  };
   let gn=0;
   const Row=({r})=>{gn++;const n=gn;
     const isDragging=dragId===r.id;
@@ -619,16 +643,16 @@ export default function Payroll(){
       <td className="r" style={{color:'#000'}}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/></td>
       <td className="r" style={{color:'#000'}}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/></td>
       {sb&&<td className="r" style={{color:'#000'}}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>}
-      <td className="r" style={{color:'#000'}}>{fmt(r.epfM)}</td>
-      <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.epfP)}</td>
-      <td className="r" style={{color:'#000'}}>{fmt(r.epfM+r.epfP)}</td>
-      <td className="r" style={{color:'#000'}}>{fmt(r.socsoM)}</td>
-      <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.socsoP)}</td>
-      <td className="r" style={{color:'#000'}}>{fmt(r.socsoM+r.socsoP)}</td>
-      <td className="r" style={{color:'#000',fontWeight:700}}>{fmt(r.eisE)}</td>
-      <td className="r" style={{color:'#000'}}>{fmt(r.eisE*2)}</td>
+      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'epfM')}>{fmt(r.epfM)}</td>
+      <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'epfP')}>{fmt(r.epfP)}</td>
+      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jepf')}>{fmt(r.epfM+r.epfP)}</td>
+      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'socsoM')}>{fmt(r.socsoM)}</td>
+      <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'socsoP')}>{fmt(r.socsoP)}</td>
+      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jsocso')}>{fmt(r.socsoM+r.socsoP)}</td>
+      <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'eis')}>{fmt(r.eisE)}</td>
+      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jeis')}>{fmt(r.eisE*2)}</td>
       <td className="r" style={{color:'#000'}}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td>
-      <td className="r" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}}>{fmt(r.netPay)}</td>
+      <td className="r fxc" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}} onClick={()=>selFT(r,'net')}>{fmt(r.netPay)}</td>
     </tr>
   );};
   const TR=({l,t,c})=>(
@@ -660,6 +684,14 @@ export default function Payroll(){
         </div>
       </div>
       <div className="body">
+        <div className="fbar no-print">
+          <span className="fxbadge">fx</span>
+          {sel ? (
+            <span className="fxtxt"><b>{sel.who} · {sel.label}</b>&nbsp;&nbsp;=&nbsp;&nbsp;{sel.formula}&nbsp;&nbsp;=&nbsp;&nbsp;<b>{fmt(sel.value)}</b></span>
+          ) : (
+            <span className="fxhint">Click any EPF / SOCSO / EIS / Jumlah / Net Pay cell to see how it's calculated…</span>
+          )}
+        </div>
         <div className="stats np">
           <div className="st"><div className="stl">Total Staff</div><div className="stv">{staff.length}</div></div>
           <div className="st"><div className="stl">Total Earnings</div><div className="stv" style={{color:'#059669'}}>RM {fmt(gT[4]+(gT[5]||0)+(gT[6]||0))}</div></div>
