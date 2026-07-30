@@ -120,6 +120,8 @@ export default function Payslip() {
 
   const changeMonth = d => { setIdx(0); if (d < 0) { if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
 
+  useEffect(() => { document.title = `CJK Payslips - ${MONTHS[mo]} ${yr}`; }, [mo, yr]);
+
   // Print pairs (2 payslips per A4)
   const pairs = [];
   for (let i = 0; i < rows.length; i += 2) pairs.push([rows[i], rows[i + 1]]);

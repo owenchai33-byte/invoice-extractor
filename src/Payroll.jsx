@@ -462,6 +462,7 @@ export default function Payroll(){
   // "+ Add row" appends more. Empty rows are dropped from print + Excel so no wasted space.
   const[remAll,setRemAll]=useState(()=>loadJ(LS_R,{}));
   useEffect(()=>{saveJ(LS_R,remAll);},[remAll]);
+  useEffect(()=>{document.title=`CJK Payroll - ${MONTHS[mo]} ${yr}`;},[mo,yr]);
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);

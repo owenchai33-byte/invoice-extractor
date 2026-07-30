@@ -147,7 +147,11 @@ export default function InvoicesWorkspace() {
     try { return localStorage.getItem('invoices_subtab') || 'choonhua'; }
     catch { return 'choonhua'; }
   });
-  useEffect(() => { try { localStorage.setItem('invoices_subtab', sub); } catch {} }, [sub]);
+  useEffect(() => {
+    try { localStorage.setItem('invoices_subtab', sub); } catch {}
+    const names = { choonhua: 'CJK Choon Hua Payment Summary', yhs: 'CJK YHS Payment Summary' };
+    document.title = names[sub] || 'CJK Payment Summary';
+  }, [sub]);
 
   return (
     <div>

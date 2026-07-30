@@ -22,6 +22,8 @@ export default function App() {
 
   useEffect(() => {
     try { localStorage.setItem('sabrina_active', active); } catch {}
+    const titles = { invoice: 'CJK Payment Summary', payroll: 'CJK Payroll', contract: 'CJK Contracts', payslip: 'CJK Payslips' };
+    document.title = titles[active] || 'Sabrina OS';
   }, [active]);
 
   useEffect(() => {
