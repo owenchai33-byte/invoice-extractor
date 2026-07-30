@@ -709,6 +709,7 @@ export default function Payroll(){
           </div>
           {notes.length>0&&<div className="notes">{notes.map((n,i)=><p key={i}>{n}</p>)}</div>}
         </div>
+        {pt.length>0 && (
         <div className="sec">
           <div className="sh"><div className="sht">Part-Time Staff</div></div>
           <div className="tw">
@@ -720,7 +721,7 @@ export default function Payroll(){
               </tbody>
             </table>
           </div>
-        </div>
+        </div>)}
       </div>
       {pan&&<>
         <div className="ov np" onClick={()=>setPan(false)}/>
