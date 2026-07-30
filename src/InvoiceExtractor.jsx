@@ -1466,7 +1466,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
           .noP{display:none!important}
           .flag-uncertain{background:transparent!important;box-shadow:none!important;color:#000!important}
           .screenOnly{display:none!important;visibility:hidden!important;width:0!important;height:0!important;overflow:hidden!important;position:absolute!important}
-          .printOnly{display:inline!important;visibility:visible!important}
+          .printOnly{display:block!important;visibility:visible!important}
           html,body{margin:0!important;padding:0!important;background:#fff}
           /* Flatten the 100vh root so it can't push a blank page in print. */
           .ext-root{min-height:0!important}
@@ -1638,6 +1638,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       <input type="text" value={cnNums[inv.id]||''} placeholder="CN no."
                         onChange={e=>setCnNums(prev=>({...prev,[inv.id]:e.target.value}))} className="noP"
                         style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:14,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
+                      {cnNums[inv.id]&&<div className="printOnly" style={{fontSize:14,color:'#c00',marginTop:2,textAlign:'center'}}>{cnNums[inv.id]}</div>}
                     </td>
                     <td style={{...T.td,fontWeight:700,textAlign:'right'}}>
                       <EditableAmount
@@ -1706,6 +1707,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       <input type="text" value={cnNums[inv.id]||''} placeholder="CN no."
                         onChange={e=>setCnNums(prev=>({...prev,[inv.id]:e.target.value}))} className="noP"
                         style={{width:'90%',border:'1px solid #ddd',borderRadius:3,padding:'2px 4px',fontSize:14,fontFamily:F,textAlign:'center',boxSizing:'border-box',marginTop:4,color:'#c00'}}/>
+                      {cnNums[inv.id]&&<div className="printOnly" style={{fontSize:14,color:'#c00',marginTop:2,textAlign:'center'}}>{cnNums[inv.id]}</div>}
                     </td>}
                     {gi===0&&<td style={{...T.td,fontWeight:700,padding:'8px 6px',position:'relative',textAlign:'right'}} rowSpan={rc}>
                       <EditableAmount
