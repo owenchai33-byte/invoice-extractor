@@ -961,6 +961,23 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
   useEffect(()=>{ try{ localStorage.setItem(LS_CN, JSON.stringify(cnValues)) }catch{} },[cnValues,LS_CN]);
   useEffect(()=>{ try{ localStorage.setItem(LS_CNN, JSON.stringify(cnNums)) }catch{} },[cnNums,LS_CNN]);
 
+  // Recalculate 0.4%/0.2% subsidies when CN values change (percentages are on amt-cn)
+  useEffect(()=>{
+    setInvoices(prev=>{
+      let changed=false;
+      const next=prev.map(inv=>{
+        const cn=cnValues[inv.id]||0;
+        const sub=calcSub(inv.raw.total_amount-cn,inv.groups,config.pct1,config.pct2);
+        if(Math.abs(sub.p1-inv.subsidy.p1)>0.001||Math.abs(sub.p2-inv.subsidy.p2)>0.001){
+          changed=true;
+          return {...inv,subsidy:sub};
+        }
+        return inv;
+      });
+      return changed?next:prev;
+    });
+  },[cnValues,config]);
+
   const config=SUPPLIERS['CHOON HUA'];
 
   // The live invoice being previewed (lookup ensures it stays in sync with edits)
@@ -1000,7 +1017,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
       const updated = prev.map(inv=>{
         if(inv.id!==invId) return inv;
         const groups=inv.groups.map(g=>g.id===rateId?{...g,ctn}:g);
-        const sub=calcSub(inv.raw.total_amount,groups,config.pct1,config.pct2);
+        const cn=cnValues[inv.id]||0;
+        const sub=calcSub(inv.raw.total_amount-cn,groups,config.pct1,config.pct2);
         return {...inv,groups,subsidy:sub, _issuesDismissed:false};
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
@@ -1025,7 +1043,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
     setInvoices(prev=>{
       const updated = prev.map(inv=>{
         if(inv.id!==invId) return inv;
-        const sub=calcSub(amt,inv.groups,config.pct1,config.pct2);
+        const cn=cnValues[inv.id]||0;
+        const sub=calcSub(amt-cn,inv.groups,config.pct1,config.pct2);
         return {...inv,raw:{...inv.raw,total_amount:amt},subsidy:sub, _issuesDismissed:false};
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
@@ -1050,7 +1069,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
         const updatedInv = {...inv, raw:{...inv.raw, [field]: normalized}, _issuesDismissed:false};
         // If total_amount changed, recompute subsidy — 0.4% and 0.2% depend on it.
         if(field==='total_amount'){
-          updatedInv.subsidy = calcSub(updatedInv.raw.total_amount, updatedInv.groups, config.pct1, config.pct2);
+          const cn=cnValues[updatedInv.id]||0;
+          updatedInv.subsidy = calcSub(updatedInv.raw.total_amount-cn, updatedInv.groups, config.pct1, config.pct2);
         }
         return updatedInv;
       });
@@ -1096,7 +1116,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
         } else {
           groups = [...inv.groups, {...rate, ctn}];
         }
-        const sub=calcSub(inv.raw.total_amount,groups,config.pct1,config.pct2);
+        const cn=cnValues[inv.id]||0;
+        const sub=calcSub(inv.raw.total_amount-cn,groups,config.pct1,config.pct2);
         return {...inv, groups, subsidy:sub, _manuallyAssigned:true, _issuesDismissed:false};
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
@@ -1143,7 +1164,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
       const updated = prev.map(inv=>{
         if(inv.id!==invId) return inv;
         const groups = inv.groups.filter(g => g.id !== rateId);
-        const sub = calcSub(inv.raw.total_amount, groups, config.pct1, config.pct2);
+        const cn=cnValues[inv.id]||0;
+        const sub = calcSub(inv.raw.total_amount-cn, groups, config.pct1, config.pct2);
         return {...inv, groups, subsidy:sub, _issuesDismissed:false};
       });
       return updated.map(inv => ({...inv, issues: recomputeIssues(inv, updated)}));
