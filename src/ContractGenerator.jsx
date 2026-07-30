@@ -519,17 +519,7 @@ export default function ContractGenerator() {
           {error && <span style={{ fontSize: 12, color: '#c0392b' }}>{error}</span>}
         </div>
 
-        {/* Apply position / date to every contract in this batch */}
-        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13, color: '#374151' }}>
-          <span style={{ color: '#6b7280' }}>Set for all:</span>
-          <input value={allPos} placeholder="position" onChange={e => setAllPos(e.target.value)}
-            style={{ width: 150, padding: '6px 9px', fontSize: 13, border: '1px solid #d1d5db', borderRadius: 6, fontFamily: F }} />
-          <button onClick={() => applyAll('position', allPos)} style={{ ...btn, padding: '6px 10px', fontSize: 12, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }}>→ all</button>
-          <input value={allDate} placeholder="start date (DD Month YYYY)" onChange={e => setAllDate(e.target.value)}
-            style={{ width: 200, padding: '6px 9px', fontSize: 13, border: '1px solid #d1d5db', borderRadius: 6, fontFamily: F }} />
-          <button onClick={() => applyAll('effectiveDate', allDate)} style={{ ...btn, padding: '6px 10px', fontSize: 12, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }}>→ all</button>
-          <span style={{ fontSize: 11, color: '#9ca3af' }}>Position &amp; date aren’t on an IC. IC OCR is never 100% — always double-check before printing.</span>
-        </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: '#9ca3af' }}>Position &amp; date aren’t on an IC. IC OCR is never 100% — always double-check before printing.</div>
       </div>
 
       {/* Batch tabs like the Choon Hua list — click to show that contract, ✕ to remove,
