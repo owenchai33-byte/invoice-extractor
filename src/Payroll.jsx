@@ -151,7 +151,7 @@ export function fmt(n){
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus';
+const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // defIncentive per staff seeded from the June 2026 Excel — recurring monthly
@@ -399,6 +399,16 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .hbar::-webkit-scrollbar{height:14px}
 .hbar::-webkit-scrollbar-thumb{background:#c4c4cc;border-radius:7px;border:3px solid #fff}
 @media print{.hbar{display:none!important}}
+/* Editable remarks below the table */
+.remsec{padding:10px 14px;border-top:1px solid #e4e4e7}
+.remhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.remrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.reminput{flex:1;border:1px solid #e4e4e7;border-radius:6px;padding:6px 10px;font-size:13px;color:#18181b}
+.reminput:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px #dbeafe}
+.remdel{flex:none;border:none;background:#f4f4f5;color:#71717a;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:12px}
+.remdel:hover{background:#fee2e2;color:#dc2626}
+.print-only{display:none}
+@media print{.print-only{display:block!important}}
 `;
 export default function Payroll(){
   const now=new Date();
@@ -430,11 +440,21 @@ export default function Payroll(){
   });
   const onTwScroll=()=>{if(hbRef.current&&twRef.current)hbRef.current.scrollLeft=twRef.current.scrollLeft;};
   const onHbScroll=()=>{if(hbRef.current&&twRef.current)twRef.current.scrollLeft=hbRef.current.scrollLeft;};
+  // Editable remarks below the table, saved per month. Defaults to one empty row;
+  // "+ Add row" appends more. Empty rows are dropped from print + Excel so no wasted space.
+  const[remAll,setRemAll]=useState(()=>loadJ(LS_R,{}));
+  useEffect(()=>{saveJ(LS_R,remAll);},[remAll]);
   useEffect(()=>{saveJ(LS_S,staff);},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
   useEffect(()=>{saveJ(LS_SB,sb);},[sb]);
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
+  // Per-month editable remarks (defined here because they key off `mk`).
+  const remarks=remAll[mk]||[''];
+  const setRemark=(i,v)=>setRemAll(p=>{const c=[...(p[mk]||[''])];c[i]=v;return{...p,[mk]:c};});
+  const addRemark=()=>setRemAll(p=>({...p,[mk]:[...(p[mk]||['']),'']}));
+  const delRemark=i=>setRemAll(p=>{const c=[...(p[mk]||[''])];c.splice(i,1);return{...p,[mk]:c.length?c:['']};});
+  const remFilled=remarks.filter(r=>(r||'').trim());
   const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
   const comp=useCallback(s=>{
@@ -698,7 +718,7 @@ export default function Payroll(){
         </div>
         <div className="acts">
           <button className="b bo" onClick={()=>setPan(true)}>Manage Staff</button>
-          <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,notes,bl,sb)}>Download Excel</button>
+          <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
           <button className="b bo" onClick={()=>window.print()}>Print</button>
         </div>
       </div>
@@ -785,6 +805,18 @@ export default function Payroll(){
             </table>
           </div>
           {notes.length>0&&<div className="notes">{notes.map((n,i)=><p key={i}>{n}</p>)}</div>}
+          {/* Editable remarks (screen only) */}
+          <div className="remsec no-print">
+            <div className="remhd"><span className="sht">Remarks</span><button className="b bo" onClick={addRemark}>+ Add row</button></div>
+            {remarks.map((r,i)=>(
+              <div className="remrow" key={i}>
+                <input className="reminput" value={r} onChange={e=>setRemark(i,e.target.value)} placeholder="Write a remark (leave blank if none)…"/>
+                {remarks.length>1&&<button className="remdel" title="Remove row" onClick={()=>delRemark(i)}>✕</button>}
+              </div>
+            ))}
+          </div>
+          {/* Print-only: only non-empty remarks, so blank rows never waste space */}
+          {remFilled.length>0&&<div className="notes print-only">{remFilled.map((r,i)=><p key={i}>{r}</p>)}</div>}
         </div>
         {hbShow && (
           <div className="hbar no-print" ref={hbRef} onScroll={onHbScroll} title="Scroll the table left / right">
