@@ -1653,7 +1653,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
-                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>{fmt(cn)}</div>}
+                      {cn>0&&<div style={{textAlign:'right',fontSize:16,fontWeight:700,color:'#c00',marginTop:2}}>{fmt(cn)}</div>}
                     </td>
                     <td style={{...T.td,padding:8}} colSpan={2}>
                       <div className="noP" style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
@@ -1722,7 +1722,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                       <input type="number" step="0.01" value={cn||''} placeholder="0.00"
                         onChange={e=>setCn(inv.id,e.target.value)} className="noP"
                         style={{width:'100%',border:'1px solid #ccc',borderRadius:3,padding:'3px 4px',fontSize:14,fontFamily:F,textAlign:'right',boxSizing:'border-box'}}/>
-                      {cn>0&&<div style={{textAlign:'right',fontSize:13,color:'#c00',marginTop:2}}>{fmt(cn)}</div>}
+                      {cn>0&&<div style={{textAlign:'right',fontSize:16,fontWeight:700,color:'#c00',marginTop:2}}>{fmt(cn)}</div>}
                     </td>}
                     <td colSpan={2} style={{
                       border:B,
