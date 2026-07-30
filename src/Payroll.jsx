@@ -409,6 +409,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .remdel:hover{background:#fee2e2;color:#dc2626}
 .print-only{display:none}
 @media print{.print-only{display:block!important}}
+/* Keyboard-nav selected cell */
+.selc{outline:2px solid #2563eb!important;outline-offset:-2px;background:#dbeafe!important}
+@media print{.selc{outline:none!important;background:transparent!important}}
 `;
 export default function Payroll(){
   const now=new Date();
@@ -427,6 +430,7 @@ export default function Payroll(){
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
   const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
   const[sel,setSel]=useState(null);      // formula-bar: currently clicked cell {who,label,formula,value}
+  const[cur,setCur]=useState(null);      // keyboard-nav: selected cell coordinate {ri,ci} (Excel-style arrows)
   // Sticky horizontal scrollbar: lets the wide payroll table scroll left/right from any
   // vertical position, instead of forcing a scroll to the very bottom to reach the native bar.
   const twRef=useRef(null),hbRef=useRef(null);
@@ -664,6 +668,8 @@ export default function Payroll(){
   const Row=({r})=>{gn++;const n=gn;
     const isDragging=dragId===r.id;
     const isDragOver=dragOverId===r.id&&dragId!==r.id;
+    const ri=riOf.get(r.id);
+    const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';   // highlight arrow-selected cell
     return(
     <tr
       data-sid={r.id}
@@ -686,33 +692,73 @@ export default function Payroll(){
       <td style={{fontWeight:600,color:'#000'}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/></td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/></td>
-      {sb&&<td className="r" style={{color:'#000'}}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>}
-      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'epfM')}>{fmt(r.epfM)}</td>
-      <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'epfP')}>{fmt(r.epfP)}</td>
-      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jepf')}>{fmt(r.epfM+r.epfP)}</td>
-      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'socsoM')}>{fmt(r.socsoM)}</td>
-      <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'socsoP')}>{fmt(r.socsoP)}</td>
-      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jsocso')}>{fmt(r.socsoM+r.socsoP)}</td>
-      <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'eis')}>{fmt(r.eisE)}</td>
-      <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jeis')}>{fmt(r.eisE*2)}</td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/></td>
-      <td className="r fxc" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}} onClick={()=>selFT(r,'net')}>{fmt(r.netPay)}</td>
+      <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/></td>
+      <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/></td>
+      {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>}
+      <td className={"r fxc"+hl(7)} style={{color:'#000'}} onClick={()=>applySel(ri,7)}>{fmt(r.epfM)}</td>
+      <td className={"r fxc"+hl(8)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,8)}>{fmt(r.epfP)}</td>
+      <td className={"r fxc"+hl(9)} style={{color:'#000'}} onClick={()=>applySel(ri,9)}>{fmt(r.epfM+r.epfP)}</td>
+      <td className={"r fxc"+hl(10)} style={{color:'#000'}} onClick={()=>applySel(ri,10)}>{fmt(r.socsoM)}</td>
+      <td className={"r fxc"+hl(11)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,11)}>{fmt(r.socsoP)}</td>
+      <td className={"r fxc"+hl(12)} style={{color:'#000'}} onClick={()=>applySel(ri,12)}>{fmt(r.socsoM+r.socsoP)}</td>
+      <td className={"r fxc"+hl(13)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,13)}>{fmt(r.eisE)}</td>
+      <td className={"r fxc"+hl(14)} style={{color:'#000'}} onClick={()=>applySel(ri,14)}>{fmt(r.eisE*2)}</td>
+      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/></td>
+      <td className={"r fxc"+hl(16)} style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}} onClick={()=>applySel(ri,16)}>{fmt(r.netPay)}</td>
     </tr>
   );};
-  const TR=({l,t,c})=>(
+  const TR=({l,t,c})=>{
+    const ri=totRi[l];
+    const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
+    const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
+    return(
     <tr className={c}>
       <td colSpan={4} style={{fontWeight:700}}>{l}</td>
-      <td className="r tcell fxc" onClick={()=>selSum(l,4,t[4])}>{fmt(t[4])}</td><td className="r tcell fxc" onClick={()=>selSum(l,5,t[5])}>{fmt(t[5])}</td>{sb&&<td className="r tcell fxc" onClick={()=>selSum(l,6,t[6])}>{fmt(t[6])}</td>}
-      <td className="r tcell fxc" onClick={()=>selSum(l,7,t[7])}>{fmt(t[7])}</td><td className="r tcell fxc" onClick={()=>selSum(l,8,t[8])}>{fmt(t[8])}</td><td className="r tcell fxc" onClick={()=>selSum(l,9,t[9])}>{fmt(t[9])}</td>
-      <td className="r tcell fxc" onClick={()=>selSum(l,10,t[10])}>{fmt(t[10])}</td><td className="r tcell fxc" onClick={()=>selSum(l,11,t[11])}>{fmt(t[11])}</td><td className="r tcell fxc" onClick={()=>selSum(l,12,t[12])}>{fmt(t[12])}</td>
-      <td className="r tcell fxc" onClick={()=>selSum(l,13,t[13])}>{fmt(t[13])}</td><td className="r tcell fxc" onClick={()=>selSum(l,14,t[14])}>{fmt(t[14])}</td><td className="r tcell fxc" onClick={()=>selSum(l,15,t[15])}>{fmt(t[15])}</td>
-      <td className="r tcell fxc" onClick={()=>selSum(l,16,t[16])}>{fmt(t[16])}</td>
+      {cell(4)}{cell(5)}{sb&&cell(6)}
+      {cell(7)}{cell(8)}{cell(9)}
+      {cell(10)}{cell(11)}{cell(12)}
+      {cell(13)}{cell(14)}{cell(15)}
+      {cell(16)}
     </tr>
-  );
+  );};
   gn=0;
   const pc=cS.filter(r=>r.status==='permanent'),pb=cS.filter(r=>r.status==='probationary');
+  // ── Keyboard navigation grid (Excel-style arrow keys) ──
+  // navRows = every navigable row in display order (staff + the 3 subtotal/total rows).
+  const navRows=[];
+  bS.forEach(r=>navRows.push({kind:'ft',r}));
+  navRows.push({kind:'tot',l:'Bank Transfer',t:bT});
+  pc.forEach(r=>navRows.push({kind:'ft',r}));
+  pb.forEach(r=>navRows.push({kind:'ft',r}));
+  navRows.push({kind:'tot',l:'Cash',t:cT});
+  navRows.push({kind:'tot',l:'TOTAL',t:gT});
+  const riOf=new Map(),totRi={};
+  navRows.forEach((nr,i)=>{if(nr.kind==='ft')riOf.set(nr.r.id,i);else totRi[nr.l]=i;});
+  const NAVCOLS=sb?[4,5,6,7,8,9,10,11,12,13,14,15,16]:[4,5,7,8,9,10,11,12,13,14,15,16];
+  const CKEY={7:'epfM',8:'epfP',9:'jepf',10:'socsoM',11:'socsoP',12:'jsocso',13:'eis',14:'jeis',16:'net'};
+  const INPUTNM={4:'Basic Salary',5:'Incentive',6:bl||'Bonus',15:'Advance'};
+  const applySel=(ri,ci)=>{
+    const nr=navRows[ri];if(!nr)return;setCur({ri,ci});
+    if(nr.kind==='tot'){selSum(nr.l,ci,nr.t[ci]);return;}
+    const r=nr.r;
+    if(CKEY[ci])selFT(r,CKEY[ci]);
+    else setSel({who:r.name,label:INPUTNM[ci],formula:'Manual input (type to edit)',value:({4:r.salary,5:r.incentive,6:r.bonus,15:r.advance}[ci])||0});
+  };
+  const onGridKey=e=>{
+    if(!cur)return;
+    const tag=(e.target&&e.target.tagName)||'';
+    if(/INPUT|TEXTAREA|SELECT/.test(tag))return; // let arrows move the caret while editing
+    const k=e.key;if(!/^Arrow(Up|Down|Left|Right)$/.test(k))return;
+    e.preventDefault();
+    let{ri,ci}=cur;const idx=NAVCOLS.indexOf(ci);
+    if(k==='ArrowDown')ri=Math.min(navRows.length-1,ri+1);
+    else if(k==='ArrowUp')ri=Math.max(0,ri-1);
+    else if(k==='ArrowRight')ci=NAVCOLS[Math.min(NAVCOLS.length-1,idx+1)];
+    else if(k==='ArrowLeft')ci=NAVCOLS[Math.max(0,idx-1)];
+    applySel(ri,ci);
+  };
+  useEffect(()=>{window.addEventListener('keydown',onGridKey);return()=>window.removeEventListener('keydown',onGridKey);});
+  useEffect(()=>{if(cur){const el=document.querySelector('.selc');if(el)el.scrollIntoView({block:'nearest',inline:'nearest'});}},[cur]);
   return(
     <div className="pr">
       <style>{CSS}</style>
