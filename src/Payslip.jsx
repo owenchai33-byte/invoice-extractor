@@ -245,20 +245,17 @@ const CSS = `
 .sig-name{font-weight:700}
 .sig-title{font-weight:700}
 
-/* Print: all payslips, 2 per A4 */
+/* Print: all payslips, 2 per A4 — each slip fills exactly half the page */
 .ps-print{display:none}
 @media print{
   .no-print{display:none!important}
   .ps-root{background:#fff}
   .ps-print{display:block}
-  .ps-page{display:flex;flex-direction:column;gap:4mm;page-break-after:always;padding-top:4mm}
-  .ps-page .slip{width:100%;font-size:9pt;padding:.8em 0 .6em}
-  .ps-page .slip-ti{margin:.4em 0 .3em}
-  .ps-page .slip-info{margin-bottom:.3em}
-  .ps-page .slip-net{margin-top:.3em}
-  .ps-page .slip-sig{margin-top:.6em}
-  .ps-page .sig-label{margin-bottom:1.2em}
-  .slip-blank{border:none!important}
-  @page{size:A4 portrait;margin:6mm 12mm}
+  .ps-page{display:flex;flex-direction:column;page-break-after:always}
+  .ps-page .slip{width:100%;font-size:10pt;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
+  .ps-page .slip-sig{margin-top:auto}
+  .ps-page .sig-label{margin-bottom:30mm}
+  .slip-blank{border:none!important;height:50vh}
+  @page{size:A4 portrait;margin:8mm 15mm}
 }
 `;
