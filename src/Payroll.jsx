@@ -194,7 +194,8 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   // and every column to its right shifts one to the left. mc() maps a logical
   // column (the always-with-bonus layout) to its physical position; L is net pay.
   const mc=c=>sb?c:(c>6?c-1:c),L=mc(16);
-  function sc(r,c,v){if(!sb&&c===6)return;const cell={v,t:typeof v==='number'?'n':'s'};if(typeof v==='number'&&c>=4)cell.z='#,##0.00';ws[X.utils.encode_cell({r,c:mc(c)})]=cell;}
+  const A1=(r,c)=>X.utils.encode_cell({r,c:mc(c)});   // physical A1 ref for a logical column
+  function sc(r,c,v,f){if(!sb&&c===6)return;const cell={v,t:typeof v==='number'?'n':'s'};if(typeof v==='number'&&c>=4)cell.z='#,##0.00';if(f)cell.f=f;ws[X.utils.encode_cell({r,c:mc(c)})]=cell;}
   sc(0,0,'C.J.K. CHAI JEE KIONG TRADING SDN BHD');mg.push({s:{r:0,c:0},e:{r:0,c:L}});
   sc(1,0,`HQ STAFF PAYROLL ${mn} ${yr}`);mg.push({s:{r:1,c:0},e:{r:1,c:L}});
   sc(2,0,'FULL-TIME STAFF');mg.push({s:{r:2,c:0},e:{r:2,c:L}});
@@ -202,16 +203,21 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   sc(3,16,'NET PAY');mg.push({s:{r:3,c:L},e:{r:4,c:L}});
   ['NO','NAME','IC NO','POSITION','BASIC SALARY','INCENTIVE',bL,'EPF (M)','EPF (P)','JUMLAH EPF','SOCSO (M)','SOCSO (P)','JUMLAH SOCSO','EIS (M/P)','JUMLAH EIS','ADVANCE'].forEach((h,i)=>sc(4,i,h));
   let row=5,sn=1;
-  const wR=rows=>{rows.forEach(s=>{sc(row,0,sn);sc(row,1,s.name);sc(row,2,s.ic);sc(row,3,s.position);sc(row,4,s.salary);sc(row,5,s.incentive||0);sc(row,6,s.bonus||0);sc(row,7,s.epfM);sc(row,8,s.epfP);sc(row,9,s.epfM+s.epfP);sc(row,10,s.socsoM);sc(row,11,s.socsoP);sc(row,12,s.socsoM+s.socsoP);sc(row,13,s.eisE);sc(row,14,s.eisE*2);sc(row,15,s.advance||0);sc(row,16,s.netPay);sn++;row++;});};
-  const tR=(l,t)=>{sc(row,0,l);mg.push({s:{r:row,c:0},e:{r:row,c:3}});[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>sc(row,c,t[c]||0));row++;};
-  wR(bR);tR('BANK TRANSFER:',bT);const pc=cR.filter(s=>s.status==='permanent'),pb=cR.filter(s=>s.status==='probationary');
-  wR(pc);if(pb.length){sc(row,0,'PROBATIONARY > PERMANENT');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}
-  tR('CASH:',cT);tR('TOTAL:',gT);
+  const wR=rows=>{rows.forEach(s=>{sc(row,0,sn);sc(row,1,s.name);sc(row,2,s.ic);sc(row,3,s.position);sc(row,4,s.salary);sc(row,5,s.incentive||0);sc(row,6,s.bonus||0);sc(row,7,s.epfM);sc(row,8,s.epfP);sc(row,9,s.epfM+s.epfP,`${A1(row,7)}+${A1(row,8)}`);sc(row,10,s.socsoM);sc(row,11,s.socsoP);sc(row,12,s.socsoM+s.socsoP,`${A1(row,10)}+${A1(row,11)}`);sc(row,13,s.eisE);sc(row,14,s.eisE*2,`${A1(row,13)}*2`);sc(row,15,s.advance||0);sc(row,16,s.netPay,`${A1(row,4)}+${A1(row,5)}${sb?'+'+A1(row,6):''}-${A1(row,8)}-${A1(row,11)}-${A1(row,13)}-${A1(row,15)}`);sn++;row++;});};
+  // BANK TRANSFER / CASH subtotals = SUM of their staff block; TOTAL = bank + cash (live formulas)
+  const tR=(l,t,opt)=>{sc(row,0,l);mg.push({s:{r:row,c:0},e:{r:row,c:3}});[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>{let f;if(opt&&opt.sum&&opt.sum[1]>=opt.sum[0])f=`SUM(${A1(opt.sum[0],c)}:${A1(opt.sum[1],c)})`;else if(opt&&opt.add)f=`${A1(opt.add[0],c)}+${A1(opt.add[1],c)}`;sc(row,c,t[c]||0,f);});row++;};
+  const bankStart=row;wR(bR);const bankEnd=row-1;tR('BANK TRANSFER:',bT,{sum:[bankStart,bankEnd]});const bankSub=row-1;
+  const pc=cR.filter(s=>s.status==='permanent'),pb=cR.filter(s=>s.status==='probationary');
+  const cashStart=row;wR(pc);if(pb.length){sc(row,0,'PROBATIONARY > PERMANENT');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
+  tR('CASH:',cT,{sum:[cashStart,cashEnd]});const cashSub=row-1;
+  tR('TOTAL:',gT,{add:[bankSub,cashSub]});
   notes.forEach(n=>{sc(row,0,n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
   row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;
   sc(row,4,'WAGES/ DAY');sc(row,5,'DAY');sc(row,15,'ADVANCE');sc(row,16,'NET PAY');row++;
-  ptR.forEach((s,i)=>{sc(row,0,i+1);sc(row,1,s.name);sc(row,2,s.ic);sc(row,4,s.wagePerDay||0);sc(row,5,s.daysWorked||0);sc(row,15,s.advance||0);sc(row,16,s.netPay||0);row++;});
-  sc(row,0,'TOTAL:');mg.push({s:{r:row,c:0},e:{r:row,c:3}});sc(row,15,ptT.advance||0);sc(row,16,ptT.netPay||0);
+  const ptStart=row;
+  ptR.forEach((s,i)=>{sc(row,0,i+1);sc(row,1,s.name);sc(row,2,s.ic);sc(row,4,s.wagePerDay||0);sc(row,5,s.daysWorked||0);sc(row,15,s.advance||0);sc(row,16,s.netPay||0,`${A1(row,4)}*${A1(row,5)}-${A1(row,15)}`);row++;});
+  const ptEnd=row-1;
+  sc(row,0,'TOTAL:');mg.push({s:{r:row,c:0},e:{r:row,c:3}});sc(row,15,ptT.advance||0,ptEnd>=ptStart?`SUM(${A1(ptStart,15)}:${A1(ptEnd,15)})`:undefined);sc(row,16,ptT.netPay||0,ptEnd>=ptStart?`SUM(${A1(ptStart,16)}:${A1(ptEnd,16)})`:undefined);
   ws['!ref']=X.utils.encode_range({s:{r:0,c:0},e:{r:row,c:L}});ws['!merges']=mg;
   // ── Styling: borders on every cell, bold shaded headers, shaded subtotal/total rows ──
   const _thin={style:'thin',color:{rgb:'AAAAAA'}}, _bd={top:_thin,bottom:_thin,left:_thin,right:_thin};
