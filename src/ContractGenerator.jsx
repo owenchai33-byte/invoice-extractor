@@ -490,7 +490,6 @@ export default function ContractGenerator() {
           <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
           <div style={{ flex: 1 }} />
           <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
-          <button onClick={() => { if (contracts.length) setSaveQueue(0); }} style={{ ...btn, background: '#fff', color: '#374151', border: '1px solid #d1d5db' }} title="Steps through each contract so you can Save each as its own PDF (named per employee)">🖨 Save each</button>
           <button onClick={saveAllZip} disabled={zipping} style={{ ...btn, background: zipping ? '#9ca3af' : '#111', color: '#fff', cursor: zipping ? 'wait' : 'pointer' }} title="Build one .zip containing a separate PDF per contract — a single download">{zipping ? (zipMsg || 'Building…') : '⬇ Save all (ZIP)'}</button>
           <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
         </div>
