@@ -651,7 +651,7 @@ export default function Payroll(){
       <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jsocso')}>{fmt(r.socsoM+r.socsoP)}</td>
       <td className="r fxc" style={{color:'#000',fontWeight:700}} onClick={()=>selFT(r,'eis')}>{fmt(r.eisE)}</td>
       <td className="r fxc" style={{color:'#000'}} onClick={()=>selFT(r,'jeis')}>{fmt(r.eisE*2)}</td>
-      <td className="r" style={{color:'#000'}}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td>
+      <td className="r" style={{color:'#000'}}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/></td>
       <td className="r fxc" style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}} onClick={()=>selFT(r,'net')}>{fmt(r.netPay)}</td>
     </tr>
   );};
@@ -774,7 +774,7 @@ export default function Payroll(){
             <table className="t">
               <thead><tr><th className="r" style={{width:32}}>#</th><th>Name</th><th>IC No</th><th className="r">Wages/Day</th><th className="r">Days</th><th className="r">Advance</th><th className="r" style={{width:90}}>Net Pay</th></tr></thead>
               <tbody>
-                {ptR.map((r,i)=><tr key={r.id}><td className="r" style={{color:'#a1a1aa'}}>{i+1}</td><td style={{fontWeight:600}}>{r.name}</td><td style={{color:'#71717a',fontSize:12}}>{r.ic}</td><td className="r"><EditableCell value={r.wagePerDay} onCommit={v=>sM(r.id,'wagePerDay',v)}/></td><td className="r"><EditableCell value={r.daysWorked} onCommit={v=>sM(r.id,'daysWorked',v)} width={36}/></td><td className="r"><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)}/></td><td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td></tr>)}
+                {ptR.map((r,i)=><tr key={r.id}><td className="r" style={{color:'#a1a1aa'}}>{i+1}</td><td style={{fontWeight:600}}>{r.name}</td><td style={{color:'#71717a',fontSize:12}}>{r.ic}</td><td className="r"><EditableCell value={r.wagePerDay} onCommit={v=>sM(r.id,'wagePerDay',v)}/></td><td className="r"><EditableCell value={r.daysWorked} onCommit={v=>sM(r.id,'daysWorked',v)} width={36}/></td><td className="r"><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/></td><td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td></tr>)}
                 <tr className="tr"><td colSpan={5} style={{fontWeight:700}}>TOTAL</td><td className="r">{fmt(ptT.advance)}</td><td className="r">{fmt(ptT.netPay)}</td></tr>
               </tbody>
             </table>
