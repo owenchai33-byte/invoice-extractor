@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import * as XLSXStyle from 'xlsx-js-style';   // styled Excel export (borders, bold, fills)
 // ═══════════════════════════════════════════════════════════════
 // STATUTORY TABLES — Malaysia
 // Sources: PERKESO SOCSO+SKBBK (June 2026), PERKESO EIS Akta 800
@@ -188,7 +189,7 @@ const MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST',
 const MON_S=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 async function loadXLSX(){if(window.XLSX)return window.XLSX;return new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';s.onload=()=>r(window.XLSX);s.onerror=j;document.head.appendChild(s);});}
 async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
-  const X=await loadXLSX(),wb=X.utils.book_new(),ws={},mg=[];const mn=MONTHS[mo];
+  const X=XLSXStyle,wb=X.utils.book_new(),ws={},mg=[];const mn=MONTHS[mo];
   // When the bonus column is hidden (sb=false) it is dropped from logical col 6
   // and every column to its right shifts one to the left. mc() maps a logical
   // column (the always-with-bonus layout) to its physical position; L is net pay.
@@ -212,6 +213,25 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   ptR.forEach((s,i)=>{sc(row,0,i+1);sc(row,1,s.name);sc(row,2,s.ic);sc(row,4,s.wagePerDay||0);sc(row,5,s.daysWorked||0);sc(row,15,s.advance||0);sc(row,16,s.netPay||0);row++;});
   sc(row,0,'TOTAL:');mg.push({s:{r:row,c:0},e:{r:row,c:3}});sc(row,15,ptT.advance||0);sc(row,16,ptT.netPay||0);
   ws['!ref']=X.utils.encode_range({s:{r:0,c:0},e:{r:row,c:L}});ws['!merges']=mg;
+  // ── Styling: borders on every cell, bold shaded headers, shaded subtotal/total rows ──
+  const _thin={style:'thin',color:{rgb:'AAAAAA'}}, _bd={top:_thin,bottom:_thin,left:_thin,right:_thin};
+  const _rng=X.utils.decode_range(ws['!ref']);
+  for(let R=_rng.s.r;R<=_rng.e.r;R++){
+    for(let C=_rng.s.c;C<=_rng.e.c;C++){
+      const a=X.utils.encode_cell({r:R,c:C}); let cell=ws[a]; if(!cell){cell={t:'s',v:''};ws[a]=cell;}
+      const st={border:_bd,alignment:{vertical:'center',wrapText:R===4}};
+      if(R<=4){ st.font={bold:true,sz:R===0?12:R===1?11:10}; st.alignment.horizontal='center'; if(R>=2) st.fill={fgColor:{rgb:'E9E9E9'}}; }
+      else {
+        st.alignment.horizontal = C>=4 ? 'right' : (C===1||C===3 ? 'left' : 'center');
+        const c0=ws[X.utils.encode_cell({r:R,c:0})]; const t0=(c0&&typeof c0.v==='string')?c0.v.trim():'';
+        if(/^TOTAL/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'FFF0A6'}}; }
+        else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'EFEFEF'}}; }
+        else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='PROBATIONARY > PERMANENT'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
+      }
+      if(cell.z) st.numFmt=cell.z;
+      cell.s=st;
+    }
+  }
   const cols=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12];if(!sb)cols.splice(6,1);
   ws['!cols']=cols.map(w=>({wch:w}));
   X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ_STAFF_PAYROLL_${yr}_${mn}.xlsx`);
