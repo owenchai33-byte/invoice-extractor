@@ -4,10 +4,10 @@ import { computeStaffMonth, LS_S, LS_P, LS_SB, SAMPLE_STAFF, fmt } from './Payro
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
-const acct = v => (!v || v === 0) ? '-' : fmt(v);              // accounting: zero shows a dash
+const numFmt = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr}`; };
 
-// ─── One payslip (matches Sabrina's Excel layout) ───
+// ─── One payslip (matches Sabrina's Excel layout exactly) ───
 function Slip({ r, mo, yr }) {
   const earn = [['BASIC SALARY', r.salary], ['INCENTIVE', r.incentive]];
   if (r.bonus > 0) earn.push([(r.bonusLabel || 'BONUS'), r.bonus]);
@@ -18,17 +18,29 @@ function Slip({ r, mo, yr }) {
 
   return (
     <div className="slip">
-      <div className="slip-co">C.J.K. CHAI JEE KIONG TRADING SDN BHD</div>
+      <div className="slip-co"><i>C.J.K.</i> CHAI JEE KIONG TRADING SDN BHD</div>
       <div className="slip-ad">NO. 19, 21, 23, 25, 27, JALAN PETANAK, 93100, KUCHING, SARAWAK.</div>
       <div className="slip-ti">PAYMENT SLIP FOR THE MONTH OF {MONTHS[mo].toUpperCase()} {yr}</div>
 
-      <table className="slip-info">
-        <tbody>
-          <tr><td className="lb">PAY TO</td><td className="vl">{r.name}</td><td className="lb">DATE</td><td className="vl">{lastDay(mo, yr)}</td></tr>
-          <tr><td className="lb">IC NO</td><td className="vl">{r.ic}</td><td className="lb">STATUS</td><td className="vl">{(r.status || '').toUpperCase()}</td></tr>
-          <tr><td className="lb">DESIGNATION</td><td className="vl" colSpan={3}>{r.position}</td></tr>
-        </tbody>
-      </table>
+      {/* Info section — no borders, just aligned text like Excel */}
+      <div className="slip-info">
+        <div className="slip-info-row">
+          <span className="si-lb">PAY TO</span>
+          <span className="si-vl">{r.name}</span>
+          <span className="si-lb">DATE</span>
+          <span className="si-vr">{lastDay(mo, yr)}</span>
+        </div>
+        <div className="slip-info-row">
+          <span className="si-lb">IC NO</span>
+          <span className="si-vl">{r.ic}</span>
+          <span className="si-lb">STATUS</span>
+          <span className="si-vr">{(r.status || '').toUpperCase()}</span>
+        </div>
+        <div className="slip-info-row">
+          <span className="si-lb">DESIGNATION</span>
+          <span className="si-vl">{r.position}</span>
+        </div>
+      </div>
 
       <table className="slip-box">
         <thead>
@@ -38,21 +50,36 @@ function Slip({ r, mo, yr }) {
           {Array.from({ length: n }).map((_, i) => (
             <tr key={i}>
               <td className="cl">{earn[i] ? earn[i][0] : ''}</td>
-              <td className="ca">{earn[i] ? acct(earn[i][1]) : ''}</td>
+              <td className="ca">{earn[i] ? numFmt(earn[i][1]) : ''}</td>
               <td className="cl">{ded[i] ? ded[i][0] : ''}</td>
-              <td className="ca">{ded[i] ? acct(ded[i][1]) : ''}</td>
+              <td className="ca">{ded[i] ? numFmt(ded[i][1]) : ''}</td>
             </tr>
           ))}
           <tr className="tot">
-            <td className="cl">TOTAL</td><td className="ca">{acct(earnTotal)}</td>
-            <td className="cl">TOTAL</td><td className="ca">{acct(dedTotal)}</td>
+            <td className="cl">TOTAL</td><td className="ca">{numFmt(earnTotal)}</td>
+            <td className="cl">TOTAL</td><td className="ca">{numFmt(dedTotal)}</td>
           </tr>
         </tbody>
       </table>
 
-      <table className="slip-net">
-        <tbody><tr><td className="cl">NET PAY</td><td className="ca">{acct(r.netPay)}</td></tr></tbody>
-      </table>
+      <div className="slip-net">
+        <span className="sn-lb">NET PAY</span>
+        <span className="sn-val">{numFmt(r.netPay)}</span>
+      </div>
+
+      {/* Signature block */}
+      <div className="slip-sig">
+        <div className="sig-left">
+          <div className="sig-label">AUTHORISED BY</div>
+          <div className="sig-line"></div>
+          <div className="sig-name">CHAI CHEE CHOI</div>
+          <div className="sig-title">DIRECTOR</div>
+        </div>
+        <div className="sig-right">
+          <div className="sig-label">RECEIVED BY</div>
+          <div className="sig-line"></div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -181,25 +208,40 @@ const CSS = `
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
 /* ─── The payslip itself (em-based so it scales screen vs print) ─── */
-.slip{width:34em;box-sizing:border-box;background:#fff;border:1px solid #000;padding:1em 1.2em 1.3em;color:#000;line-height:1.25}
-.slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1.12em;text-align:center;letter-spacing:.01em}
-.slip-ad{font-size:.72em;text-align:center;margin-top:.15em}
-.slip-ti{font-weight:700;font-size:.92em;text-align:center;text-decoration:underline;margin:.7em 0 .6em}
-.slip-info{width:100%;border-collapse:collapse;font-size:.8em;margin-bottom:.6em}
-.slip-info td{padding:.12em 0;vertical-align:top}
-.slip-info .lb{font-weight:700;width:7.5em;white-space:nowrap}
-.slip-info .vl{padding-right:1em}
+.slip{width:34em;box-sizing:border-box;background:#fff;padding:1.2em 1.5em 1em;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif}
+.slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1.1em;text-align:center;letter-spacing:.01em}
+.slip-co i{font-style:italic}
+.slip-ad{font-size:.7em;text-align:center;margin-top:.1em}
+.slip-ti{font-weight:700;font-size:.88em;text-align:center;text-decoration:underline;margin:.7em 0 .5em}
+
+/* Info section — no borders, plain aligned text */
+.slip-info{font-size:.8em;margin-bottom:.5em}
+.slip-info-row{display:flex;align-items:baseline;margin-bottom:.1em}
+.si-lb{font-weight:700;width:7em;flex-shrink:0}
+.si-vl{flex:1}
+.si-vr{text-align:right;font-weight:700}
+
+/* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:.8em}
 .slip-box th,.slip-box td{border:1px solid #000;padding:.2em .5em}
 .slip-box .hl{text-align:left;font-weight:700;width:26%}
 .slip-box .ha{text-align:right;font-weight:700;width:24%}
 .slip-box .cl{text-align:left}
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
-.slip-box .tot .cl,.slip-box .tot .ca{font-weight:700;border-top:1.5px solid #000}
-.slip-net{width:100%;border-collapse:collapse;font-size:.85em;margin-top:.5em}
-.slip-net td{border:1px solid #000;padding:.28em .5em;font-weight:700}
-.slip-net .cl{text-align:left;width:50%}
-.slip-net .ca{text-align:right;font-variant-numeric:tabular-nums}
+.slip-box .tot .cl,.slip-box .tot .ca{font-weight:700;border-top:2px solid #000}
+
+/* NET PAY row — bordered box */
+.slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
+.sn-lb{flex:1}
+.sn-val{border:1.5px solid #000;padding:.25em .6em;font-variant-numeric:tabular-nums;min-width:6em;text-align:right}
+
+/* Signature block */
+.slip-sig{display:flex;justify-content:space-between;margin-top:1.2em;font-size:.72em}
+.sig-left,.sig-right{width:40%}
+.sig-label{margin-bottom:2em}
+.sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
+.sig-name{font-weight:700}
+.sig-title{font-weight:700}
 
 /* Print: all payslips, 2 per A4 */
 .ps-print{display:none}
@@ -207,9 +249,9 @@ const CSS = `
   .no-print{display:none!important}
   .ps-root{background:#fff}
   .ps-print{display:block}
-  .ps-page{display:flex;gap:6mm;justify-content:center;align-items:flex-start;page-break-after:always;padding-top:6mm}
-  .ps-page .slip{width:96mm;font-size:8.2pt;border:1px solid #000}
+  .ps-page{display:flex;flex-direction:column;gap:8mm;align-items:center;page-break-after:always;padding-top:6mm}
+  .ps-page .slip{width:170mm;font-size:10.5pt}
   .slip-blank{border:none!important}
-  @page{size:A4 portrait;margin:6mm}
+  @page{size:A4 portrait;margin:8mm 15mm}
 }
 `;
