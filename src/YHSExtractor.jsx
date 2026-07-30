@@ -672,7 +672,7 @@ export default function YHSExtractor({ batchId = 'default' }) {
 
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
             <thead><tr>
-              <th style={{ ...T.th, width: 32 }}>NO.</th>
+              <th style={{ ...T.th, width: 42 }}>NO.</th>
               <th style={{ ...T.th, width: 82 }}>DATE</th>
               <th style={{ ...T.th, width: 122 }}>INVOICE NO.</th>
               <th style={{ ...T.th, width: 104 }}>AMOUNT</th>

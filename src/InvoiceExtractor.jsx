@@ -1588,7 +1588,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               <col style={{width:'13%'}}/>
             </colgroup>
             <thead><tr>
-              <th style={{...T.th,width:36}}>NO.</th>
+              <th style={{...T.th,width:42}}>NO.</th>
               <th style={{...T.th,width:86}}>DATE</th>
               <th style={{...T.th,width:120}}>INVOICE NO.</th>
               <th style={{...T.th,width:88}}>AMOUNT</th>
