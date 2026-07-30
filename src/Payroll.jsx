@@ -147,18 +147,32 @@ export function fmt(n){
   if(n==null || !isFinite(n)) return '0.00';
   return n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
+// Compute one staff's figures for a month. Single source of truth shared by the
+// Payroll table and the Payslip generator so their numbers can never drift.
+// `monthly` = pd[mk]?.[staff.id] (per-month override object or undefined).
+export function computeStaffMonth(s, monthly, ref, showBonus=true){
+  const a=getAgeFromIC(s.ic,ref), m=monthly||{};
+  const inc = monthly && 'incentive' in monthly ? (m.incentive||0) : (s.defIncentive||0);
+  const bon = showBonus ? (monthly && 'bonus' in monthly ? (m.bonus||0) : (s.defBonus||0)) : 0;
+  const adv = monthly && 'advance' in monthly ? (m.advance||0) : (s.defAdvance||0);
+  const epfWage = s.salary + inc + bon;      // bonus + incentive raise EPF base
+  const socsoEisWage = s.salary + inc;        // only incentive raises SOCSO/EIS base
+  const epf=calcEPF(epfWage,a), socso=calcSOCSO(socsoEisWage,a), eis=calcEIS(socsoEisWage,a);
+  const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
+  return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
+}
 // LS_S bumped to _v3: adds defIncentive per staff so each new month
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks';
+export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // defIncentive per staff seeded from the June 2026 Excel — recurring monthly
 // incentive that auto-fills each new month. Owen can override per-month via
 // the payroll table. Gawai bonus and advance are month-specific, entered
 // manually — not seeded here.
-const SAMPLE_STAFF=[
+export const SAMPLE_STAFF=[
   {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:2450,method:'bank',status:'permanent',defIncentive:275},
   {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:2250,method:'bank',status:'permanent',defIncentive:250},
   {id:'s3',name:'LO HUI TIN',ic:'961122-13-5142',position:'PJ EXEC. OPERATIONS SUPERVISOR',salary:2450,method:'bank',status:'permanent',defIncentive:275},
@@ -461,24 +475,7 @@ export default function Payroll(){
   const remFilled=remarks.filter(r=>(r||'').trim());
   const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
-  const comp=useCallback(s=>{
-    const a=getAgeFromIC(s.ic,ref),m=gM(s.id);
-    // Use monthly override if exists, otherwise fall back to staff default
-    const hasMonthly = pd[mk]?.[s.id];
-    const inc = hasMonthly && 'incentive' in hasMonthly ? (m.incentive||0) : (s.defIncentive||0);
-    const bon = sb ? (hasMonthly && 'bonus' in hasMonthly ? (m.bonus||0) : (s.defBonus||0)) : 0;
-    const adv = hasMonthly && 'advance' in hasMonthly ? (m.advance||0) : (s.defAdvance||0);
-    // Per KWSP/PERKESO 2026 guidelines:
-    // - Incentive is treated as wages → subject to EPF + SOCSO + EIS (recalc bands)
-    // - Bonus → subject to EPF only (recalc EPF band with bonus added)
-    const epfWage = s.salary + inc + bon;          // bonus + incentive both raise EPF base
-    const socsoEisWage = s.salary + inc;            // only incentive raises SOCSO/EIS base
-    const epf=calcEPF(epfWage,a);
-    const socso=calcSOCSO(socsoEisWage,a);
-    const eis=calcEIS(socsoEisWage,a);
-    const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
-    return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
-  },[ref,gM,pd,mk,sb]);
+  const comp=useCallback(s=>computeStaffMonth(s, pd[mk]?.[s.id], ref, sb),[ref,pd,mk,sb]);
   const bS=useMemo(()=>staff.filter(s=>s.method==='bank').map(comp),[staff,comp]);
   const cS=useMemo(()=>staff.filter(s=>s.method==='cash').map(comp),[staff,comp]);
   const ptR=useMemo(()=>pt.map(s=>{const m=gM(s.id),w=m.wagePerDay||s.wagePerDay||0,d=m.daysWorked||0,a=m.advance||0;return{...s,wagePerDay:w,daysWorked:d,advance:a,netPay:Math.round((w*d-a)*100)/100};}),[pt,gM]);
