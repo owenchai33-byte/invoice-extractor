@@ -1793,8 +1793,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               {/* COLUMN FOOTER — invoice-total under AMOUNT column, credit-note under CN column */}
               <tr>
                 <td colSpan={3} style={{border:'none'}}/>
-                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:18,textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{fmt(gT)}</td>
-                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,textAlign:'right',fontVariantNumeric:'tabular-nums',color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,background:'#ffe600',fontSize:18,textAlign:'center',fontVariantNumeric:'tabular-nums'}}>{fmt(gT)}</td>
+                <td style={{...T.td,borderTop:'2px solid #000',fontWeight:700,textAlign:'center',fontVariantNumeric:'tabular-nums',color:totalCn?'#c00':'#000'}}>{totalCn?'-'+fmt(totalCn):'RM0.00'}</td>
                 <td colSpan={2} style={{border:'none'}}/>
               </tr>
               {/* SUMMARY BOX — right-aligned subsidy breakdown */}
