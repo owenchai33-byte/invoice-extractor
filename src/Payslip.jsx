@@ -201,8 +201,8 @@ const CSS = `
 .ps-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
-.ps-pagewrap{font-size:13px;display:flex;gap:3em;border-radius:2px;padding:0;align-items:stretch}
-.ps-pagewrap .slip{padding:2.5em 1.5em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;min-height:28em}
+.ps-pagewrap{font-size:13px;display:flex;gap:1.5em;border-radius:2px;padding:0;align-items:stretch}
+.ps-pagewrap .slip{padding:1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;min-height:28em}
 
 /* Bottom preview strip */
 .ps-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
@@ -259,7 +259,7 @@ const CSS = `
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:12pt;line-height:1.3;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
+  .ps-page .slip{width:100%;font-size:12pt;line-height:1.3;padding:8mm 15mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
   .ps-page .slip-sig{flex:1;display:flex;flex-direction:column}
   .ps-page .sig-bottom{margin-top:auto}
 
