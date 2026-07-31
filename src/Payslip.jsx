@@ -202,7 +202,7 @@ const CSS = `
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
 .ps-pagewrap{font-size:13px;display:flex;gap:0;border-radius:2px;padding:0;align-items:stretch}
-.ps-pagewrap .slip{padding:1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:2px}
+.ps-pagewrap .slip{padding:2.5em 1.5em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:2px}
 
 /* Bottom preview strip */
 .ps-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
