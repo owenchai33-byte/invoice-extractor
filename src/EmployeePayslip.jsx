@@ -4,70 +4,81 @@ import { computeStaffMonth, LS_S, LS_P, LS_SB, SAMPLE_STAFF, fmt } from './Payro
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
-const numFmt = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
-const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr}`; };
-const incDate = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2}`; };
+const nf = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr.toString().slice(-2)}`; };
+const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2.toString().slice(-2)}`; };
+const fitCls = (txt, base) => { const len = (txt || '').length; if (len > 34) return base + ' ep-xs'; if (len > 22) return base + ' ep-sm'; return base; };
 
 function EpCard({ r, mo, yr }) {
-  const dailyRate = (r.salary / 26);
-  const epfMDaily = (r.epfM / 26);
-  const salaryNet = Math.round((r.salary + (r.bonus || 0) - r.epfP - r.socsoInv - r.socsoSkbbk - r.eisE - (r.advance || 0)) * 100) / 100;
-  const nameCls = (r.name || '').length > 22 ? 'ep-val ep-sm' : 'ep-val';
+  const hasInc = (r.incentive || 0) > 0;
+  const daily = r.salary / 26;
+  const epfMD = r.epfM / 26;
+  const salNet = Math.round((r.salary + (r.bonus || 0) - r.epfP - r.socsoInv - r.socsoSkbbk - r.eisE - (r.advance || 0)) * 100) / 100;
 
   return (
     <div className="ep-card">
       <div className="ep-halves">
-        {/* Left: Salary */}
-        <div className="ep-half ep-salary">
-          <div className="ep-title">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
+        {/* Salary side */}
+        <div className={hasInc ? 'ep-sal' : 'ep-sal ep-sal-full'}>
+          <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
           <div className="ep-info">
-            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={nameCls}>{r.name}</span></div>
-            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={nameCls}>{r.position}</span></div>
-            <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-val">{lastDay(mo, yr)}</span></div>
+            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
+            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
+            <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
           </div>
 
-          <div className="ep-sec">
-            <div className="ep-hdr"><span>EARNINGS</span><span>AMOUNT (RM)</span></div>
-            <div className="ep-line"><span className="ep-lbl">BASIC SALARY</span><span className="ep-rate">{numFmt(dailyRate)}</span><span className="ep-amt">{numFmt(r.salary)}</span></div>
-            {r.bonus > 0 && <div className="ep-line"><span className="ep-lbl">{r.bonusLabel || 'BONUS (PAID)'}</span><span className="ep-rate"></span><span className="ep-amt">{numFmt(r.bonus)}</span></div>}
-          </div>
+          <table className="ep-tbl">
+            <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
+            <tbody>
+              <tr><td className="ep-tl">BASIC SALARY</td><td className="ep-tm">{nf(daily)}</td><td className="ep-tr">{nf(r.salary)}</td></tr>
+              {r.bonus > 0 && <tr className="ep-bonus"><td className="ep-tl">{r.bonusLabel || 'BONUS (PAID)'}</td><td className="ep-tm"></td><td className="ep-tr">{nf(r.bonus)}</td></tr>}
+            </tbody>
+          </table>
 
-          <div className="ep-sec">
-            <div className="ep-hdr"><span>DEDUCTIONS</span><span>AMOUNT (RM)</span></div>
-            <div className="ep-line"><span className="ep-lbl ep-ded-lbl">EPF {numFmt(r.epfM)}/{numFmt(epfMDaily)}</span><span className="ep-amt">{numFmt(r.epfP)}</span></div>
-            <div className="ep-line"><span className="ep-lbl ep-ded-lbl">SOCSO (0.5%) {numFmt(r.socsoM)}</span><span className="ep-amt">{numFmt(r.socsoInv)}</span></div>
-            <div className="ep-line"><span className="ep-lbl ep-ded-lbl">SOCSO (SKBBK 0.75%)</span><span className="ep-amt">{numFmt(r.socsoSkbbk)}</span></div>
-            <div className="ep-line"><span className="ep-lbl ep-ded-lbl">EIS{'      '}{numFmt(r.eisE)}</span><span className="ep-amt">{numFmt(r.eisE)}</span></div>
-            <div className="ep-line"><span className="ep-lbl ep-ded-lbl">ADVANCE</span><span className="ep-amt">{numFmt(r.advance || 0)}</span></div>
-          </div>
+          <table className="ep-tbl ep-ded">
+            <thead><tr><th className="ep-tl">DEDUCTIONS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
+            <tbody>
+              <tr><td className="ep-tl">EPF{' '}{nf(r.epfM)}/{nf(epfMD)}</td><td className="ep-tr">{nf(r.epfP)}</td></tr>
+              <tr><td className="ep-tl">SOCSO (0.5%) {nf(r.socsoM)}</td><td className="ep-tr">{nf(r.socsoInv)}</td></tr>
+              <tr><td className="ep-tl">SOCSO (SKBBK 0.75%)</td><td className="ep-tr">{nf(r.socsoSkbbk)}</td></tr>
+              <tr><td className="ep-tl">EIS{' '}{nf(r.eisE)}</td><td className="ep-tr">{nf(r.eisE)}</td></tr>
+              <tr><td className="ep-tl">ADVANCE</td><td className="ep-tr">{nf(r.advance || 0)}</td></tr>
+              <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr">{nf(salNet)}</td></tr>
+            </tbody>
+          </table>
 
-          <div className="ep-subtotal"><span className="ep-amt">{numFmt(salaryNet)}</span></div>
-          <div className="ep-row ep-extra"><span className="ep-lb">ABSENCE</span><span className="ep-val">-</span></div>
-          <div className="ep-row ep-extra"><span className="ep-lb">OTHERS</span><span className="ep-val"></span></div>
+          <div className="ep-abs"><span className="ep-lb">ABSENCE</span><span className="ep-vl">-</span></div>
+          <div className="ep-abs"><span className="ep-lb">OTHERS</span><span className="ep-vl"></span></div>
         </div>
 
-        {/* Right: Incentive */}
-        <div className="ep-half ep-incentive">
-          <div className="ep-title">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
-          <div className="ep-info">
-            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={nameCls}>{r.name}</span></div>
-            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={nameCls}>{r.position}</span></div>
-            <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-val">{incDate(mo, yr)}</span></div>
-          </div>
+        {/* Incentive side */}
+        {hasInc && (
+          <div className="ep-inc">
+            <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
+            <div className="ep-info">
+              <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
+              <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
+              <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{incDay(mo, yr)}</span></div>
+            </div>
 
-          <div className="ep-sec">
-            <div className="ep-hdr"><span>EARNINGS</span><span>AMOUNT (RM)</span></div>
-            <div className="ep-line"><span className="ep-lbl">INCENTIVE</span><span className="ep-rate"></span><span className="ep-amt">{numFmt(r.incentive)}</span></div>
-          </div>
+            <table className="ep-tbl">
+              <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
+              <tbody>
+                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr">{nf(r.incentive)}</td></tr>
+              </tbody>
+            </table>
 
-          <div className="ep-inc-net">
-            <span className="ep-lb">NET PAY</span>
+            <div className="ep-netbox">
+              <span className="ep-net-lb">NET PAY</span>
+              <span className="ep-net-bx"></span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="ep-bottom">
+      <div className="ep-foot">
         <span className="ep-net-lb">NET PAY</span>
+        <span className="ep-net-bx"></span>
       </div>
     </div>
   );
@@ -185,44 +196,55 @@ const CSS = `
 .ep-pagewrap .ep-card{width:19cm;height:13.35cm;padding:1.2em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11px}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+.thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
+.thumb:hover{background:#f4f4f5}
+.thumb.on{border-color:#18181b;background:#f4f4f5;box-shadow:0 0 0 1px #18181b inset}
+.thumb-n{font-size:10px;color:#a1a1aa;font-weight:700}
+.thumb-name{font-size:11px;font-weight:600;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
-/* Employee payslip card */
-.ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.3;display:flex;flex-direction:column}
-.ep-halves{display:flex;gap:.8em;flex:1}
-.ep-half{flex:1;display:flex;flex-direction:column}
-.ep-salary{flex:1.2}
-.ep-incentive{flex:0.8}
+/* ─── Card ─── */
+.ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.35;display:flex;flex-direction:column}
+.ep-halves{display:flex;gap:1.5em;flex:1}
+.ep-sal{flex:1.15;display:flex;flex-direction:column}
+.ep-sal-full{flex:1}
+.ep-inc{flex:0.85;display:flex;flex-direction:column}
 
-.ep-title{font-weight:700;text-decoration:underline;text-align:center;margin-bottom:.4em;font-size:1em}
-.ep-info{margin-bottom:.5em}
-.ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
-.ep-lb{width:35%;flex-shrink:0;font-size:1em}
-.ep-val{flex:1;font-weight:700;font-size:1em}
+.ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
+.ep-info{margin-bottom:.6em}
+.ep-row{display:flex;align-items:baseline;margin-bottom:.05em}
+.ep-lb{width:40%;flex-shrink:0;font-size:1em}
+.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
 .ep-sm{font-size:.78em;white-space:nowrap}
-.ep-extra{font-size:.95em}
+.ep-xs{font-size:.62em;white-space:nowrap}
+.ep-abs{display:flex;align-items:baseline;margin-bottom:.05em;font-size:.95em}
 
-.ep-sec{margin-bottom:.3em}
-.ep-hdr{display:flex;justify-content:space-between;border-bottom:1px solid #000;padding-bottom:.1em;margin-bottom:.15em;font-weight:700;font-size:.95em}
-.ep-line{display:flex;align-items:baseline;font-size:.9em;line-height:1.4}
-.ep-lbl{flex:1;white-space:nowrap}
-.ep-ded-lbl{font-size:.85em}
-.ep-rate{width:3.5em;text-align:right;font-size:.85em;color:#555;flex-shrink:0;margin-right:.3em}
-.ep-amt{width:4.5em;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+/* ─── Tables ─── */
+.ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:.4em}
+.ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
+.ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.1em .4em}
+.ep-tl{text-align:left}
+.ep-tm{text-align:right;font-size:.9em;width:3.5em}
+.ep-tr{text-align:right;font-variant-numeric:tabular-nums}
+.ep-tbl tbody tr:last-child td{border-bottom:1px solid #000}
+.ep-bonus td{color:#c00}
+.ep-ded td{font-size:.92em}
+.ep-sub td{border-top:1px solid #000;font-weight:700}
 
-.ep-subtotal{text-align:right;font-weight:700;border-top:1px solid #000;padding-top:.15em;margin-bottom:.3em;font-size:.9em}
-.ep-inc-net{margin-top:auto;font-weight:700;font-size:1em}
+/* ─── NET PAY box ─── */
+.ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:auto;font-weight:700;font-size:1em}
+.ep-foot{display:flex;align-items:center;gap:.5em;margin-top:auto;padding-top:.5em;font-weight:700;font-size:1em}
+.ep-net-lb{flex-shrink:0}
+.ep-net-bx{display:inline-block;width:7em;height:1.6em;border:1px solid #000;box-sizing:border-box}
 
-.ep-bottom{font-weight:700;font-size:1em;margin-top:auto;padding-top:.3em}
-.ep-net-lb{display:block}
-
-/* Print */
+/* ─── Print ─── */
 .ep-print{display:none}
 @media print{
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
   .ep-page{display:flex;flex-direction:column;page-break-after:always}
-  .ep-page .ep-card{width:100%;font-size:11pt;padding:5mm 10mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
+  .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
   .ep-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:0}
 }
