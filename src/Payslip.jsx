@@ -214,24 +214,25 @@ const CSS = `
 .slip{width:34em;box-sizing:border-box;background:#fff;padding:1.2em 1.5em 1em;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif}
 .slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1.1em;text-align:center;letter-spacing:.01em}
 .slip-co i{font-style:italic}
-.slip-ad{font-size:.7em;text-align:center;margin-top:.1em}
+.slip-ad{font-size:.85em;text-align:center;margin-top:.1em}
 .slip-ti{font-weight:700;font-size:.88em;text-align:center;text-decoration:underline;margin:.7em 0 .5em}
 
 /* Info section — no borders, plain aligned text */
 .slip-info{font-size:.8em;margin-bottom:.5em}
 .slip-info-row{display:flex;align-items:baseline;margin-bottom:.1em}
-.si-lb{font-weight:700;width:7em;flex-shrink:0}
-.si-vl{flex:1}
-.si-vr{text-align:right;font-weight:700}
+.si-lb{width:7em;flex-shrink:0}
+.si-vl{flex:1;font-weight:700;text-align:center}
+.si-vr{text-align:center;font-weight:700}
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:.8em}
-.slip-box th,.slip-box td{border:1px solid #000;padding:.2em .5em}
-.slip-box .hl{text-align:left;font-weight:700;width:26%}
-.slip-box .ha{text-align:right;font-weight:700;width:24%}
+.slip-box th{border:1px solid #000;padding:.2em .5em;text-align:center;font-weight:700}
+.slip-box td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .5em}
+.slip-box .hl{width:26%}
+.slip-box .ha{width:24%}
 .slip-box .cl{text-align:left}
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
-.slip-box .tot .cl,.slip-box .tot .ca{font-weight:700;border-top:2px solid #000}
+.slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
 .slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
@@ -240,7 +241,7 @@ const CSS = `
 
 /* Signature block — labels top, lines bottom, signing gap between */
 .slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%}
-.sig-labels{display:flex;justify-content:space-between;font-weight:700}
+.sig-labels{display:flex;justify-content:space-between}
 .sig-bottom{display:flex;justify-content:space-between;margin-top:2em}
 .sig-col{width:28%}
 .sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
@@ -256,7 +257,7 @@ const CSS = `
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
   .ps-page .slip{width:100%;font-size:13pt;line-height:1.3;padding:0 5mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
   .ps-page .slip-co{font-size:1em}
-  .ps-page .slip-ad{font-size:.85em}
+  .ps-page .slip-ad{font-size:1em}
   .ps-page .slip-box th,.ps-page .slip-box td{padding:.25em .4em}
   .ps-page .slip-box .hl{width:20%}
   .ps-page .slip-box .ha{width:30%}
