@@ -194,7 +194,7 @@ export const SAMPLE_STAFF=[
   {id:'s19',name:'AZNAN BIN ZAHIDI',ic:'870907-13-5413',position:'DRIVER',salary:1825,method:'cash',status:'permanent',defIncentive:75},
   {id:'s20',name:'DANIELL SHAH RIEZAL BIN ROSLI',ic:'080705-13-0773',position:'GENERAL WORKER',salary:1700,method:'cash',status:'permanent'},
   {id:'s21',name:'JEE SWEE EN',ic:'060310-13-0180',position:'CASHIER',salary:1700,method:'cash',status:'permanent'},
-  {id:'s22',name:'JANET SOON PEI YEE',ic:'020627-13-0836',position:'CASHIER',salary:1700,method:'cash',status:'permanent'},
+  {id:'s22',name:'JANET SOON PEI YEE',ic:'020627-13-0836',position:'CASHIER',salary:1700,method:'cash',status:'probationary'},
   {id:'s23',name:'TAN WEI HOW',ic:'071210-13-0507',position:'GENERAL WORKER',salary:1700,method:'cash',status:'probationary'},
   {id:'s24',name:'ERRA ERYCA NORY ANAK LASUMDER @ LASUNDER JUING',ic:'980125-13-6128',position:'ADMIN CLERK',salary:1800,method:'cash',status:'probationary'},
 ];
@@ -319,6 +319,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .tgb{background:#dbeafe;color:#1e40af}
 .tgc{background:#d1fae5;color:#065f46}
 .tgp{background:#fef3c7;color:#92400e}
+.tgg{background:#e5e7eb;color:#374151}
 .notes{padding:8px 14px;background:#fffbeb;border-top:1px solid #fcd34d}
 .notes p{margin:0 0 3px;font-size:11px;color:#92400e;font-style:italic}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:80}
@@ -461,7 +462,18 @@ function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
 export default function Payroll(){
   const now=new Date();
   const[mo,setMo]=useState(now.getMonth()),[yr,setYr]=useState(now.getFullYear());
-  const[staff,setStaff]=useState(()=>loadJ(LS_S,SAMPLE_STAFF));
+  const[staff,setStaff]=useState(()=>{
+    const d=loadJ(LS_S,SAMPLE_STAFF);
+    const MIG='cjk_prob_mig_v1';
+    if(!localStorage.getItem(MIG)){
+      const names=['ERRA ERYCA','TAN WEI HOW','JANET SOON PEI YEE'];
+      const fixed=d.map(s=>names.some(n=>s.name.includes(n))?{...s,status:'probationary'}:s);
+      localStorage.setItem(MIG,'1');
+      saveJ(LS_S,fixed);
+      return fixed;
+    }
+    return d;
+  });
   const[pt,setPt]=useState(()=>loadJ(LS_PT,SAMPLE_PT));
   const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
   const[bl,setBl]=useState('GAWAI BONUS');
@@ -902,7 +914,7 @@ export default function Payroll(){
                 <div><label className="fl">Salary (RM)</label><input className="fi" type="number" value={fm.salary} onChange={e=>setFm(f=>({...f,salary:parseFloat(e.target.value)||0}))}/></div>
                 <div className="ff"><label className="fl">Position</label><input className="fi" style={{textTransform:'uppercase'}} value={fm.position} onChange={e=>setFm(f=>({...f,position:e.target.value}))} onBlur={()=>setFm(f=>({...f,position:(f.position||'').toUpperCase()}))} placeholder="JOB TITLE"/></div>
                 <div><label className="fl">Payment</label><select className="fs" value={fm.method} onChange={e=>setFm(f=>({...f,method:e.target.value}))}><option value="bank">Bank Transfer</option><option value="cash">Cash</option></select></div>
-                <div><label className="fl">Status</label><select className="fs" value={fm.status} onChange={e=>setFm(f=>({...f,status:e.target.value}))}><option value="permanent">Permanent</option><option value="probationary">Probationary</option></select></div>
+                <div><label className="fl" style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}><input type="checkbox" checked={fm.status==='probationary'} onChange={e=>setFm(f=>({...f,status:e.target.checked?'probationary':'permanent'}))}/> Probationary</label></div>
                 <div className="ff" style={{borderTop:'1px solid #e4e4e7',paddingTop:12,marginTop:4}}>
                   <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.05em',color:'#a1a1aa',marginBottom:8}}>Default Monthly Values</div>
                   <div style={{fontSize:11,color:'#a1a1aa',marginBottom:10}}>Auto-fills each new month. You can still override per month in the payroll table.</div>
@@ -918,7 +930,7 @@ export default function Payroll(){
               </div>
             </div>
             <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({staff.length})</div>
-            {staff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span>{s.status==='probationary'&&<span className="tag tgp">PROB</span>}<button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#92400e'}} onClick={()=>convertFTtoPT(s)} title="Move to Part-Time">→ PT</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Del</button></div>)}
+            {staff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span><label style={{fontSize:11,display:'flex',alignItems:'center',gap:3,cursor:'pointer'}}><input type="checkbox" checked={s.status==='probationary'} onChange={()=>setStaff(p=>p.map(x=>x.id===s.id?{...x,status:x.status==='probationary'?'permanent':'probationary'}:x))}/><span className={`tag ${s.status==='probationary'?'tgp':'tgg'}`} style={{margin:0}}>{s.status==='probationary'?'PROB':'PERM'}</span></label><button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#92400e'}} onClick={()=>convertFTtoPT(s)} title="Move to Part-Time">→ PT</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Del</button></div>)}
             <div style={{fontSize:12,fontWeight:700,margin:'20px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Part-Time ({pt.length})<button className="b bg" style={{marginLeft:8,fontSize:11}} onClick={()=>setPtf(!ptf)}>+ Add</button></div>
             {ptf&&<div style={{background:'#fafafa',borderRadius:8,padding:12,marginBottom:12,border:'1px solid #e4e4e7'}}>
               <div style={{fontSize:11,fontWeight:700,marginBottom:10,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>{eidPT?'Edit Part-Time':'Add Part-Time'}</div>
