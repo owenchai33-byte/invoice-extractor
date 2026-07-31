@@ -443,6 +443,7 @@ function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
   };
   return (
     <input ref={ref} className="i" type="text" inputMode="decimal" value={local} placeholder={placeholder}
+      onClick={e => e.stopPropagation()}
       onChange={e => setLocal(e.target.value.replace(/[^0-9.-]/g,''))}
       onBlur={commit}
       onKeyDown={e => {
