@@ -201,7 +201,8 @@ const CSS = `
 .ps-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
-.ps-pagewrap{font-size:13px;display:flex;gap:2em;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:2px;padding:1em;align-items:flex-start}
+.ps-pagewrap{font-size:13px;display:flex;gap:0;border-radius:2px;padding:0;align-items:stretch}
+.ps-pagewrap .slip{padding:1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:2px}
 
 /* Bottom preview strip */
 .ps-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
@@ -213,7 +214,7 @@ const CSS = `
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
 /* ─── The payslip itself (em-based so it scales screen vs print) ─── */
-.slip{width:34em;height:24em;box-sizing:border-box;background:#fff;padding:0;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+.slip{width:34em;box-sizing:border-box;background:#fff;padding:0;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
 .slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1em;text-align:center;letter-spacing:.01em}
 .slip-co i{font-style:italic}
 .slip-ad{font-size:1em;text-align:center;margin-top:.1em}
