@@ -399,7 +399,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
-  @page{size:A4 landscape;margin:5mm}
+  @page{size:A4 landscape;margin:2cm 0.5cm}
 }
 .po{display:none}
 @media print{.po{display:block!important;text-align:center;margin-bottom:4px}.po div:first-child{font-size:9pt!important;font-weight:700}.po div:nth-child(2){font-size:8pt!important;font-weight:600}.po div:nth-child(3){font-size:7pt!important;font-weight:700;text-align:left}}
