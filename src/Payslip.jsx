@@ -84,6 +84,8 @@ function Slip({ r, mo, yr }) {
         <div className="sig-col">
           <span className="sig-label">RECEIVED BY</span>
           <div className="sig-line"></div>
+          <div className="sig-name">&nbsp;</div>
+          <div className="sig-title">&nbsp;</div>
         </div>
       </div>
     </div>
@@ -265,8 +267,8 @@ const CSS = `
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:12pt;line-height:1.3;padding:8mm 15mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
-  .ps-page .slip-sig{flex:1}
+  .ps-page .slip{width:100%;font-size:12pt;line-height:1.3;padding:5mm 10mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
+  .ps-page .slip-sig{flex:1;margin-top:1.5em}
   .ps-page .sig-label{margin-bottom:0}
   .ps-page .sig-line{margin-top:auto}
 
