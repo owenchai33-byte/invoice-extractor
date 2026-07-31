@@ -103,8 +103,11 @@ export default function Payslip() {
     return [...all.filter(r => r.method === 'bank'), ...all.filter(r => r.method === 'cash')];
   }, [staff, pd, showBonus, mo, yr]);
 
-  const cur = Math.min(idx, Math.max(0, rows.length - 1));
-  const go = d => setIdx(i => Math.min(rows.length - 1, Math.max(0, i + d)));
+  const pairs = [];
+  for (let i = 0; i < rows.length; i += 2) pairs.push([rows[i], rows[i + 1]]);
+
+  const cur = Math.min(idx, Math.max(0, pairs.length - 1));
+  const go = d => setIdx(i => Math.min(pairs.length - 1, Math.max(0, i + d)));
 
   // Keyboard arrows navigate one-by-one
   useEffect(() => {
@@ -123,10 +126,6 @@ export default function Payslip() {
 
   useEffect(() => { document.title = `CJK Payslips - ${MONTHS[mo]} ${yr}`; }, [mo, yr]);
 
-  // Print pairs (2 payslips per A4)
-  const pairs = [];
-  for (let i = 0; i < rows.length; i += 2) pairs.push([rows[i], rows[i + 1]]);
-
   return (
     <div className="ps-root">
       <style>{CSS}</style>
@@ -139,7 +138,7 @@ export default function Payslip() {
           <button className="ps-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
         </div>
         <div className="ps-acts">
-          <span className="ps-count">{rows.length ? `${cur + 1} / ${rows.length}` : '0'}</span>
+          <span className="ps-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
           <button className="ps-btn" onClick={() => window.print()}>Print all (2 per page)</button>
         </div>
       </div>
@@ -148,17 +147,20 @@ export default function Payslip() {
         <div className="ps-body"><div className="ps-empty"><h2>No staff found</h2><p>Add staff in the Payroll tab first, then their payslips will show here.</p></div></div>
       ) : (
         <>
-          {/* Single-payslip viewer */}
+          {/* Two-payslip page viewer (matches print layout) */}
           <div className="ps-stage no-print">
             <button className="ps-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
-            <div className="ps-slipwrap"><Slip r={rows[cur]} mo={mo} yr={yr} /></div>
-            <button className="ps-arrow" disabled={cur >= rows.length - 1} onClick={() => go(1)}>&#9654;</button>
+            <div className="ps-pagewrap">
+              <Slip r={pairs[cur][0]} mo={mo} yr={yr} />
+              {pairs[cur][1] && <Slip r={pairs[cur][1]} mo={mo} yr={yr} />}
+            </div>
+            <button className="ps-arrow" disabled={cur >= pairs.length - 1} onClick={() => go(1)}>&#9654;</button>
           </div>
 
           {/* Bottom preview strip */}
           <div className="ps-strip no-print" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + (i === cur ? " on" : "")} onClick={() => setIdx(i)} title={r.name}>
+              <button key={r.id} className={"thumb" + (Math.floor(i / 2) === cur ? " on" : "")} onClick={() => setIdx(Math.floor(i / 2))} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
@@ -199,7 +201,7 @@ const CSS = `
 .ps-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
-.ps-slipwrap{font-size:15px}
+.ps-pagewrap{font-size:11px;display:flex;flex-direction:column;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:2px;min-height:48em}
 
 /* Bottom preview strip */
 .ps-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
@@ -256,7 +258,7 @@ const CSS = `
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:13pt;line-height:1.3;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
+  .ps-page .slip{width:100%;font-size:11pt;line-height:1.3;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
 
   .slip-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:0}
