@@ -251,7 +251,7 @@ const CSS = `
 .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
 /* Signature block — label centered above line, signing space between */
-.slip-sig{display:flex;justify-content:space-between;margin-top:.8em;font-size:1em}
+.slip-sig{display:flex;justify-content:space-between;margin-top:3.5em;font-size:1em}
 .sig-col{width:28%;display:flex;flex-direction:column;align-items:center}
 .sig-label{margin-bottom:4.5em}
 .sig-line{width:100%;border-bottom:1px solid #000;margin-bottom:.3em}
