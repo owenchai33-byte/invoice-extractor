@@ -341,7 +341,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .no-print{display:none!important}
   .dgs{display:none!important}   /* hide drag ⋮⋮ handle on print */
   .pr{background:#fff}
-  .body{max-width:100%;padding:0;margin:0}
+  .body{max-width:100%;padding:2cm 0.5cm;margin:0;box-sizing:border-box}
   .sec{border:none;border-radius:0;margin-bottom:6px;box-shadow:none}
   .sh{padding:4px 0;border:none}
   .sht{font-size:10pt;font-weight:700}
@@ -399,7 +399,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
-  @page{size:A4 landscape;margin:2cm 0.5cm}
+  @page{size:A4 landscape;margin:0}
 }
 .po{display:none}
 @media print{.po{display:block!important;text-align:center;margin-bottom:4px}.po div:first-child{font-size:9pt!important;font-weight:700}.po div:nth-child(2){font-size:8pt!important;font-weight:600}.po div:nth-child(3){font-size:7pt!important;font-weight:700;text-align:left}}
