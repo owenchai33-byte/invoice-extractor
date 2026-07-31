@@ -97,6 +97,7 @@ export default function Payslip() {
   const [mo, setMo] = useState(now.getMonth());
   const [yr, setYr] = useState(now.getFullYear());
   const [idx, setIdx] = useState(0);
+  const [printOnly, setPrintOnly] = useState(null);
   const stripRef = useRef(null);
 
   // Pull staff + monthly data straight from payroll storage
@@ -133,6 +134,13 @@ export default function Payslip() {
 
   useEffect(() => { document.title = `CJK Payslips - ${MONTHS[mo]} ${yr}`; }, [mo, yr]);
 
+  useEffect(() => {
+    if (printOnly !== null) {
+      window.print();
+      setPrintOnly(null);
+    }
+  }, [printOnly]);
+
   return (
     <div className="ps-root">
       <style>{CSS}</style>
@@ -146,7 +154,8 @@ export default function Payslip() {
         </div>
         <div className="ps-acts">
           <span className="ps-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
-          <button className="ps-btn" onClick={() => window.print()}>Print all (2 per page)</button>
+          <button className="ps-btn ps-btn-o" onClick={() => setPrintOnly(cur)}>Print current</button>
+          <button className="ps-btn" onClick={() => window.print()}>Print all</button>
         </div>
       </div>
 
@@ -177,7 +186,7 @@ export default function Payslip() {
 
           {/* Hidden until print: all payslips, 2 per A4 */}
           <div className="ps-print">
-            {pairs.map((pair, pi) => (
+            {(printOnly !== null ? [pairs[printOnly]] : pairs).map((pair, pi) => (
               <div className="ps-page" key={pi}>
                 {pair.map((r, j) => r ? <Slip key={r.id} r={r} mo={mo} yr={yr} /> : <div key={j} className="slip slip-blank" />)}
               </div>
@@ -200,6 +209,8 @@ const CSS = `
 .ps-count{font-size:12px;color:#71717a;font-variant-numeric:tabular-nums}
 .ps-btn{border:1px solid #18181b;background:#18181b;color:#fff;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
 .ps-btn:hover{background:#000}
+.ps-btn-o{background:#fff;color:#18181b;border-color:#d4d4d8}
+.ps-btn-o:hover{background:#f4f4f5}
 .ps-body{max-width:1100px;margin:0 auto;padding:24px}
 .ps-empty{background:#fff;border:1px dashed #d4d4d8;border-radius:12px;padding:48px 24px;text-align:center;color:#71717a}
 .ps-empty h2{margin:0 0 8px;font-size:16px;color:#18181b}
