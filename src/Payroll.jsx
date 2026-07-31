@@ -393,7 +393,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .nh{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .i{border:none!important;font-size:6.5pt;width:100%!important;padding:0!important;background:transparent!important;text-align:right}
+  .i{display:none!important}
+  .pv{display:inline!important;font-size:6.5pt;text-align:right}
   .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
@@ -420,6 +421,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .reminput:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px #dbeafe}
 .remdel{flex:none;border:none;background:#f4f4f5;color:#71717a;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:12px}
 .remdel:hover{background:#fee2e2;color:#dc2626}
+.pv{display:none}
 .print-only{display:none}
 @media print{.print-only{display:block!important}}
 /* Keyboard-nav selected cell */
@@ -427,6 +429,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 @media print{.selc{outline:none!important;background:transparent!important}}
 `;
 const disp = (v, dec) => v ? (dec ? Number(v).toFixed(2) : String(v)) : '';
+const pfmt = v => (!v || v === 0) ? '-' : fmt(v);
 function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
   const ref = useRef(null);
   const [local, setLocal] = useState(disp(value, dec));
@@ -687,9 +690,9 @@ export default function Payroll(){
       <td style={{fontWeight:600,color:'#000'}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
-      <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/></td>
-      <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/></td>
-      {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/></td>}
+      <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
+      <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/><span className="pv">{pfmt(r.incentive)}</span></td>
+      {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/><span className="pv">{pfmt(r.bonus)}</span></td>}
       <td className={"r fxc"+hl(7)} style={{color:'#000'}} onClick={()=>applySel(ri,7)}>{fmt(r.epfM)}</td>
       <td className={"r fxc"+hl(8)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,8)}>{fmt(r.epfP)}</td>
       <td className={"r fxc"+hl(9)} style={{color:'#000'}} onClick={()=>applySel(ri,9)}>{fmt(r.epfM+r.epfP)}</td>
@@ -698,7 +701,7 @@ export default function Payroll(){
       <td className={"r fxc"+hl(12)} style={{color:'#000'}} onClick={()=>applySel(ri,12)}>{fmt(r.socsoM+r.socsoP)}</td>
       <td className={"r fxc"+hl(13)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,13)}>{fmt(r.eisE)}</td>
       <td className={"r fxc"+hl(14)} style={{color:'#000'}} onClick={()=>applySel(ri,14)}>{fmt(r.eisE*2)}</td>
-      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/></td>
+      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/><span className="pv">{pfmt(r.advance)}</span></td>
       <td className={"r fxc"+hl(16)} style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}} onClick={()=>applySel(ri,16)}>{fmt(r.netPay)}</td>
     </tr>
   );};
