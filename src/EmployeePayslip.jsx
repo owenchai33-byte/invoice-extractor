@@ -44,11 +44,10 @@ function EpCard({ r, mo, yr }) {
               <tr><td className="ep-tl">EIS{' '}{nf(r.eisE)}</td><td className="ep-tr">{nf(r.eisE)}</td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td className="ep-tr">{nf(r.advance || 0)}</td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr">{nf(salNet)}</td></tr>
+              <tr className="ep-xtra"><td colSpan="2">ABSENCE{'   '}-</td></tr>
+              <tr className="ep-xtra"><td colSpan="2">OTHERS</td></tr>
             </tbody>
           </table>
-
-          <div className="ep-abs"><span className="ep-lb">ABSENCE</span><span className="ep-vl">-</span></div>
-          <div className="ep-abs"><span className="ep-lb">OTHERS</span><span className="ep-vl"></span></div>
         </div>
 
         {/* Incentive side */}
@@ -217,7 +216,7 @@ const CSS = `
 .ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
 .ep-sm{font-size:.78em;white-space:nowrap}
 .ep-xs{font-size:.62em;white-space:nowrap}
-.ep-abs{display:flex;align-items:baseline;margin-bottom:.05em;font-size:.95em}
+.ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
 
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:.4em}
