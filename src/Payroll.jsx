@@ -426,6 +426,34 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .selc{outline:2px solid #2563eb!important;outline-offset:-2px;background:#dbeafe!important}
 @media print{.selc{outline:none!important;background:transparent!important}}
 `;
+const disp = (v, dec) => v ? (dec ? Number(v).toFixed(2) : String(v)) : '';
+function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
+  const ref = useRef(null);
+  const [local, setLocal] = useState(disp(value, dec));
+  const lastExternal = useRef(value);
+  useEffect(() => {
+    if (lastExternal.current !== value && document.activeElement !== ref.current) {
+      setLocal(disp(value, dec));
+    }
+    lastExternal.current = value;
+  }, [value, dec]);
+  const commit = () => {
+    const n = parseFloat(local) || 0;
+    if (n !== (value || 0)) onCommit(n);
+  };
+  return (
+    <input ref={ref} className="i" type="text" inputMode="decimal" value={local} placeholder={placeholder}
+      onChange={e => setLocal(e.target.value.replace(/[^0-9.-]/g,''))}
+      onBlur={commit}
+      onKeyDown={e => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); ref.current?.blur(); }
+        if (e.key === 'Escape') { setLocal(disp(value, dec)); ref.current?.blur(); }
+      }}
+      style={{width}}
+    />
+  );
+}
+
 export default function Payroll(){
   const now=new Date();
   const[mo,setMo]=useState(now.getMonth()),[yr,setYr]=useState(now.getFullYear());
@@ -569,37 +597,6 @@ export default function Payroll(){
     // Close the FT edit form if it was open
     setEid(null);
     setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
-  };
-  // EditableCell — uncontrolled input that holds local state during typing,
-  // commits to global state only on blur/Enter so focus never jumps
-  const EditableCell = ({value, onCommit, placeholder='0', width=50, dec=false}) => {
-    const ref = useRef(null);
-    // dec: display with 2 decimals when not being edited (salary/incentive), like the other money columns
-    const disp = v => v ? (dec ? Number(v).toFixed(2) : String(v)) : '';
-    const [local, setLocal] = useState(disp(value));
-    const lastExternal = useRef(value);
-    // Sync from external only when external changes AND user isn't typing
-    useEffect(() => {
-      if (lastExternal.current !== value && document.activeElement !== ref.current) {
-        setLocal(disp(value));
-      }
-      lastExternal.current = value;
-    }, [value]);
-    const commit = () => {
-      const n = parseFloat(local) || 0;
-      if (n !== (value || 0)) onCommit(n);
-    };
-    return (
-      <input ref={ref} className="i" type="text" inputMode="decimal" value={local} placeholder={placeholder}
-        onChange={e => setLocal(e.target.value.replace(/[^0-9.-]/g,''))}
-        onBlur={commit}
-        onKeyDown={e => {
-          if (e.key === 'Enter') { e.preventDefault(); commit(); ref.current?.blur(); }
-          if (e.key === 'Escape') { setLocal(disp(value)); ref.current?.blur(); }
-        }}
-        style={{width}}
-      />
-    );
   };
   // Drag manager — uses refs for live state during drag (no React lag)
   const dragRef = useRef({ id: null, overId: null });
