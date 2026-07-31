@@ -211,7 +211,7 @@ const CSS = `
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
 /* ─── The payslip itself (em-based so it scales screen vs print) ─── */
-.slip{width:34em;box-sizing:border-box;background:#fff;padding:1.2em 1.5em 1em;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif}
+.slip{width:34em;height:24em;box-sizing:border-box;background:#fff;padding:1.2em 1.5em 1em;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
 .slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1.1em;text-align:center;letter-spacing:.01em}
 .slip-co i{font-style:italic}
 .slip-ad{font-size:.85em;text-align:center;margin-top:.1em}
@@ -232,18 +232,18 @@ const CSS = `
 .slip-box .ha{width:30%}
 .slip-box .cl{text-align:left}
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
-.slip-box .cl-long{font-size:.88em}
+.slip-box .cl-long{font-size:.75em;white-space:nowrap}
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
 .slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
 .sn-lb{width:20%;flex-shrink:0}
-.sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
+.sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
 /* Signature block — labels top, lines bottom, signing gap between */
-.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%}
+.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%;flex:1}
 .sig-labels{display:flex;justify-content:space-between}
-.sig-bottom{display:flex;justify-content:space-between;margin-top:2em}
+.sig-bottom{display:flex;justify-content:space-between;margin-top:auto}
 .sig-col{width:28%}
 .sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
 .sig-name{font-weight:700;text-align:center}
@@ -264,9 +264,7 @@ const CSS = `
   .ps-page .slip-ti{margin:.4em 0 .3em}
   .ps-page .slip-info{margin-bottom:.3em}
   .ps-page .si-vl{flex:none}
-  .ps-page .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000}
-  .ps-page .slip-sig{flex:1}
-  .ps-page .sig-bottom{margin-top:auto}
+
   .slip-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:0}
 }
