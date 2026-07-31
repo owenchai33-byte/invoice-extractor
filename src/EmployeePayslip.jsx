@@ -25,6 +25,7 @@ function EpCard({ r, mo, yr }) {
             <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
             <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
             <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
+            {r.bankAcc && <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={fitCls(r.bankAcc,'ep-vl')}>{r.bankAcc}</span></div>}
           </div>
 
           <table className="ep-tbl">
@@ -48,6 +49,11 @@ function EpCard({ r, mo, yr }) {
               <tr className="ep-xtra"><td colSpan="2">OTHERS</td></tr>
             </tbody>
           </table>
+
+          <div className="ep-netbox">
+            <span className="ep-net-lb">NET PAY</span>
+            <span className="ep-net-bx"></span>
+          </div>
         </div>
 
         {/* Incentive side */}
@@ -73,11 +79,6 @@ function EpCard({ r, mo, yr }) {
             </div>
           </div>
         )}
-      </div>
-
-      <div className="ep-foot">
-        <span className="ep-net-lb">NET PAY</span>
-        <span className="ep-net-bx"></span>
       </div>
     </div>
   );
@@ -231,8 +232,7 @@ const CSS = `
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
 /* ─── NET PAY box ─── */
-.ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:auto;font-weight:700;font-size:1em}
-.ep-foot{display:flex;align-items:center;gap:.5em;margin-top:auto;padding-top:.5em;font-weight:700;font-size:1em}
+.ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:.9em;font-weight:700;font-size:1em}
 .ep-net-lb{flex-shrink:0}
 .ep-net-bx{display:inline-block;width:7em;height:1.6em;border:1px solid #000;box-sizing:border-box}
 

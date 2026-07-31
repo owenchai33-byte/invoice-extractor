@@ -173,8 +173,8 @@ function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // the payroll table. Gawai bonus and advance are month-specific, entered
 // manually — not seeded here.
 export const SAMPLE_STAFF=[
-  {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:2450,method:'bank',status:'permanent',defIncentive:275},
-  {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:2250,method:'bank',status:'permanent',defIncentive:250},
+  {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:2450,method:'bank',status:'permanent',defIncentive:275,bankAcc:'PBB 6367244508'},
+  {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:2250,method:'bank',status:'permanent',defIncentive:250,bankAcc:'PBB 5012974626'},
   {id:'s3',name:'LO HUI TIN',ic:'961122-13-5142',position:'PJ EXEC. OPERATIONS SUPERVISOR',salary:2450,method:'bank',status:'permanent',defIncentive:275},
   {id:'s4',name:'JEE SUK HUI',ic:'981109-13-5330',position:'KC ASST. SUPERVISOR',salary:2000,method:'bank',status:'permanent',defIncentive:75},
   {id:'s5',name:'VOON SUK YIN',ic:'001028-13-1446',position:'INVOICING CLERK',salary:1950,method:'cash',status:'permanent',defIncentive:150},
@@ -385,8 +385,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Allow name, IC, position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
-  .t .gh{background:#e5e7eb!important;color:#18181b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gh td{padding:2px 4px;font-size:7pt;font-weight:700;overflow:visible}
+  .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
   .t .tr td{background:#f0fdf4!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -725,11 +724,11 @@ export default function Payroll(){
   // navRows = every navigable row in display order (staff + the 3 subtotal/total rows).
   const navRows=[];
   bS.forEach(r=>navRows.push({kind:'ft',r}));
-  navRows.push({kind:'tot',l:'Bank Transfer',t:bT});
+  navRows.push({kind:'tot',l:'BANK TRANSFER:',t:bT});
   pc.forEach(r=>navRows.push({kind:'ft',r}));
   pb.forEach(r=>navRows.push({kind:'ft',r}));
-  navRows.push({kind:'tot',l:'Cash',t:cT});
-  navRows.push({kind:'tot',l:'TOTAL',t:gT});
+  navRows.push({kind:'tot',l:'CASH:',t:cT});
+  navRows.push({kind:'tot',l:'TOTAL:',t:gT});
   const riOf=new Map(),totRi={};
   navRows.forEach((nr,i)=>{if(nr.kind==='ft')riOf.set(nr.r.id,i);else totRi[nr.l]=i;});
   const NAVCOLS=sb?[4,5,6,7,8,9,10,11,12,13,14,15,16]:[4,5,7,8,9,10,11,12,13,14,15,16];
@@ -847,12 +846,12 @@ export default function Payroll(){
               <tbody>
                 <tr className="gh"><td colSpan={sb?17:16}>Bank Transfer</td></tr>
                 {bS.map(r=><Row key={r.id} r={r}/>)}
-                <TR l="Bank Transfer" t={bT} c="tr"/>
+                <TR l="BANK TRANSFER:" t={bT} c="tr"/>
                 <tr className="gh"><td colSpan={sb?17:16}>Cash</td></tr>
                 {pc.map(r=><Row key={r.id} r={r}/>)}
-                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>Probationary Staff</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
-                <TR l="Cash" t={cT} c="tr"/>
-                <TR l="TOTAL" t={gT} c="gr"/>
+                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>PROBATIONARY {'>'} PERMANENT</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
+                <TR l="CASH:" t={cT} c="tr"/>
+                <TR l="TOTAL:" t={gT} c="gr"/>
               </tbody>
             </table>
           </div>
