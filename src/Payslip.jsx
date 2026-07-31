@@ -67,18 +67,16 @@ function Slip({ r, mo, yr }) {
         <span className="sn-val">{numFmt(r.netPay)}</span>
       </div>
 
-      {/* Signature block — labels at top, lines at bottom, gap in between */}
       <div className="slip-sig">
-        <div className="sig-labels"><span>AUTHORISED BY</span><span>RECEIVED BY</span></div>
-        <div className="sig-bottom">
-          <div className="sig-col">
-            <div className="sig-line"></div>
-            <div className="sig-name">CHAI CHEE CHOI</div>
-            <div className="sig-title">DIRECTOR</div>
-          </div>
-          <div className="sig-col">
-            <div className="sig-line"></div>
-          </div>
+        <div className="sig-col">
+          <span className="sig-label">AUTHORISED BY</span>
+          <div className="sig-line"></div>
+          <div className="sig-name">CHAI CHEE CHOI</div>
+          <div className="sig-title">DIRECTOR</div>
+        </div>
+        <div className="sig-col">
+          <span className="sig-label">RECEIVED BY</span>
+          <div className="sig-line"></div>
         </div>
       </div>
     </div>
@@ -243,14 +241,13 @@ const CSS = `
 .sn-lb{width:20%;flex-shrink:0}
 .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
-/* Signature block — labels top, lines bottom, signing gap between */
-.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:1em;padding:0}
-.sig-labels{display:flex;justify-content:space-between}
-.sig-bottom{display:flex;justify-content:space-between;margin-top:3.5em}
-.sig-col{width:28%}
-.sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
-.sig-name{font-weight:700;text-align:center}
-.sig-title{font-weight:700;text-align:center}
+/* Signature block — label centered above line, signing space between */
+.slip-sig{display:flex;justify-content:space-between;margin-top:.8em;font-size:1em}
+.sig-col{width:28%;display:flex;flex-direction:column;align-items:center}
+.sig-label{margin-bottom:3.5em}
+.sig-line{width:100%;border-bottom:1px solid #000;margin-bottom:.3em}
+.sig-name{font-weight:700}
+.sig-title{font-weight:700}
 
 /* Print: all payslips, 2 per A4 — matches Excel: Calibri 13pt, 0 margins */
 .ps-print{display:none}
@@ -260,8 +257,9 @@ const CSS = `
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
   .ps-page .slip{width:100%;font-size:12pt;line-height:1.3;padding:8mm 15mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
-  .ps-page .slip-sig{flex:1;display:flex;flex-direction:column}
-  .ps-page .sig-bottom{margin-top:auto}
+  .ps-page .slip-sig{flex:1}
+  .ps-page .sig-label{margin-bottom:0}
+  .ps-page .sig-line{margin-top:auto}
 
   .slip-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:0}
