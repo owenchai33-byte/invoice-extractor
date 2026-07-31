@@ -247,20 +247,29 @@ const CSS = `
 .sig-name{font-weight:700;text-align:center}
 .sig-title{font-weight:700;text-align:center}
 
-/* Print: all payslips, 2 per A4 — each slip fills exactly half the page */
+/* Print: all payslips, 2 per A4 — matches Excel: Calibri 13pt, 0 margins */
 .ps-print{display:none}
 @media print{
   .no-print{display:none!important}
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:12pt;line-height:1.6;padding:3mm 10mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
-  .ps-page .slip-box th,.ps-page .slip-box td{padding:.35em .5em}
-  .ps-page .slip-ti{margin:.5em 0 .4em}
-  .ps-page .slip-info{margin-bottom:.4em}
+  .ps-page .slip{width:100%;font-size:13pt;line-height:1.3;padding:0 5mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
+  .ps-page .slip-co{font-size:1em}
+  .ps-page .slip-ad{font-size:.85em}
+  .ps-page .slip-box th,.ps-page .slip-box td{padding:.25em .4em}
+  .ps-page .slip-box .hl{width:20%}
+  .ps-page .slip-box .ha{width:30%}
+  .ps-page .slip-ti{margin:.4em 0 .3em}
+  .ps-page .slip-info{margin-bottom:.3em}
+  .ps-page .si-lb{width:20%}
+  .ps-page .si-vl{width:30%;flex:none}
+  .ps-page .si-vr{width:30%}
+  .ps-page .sn-lb{width:20%}
+  .ps-page .sn-val{width:30%;border:none;border-top:1px solid #000;border-bottom:3px double #000}
   .ps-page .slip-sig{flex:1}
   .ps-page .sig-bottom{margin-top:auto}
   .slip-blank{border:none!important;height:50vh}
-  @page{size:A4 portrait;margin:5mm 10mm}
+  @page{size:A4 portrait;margin:0}
 }
 `;
