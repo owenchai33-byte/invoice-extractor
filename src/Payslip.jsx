@@ -258,7 +258,7 @@ const CSS = `
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:11pt;line-height:1.3;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
+  .ps-page .slip{width:100%;font-size:9.5pt;line-height:1.3;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
 
   .slip-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:0}
