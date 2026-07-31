@@ -241,9 +241,9 @@ const CSS = `
 .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
 /* Signature block — labels top, lines bottom, signing gap between */
-.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%;flex:1}
+.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%}
 .sig-labels{display:flex;justify-content:space-between}
-.sig-bottom{display:flex;justify-content:space-between;margin-top:auto}
+.sig-bottom{display:flex;justify-content:space-between;margin-top:3.5em}
 .sig-col{width:28%}
 .sig-line{border-bottom:1px solid #000;margin-bottom:.3em}
 .sig-name{font-weight:700;text-align:center}
