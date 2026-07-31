@@ -3,12 +3,14 @@ import InvoicesWorkspace from './InvoicesWorkspace';
 import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
 import Payslip from './Payslip';
+import EmployeePayslip from './EmployeePayslip';
 
 const FEATURES = [
   { id: 'invoice',  label: 'Payment Summary',  hint: 'Supplier invoices' },
   { id: 'payroll',  label: 'Payroll',   hint: 'Monthly statements' },
   { id: 'contract', label: 'Contracts', hint: 'Employment contracts' },
   { id: 'payslip',  label: 'Payslip',   hint: 'Staff payslips' },
+  { id: 'epayslip', label: 'Employee Payslip', hint: 'Salary + incentive breakdown' },
 ];
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
@@ -22,7 +24,7 @@ export default function App() {
 
   useEffect(() => {
     try { localStorage.setItem('sabrina_active', active); } catch {}
-    const titles = { invoice: 'CJK Payment Summary', payroll: 'CJK Payroll', contract: 'CJK Contracts', payslip: 'CJK Payslips' };
+    const titles = { invoice: 'CJK Payment Summary', payroll: 'CJK Payroll', contract: 'CJK Contracts', payslip: 'CJK Payslips', epayslip: 'CJK Employee Payslips' };
     document.title = titles[active] || 'Sabrina OS';
   }, [active]);
 
@@ -193,6 +195,7 @@ export default function App() {
         {active === 'payroll' && <Payroll />}
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && <Payslip />}
+        {active === 'epayslip' && <EmployeePayslip />}
       </main>
 
       <style>{`
