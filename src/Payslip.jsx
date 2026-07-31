@@ -51,7 +51,7 @@ function Slip({ r, mo, yr }) {
             <tr key={i}>
               <td className="cl">{earn[i] ? earn[i][0] : ''}</td>
               <td className="ca">{earn[i] ? numFmt(earn[i][1]) : ''}</td>
-              <td className="cl">{ded[i] ? ded[i][0] : ''}</td>
+              <td className={ded[i] && ded[i][0].length > 15 ? "cl cl-long" : "cl"}>{ded[i] ? ded[i][0] : ''}</td>
               <td className="ca">{ded[i] ? numFmt(ded[i][1]) : ''}</td>
             </tr>
           ))}
@@ -220,24 +220,25 @@ const CSS = `
 /* Info section — no borders, plain aligned text */
 .slip-info{font-size:.8em;margin-bottom:.5em}
 .slip-info-row{display:flex;align-items:baseline;margin-bottom:.1em}
-.si-lb{width:7em;flex-shrink:0}
-.si-vl{flex:1;font-weight:700;text-align:center}
-.si-vr{text-align:center;font-weight:700}
+.si-lb{width:20%;flex-shrink:0}
+.si-vl{width:30%;flex-shrink:0;font-weight:700;text-align:center}
+.si-vr{width:30%;flex-shrink:0;text-align:center;font-weight:700}
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:.8em}
 .slip-box th{border:1px solid #000;padding:.2em .5em;text-align:center;font-weight:700}
 .slip-box td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .5em}
-.slip-box .hl{width:26%}
-.slip-box .ha{width:24%}
+.slip-box .hl{width:20%}
+.slip-box .ha{width:30%}
 .slip-box .cl{text-align:left}
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
+.slip-box .cl-long{font-size:.88em}
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
 .slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
-.sn-lb{width:26%;flex-shrink:0}
-.sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:24%;text-align:right;box-sizing:border-box}
+.sn-lb{width:20%;flex-shrink:0}
+.sn-val{border:2px solid #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
 /* Signature block — labels top, lines bottom, signing gap between */
 .slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%}
@@ -259,15 +260,11 @@ const CSS = `
   .ps-page .slip-co{font-size:1em}
   .ps-page .slip-ad{font-size:1em}
   .ps-page .slip-box th,.ps-page .slip-box td{padding:.25em .4em}
-  .ps-page .slip-box .hl{width:20%}
-  .ps-page .slip-box .ha{width:30%}
+  .ps-page .slip-box .cl-long{font-size:.85em}
   .ps-page .slip-ti{margin:.4em 0 .3em}
   .ps-page .slip-info{margin-bottom:.3em}
-  .ps-page .si-lb{width:20%}
-  .ps-page .si-vl{width:30%;flex:none}
-  .ps-page .si-vr{width:30%}
-  .ps-page .sn-lb{width:20%}
-  .ps-page .sn-val{width:30%;border:none;border-top:1px solid #000;border-bottom:3px double #000}
+  .ps-page .si-vl{flex:none}
+  .ps-page .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000}
   .ps-page .slip-sig{flex:1}
   .ps-page .sig-bottom{margin-top:auto}
   .slip-blank{border:none!important;height:50vh}
