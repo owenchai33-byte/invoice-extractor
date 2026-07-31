@@ -211,21 +211,21 @@ const CSS = `
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
 /* ─── The payslip itself (em-based so it scales screen vs print) ─── */
-.slip{width:34em;height:24em;box-sizing:border-box;background:#fff;padding:1.2em 1.5em 1em;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
-.slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1.1em;text-align:center;letter-spacing:.01em}
+.slip{width:34em;height:24em;box-sizing:border-box;background:#fff;padding:0;color:#000;line-height:1.3;font-family:"Calibri","Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+.slip-co{font-family:"Times New Roman",Times,serif;font-weight:700;font-size:1em;text-align:center;letter-spacing:.01em}
 .slip-co i{font-style:italic}
-.slip-ad{font-size:.85em;text-align:center;margin-top:.1em}
-.slip-ti{font-weight:700;font-size:.88em;text-align:center;text-decoration:underline;margin:.7em 0 .5em}
+.slip-ad{font-size:1em;text-align:center;margin-top:.1em}
+.slip-ti{font-weight:700;font-size:1em;text-align:center;text-decoration:underline;margin:.55em 0 .55em}
 
 /* Info section — no borders, plain aligned text */
-.slip-info{font-size:.8em;margin-bottom:.5em}
+.slip-info{font-size:1em;margin-bottom:1.3em}
 .slip-info-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .si-lb{width:20%;flex-shrink:0}
 .si-vl{width:30%;flex-shrink:0;font-weight:700;text-align:center}
 .si-vr{width:30%;flex-shrink:0;text-align:center;font-weight:700}
 
 /* Earnings/Deductions bordered table */
-.slip-box{width:100%;border-collapse:collapse;font-size:.8em}
+.slip-box{width:100%;border-collapse:collapse;font-size:1em}
 .slip-box th{border:1px solid #000;padding:.2em .5em;text-align:center;font-weight:700}
 .slip-box td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .5em}
 .slip-box .hl{width:20%}
@@ -236,12 +236,12 @@ const CSS = `
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
-.slip-net{display:flex;align-items:center;margin-top:.5em;font-size:.85em;font-weight:700}
+.slip-net{display:flex;align-items:center;margin-top:.5em;font-size:1em;font-weight:700}
 .sn-lb{width:20%;flex-shrink:0}
 .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
 /* Signature block — labels top, lines bottom, signing gap between */
-.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:.75em;padding:0 3%}
+.slip-sig{display:flex;flex-direction:column;margin-top:.8em;font-size:1em;padding:0}
 .sig-labels{display:flex;justify-content:space-between}
 .sig-bottom{display:flex;justify-content:space-between;margin-top:3.5em}
 .sig-col{width:28%}
@@ -256,14 +256,7 @@ const CSS = `
   .ps-root{background:#fff}
   .ps-print{display:block}
   .ps-page{display:flex;flex-direction:column;page-break-after:always}
-  .ps-page .slip{width:100%;font-size:13pt;line-height:1.3;padding:0 5mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
-  .ps-page .slip-co{font-size:1em}
-  .ps-page .slip-ad{font-size:1em}
-  .ps-page .slip-box th,.ps-page .slip-box td{padding:.25em .4em}
-  .ps-page .slip-box .cl-long{font-size:.85em}
-  .ps-page .slip-ti{margin:.4em 0 .3em}
-  .ps-page .slip-info{margin-bottom:.3em}
-  .ps-page .si-vl{flex:none}
+  .ps-page .slip{width:100%;font-size:13pt;line-height:1.3;padding:0;height:50vh;box-sizing:border-box;display:flex;flex-direction:column}
 
   .slip-blank{border:none!important;height:50vh}
   @page{size:A4 portrait;margin:0}
