@@ -862,7 +862,7 @@ export default function Payroll(){
                 <TR l="BANK TRANSFER:" t={bT} c="tr"/>
                 <tr className="gh"><td colSpan={sb?17:16}>Cash</td></tr>
                 {pc.map(r=><Row key={r.id} r={r}/>)}
-                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>PROBATIONARY {'>'} PERMANENT</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
+                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>NEW STAFF</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
                 <TR l="CASH:" t={cT} c="tr"/>
                 <TR l="TOTAL:" t={gT} c="gr"/>
               </tbody>
