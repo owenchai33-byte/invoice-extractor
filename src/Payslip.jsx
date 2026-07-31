@@ -7,6 +7,13 @@ const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; 
 const numFmt = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr}`; };
 
+const fitCls = (txt, base) => {
+  const len = (txt || '').length;
+  if (len > 34) return base + ' si-xs';
+  if (len > 22) return base + ' si-sm';
+  return base;
+};
+
 // ─── One payslip (matches Sabrina's Excel layout exactly) ───
 function Slip({ r, mo, yr }) {
   const earn = [['BASIC SALARY', r.salary], ['INCENTIVE', r.incentive]];
@@ -26,7 +33,7 @@ function Slip({ r, mo, yr }) {
       <div className="slip-info">
         <div className="slip-info-row">
           <span className="si-lb">PAY TO</span>
-          <span className="si-vl">{r.name}</span>
+          <span className={fitCls(r.name, 'si-vl')}>{r.name}</span>
           <span className="si-lb">DATE</span>
           <span className="si-vr">{lastDay(mo, yr)}</span>
         </div>
@@ -38,7 +45,7 @@ function Slip({ r, mo, yr }) {
         </div>
         <div className="slip-info-row">
           <span className="si-lb">DESIGNATION</span>
-          <span className="si-vl">{r.position}</span>
+          <span className={fitCls(r.position, 'si-vl')}>{r.position}</span>
         </div>
       </div>
 
@@ -199,8 +206,8 @@ const CSS = `
 .ps-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
-.ps-pagewrap{font-size:13px;display:flex;gap:1.5em;padding:0;align-items:stretch}
-.ps-pagewrap .slip{padding:1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px}
+.ps-pagewrap{display:flex;gap:1.5em;padding:0;align-items:stretch}
+.ps-pagewrap .slip{width:19cm;height:13.35cm;padding:1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:13px}
 
 /* Bottom preview strip */
 .ps-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
@@ -224,6 +231,8 @@ const CSS = `
 .si-lb{width:20%;flex-shrink:0}
 .si-vl{width:30%;flex-shrink:0;font-weight:700;text-align:center}
 .si-vr{width:30%;flex-shrink:0;text-align:center;font-weight:700}
+.si-sm{font-size:.82em;white-space:nowrap}
+.si-xs{font-size:.65em;white-space:nowrap}
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:1em}
