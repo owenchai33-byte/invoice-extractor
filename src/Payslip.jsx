@@ -19,8 +19,7 @@ function Slip({ r, mo, yr }) {
   const earn = [['BASIC SALARY', r.salary], ['INCENTIVE', r.incentive]];
   if (r.bonus > 0) earn.push([(r.bonusLabel || 'BONUS'), r.bonus]);
   const earnTotal = r.salary + (r.incentive || 0) + (r.bonus || 0);
-  const ded = [['EPF', r.epfP], ['SOCSO (+SKBBK=1.25%)', r.socsoP], ['EIS', r.eisE]];
-  if (r.advance > 0) ded.push(['ADVANCE', r.advance]);
+  const ded = [['EPF', r.epfP], ['SOCSO (+SKBBK=1.25%)', r.socsoP], ['EIS', r.eisE], ['ADVANCE', r.advance || 0]];
   const dedTotal = Math.round((r.epfP + r.socsoP + r.eisE + (r.advance || 0)) * 100) / 100;
   const n = Math.max(earn.length, ded.length);
 
@@ -254,7 +253,7 @@ const CSS = `
 /* Signature block — label centered above line, signing space between */
 .slip-sig{display:flex;justify-content:space-between;margin-top:.8em;font-size:1em}
 .sig-col{width:28%;display:flex;flex-direction:column;align-items:center}
-.sig-label{margin-bottom:3.5em}
+.sig-label{margin-bottom:4.5em}
 .sig-line{width:100%;border-bottom:1px solid #000;margin-bottom:.3em}
 .sig-name{font-weight:700}
 .sig-title{font-weight:700}
