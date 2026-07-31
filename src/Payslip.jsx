@@ -97,6 +97,7 @@ export default function Payslip() {
   const [mo, setMo] = useState(now.getMonth());
   const [yr, setYr] = useState(now.getFullYear());
   const [idx, setIdx] = useState(0);
+  const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
   const stripRef = useRef(null);
 
@@ -154,7 +155,7 @@ export default function Payslip() {
         </div>
         <div className="ps-acts">
           <span className="ps-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
-          <button className="ps-btn ps-btn-o" onClick={() => setPrintOnly(cur)}>Print current</button>
+          <button className="ps-btn ps-btn-o" onClick={() => setPrintOnly(sel)}>Print current</button>
           <button className="ps-btn" onClick={() => window.print()}>Print all</button>
         </div>
       </div>
@@ -176,7 +177,7 @@ export default function Payslip() {
           {/* Bottom preview strip */}
           <div className="ps-strip no-print" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + (Math.floor(i / 2) === cur ? " on" : "")} onClick={() => setIdx(Math.floor(i / 2))} title={r.name}>
+              <button key={r.id} className={"thumb" + (i === sel ? " on" : Math.floor(i / 2) === cur ? " cur" : "")} onClick={() => { setSel(i); setIdx(Math.floor(i / 2)); }} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
@@ -186,7 +187,12 @@ export default function Payslip() {
 
           {/* Hidden until print: all payslips, 2 per A4 */}
           <div className="ps-print">
-            {(printOnly !== null ? [pairs[printOnly]] : pairs).map((pair, pi) => (
+            {printOnly !== null ? (
+              <div className="ps-page">
+                <Slip r={rows[printOnly]} mo={mo} yr={yr} />
+                <div className="slip slip-blank" />
+              </div>
+            ) : pairs.map((pair, pi) => (
               <div className="ps-page" key={pi}>
                 {pair.map((r, j) => r ? <Slip key={r.id} r={r} mo={mo} yr={yr} /> : <div key={j} className="slip slip-blank" />)}
               </div>
@@ -227,6 +233,7 @@ const CSS = `
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
 .thumb:hover{background:#f4f4f5}
 .thumb.on{border-color:#18181b;background:#f4f4f5;box-shadow:0 0 0 1px #18181b inset}
+.thumb.cur{background:#f4f4f5}
 .thumb-n{font-size:10px;color:#a1a1aa;font-weight:700}
 .thumb-name{font-size:11px;font-weight:600;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
