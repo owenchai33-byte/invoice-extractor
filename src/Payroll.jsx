@@ -175,8 +175,8 @@ function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 export const SAMPLE_STAFF=[
   {id:'s1',name:'JENNY KUEH MIAW SIN',ic:'940921-13-5170',position:'ADMIN INV. CLERK',salary:2450,method:'bank',status:'permanent',defIncentive:275,bankAcc:'PBB 6367244508'},
   {id:'s2',name:'JANET KUEH NEO PEI',ic:'971020-13-5220',position:'ASST. SUPERVISOR',salary:2250,method:'bank',status:'permanent',defIncentive:250,bankAcc:'PBB 5012974626'},
-  {id:'s3',name:'LO HUI TIN',ic:'961122-13-5142',position:'PJ EXEC. OPERATIONS SUPERVISOR',salary:2450,method:'bank',status:'permanent',defIncentive:275},
-  {id:'s4',name:'JEE SUK HUI',ic:'981109-13-5330',position:'KC ASST. SUPERVISOR',salary:2000,method:'bank',status:'permanent',defIncentive:75},
+  {id:'s3',name:'LO HUI TIN',ic:'961122-13-5142',position:'PJ EXEC. OPERATIONS SUPERVISOR',salary:2450,method:'bank',status:'permanent',defIncentive:275,bankAcc:'PBB 4665043707'},
+  {id:'s4',name:'JEE SUK HUI',ic:'981109-13-5330',position:'KC ASST. SUPERVISOR',salary:2000,method:'bank',status:'permanent',defIncentive:75,bankAcc:'PBB 4608945213'},
   {id:'s5',name:'VOON SUK YIN',ic:'001028-13-1446',position:'INVOICING CLERK',salary:1950,method:'cash',status:'permanent',defIncentive:150},
   {id:'s6',name:'CHAI WAN NEE',ic:'011227-13-0648',position:'ASST. CASHIER SUPERVISOR',salary:1950,method:'cash',status:'permanent',defIncentive:150},
   {id:'s7',name:'SIMON ANG TECK HOCK',ic:'740202-13-5485',position:'DRIVER',salary:2250,method:'cash',status:'permanent',defIncentive:300},
@@ -470,10 +470,10 @@ export default function Payroll(){
       d.forEach(s=>{if(names.some(n=>s.name.includes(n)))s.status='probationary';});
       localStorage.setItem(MIG,'1');
     }
-    const MIG2='cjk_bankacc_mig_v1';
+    const MIG2='cjk_bankacc_mig_v2';
     if(!localStorage.getItem(MIG2)){
-      const accs={'JENNY KUEH':'PBB 6367244508','JANET KUEH':'PBB 5012974626'};
-      d.forEach(s=>{const k=Object.keys(accs).find(n=>s.name.includes(n));if(k&&!s.bankAcc)s.bankAcc=accs[k];});
+      const accs={'JENNY KUEH':'PBB 6367244508','JANET KUEH':'PBB 5012974626','LO HUI TIN':'PBB 4665043707','JEE SUK HUI':'PBB 4608945213'};
+      d.forEach(s=>{const k=Object.keys(accs).find(n=>s.name.includes(n));if(k)s.bankAcc=accs[k];});
       localStorage.setItem(MIG2,'1');
     }
     saveJ(LS_S,d);
