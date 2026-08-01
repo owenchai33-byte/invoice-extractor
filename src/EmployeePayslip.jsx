@@ -214,7 +214,7 @@ const CSS = `
 .ep-info{margin-bottom:.6em}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.05em}
 .ep-lb{width:30%;flex-shrink:0;font-size:1em}
-.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:right}
+.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
 .ep-sm{font-size:.78em;white-space:nowrap}
 .ep-xs{font-size:.62em;white-space:nowrap}
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
