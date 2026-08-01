@@ -192,8 +192,8 @@ const CSS = `
 .ep-arrow:hover:not(:disabled){background:#f4f4f5}
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
-.ep-pagewrap{display:flex;gap:1.5em;padding:0;align-items:stretch}
-.ep-pagewrap .ep-card{width:19cm;height:13.35cm;padding:1.2em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11px}
+.ep-pagewrap{display:flex;flex-direction:column;width:21cm;min-height:29.7cm;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;margin:0 auto}
+.ep-pagewrap .ep-card{width:100%;height:14.85cm;padding:5mm 10mm;font-size:11px;box-sizing:border-box}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
