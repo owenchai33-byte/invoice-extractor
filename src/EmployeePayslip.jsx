@@ -213,7 +213,7 @@ const CSS = `
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
 .ep-info{margin-bottom:.6em}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.05em}
-.ep-lb{width:30%;flex-shrink:0;font-size:1em}
+.ep-lb{width:38%;flex-shrink:0;font-size:1em}
 .ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
 .ep-sm{font-size:.78em;white-space:nowrap}
 .ep-xs{font-size:.62em;white-space:nowrap}
