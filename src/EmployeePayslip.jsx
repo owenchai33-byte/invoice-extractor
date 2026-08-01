@@ -235,7 +235,7 @@ const CSS = `
 /* ─── NET PAY box ─── */
 .ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:auto;padding-top:.9em;font-weight:700;font-size:1em}
 .ep-net-lb{flex-shrink:0}
-.ep-net-bx{display:inline-block;width:7em;height:1.6em;border:1px solid #000;box-sizing:border-box}
+.ep-net-bx{display:inline-block;width:8em;height:2.5em;border:1px solid #000;box-sizing:border-box}
 
 /* ─── Print ─── */
 .ep-print{display:none}
