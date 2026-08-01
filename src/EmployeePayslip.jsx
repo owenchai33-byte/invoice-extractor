@@ -192,8 +192,8 @@ const CSS = `
 .ep-arrow:hover:not(:disabled){background:#f4f4f5}
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
-.ep-pagewrap{display:flex;flex-direction:column;width:21cm;min-height:29.7cm;background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;margin:0 auto}
-.ep-pagewrap .ep-card{width:100%;height:14.85cm;padding:5mm 10mm;font-size:11px;box-sizing:border-box}
+.ep-pagewrap{display:flex;gap:0;padding:0;align-items:stretch;justify-content:center}
+.ep-pagewrap .ep-card{width:21cm;padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11.5px}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
@@ -205,7 +205,7 @@ const CSS = `
 
 /* ─── Card ─── */
 .ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.35;display:flex;flex-direction:column}
-.ep-halves{display:flex;gap:1.5em;flex:1}
+.ep-halves{display:flex;gap:.8em}
 .ep-sal{flex:1.15;display:flex;flex-direction:column}
 .ep-sal-full{flex:1}
 .ep-inc{flex:0.85;display:flex;flex-direction:column}
@@ -213,8 +213,8 @@ const CSS = `
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
 .ep-info{margin-bottom:.6em}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.05em}
-.ep-lb{width:40%;flex-shrink:0;font-size:1em}
-.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
+.ep-lb{width:30%;flex-shrink:0;font-size:1em}
+.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:right}
 .ep-sm{font-size:.78em;white-space:nowrap}
 .ep-xs{font-size:.62em;white-space:nowrap}
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
@@ -232,7 +232,7 @@ const CSS = `
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
 /* ─── NET PAY box ─── */
-.ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:.9em;font-weight:700;font-size:1em}
+.ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:auto;padding-top:.9em;font-weight:700;font-size:1em}
 .ep-net-lb{flex-shrink:0}
 .ep-net-bx{display:inline-block;width:7em;height:1.6em;border:1px solid #000;box-sizing:border-box}
 
