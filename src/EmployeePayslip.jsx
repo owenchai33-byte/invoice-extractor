@@ -64,13 +64,9 @@ function EpCard({ r, mo, yr }) {
               <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
               <tr className="ep-xtra"><td colSpan="2">ABSENCE{'   '}-</td></tr>
               <tr className="ep-xtra"><td colSpan="2">OTHERS</td></tr>
+              <tr className="ep-net-row"><td className="ep-tl">NET PAY</td><td className="ep-tr"><span className="ep-net-bx"></span></td></tr>
             </tbody>
           </table>
-
-          <div className="ep-netbox">
-            <span className="ep-net-lb">NET PAY</span>
-            <span className="ep-net-bx"></span>
-          </div>
         </div>
 
         {/* Incentive side */}
@@ -87,13 +83,9 @@ function EpCard({ r, mo, yr }) {
               <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody>
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
+                <tr className="ep-net-row"><td className="ep-tl">NET PAY</td><td className="ep-tr"><span className="ep-net-bx"></span></td></tr>
               </tbody>
             </table>
-
-            <div className="ep-netbox">
-              <span className="ep-net-lb">NET PAY</span>
-              <span className="ep-net-bx"></span>
-            </div>
           </div>
         )}
       </div>
@@ -243,7 +235,7 @@ const CSS = `
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
 
 /* ─── Tables ─── */
-.ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:.4em}
+.ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:0;table-layout:fixed}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
 .ep-tl{text-align:left}
@@ -256,9 +248,8 @@ const CSS = `
 .ep-ded td{font-size:.92em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
-/* ─── NET PAY box ─── */
-.ep-netbox{display:flex;align-items:center;gap:.5em;margin-top:1.5em;font-weight:700;font-size:1em}
-.ep-net-lb{flex-shrink:0}
+/* ─── NET PAY row ─── */
+.ep-net-row td{border-top:none;font-weight:700;padding-top:1.2em;vertical-align:middle}
 .ep-net-bx{display:inline-block;width:7em;height:1.8em;border:1px solid #000;box-sizing:border-box}
 
 /* ─── Print ─── */
