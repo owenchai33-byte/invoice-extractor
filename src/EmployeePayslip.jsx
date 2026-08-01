@@ -283,13 +283,9 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:flex;flex-direction:column;gap:.2cm;page-break-after:always;height:100vh;box-sizing:border-box}
-  .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;flex:2;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
-  .ep-page .ep-compact{flex:1;font-size:7.5pt;padding:2mm 8mm}
-  .ep-compact .ep-netbox{height:1.8em;margin-top:.25em}
-  .ep-compact .ep-ti{margin-bottom:.1em}
-  .ep-compact .ep-info{margin-bottom:.15em}
-  .ep-compact .ep-row{margin-bottom:0}
+  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.2cm;page-break-after:always;height:100vh;box-sizing:border-box}
+  .ep-page .ep-card{font-size:10.5pt;padding:5mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
+  .ep-page .ep-compact{grid-column:span 1;font-size:8pt;padding:3mm 5mm}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
