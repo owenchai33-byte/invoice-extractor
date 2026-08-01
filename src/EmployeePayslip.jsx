@@ -45,25 +45,23 @@ function EpCard({ r, mo, yr }) {
             {r.bankAcc && <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={fitCls(r.bankAcc,'ep-vl')}>{r.bankAcc}</span></div>}
           </div>
 
-          <table className="ep-tbl ep-earn">
-            <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
-            <tbody>
+          <table className="ep-tbl">
+            <colgroup><col className="ep-col-lbl"/><col className="ep-col-mid"/><col className="ep-col-amt"/></colgroup>
+            <tbody className="ep-earn">
+              <tr className="ep-hdr"><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr>
               <tr><td className="ep-tl">BASIC SALARY</td><td className="ep-tm"><Fv f={`Salary \xf7 26 = ${nf(r.salary)} \xf7 26`}>{nf(daily)}</Fv></td><td className="ep-tr"><Fv f="Basic monthly salary">{nf(r.salary)}</Fv></td></tr>
               {r.bonus > 0 && <tr className="ep-bonus"><td className="ep-tl">{r.bonusLabel || 'BONUS (PAID)'}</td><td className="ep-tm"></td><td className="ep-tr"><Fv f="Bonus payment">{nf(r.bonus)}</Fv></td></tr>}
             </tbody>
-          </table>
-
-          <table className="ep-tbl ep-ded">
-            <thead><tr><th className="ep-tl">DEDUCTIONS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
-            <tbody>
-              <tr><td className="ep-tl">EPF{' '}<Fv f={`EPF employer (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></td><td className="ep-tr"><Fv f={`EPF employee (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfP)}</Fv></td></tr>
-              <tr><td className="ep-tl">SOCSO (0.5%) <Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></td><td className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
-              <tr><td className="ep-tl">SOCSO (SKBBK 0.75%)</td><td className="ep-tr"><Fv f="SOCSO SKBBK employment injury (0.75%)">{nf(r.socsoSkbbk)}</Fv></td></tr>
-              <tr><td className="ep-tl">EIS{' '}<Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td><td className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
-              <tr><td className="ep-tl">ADVANCE</td><td className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
-              <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
-              <tr className="ep-xtra"><td colSpan="2">ABSENCE{'   '}-</td></tr>
-              <tr className="ep-xtra"><td colSpan="2">OTHERS</td></tr>
+            <tbody className="ep-ded">
+              <tr className="ep-hdr"><th colSpan="2" className="ep-tl">DEDUCTIONS</th><th className="ep-tr">AMOUNT (RM)</th></tr>
+              <tr><td colSpan="2" className="ep-tl">EPF{' '}<Fv f={`EPF employer (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></td><td className="ep-tr"><Fv f={`EPF employee (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfP)}</Fv></td></tr>
+              <tr><td colSpan="2" className="ep-tl">SOCSO (0.5%) <Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></td><td className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
+              <tr><td colSpan="2" className="ep-tl">SOCSO (SKBBK 0.75%)</td><td className="ep-tr"><Fv f="SOCSO SKBBK employment injury (0.75%)">{nf(r.socsoSkbbk)}</Fv></td></tr>
+              <tr><td colSpan="2" className="ep-tl">EIS{' '}<Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td><td className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
+              <tr><td colSpan="2" className="ep-tl">ADVANCE</td><td className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
+              <tr className="ep-sub"><td colSpan="2" className="ep-tl"></td><td className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
+              <tr className="ep-xtra"><td colSpan="3">ABSENCE{'   '}-</td></tr>
+              <tr className="ep-xtra"><td colSpan="3">OTHERS</td></tr>
             </tbody>
           </table>
 
@@ -243,18 +241,21 @@ const CSS = `
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
 
 /* ─── Tables ─── */
-.ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:0;table-layout:fixed}
+.ep-tbl{width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
+.ep-col-lbl{width:40%}
+.ep-col-mid{width:15%}
+.ep-col-amt{width:45%}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
 .ep-earn td.ep-tl{border-right:none}
 .ep-earn td.ep-tm{border:none;padding:.2em .4em}
 .ep-earn td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
-.ep-tm{text-align:right;font-size:.9em;width:18%}
+.ep-tm{text-align:right;font-size:.9em}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
-.ep-tbl tbody tr:last-child td{border-bottom:1px solid #000}
+.ep-tbl tbody:last-child tr:last-child td{border-bottom:1px solid #000}
+.ep-hdr th{border:1px solid #000}
 .ep-bonus td{color:#c00}
-.ep-ded .ep-tl{width:58%}
 .ep-ded td{font-size:.92em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
