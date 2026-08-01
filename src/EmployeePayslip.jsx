@@ -204,7 +204,7 @@ const CSS = `
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
 /* ─── Card ─── */
-.ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.35;display:flex;flex-direction:column}
+.ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.55;display:flex;flex-direction:column}
 .ep-halves{display:flex;gap:1cm}
 .ep-sal{flex:1;display:flex;flex-direction:column}
 .ep-sal-full{flex:1}
@@ -212,7 +212,7 @@ const CSS = `
 
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
 .ep-info{margin-bottom:.6em}
-.ep-row{display:flex;align-items:baseline;margin-bottom:.05em}
+.ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .ep-lb{width:40%;flex-shrink:0;font-size:1em}
 .ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
 .ep-sm{font-size:.78em;white-space:nowrap}
@@ -222,7 +222,7 @@ const CSS = `
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:.4em}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
-.ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.1em .4em}
+.ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
 .ep-tl{text-align:left}
 .ep-tm{text-align:right;font-size:.9em;width:18%}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
