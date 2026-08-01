@@ -26,14 +26,14 @@ function Fv({ f, children }) {
   );
 }
 
-function EpCard({ r, mo, yr }) {
+function EpCard({ r, mo, yr, compact }) {
   const hasInc = (r.incentive || 0) > 0;
   const daily = r.salary / 26;
   const epfMD = r.epfM / 26;
   const salNet = Math.round((r.salary + (r.bonus || 0) - r.epfP - r.socsoInv - r.socsoSkbbk - r.eisE - (r.advance || 0)) * 100) / 100;
 
   return (
-    <div className="ep-card">
+    <div className={"ep-card" + (compact ? " ep-compact" : "")}>
       <div className="ep-halves">
         {/* Salary side */}
         <div className={hasInc ? 'ep-sal' : 'ep-sal ep-sal-full'}>
@@ -121,10 +121,15 @@ export default function EmployeePayslip() {
 
   const printPages = useMemo(() => {
     const pages = [];
-    const inc = rows.filter(r => (r.incentive || 0) > 0);
-    const noInc = rows.filter(r => !((r.incentive || 0) > 0));
-    for (let i = 0; i < inc.length; i += 2) pages.push({ quad: false, items: [inc[i], inc[i + 1]].filter(Boolean) });
-    for (let i = 0; i < noInc.length; i += 4) pages.push({ quad: true, items: noInc.slice(i, i + 4) });
+    let cur = { items: [], slots: 0 };
+    rows.forEach(r => {
+      const half = (r.incentive || 0) > 0;
+      const size = half ? 2 : 1;
+      if (cur.slots + size > 4) { pages.push(cur); cur = { items: [], slots: 0 }; }
+      cur.items.push({ r, half });
+      cur.slots += size;
+    });
+    if (cur.items.length > 0) pages.push(cur);
     return pages;
   }, [rows]);
 
@@ -188,9 +193,8 @@ export default function EmployeePayslip() {
 
           <div className="ep-print">
             {printPages.map((pg, pi) => (
-              <div className={pg.quad ? "ep-page ep-page-quad" : "ep-page"} key={pi}>
-                {pg.items.map(r => <EpCard key={r.id} r={r} mo={mo} yr={yr} />)}
-                {!pg.quad && pg.items.length < 2 && <div className="ep-card ep-blank" />}
+              <div className="ep-page" key={pi}>
+                {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} />)}
               </div>
             ))}
           </div>
@@ -279,15 +283,13 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:flex;flex-direction:column;gap:1cm;page-break-after:always}
-  .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;height:calc(50vh - .5cm);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
-  .ep-blank{border:none!important;height:calc(50vh - .5cm)}
-  .ep-page-quad{gap:.2cm}
-  .ep-page-quad .ep-card{font-size:7.5pt;padding:2mm 8mm;height:calc(25vh - .15cm)}
-  .ep-page-quad .ep-netbox{height:1.8em;margin-top:.25em}
-  .ep-page-quad .ep-ti{margin-bottom:.1em}
-  .ep-page-quad .ep-info{margin-bottom:.15em}
-  .ep-page-quad .ep-row{margin-bottom:0}
+  .ep-page{display:flex;flex-direction:column;gap:.2cm;page-break-after:always;height:100vh;box-sizing:border-box}
+  .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;flex:2;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
+  .ep-page .ep-compact{flex:1;font-size:7.5pt;padding:2mm 8mm}
+  .ep-compact .ep-netbox{height:1.8em;margin-top:.25em}
+  .ep-compact .ep-ti{margin-bottom:.1em}
+  .ep-compact .ep-info{margin-bottom:.15em}
+  .ep-compact .ep-row{margin-bottom:0}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
