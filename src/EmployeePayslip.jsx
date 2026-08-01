@@ -262,7 +262,7 @@ const CSS = `
 /* ─── NET PAY ─── */
 .ep-netbox{display:flex;align-items:center;margin-top:1em;font-weight:700;font-size:1em;height:3.5em}
 .ep-net-lb{width:40%;flex-shrink:0}
-.ep-net-bx{flex:1;height:100%;border:1px solid #000;box-sizing:border-box}
+.ep-net-bx{flex:1;height:100%;border:2px solid #000;box-sizing:border-box}
 
 /* ─── Print ─── */
 .ep-print{display:none}
