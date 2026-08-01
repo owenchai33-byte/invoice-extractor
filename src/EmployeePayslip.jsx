@@ -283,8 +283,9 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.2cm;page-break-after:always;height:100vh;box-sizing:border-box}
-  .ep-page .ep-card{font-size:10.5pt;padding:5mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
+  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
+  .ep-page .ep-card{font-size:10.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
+  .ep-page .ep-netbox{margin-top:.4em;height:2.8em}
   .ep-page .ep-compact{grid-column:span 1;font-size:8pt;padding:3mm 5mm}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
