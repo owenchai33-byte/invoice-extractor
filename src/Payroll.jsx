@@ -467,11 +467,16 @@ export default function Payroll(){
     const MIG='cjk_prob_mig_v1';
     if(!localStorage.getItem(MIG)){
       const names=['ERRA ERYCA','TAN WEI HOW','JANET SOON PEI YEE'];
-      const fixed=d.map(s=>names.some(n=>s.name.includes(n))?{...s,status:'probationary'}:s);
+      d.forEach(s=>{if(names.some(n=>s.name.includes(n)))s.status='probationary';});
       localStorage.setItem(MIG,'1');
-      saveJ(LS_S,fixed);
-      return fixed;
     }
+    const MIG2='cjk_bankacc_mig_v1';
+    if(!localStorage.getItem(MIG2)){
+      const accs={'JENNY KUEH':'PBB 6367244508','JANET KUEH':'PBB 5012974626'};
+      d.forEach(s=>{const k=Object.keys(accs).find(n=>s.name.includes(n));if(k&&!s.bankAcc)s.bankAcc=accs[k];});
+      localStorage.setItem(MIG2,'1');
+    }
+    saveJ(LS_S,d);
     return d;
   });
   const[pt,setPt]=useState(()=>loadJ(LS_PT,SAMPLE_PT));
@@ -483,7 +488,7 @@ export default function Payroll(){
   const[pan,setPan]=useState(false),[eid,setEid]=useState(null);
   const[dragId,setDragId]=useState(null);
   const[dragOverId,setDragOverId]=useState(null);
-  const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});
+  const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
   const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
   const[sel,setSel]=useState(null);      // formula-bar: currently clicked cell {who,label,formula,value}
@@ -531,8 +536,8 @@ export default function Payroll(){
     const firstName = (r.name||'(unnamed)').split(' ')[0];
     return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;
   }),[bS,cS]);
-  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});setEid(null);};
-  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});};
+  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});setEid(null);};
+  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});};
   const delS=id=>{setStaff(p=>p.filter(s=>s.id!==id));};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
@@ -555,7 +560,7 @@ export default function Payroll(){
       return arr;
     });
   };
-  const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0});};
+  const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0,bankAcc:s.bankAcc||''});};
   const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,name:(ptfm.name||'').toUpperCase(),status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);setEidPT(null);};
   const delPT=id=>{setPt(p=>p.filter(s=>s.id!==id));};
 
@@ -914,6 +919,7 @@ export default function Payroll(){
                 <div><label className="fl">Salary (RM)</label><input className="fi" type="number" value={fm.salary} onChange={e=>setFm(f=>({...f,salary:parseFloat(e.target.value)||0}))}/></div>
                 <div className="ff"><label className="fl">Position</label><input className="fi" style={{textTransform:'uppercase'}} value={fm.position} onChange={e=>setFm(f=>({...f,position:e.target.value}))} onBlur={()=>setFm(f=>({...f,position:(f.position||'').toUpperCase()}))} placeholder="JOB TITLE"/></div>
                 <div><label className="fl">Payment</label><select className="fs" value={fm.method} onChange={e=>setFm(f=>({...f,method:e.target.value}))}><option value="bank">Bank Transfer</option><option value="cash">Cash</option></select></div>
+                <div><label className="fl">Bank Acc No.</label><input className="fi" value={fm.bankAcc||''} onChange={e=>setFm(f=>({...f,bankAcc:e.target.value}))} placeholder="e.g. PBB 1234567890"/></div>
                 <div><label className="fl" style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}><input type="checkbox" checked={fm.status==='probationary'} onChange={e=>setFm(f=>({...f,status:e.target.checked?'probationary':'permanent'}))}/> Probationary</label></div>
                 <div className="ff" style={{borderTop:'1px solid #e4e4e7',paddingTop:12,marginTop:4}}>
                   <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.05em',color:'#a1a1aa',marginBottom:8}}>Default Monthly Values</div>
@@ -926,7 +932,7 @@ export default function Payroll(){
               {fm.ic&&getAgeFromIC(fm.ic,new Date())!==null&&<div style={{fontSize:12,color:getAgeFromIC(fm.ic,new Date())<18?'#dc2626':'#71717a',marginBottom:12}}>Age: {getAgeFromIC(fm.ic,new Date())} {getAgeFromIC(fm.ic,new Date())<18&&'— EIS exempt (under 18)'}</div>}
               <div style={{display:'flex',gap:8}}>
                 <button className="b bd" onClick={eid?updS:addS}>{eid?'Update':'Add Staff'}</button>
-                {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0});}}>Cancel</button>}
+                {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});}}>Cancel</button>}
               </div>
             </div>
             <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({staff.length})</div>
