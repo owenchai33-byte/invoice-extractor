@@ -45,7 +45,7 @@ function EpCard({ r, mo, yr }) {
             {r.bankAcc && <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={fitCls(r.bankAcc,'ep-vl')}>{r.bankAcc}</span></div>}
           </div>
 
-          <table className="ep-tbl">
+          <table className="ep-tbl ep-earn">
             <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
             <tbody>
               <tr><td className="ep-tl">BASIC SALARY</td><td className="ep-tm"><Fv f={`Salary \xf7 26 = ${nf(r.salary)} \xf7 26`}>{nf(daily)}</Fv></td><td className="ep-tr"><Fv f="Basic monthly salary">{nf(r.salary)}</Fv></td></tr>
@@ -247,9 +247,9 @@ const CSS = `
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
 .ep-tbl th.ep-tl{border-bottom:none}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
-.ep-tbl td.ep-tl{border-right:none}
-.ep-tbl td.ep-tm{border:none;padding:.2em .4em}
-.ep-tbl td.ep-tr{border-left:none}
+.ep-earn td.ep-tl{border-right:none}
+.ep-earn td.ep-tm{border:none;padding:.2em .4em}
+.ep-earn td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
 .ep-tm{text-align:right;font-size:.9em;width:18%}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
