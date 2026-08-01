@@ -252,7 +252,7 @@ const CSS = `
 .si-vl{width:30%;flex-shrink:0;font-weight:700;text-align:center}
 .si-vr{width:30%;flex-shrink:0;text-align:center;font-weight:700}
 .si-sm{font-size:.82em;white-space:nowrap}
-.si-xs{font-size:.65em;white-space:nowrap}
+.si-xs{font-size:.72em}
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:1em}
