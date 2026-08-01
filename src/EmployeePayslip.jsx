@@ -67,9 +67,9 @@ function EpCard({ r, mo, yr }) {
             </div>
 
             <table className="ep-tbl">
-              <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
+              <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody>
-                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tm"></td><td className="ep-tr">{nf(r.incentive)}</td></tr>
+                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr">{nf(r.incentive)}</td></tr>
               </tbody>
             </table>
 
@@ -228,7 +228,8 @@ const CSS = `
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
 .ep-tbl tbody tr:last-child td{border-bottom:1px solid #000}
 .ep-bonus td{color:#c00}
-.ep-ded .ep-tl{width:58%}
+.ep-ded .ep-tl{width:58%;border-right:none}
+.ep-ded .ep-tr{border-left:none}
 .ep-ded td{font-size:.92em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
