@@ -243,9 +243,9 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:flex;flex-direction:column;page-break-after:always}
-  .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;height:50vh;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
-  .ep-blank{border:none!important;height:50vh}
+  .ep-page{display:flex;flex-direction:column;gap:1cm;page-break-after:always}
+  .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;height:calc(50vh - .5cm);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
+  .ep-blank{border:none!important;height:calc(50vh - .5cm)}
   @page{size:A4 portrait;margin:0}
 }
 `;
