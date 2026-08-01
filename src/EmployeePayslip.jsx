@@ -245,7 +245,6 @@ const CSS = `
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:0;table-layout:fixed}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
-.ep-tbl th.ep-tl{border-bottom:none}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
 .ep-earn td.ep-tl{border-right:none}
 .ep-earn td.ep-tm{border:none;padding:.2em .4em}
