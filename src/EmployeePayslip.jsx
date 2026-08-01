@@ -9,6 +9,23 @@ const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.get
 const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2.toString().slice(-2)}`; };
 const fitCls = (txt, base) => { const len = (txt || '').length; if (len > 34) return base + ' ep-xs'; if (len > 22) return base + ' ep-sm'; return base; };
 
+function Fv({ f, children }) {
+  const [show, setShow] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!show) return;
+    const close = e => { if (ref.current && !ref.current.contains(e.target)) setShow(false); };
+    document.addEventListener('click', close, true);
+    return () => document.removeEventListener('click', close, true);
+  }, [show]);
+  return (
+    <span ref={ref} className="fv-wrap" onClick={e => { e.stopPropagation(); setShow(!show); }}>
+      {children}
+      {show && <span className="fv-tip">{f}</span>}
+    </span>
+  );
+}
+
 function EpCard({ r, mo, yr }) {
   const hasInc = (r.incentive || 0) > 0;
   const daily = r.salary / 26;
@@ -31,20 +48,20 @@ function EpCard({ r, mo, yr }) {
           <table className="ep-tbl">
             <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
             <tbody>
-              <tr><td className="ep-tl">BASIC SALARY</td><td className="ep-tm">{nf(daily)}</td><td className="ep-tr">{nf(r.salary)}</td></tr>
-              {r.bonus > 0 && <tr className="ep-bonus"><td className="ep-tl">{r.bonusLabel || 'BONUS (PAID)'}</td><td className="ep-tm"></td><td className="ep-tr">{nf(r.bonus)}</td></tr>}
+              <tr><td className="ep-tl">BASIC SALARY</td><td className="ep-tm"><Fv f={`Salary \xf7 26 = ${nf(r.salary)} \xf7 26`}>{nf(daily)}</Fv></td><td className="ep-tr"><Fv f="Basic monthly salary">{nf(r.salary)}</Fv></td></tr>
+              {r.bonus > 0 && <tr className="ep-bonus"><td className="ep-tl">{r.bonusLabel || 'BONUS (PAID)'}</td><td className="ep-tm"></td><td className="ep-tr"><Fv f="Bonus payment">{nf(r.bonus)}</Fv></td></tr>}
             </tbody>
           </table>
 
           <table className="ep-tbl ep-ded">
             <thead><tr><th className="ep-tl">DEDUCTIONS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
             <tbody>
-              <tr><td className="ep-tl">EPF{' '}{nf(r.epfM)}/{nf(epfMD)}</td><td className="ep-tr">{nf(r.epfP)}</td></tr>
-              <tr><td className="ep-tl">SOCSO (0.5%) {nf(r.socsoM)}</td><td className="ep-tr">{nf(r.socsoInv)}</td></tr>
-              <tr><td className="ep-tl">SOCSO (SKBBK 0.75%)</td><td className="ep-tr">{nf(r.socsoSkbbk)}</td></tr>
-              <tr><td className="ep-tl">EIS{' '}{nf(r.eisE)}</td><td className="ep-tr">{nf(r.eisE)}</td></tr>
-              <tr><td className="ep-tl">ADVANCE</td><td className="ep-tr">{nf(r.advance || 0)}</td></tr>
-              <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr">{nf(salNet)}</td></tr>
+              <tr><td className="ep-tl">EPF{' '}<Fv f={`EPF employer (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></td><td className="ep-tr"><Fv f={`EPF employee (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfP)}</Fv></td></tr>
+              <tr><td className="ep-tl">SOCSO (0.5%) <Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></td><td className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
+              <tr><td className="ep-tl">SOCSO (SKBBK 0.75%)</td><td className="ep-tr"><Fv f="SOCSO SKBBK employment injury (0.75%)">{nf(r.socsoSkbbk)}</Fv></td></tr>
+              <tr><td className="ep-tl">EIS{' '}<Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td><td className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
+              <tr><td className="ep-tl">ADVANCE</td><td className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
+              <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
               <tr className="ep-xtra"><td colSpan="2">ABSENCE{'   '}-</td></tr>
               <tr className="ep-xtra"><td colSpan="2">OTHERS</td></tr>
             </tbody>
@@ -69,7 +86,7 @@ function EpCard({ r, mo, yr }) {
             <table className="ep-tbl">
               <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody>
-                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr">{nf(r.incentive)}</td></tr>
+                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
             </table>
 
@@ -203,6 +220,12 @@ const CSS = `
 .thumb-name{font-size:11px;font-weight:600;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thumb-net{font-size:10.5px;color:#059669;font-variant-numeric:tabular-nums}
 
+/* ─── Formula tooltip ─── */
+.fv-wrap{position:relative;cursor:pointer;border-bottom:1px dashed #bbb}
+.fv-wrap:hover{background:#eff6ff}
+.fv-tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#18181b;color:#fff;font-size:11px;font-weight:400;padding:5px 10px;border-radius:6px;white-space:nowrap;z-index:100;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.fv-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#18181b}
+
 /* ─── Card ─── */
 .ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.55;display:flex;flex-direction:column}
 .ep-halves{display:flex;gap:1cm}
@@ -247,6 +270,8 @@ const CSS = `
   .ep-page{display:flex;flex-direction:column;gap:1cm;page-break-after:always}
   .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;height:calc(50vh - .5cm);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
   .ep-blank{border:none!important;height:calc(50vh - .5cm)}
+  .fv-wrap{border-bottom:none;cursor:default}
+  .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
 }
 `;
