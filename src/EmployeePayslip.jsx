@@ -237,14 +237,17 @@ const CSS = `
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;margin-bottom:0;table-layout:fixed}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
+.ep-tbl th.ep-tl{border-bottom:none}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
+.ep-tbl td.ep-tl{border-right:none}
+.ep-tbl td.ep-tm{border:none;padding:.2em .4em}
+.ep-tbl td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
 .ep-tm{text-align:right;font-size:.9em;width:18%}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
 .ep-tbl tbody tr:last-child td{border-bottom:1px solid #000}
 .ep-bonus td{color:#c00}
-.ep-ded .ep-tl{width:58%;border-right:none}
-.ep-ded .ep-tr{border-left:none}
+.ep-ded .ep-tl{width:58%}
 .ep-ded td{font-size:.92em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
