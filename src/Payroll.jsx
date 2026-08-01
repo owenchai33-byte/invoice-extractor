@@ -168,6 +168,16 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
+// Module-level migration: bank account numbers (runs on import so EmployeePayslip picks them up)
+(function(){
+  if(typeof localStorage==='undefined')return;
+  const MK='cjk_bankacc_mig_v2';
+  if(localStorage.getItem(MK))return;
+  const d=loadJ(LS_S,null);if(!d)return;
+  const accs={'JENNY KUEH':'PBB 6367244508','JANET KUEH':'PBB 5012974626','LO HUI TIN':'PBB 4665043707','JEE SUK HUI':'PBB 4608945213'};
+  d.forEach(s=>{const k=Object.keys(accs).find(n=>s.name.includes(n));if(k)s.bankAcc=accs[k];});
+  saveJ(LS_S,d);localStorage.setItem(MK,'1');
+})();
 // defIncentive per staff seeded from the June 2026 Excel — recurring monthly
 // incentive that auto-fills each new month. Owen can override per-month via
 // the payroll table. Gawai bonus and advance are month-specific, entered
@@ -469,12 +479,6 @@ export default function Payroll(){
       const names=['ERRA ERYCA','TAN WEI HOW','JANET SOON PEI YEE'];
       d.forEach(s=>{if(names.some(n=>s.name.includes(n)))s.status='probationary';});
       localStorage.setItem(MIG,'1');
-    }
-    const MIG2='cjk_bankacc_mig_v2';
-    if(!localStorage.getItem(MIG2)){
-      const accs={'JENNY KUEH':'PBB 6367244508','JANET KUEH':'PBB 5012974626','LO HUI TIN':'PBB 4665043707','JEE SUK HUI':'PBB 4608945213'};
-      d.forEach(s=>{const k=Object.keys(accs).find(n=>s.name.includes(n));if(k)s.bankAcc=accs[k];});
-      localStorage.setItem(MIG2,'1');
     }
     saveJ(LS_S,d);
     return d;

@@ -64,9 +64,13 @@ function EpCard({ r, mo, yr }) {
               <tr className="ep-sub"><td className="ep-tl"></td><td className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
               <tr className="ep-xtra"><td colSpan="2">ABSENCE{'   '}-</td></tr>
               <tr className="ep-xtra"><td colSpan="2">OTHERS</td></tr>
-              <tr className="ep-net-row"><td className="ep-tl">NET PAY</td><td className="ep-tr"><span className="ep-net-bx"></span></td></tr>
             </tbody>
           </table>
+
+          <div className="ep-netbox">
+            <span className="ep-net-lb">NET PAY</span>
+            <span className="ep-net-bx"></span>
+          </div>
         </div>
 
         {/* Incentive side */}
@@ -83,9 +87,13 @@ function EpCard({ r, mo, yr }) {
               <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody>
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
-                <tr className="ep-net-row"><td className="ep-tl">NET PAY</td><td className="ep-tr"><span className="ep-net-bx"></span></td></tr>
               </tbody>
             </table>
+
+            <div className="ep-netbox">
+              <span className="ep-net-lb">NET PAY</span>
+              <span className="ep-net-bx"></span>
+            </div>
           </div>
         )}
       </div>
@@ -251,9 +259,10 @@ const CSS = `
 .ep-ded td{font-size:.92em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
-/* ─── NET PAY row ─── */
-.ep-net-row td{border-top:none;font-weight:700;padding-top:1.2em;vertical-align:middle}
-.ep-net-bx{display:inline-block;width:7em;height:1.8em;border:1px solid #000;box-sizing:border-box}
+/* ─── NET PAY ─── */
+.ep-netbox{display:flex;align-items:center;margin-top:1em;font-weight:700;font-size:1em}
+.ep-net-lb{width:40%;flex-shrink:0}
+.ep-net-bx{flex:1;height:2.2em;border:1px solid #000;box-sizing:border-box}
 
 /* ─── Print ─── */
 .ep-print{display:none}
