@@ -67,9 +67,9 @@ function EpCard({ r, mo, yr }) {
             </div>
 
             <table className="ep-tbl">
-              <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
+              <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody>
-                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr">{nf(r.incentive)}</td></tr>
+                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tm"></td><td className="ep-tr">{nf(r.incentive)}</td></tr>
               </tbody>
             </table>
 
@@ -205,10 +205,10 @@ const CSS = `
 
 /* ─── Card ─── */
 .ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.35;display:flex;flex-direction:column}
-.ep-halves{display:flex;gap:.8em}
-.ep-sal{flex:1.15;display:flex;flex-direction:column}
+.ep-halves{display:flex;gap:1cm}
+.ep-sal{flex:1;display:flex;flex-direction:column}
 .ep-sal-full{flex:1}
-.ep-inc{flex:0.85;display:flex;flex-direction:column}
+.ep-inc{flex:1;display:flex;flex-direction:column}
 
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
 .ep-info{margin-bottom:.6em}
