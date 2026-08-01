@@ -119,6 +119,15 @@ export default function EmployeePayslip() {
   const pairs = [];
   for (let i = 0; i < rows.length; i += 2) pairs.push([rows[i], rows[i + 1]]);
 
+  const printPages = useMemo(() => {
+    const pages = [];
+    const inc = rows.filter(r => (r.incentive || 0) > 0);
+    const noInc = rows.filter(r => !((r.incentive || 0) > 0));
+    for (let i = 0; i < inc.length; i += 2) pages.push({ quad: false, items: [inc[i], inc[i + 1]].filter(Boolean) });
+    for (let i = 0; i < noInc.length; i += 4) pages.push({ quad: true, items: noInc.slice(i, i + 4) });
+    return pages;
+  }, [rows]);
+
   const cur = Math.min(idx, Math.max(0, pairs.length - 1));
   const go = d => setIdx(i => Math.min(pairs.length - 1, Math.max(0, i + d)));
 
@@ -178,9 +187,10 @@ export default function EmployeePayslip() {
           </div>
 
           <div className="ep-print">
-            {pairs.map((pair, pi) => (
-              <div className="ep-page" key={pi}>
-                {pair.map((r, j) => r ? <EpCard key={r.id} r={r} mo={mo} yr={yr} /> : <div key={j} className="ep-card ep-blank" />)}
+            {printPages.map((pg, pi) => (
+              <div className={pg.quad ? "ep-page ep-page-quad" : "ep-page"} key={pi}>
+                {pg.items.map(r => <EpCard key={r.id} r={r} mo={mo} yr={yr} />)}
+                {!pg.quad && pg.items.length < 2 && <div className="ep-card ep-blank" />}
               </div>
             ))}
           </div>
@@ -272,6 +282,12 @@ const CSS = `
   .ep-page{display:flex;flex-direction:column;gap:1cm;page-break-after:always}
   .ep-page .ep-card{width:100%;font-size:10.5pt;padding:5mm 10mm;height:calc(50vh - .5cm);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
   .ep-blank{border:none!important;height:calc(50vh - .5cm)}
+  .ep-page-quad{gap:.2cm}
+  .ep-page-quad .ep-card{font-size:7.5pt;padding:2mm 8mm;height:calc(25vh - .15cm)}
+  .ep-page-quad .ep-netbox{height:1.8em;margin-top:.25em}
+  .ep-page-quad .ep-ti{margin-bottom:.1em}
+  .ep-page-quad .ep-info{margin-bottom:.15em}
+  .ep-page-quad .ep-row{margin-bottom:0}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
