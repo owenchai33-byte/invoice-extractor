@@ -189,20 +189,20 @@ export default function Payslip() {
           <div className="ps-mlbl">{MONTHS[mo]} {yr}</div>
           <button className="ps-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
           {updTs&&<span style={{fontSize:11,color:'#a1a1aa',marginLeft:8,whiteSpace:'nowrap'}}>Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
-          <span style={{fontSize:12,color:'#a1a1aa',marginLeft:8}}>🔒 View only</span>
-        </div>
-        <div className="ps-batch-wrap" ref={batchRef}>
-          <button className="ps-btn ps-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>
-          {batchOpen && (
-            <div className="ps-batch-panel">
-              <div className="ps-bp-row"><label>Staff</label><select value={batchStaff} onChange={e => setBatchStaff(e.target.value)}><option value="">-- Select --</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-              <div className="ps-bp-row"><label>From</label><select value={batchFromMo} onChange={e => setBatchFromMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ps-bp-yr" value={batchFromYr} onChange={e => setBatchFromYr(Number(e.target.value))} /></div>
-              <div className="ps-bp-row"><label>To</label><select value={batchToMo} onChange={e => setBatchToMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ps-bp-yr" value={batchToYr} onChange={e => setBatchToYr(Number(e.target.value))} /></div>
-              <button className="ps-btn" disabled={!batchStaff} onClick={() => { setBatchOpen(false); setPrintOnly('batch'); }}>Print</button>
-            </div>
-          )}
         </div>
         <div className="ps-acts">
+          <span style={{fontSize:12,color:'#a1a1aa'}}>🔒 View only</span>
+          <div className="ps-batch-wrap" ref={batchRef}>
+            <button className="ps-btn ps-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>
+            {batchOpen && (
+              <div className="ps-batch-panel">
+                <div className="ps-bp-row"><label>Staff</label><select value={batchStaff} onChange={e => setBatchStaff(e.target.value)}><option value="">-- Select --</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+                <div className="ps-bp-row"><label>From</label><select value={batchFromMo} onChange={e => setBatchFromMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ps-bp-yr" value={batchFromYr} onChange={e => setBatchFromYr(Number(e.target.value))} /></div>
+                <div className="ps-bp-row"><label>To</label><select value={batchToMo} onChange={e => setBatchToMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ps-bp-yr" value={batchToYr} onChange={e => setBatchToYr(Number(e.target.value))} /></div>
+                <button className="ps-btn" disabled={!batchStaff} onClick={() => { setBatchOpen(false); setPrintOnly('batch'); }}>Print</button>
+              </div>
+            )}
+          </div>
           <span className="ps-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
           <button className="ps-btn ps-btn-o" onClick={() => setPrintOnly(sel)}>Print current</button>
           <button className="ps-btn" onClick={() => window.print()}>Print all</button>
