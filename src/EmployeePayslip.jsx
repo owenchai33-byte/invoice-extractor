@@ -295,9 +295,9 @@ const CSS = `
 
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
-.ep-col-lbl{width:40%}
-.ep-col-mid{width:15%}
-.ep-col-amt{width:45%}
+.ep-col-lbl{width:42%}
+.ep-col-mid{width:14%}
+.ep-col-amt{width:44%}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
 .ep-tbl td.ep-tm{border-left:none;border-right:none;padding:.2em .4em}
