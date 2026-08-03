@@ -142,55 +142,11 @@ function BatchedSupplier({ ns, Extractor }) {
   );
 }
 
-export default function InvoicesWorkspace() {
-  const [sub, setSub] = useState(() => {
-    try { return localStorage.getItem('invoices_subtab') || 'choonhua'; }
-    catch { return 'choonhua'; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem('invoices_subtab', sub); } catch {}
-    const names = { choonhua: 'CJK Choon Hua Payment Summary', yhs: 'CJK YHS Payment Summary' };
-    document.title = names[sub] || 'CJK Payment Summary';
-  }, [sub]);
-
+export default function InvoicesWorkspace({ supplier = 'choonhua' }) {
   return (
     <div>
-      {/* Supplier sub-tab bar — hidden on print so the payment summary prints clean */}
-      <div className="noP" style={{
-        display: 'flex',
-        gap: 4,
-        justifyContent: 'center',
-        padding: '12px 0 4px',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-      }}>
-        {SUB_TABS.map(t => {
-          const active = sub === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setSub(t.id)}
-              style={{
-                position: 'relative',
-                background: active ? '#111' : 'transparent',
-                color: active ? '#fff' : '#666',
-                border: active ? 'none' : '1px solid #d4d4d8',
-                padding: '6px 18px',
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'all 150ms',
-              }}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {sub === 'choonhua' && <BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} />}
-      {sub === 'yhs' && <BatchedSupplier ns="yhs" Extractor={YHSExtractor} />}
+      {supplier === 'choonhua' && <BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} />}
+      {supplier === 'yhs' && <BatchedSupplier ns="yhs" Extractor={YHSExtractor} />}
     </div>
   );
 }
