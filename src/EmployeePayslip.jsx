@@ -167,45 +167,6 @@ export default function EmployeePayslip() {
   const [printMode, setPrintMode] = useState(null);
   useEffect(() => { if (printMode) { window.print(); setPrintMode(null); } }, [printMode]);
 
-  const [batchOpen, setBatchOpen] = useState(false);
-  const [batchStaff, setBatchStaff] = useState('');
-  const [batchFromMo, setBatchFromMo] = useState(0);
-  const [batchFromYr, setBatchFromYr] = useState(yr);
-  const [batchToMo, setBatchToMo] = useState(mo);
-  const [batchToYr, setBatchToYr] = useState(yr);
-  const batchRef = useRef(null);
-  useEffect(() => { if (!batchOpen) return; const close = e => { if (batchRef.current && !batchRef.current.contains(e.target)) setBatchOpen(false); }; document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close); }, [batchOpen]);
-
-  const batchPages = useMemo(() => {
-    if (printMode !== 'batch' || !batchStaff) return [];
-    const s = staff.find(x => x.id === batchStaff);
-    if (!s) return [];
-    const months = [];
-    let cm = batchFromMo, cy = batchFromYr;
-    for (let i = 0; i < 120; i++) {
-      months.push({ mo: cm, yr: cy });
-      if (cm === batchToMo && cy === batchToYr) break;
-      cm++; if (cm > 11) { cm = 0; cy++; }
-    }
-    const cards = months.map(({ mo: m, yr: y }) => {
-      const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
-      const ref = new Date(y, m, 15);
-      const r = computeStaffMonth(s, pd[mk]?.[s.id], ref, showBonus);
-      const half = (r.incentive || 0) > 0;
-      const absKey = `${y}-${String(m + 1).padStart(2, '0')}-${s.id}`;
-      return { r, half, mo: m, yr: y, absVal: abs[absKey] || '' };
-    });
-    const pages = [];
-    let cur = { items: [], slots: 0 };
-    cards.forEach(c => {
-      const size = c.half ? 2 : 1;
-      if (cur.slots + size > 4) { pages.push(cur); cur = { items: [], slots: 0 }; }
-      cur.items.push(c);
-      cur.slots += size;
-    });
-    if (cur.items.length > 0) pages.push(cur);
-    return pages;
-  }, [printMode, batchStaff, batchFromMo, batchFromYr, batchToMo, batchToYr, staff, pd, showBonus, abs]);
 
   useEffect(() => {
     const h = e => {
@@ -232,17 +193,6 @@ export default function EmployeePayslip() {
           <button className="ep-mbtn" onClick={() => changeMonth(-1)}>&#9664;</button>
           <div className="ep-mlbl">{MONTHS[mo]} {yr}</div>
           <button className="ep-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
-        </div>
-        <div className="ep-batch-wrap" ref={batchRef}>
-          <button className="ep-btn ep-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>
-          {batchOpen && (
-            <div className="ep-batch-panel">
-              <div className="ep-bp-row"><label>Staff</label><select value={batchStaff} onChange={e => setBatchStaff(e.target.value)}><option value="">-- Select --</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-              <div className="ep-bp-row"><label>From</label><select value={batchFromMo} onChange={e => setBatchFromMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ep-bp-yr" value={batchFromYr} onChange={e => setBatchFromYr(Number(e.target.value))} /></div>
-              <div className="ep-bp-row"><label>To</label><select value={batchToMo} onChange={e => setBatchToMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ep-bp-yr" value={batchToYr} onChange={e => setBatchToYr(Number(e.target.value))} /></div>
-              <button className="ep-btn" disabled={!batchStaff} onClick={() => { setBatchOpen(false); setPrintMode('batch'); }}>Print</button>
-            </div>
-          )}
         </div>
         <div className="ep-acts">
           <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
@@ -274,9 +224,9 @@ export default function EmployeePayslip() {
           </div>
 
           <div className="ep-print">
-            {(printMode === 'batch' ? batchPages : printMode === 'current' ? [{ items: screenPages[curPage].items.filter(it => it.r.id === sel) }] : printPages).map((pg, pi) => (
+            {(printMode === 'current' ? [{ items: screenPages[curPage].items.filter(it => it.r.id === sel) }] : printPages).map((pg, pi) => (
               <div className="ep-page" key={pi}>
-                {pg.items.map((it, ii) => <EpCard key={it.r.id + '-' + (it.mo ?? mo) + '-' + (it.yr ?? yr)} r={it.r} mo={it.mo ?? mo} yr={it.yr ?? yr} compact={!it.half} absVal={it.absVal ?? getAbs(it.r.id)} onAbsChange={() => {}} />)}
+                {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
               </div>
             ))}
           </div>
@@ -299,15 +249,6 @@ const CSS = `
 .ep-btn:hover{background:#000}
 .ep-btn-o{background:#fff;color:#18181b}
 .ep-btn-o:hover{background:#f4f4f5}
-
-.ep-batch-wrap{position:relative}
-.ep-batch-panel{position:absolute;top:100%;left:0;margin-top:6px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:16px;z-index:60;min-width:300px;display:flex;flex-direction:column;gap:10px}
-.ep-bp-row{display:flex;align-items:center;gap:8px}
-.ep-bp-row label{font-size:12px;font-weight:600;color:#52525b;width:40px;flex-shrink:0}
-.ep-bp-row select,.ep-bp-yr{font-size:13px;padding:6px 8px;border:1px solid #d4d4d8;border-radius:6px;background:#fff;color:#18181b}
-.ep-bp-row select{flex:1}
-.ep-bp-yr{width:70px}
-.ep-batch-panel .ep-btn{margin-top:4px;width:100%;text-align:center}
 
 .ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 72px 120px}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}

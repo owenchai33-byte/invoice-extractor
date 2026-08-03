@@ -143,6 +143,39 @@ export default function Payslip() {
     }
   }, [printOnly]);
 
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchStaff, setBatchStaff] = useState('');
+  const [batchFromMo, setBatchFromMo] = useState(0);
+  const [batchFromYr, setBatchFromYr] = useState(yr);
+  const [batchToMo, setBatchToMo] = useState(mo);
+  const [batchToYr, setBatchToYr] = useState(yr);
+  const batchRef = useRef(null);
+  useEffect(() => { if (!batchOpen) return; const close = e => { if (batchRef.current && !batchRef.current.contains(e.target)) setBatchOpen(false); }; document.addEventListener('mousedown', close); return () => document.removeEventListener('mousedown', close); }, [batchOpen]);
+
+  const batchSlips = useMemo(() => {
+    if (printOnly !== 'batch' || !batchStaff) return [];
+    const s = staff.find(x => x.id === batchStaff);
+    if (!s) return [];
+    const months = [];
+    let cm = batchFromMo, cy = batchFromYr;
+    for (let i = 0; i < 120; i++) {
+      months.push({ mo: cm, yr: cy });
+      if (cm === batchToMo && cy === batchToYr) break;
+      cm++; if (cm > 11) { cm = 0; cy++; }
+    }
+    return months.map(({ mo: m, yr: y }) => {
+      const mk = `${y}-${String(m + 1).padStart(2, '0')}`;
+      const ref = new Date(y, m, 15);
+      return { r: computeStaffMonth(s, pd[mk]?.[s.id], ref, showBonus), mo: m, yr: y };
+    });
+  }, [printOnly, batchStaff, batchFromMo, batchFromYr, batchToMo, batchToYr, staff, pd, showBonus]);
+
+  const batchPairs = useMemo(() => {
+    const p = [];
+    for (let i = 0; i < batchSlips.length; i += 2) p.push([batchSlips[i], batchSlips[i + 1]]);
+    return p;
+  }, [batchSlips]);
+
   return (
     <div className="ps-root">
       <style>{CSS}</style>
@@ -153,6 +186,17 @@ export default function Payslip() {
           <button className="ps-mbtn" onClick={() => changeMonth(-1)}>&#9664;</button>
           <div className="ps-mlbl">{MONTHS[mo]} {yr}</div>
           <button className="ps-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
+        </div>
+        <div className="ps-batch-wrap" ref={batchRef}>
+          <button className="ps-btn ps-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>
+          {batchOpen && (
+            <div className="ps-batch-panel">
+              <div className="ps-bp-row"><label>Staff</label><select value={batchStaff} onChange={e => setBatchStaff(e.target.value)}><option value="">-- Select --</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+              <div className="ps-bp-row"><label>From</label><select value={batchFromMo} onChange={e => setBatchFromMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ps-bp-yr" value={batchFromYr} onChange={e => setBatchFromYr(Number(e.target.value))} /></div>
+              <div className="ps-bp-row"><label>To</label><select value={batchToMo} onChange={e => setBatchToMo(Number(e.target.value))}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select><input type="number" className="ps-bp-yr" value={batchToYr} onChange={e => setBatchToYr(Number(e.target.value))} /></div>
+              <button className="ps-btn" disabled={!batchStaff} onClick={() => { setBatchOpen(false); setPrintOnly('batch'); }}>Print</button>
+            </div>
+          )}
         </div>
         <div className="ps-acts">
           <span className="ps-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
@@ -188,7 +232,11 @@ export default function Payslip() {
 
           {/* Hidden until print: all payslips, 2 per A4 */}
           <div className="ps-print">
-            {printOnly !== null ? (
+            {printOnly === 'batch' ? batchPairs.map((pair, pi) => (
+              <div className="ps-page" key={pi}>
+                {pair.map((s, j) => s ? <Slip key={s.r.id + '-' + s.mo + '-' + s.yr} r={s.r} mo={s.mo} yr={s.yr} /> : <div key={j} className="slip slip-blank" />)}
+              </div>
+            )) : printOnly !== null ? (
               <div className="ps-page">
                 <Slip r={rows[printOnly]} mo={mo} yr={yr} />
                 <div className="slip slip-blank" />
@@ -218,6 +266,14 @@ const CSS = `
 .ps-btn:hover{background:#000}
 .ps-btn-o{background:#fff;color:#18181b;border-color:#d4d4d8}
 .ps-btn-o:hover{background:#f4f4f5}
+.ps-batch-wrap{position:relative}
+.ps-batch-panel{position:absolute;top:100%;left:0;margin-top:6px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:16px;z-index:60;min-width:300px;display:flex;flex-direction:column;gap:10px}
+.ps-bp-row{display:flex;align-items:center;gap:8px}
+.ps-bp-row label{font-size:12px;font-weight:600;color:#52525b;width:40px;flex-shrink:0}
+.ps-bp-row select,.ps-bp-yr{font-size:13px;padding:6px 8px;border:1px solid #d4d4d8;border-radius:6px;background:#fff;color:#18181b}
+.ps-bp-row select{flex:1}
+.ps-bp-yr{width:70px}
+.ps-batch-panel .ps-btn{margin-top:4px;width:100%;text-align:center}
 .ps-body{max-width:1100px;margin:0 auto;padding:24px}
 .ps-empty{background:#fff;border:1px dashed #d4d4d8;border-radius:12px;padding:48px 24px;text-align:center;color:#71717a}
 .ps-empty h2{margin:0 0 8px;font-size:16px;color:#18181b}
