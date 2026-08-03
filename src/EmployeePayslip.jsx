@@ -159,6 +159,8 @@ export default function EmployeePayslip() {
   const curPage = Math.min(idx, maxPage);
   const go = d => setIdx(i => Math.min(maxPage, Math.max(0, i + d)));
   const staffPage = useMemo(() => { const m = {}; screenPages.forEach((p, pi) => p.items.forEach(it => { m[it.r.id] = pi; })); return m; }, [screenPages]);
+  const [sel, setSel] = useState(() => rows.length ? rows[0].id : null);
+  useEffect(() => { if (screenPages[curPage]) { const ids = screenPages[curPage].items.map(it => it.r.id); if (!ids.includes(sel)) setSel(ids[0]); } }, [curPage, screenPages]);
   const [printMode, setPrintMode] = useState(null);
   useEffect(() => { if (printMode) { window.print(); setPrintMode(null); } }, [printMode]);
 
@@ -202,7 +204,7 @@ export default function EmployeePayslip() {
           <div className="ep-stage no-print">
             <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              {screenPages[curPage].items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
+              {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} /></div>)}
             </div>
             <button className="ep-arrow" disabled={curPage >= maxPage} onClick={() => go(1)}>&#9654;</button>
           </div>
@@ -218,7 +220,7 @@ export default function EmployeePayslip() {
           </div>
 
           <div className="ep-print">
-            {(printMode === 'current' ? [{ items: screenPages[curPage].items }] : printPages).map((pg, pi) => (
+            {(printMode === 'current' ? [{ items: screenPages[curPage].items.filter(it => it.r.id === sel) }] : printPages).map((pg, pi) => (
               <div className="ep-page" key={pi}>
                 {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
               </div>
@@ -254,6 +256,9 @@ const CSS = `
 .ep-pagewrap{display:flex;gap:0;padding:0;align-items:stretch;justify-content:center}
 .ep-pagewrap .ep-card{width:100%;max-width:21cm;padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:13px}
 .ep-pagewrap .ep-compact{max-width:10.5cm}
+
+.ep-sel-wrap{cursor:pointer;border-radius:6px;border:2px solid transparent;transition:border-color .15s}
+.ep-sel-wrap.ep-selected{border-color:#2563eb}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
