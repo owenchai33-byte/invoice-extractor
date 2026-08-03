@@ -325,10 +325,10 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
-  .ep-page .ep-card{font-size:8.5pt;padding:2mm 5mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 1}
-  .ep-page .ep-halves{gap:3mm}
-  .ep-page .ep-net-body .ep-net-td{height:1.5em}
+  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:148.5mm 148.5mm;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:297mm;width:210mm;box-sizing:border-box;overflow:hidden}
+  .ep-page .ep-card{font-size:8.5pt;padding:2mm 4mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 1;min-height:0}
+  .ep-page .ep-halves{gap:2mm}
+  .ep-page .ep-net-body .ep-net-td{height:1.2em}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
