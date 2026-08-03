@@ -389,6 +389,7 @@ const CSS = `
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-page .ep-compact{grid-column:span 1}
   .ep-abs-pr{display:inline!important}
+  .ep-page .ep-tl{white-space:nowrap;overflow:visible}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
