@@ -230,7 +230,7 @@ const CSS = `
 .ep-btn{border:1px solid #18181b;background:#18181b;color:#fff;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
 .ep-btn:hover{background:#000}
 
-.ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 16px 120px}
+.ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 72px 120px}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .ep-stage>.ep-arrow:first-child{left:12px}
 .ep-stage>.ep-arrow:last-child{right:12px}
