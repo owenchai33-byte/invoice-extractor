@@ -85,15 +85,15 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
             </div>
 
             <table className="ep-tbl">
-              <colgroup><col style={{width:'40%'}}/><col style={{width:'60%'}}/></colgroup>
-              <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
+              <colgroup><col className="ep-col-lbl"/><col className="ep-col-mid"/><col className="ep-col-amt"/></colgroup>
+              <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody className="ep-inc-body">
-                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
+                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tm"></td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
               <tbody className="ep-net-body">
-                <tr className="ep-net-gap"><td colSpan="2"></td></tr>
-                <tr className="ep-net-gap"><td colSpan="2"></td></tr>
-                <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"></td></tr>
+                <tr className="ep-net-gap"><td colSpan="3"></td></tr>
+                <tr className="ep-net-gap"><td colSpan="3"></td></tr>
+                <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"></td></tr>
               </tbody>
             </table>
           </div>
@@ -136,11 +136,13 @@ export default function EmployeePayslip() {
 
   const printPages = useMemo(() => {
     const pages = [];
-    for (let i = 0; i < rows.length; i += 2) {
-      const items = [{ r: rows[i], half: (rows[i].incentive || 0) > 0 }];
-      if (rows[i + 1]) items.push({ r: rows[i + 1], half: (rows[i + 1].incentive || 0) > 0 });
-      pages.push({ items });
-    }
+    let slots = 0, cur = [];
+    rows.forEach(r => {
+      const s = (r.incentive || 0) > 0 ? 2 : 1;
+      if (slots + s > 4) { pages.push({ items: cur }); cur = []; slots = 0; }
+      cur.push({ r, half: s === 2 }); slots += s;
+    });
+    if (cur.length) pages.push({ items: cur });
     return pages;
   }, [rows]);
 
@@ -296,8 +298,8 @@ const CSS = `
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
 .ep-col-lbl{width:40%}
-.ep-col-mid{width:15%}
-.ep-col-amt{width:45%}
+.ep-col-mid{width:18%}
+.ep-col-amt{width:42%}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
 .ep-tbl td.ep-tm{border-left:none;border-right:none;padding:.2em .4em}
@@ -325,8 +327,9 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
-  .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
+  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:148.5mm 148.5mm;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:297mm;width:210mm;box-sizing:border-box;overflow:hidden}
+  .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2;min-height:0}
+  .ep-page .ep-compact{grid-column:span 1}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
