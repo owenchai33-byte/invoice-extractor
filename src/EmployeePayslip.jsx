@@ -108,7 +108,14 @@ export default function EmployeePayslip() {
   const [mo, setMo] = useState(now.getMonth());
   const [yr, setYr] = useState(now.getFullYear());
   const [idx, setIdx] = useState(0);
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
+
+  useEffect(() => {
+    const check = () => setWide(window.innerWidth > 1200);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const staff = useMemo(() => load(LS_S, SAMPLE_STAFF), []);
   const pd = useMemo(() => load(LS_P, {}), []);
@@ -138,8 +145,10 @@ export default function EmployeePayslip() {
     return pages;
   }, [rows]);
 
-  const cur = Math.min(idx, Math.max(0, rows.length - 1));
-  const go = d => setIdx(i => Math.min(rows.length - 1, Math.max(0, i + d)));
+  const step = wide ? 2 : 1;
+  const maxIdx = Math.max(0, rows.length - step);
+  const cur = Math.min(wide ? (idx % 2 === 0 ? idx : Math.max(0, idx - 1)) : idx, maxIdx);
+  const go = d => setIdx(Math.min(maxIdx, Math.max(0, cur + d * step)));
 
   useEffect(() => {
     const h = e => {
@@ -168,7 +177,7 @@ export default function EmployeePayslip() {
           <button className="ep-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
         </div>
         <div className="ep-acts">
-          <span className="ep-count">{rows.length ? `${cur + 1} / ${rows.length}` : '0'}</span>
+          <span className="ep-count">{rows.length ? (wide ? `Page ${cur / 2 + 1} / ${Math.ceil(rows.length / 2)}` : `${cur + 1} / ${rows.length}`) : '0'}</span>
           <button className="ep-btn" onClick={() => window.print()}>Print all (2 per page)</button>
         </div>
       </div>
@@ -181,13 +190,14 @@ export default function EmployeePayslip() {
             <button className="ep-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
               <EpCard r={rows[cur]} mo={mo} yr={yr} absVal={getAbs(rows[cur].id)} onAbsChange={v => setAbsV(rows[cur].id, v)} />
+              {wide && rows[cur + 1] && <EpCard r={rows[cur + 1]} mo={mo} yr={yr} absVal={getAbs(rows[cur + 1].id)} onAbsChange={v => setAbsV(rows[cur + 1].id, v)} />}
             </div>
-            <button className="ep-arrow" disabled={cur >= rows.length - 1} onClick={() => go(1)}>&#9654;</button>
+            <button className="ep-arrow" disabled={cur >= maxIdx} onClick={() => go(1)}>&#9654;</button>
           </div>
 
           <div className="ep-strip no-print" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + (i === cur ? " on" : "")} onClick={() => setIdx(i)} title={r.name}>
+              <button key={r.id} className={"thumb" + ((wide ? (i === cur || i === cur + 1) : i === cur) ? " on" : "")} onClick={() => setIdx(wide ? Math.floor(i / 2) * 2 : i)} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
