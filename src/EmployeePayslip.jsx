@@ -7,7 +7,6 @@ const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; 
 const nf = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr.toString().slice(-2)}`; };
 const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2.toString().slice(-2)}`; };
-const fitCls = (txt, base) => { const len = (txt || '').length; if (len > 34) return base + ' ep-xs'; if (len > 22) return base + ' ep-sm'; return base; };
 const fmtAbs = v => { const n = parseFloat(v); if (!n) return '-'; const w = Math.floor(n); const h = (n % 1) >= 0.5; let s = ''; if (w > 0) s += w; if (h) s += '½'; return s + (n > 1 ? ' DAYS' : ' DAY'); };
 
 if (typeof localStorage !== 'undefined') { try { const _sv = JSON.parse(localStorage.getItem(LS_S)); if (_sv) { const _df = Object.fromEntries(SAMPLE_STAFF.map(s => [s.id, s])); let _ch = false; _sv.forEach(s => { const d = _df[s.id]; if (d?.bankAcc && !s.bankAcc) { s.bankAcc = d.bankAcc; _ch = true; } }); if (_ch) localStorage.setItem(LS_S, JSON.stringify(_sv)); } } catch {} }
@@ -42,10 +41,10 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
         <div className={hasInc ? 'ep-sal' : 'ep-sal ep-sal-full'}>
           <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
           <div className="ep-info">
-            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
-            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
+            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={'ep-vl'}>{r.name}</span></div>
+            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={'ep-vl'}>{r.position}</span></div>
             <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
-            {r.bankAcc ? <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={fitCls(r.bankAcc,'ep-vl')}>{r.bankAcc}</span></div> : <div className="ep-row ep-spacer">&nbsp;</div>}
+            {r.bankAcc ? <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={'ep-vl'}>{r.bankAcc}</span></div> : <div className="ep-row ep-spacer">&nbsp;</div>}
           </div>
 
           <table className="ep-tbl">
@@ -79,8 +78,8 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
           <div className="ep-inc">
             <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
             <div className="ep-info">
-              <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
-              <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
+              <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={'ep-vl'}>{r.name}</span></div>
+              <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={'ep-vl'}>{r.position}</span></div>
               <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{incDay(mo, yr)}</span></div>
               <div className="ep-row ep-spacer">&nbsp;</div>
             </div>
@@ -252,7 +251,7 @@ const CSS = `
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
 .ep-pagewrap{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:42cm;margin:0 auto}
-.ep-pagewrap .ep-card{padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11.5px;grid-column:span 2}
+.ep-pagewrap .ep-card{padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:13px;grid-column:span 2}
 .ep-pagewrap .ep-compact{grid-column:span 1}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
@@ -280,9 +279,7 @@ const CSS = `
 .ep-info{margin-bottom:.6em}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .ep-lb{width:40%;flex-shrink:0;font-size:1em}
-.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center}
-.ep-sm{font-size:.78em;white-space:nowrap}
-.ep-xs{font-size:.62em;white-space:nowrap}
+.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center;word-wrap:break-word}
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
 .ep-abs-in{width:3em;font-size:inherit;border:1px solid #d4d4d8;border-radius:3px;padding:1px 4px;text-align:center;font-family:inherit}
 .ep-abs-in::-webkit-inner-spin-button,.ep-abs-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
