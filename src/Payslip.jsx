@@ -94,8 +94,9 @@ function Slip({ r, mo, yr }) {
 
 export default function Payslip() {
   const now = new Date();
-  const [mo, setMo] = useState(now.getMonth());
-  const [yr, setYr] = useState(now.getFullYear());
+  const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_ep_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
+  const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_ep_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
+  useEffect(() => { try { localStorage.setItem('cjk_ep_mo', mo); localStorage.setItem('cjk_ep_yr', yr); } catch {} }, [mo, yr]);
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
