@@ -165,7 +165,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated';
+export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // Module-level migration: bank account numbers (runs on import so EmployeePayslip picks them up)
@@ -272,6 +272,8 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
 const CSS=`
 *{box-sizing:border-box}
 .pr{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#18181b;background:#f4f4f5;min-height:100vh}
+.pr-locked input,.pr-locked select,.pr-locked textarea,.pr-locked .editable{pointer-events:none;opacity:.6}
+.pr-locked .b.bo:not([title*="lock"]):not(.mbtn){opacity:.5;pointer-events:none}
 .bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 .bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0}
 .mnav{display:flex;align-items:center;gap:4px}
@@ -525,6 +527,8 @@ export default function Payroll(){
   useEffect(()=>{saveJ(LS_SB,sb);_touch();},[sb]);
   useEffect(()=>{_skip.current=false;},[]);
   const[updTs,setUpdTs]=useState(()=>localStorage.getItem(LS_TS)||'');
+  const[locked,setLocked]=useState(true);
+  const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   // Per-month editable remarks (defined here because they key off `mk`).
   const remarks=remAll[mk]||[''];
@@ -785,7 +789,7 @@ export default function Payroll(){
   useEffect(()=>{window.addEventListener('keydown',onGridKey);return()=>window.removeEventListener('keydown',onGridKey);});
   useEffect(()=>{if(cur){const el=document.querySelector('.selc');if(el)el.scrollIntoView({block:'nearest',inline:'nearest'});}},[cur]);
   return(
-    <div className="pr">
+    <div className={"pr"+(locked?" pr-locked":"")}>
       <style>{CSS}</style>
       <div className="bar np">
         <h1>HQ PAYROLL</h1>
@@ -796,7 +800,8 @@ export default function Payroll(){
           {updTs&&<span className="upd-ts">Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="acts">
-          <button className="b bo" onClick={()=>setPan(true)}>Manage Staff</button>
+          <button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?'🔒 Locked':'🔓 Editing'}</button>
+          <button className="b bo" disabled={locked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
           <button className="b bo" onClick={()=>window.print()}>Print</button>
         </div>

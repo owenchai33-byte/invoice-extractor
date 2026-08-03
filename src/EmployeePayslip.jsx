@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_TS, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_TS, LS_PIN, SAMPLE_STAFF, fmt } from './Payroll';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -29,7 +29,7 @@ function Fv({ f, children }) {
   );
 }
 
-function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
+function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
   const hasInc = (r.incentive || 0) > 0;
   const daily = r.salary / 26;
   const epfMD = r.epfM / 26;
@@ -63,7 +63,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <tr><td className="ep-tl"><div className="ep-split"><span>EIS</span><span className="ep-nums"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
-              <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td className="ep-tm"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tr"></td></tr>
+              <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td className="ep-tm"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tr"></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
             <tbody className="ep-net-body">
@@ -115,6 +115,8 @@ export default function EmployeePayslip() {
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
   const updTs = localStorage.getItem(LS_TS) || '';
+  const[locked,setLocked]=useState(true);
+  const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
 
   useEffect(() => {
     const check = () => setWide(window.innerWidth > 1200);
@@ -198,6 +200,7 @@ export default function EmployeePayslip() {
           {updTs&&<span style={{fontSize:11,color:'#a1a1aa',marginLeft:8,whiteSpace:'nowrap'}}>Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="ep-acts">
+          <button className={"ep-btn "+(locked?"ep-btn-o":"")} onClick={locked?tryUnlock:()=>setLocked(true)} style={{fontSize:12}}>{locked?'🔒 Locked':'🔓 Editing'}</button>
           <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
           <button className="ep-btn ep-btn-o" onClick={() => setPrintMode('current')}>Print current</button>
           <button className="ep-btn" onClick={() => setPrintMode('all')}>Print all</button>
@@ -211,7 +214,7 @@ export default function EmployeePayslip() {
           <div className="ep-stage no-print">
             <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} /></div>)}
+              {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} locked={locked} /></div>)}
             </div>
             <button className="ep-arrow" disabled={curPage >= maxPage} onClick={() => go(1)}>&#9654;</button>
           </div>
@@ -233,12 +236,12 @@ export default function EmployeePayslip() {
               while (idx < pg.items.length) {
                 const it = pg.items[idx];
                 if (it.half) {
-                  els.push(<EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={false} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />);
+                  els.push(<EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={false} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} locked={locked} />);
                   idx++;
                 } else {
                   const pair = [it];
                   if (idx + 1 < pg.items.length && !pg.items[idx + 1].half) { pair.push(pg.items[idx + 1]); idx += 2; } else { idx++; }
-                  els.push(<div className={"ep-pair" + (pair.length === 1 ? " ep-pair-single" : "")} key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} />)}</div>);
+                  els.push(<div className={"ep-pair" + (pair.length === 1 ? " ep-pair-single" : "")} key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} locked={locked} />)}</div>);
                 }
               }
               return <div className="ep-page" key={pi}>{els}</div>;
