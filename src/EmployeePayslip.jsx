@@ -122,9 +122,6 @@ export default function EmployeePayslip() {
     return [...all.filter(r => r.method === 'bank'), ...all.filter(r => r.method === 'cash')];
   }, [staff, pd, showBonus, mo, yr]);
 
-  const pairs = [];
-  for (let i = 0; i < rows.length; i += 2) pairs.push([rows[i], rows[i + 1]]);
-
   const printPages = useMemo(() => {
     const pages = [];
     let cur = { items: [], slots: 0 };
@@ -139,8 +136,8 @@ export default function EmployeePayslip() {
     return pages;
   }, [rows]);
 
-  const cur = Math.min(idx, Math.max(0, pairs.length - 1));
-  const go = d => setIdx(i => Math.min(pairs.length - 1, Math.max(0, i + d)));
+  const cur = Math.min(idx, Math.max(0, rows.length - 1));
+  const go = d => setIdx(i => Math.min(rows.length - 1, Math.max(0, i + d)));
 
   useEffect(() => {
     const h = e => {
@@ -169,7 +166,7 @@ export default function EmployeePayslip() {
           <button className="ep-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
         </div>
         <div className="ep-acts">
-          <span className="ep-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
+          <span className="ep-count">{rows.length ? `${cur + 1} / ${rows.length}` : '0'}</span>
           <button className="ep-btn" onClick={() => window.print()}>Print all (2 per page)</button>
         </div>
       </div>
@@ -181,15 +178,14 @@ export default function EmployeePayslip() {
           <div className="ep-stage no-print">
             <button className="ep-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              <EpCard r={pairs[cur][0]} mo={mo} yr={yr} absVal={getAbs(pairs[cur][0].id)} onAbsChange={v => setAbsV(pairs[cur][0].id, v)} />
-              {pairs[cur][1] && <EpCard r={pairs[cur][1]} mo={mo} yr={yr} absVal={getAbs(pairs[cur][1].id)} onAbsChange={v => setAbsV(pairs[cur][1].id, v)} />}
+              <EpCard r={rows[cur]} mo={mo} yr={yr} absVal={getAbs(rows[cur].id)} onAbsChange={v => setAbsV(rows[cur].id, v)} />
             </div>
-            <button className="ep-arrow" disabled={cur >= pairs.length - 1} onClick={() => go(1)}>&#9654;</button>
+            <button className="ep-arrow" disabled={cur >= rows.length - 1} onClick={() => go(1)}>&#9654;</button>
           </div>
 
           <div className="ep-strip no-print" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + (Math.floor(i / 2) === cur ? " on" : "")} onClick={() => setIdx(Math.floor(i / 2))} title={r.name}>
+              <button key={r.id} className={"thumb" + (i === cur ? " on" : "")} onClick={() => setIdx(i)} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
@@ -230,7 +226,7 @@ const CSS = `
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
 .ep-pagewrap{display:flex;gap:0;padding:0;align-items:stretch;justify-content:center}
-.ep-pagewrap .ep-card{width:21cm;padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11.5px}
+.ep-pagewrap .ep-card{width:100%;max-width:21cm;padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11.5px}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
