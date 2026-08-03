@@ -105,8 +105,8 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
 
 export default function EmployeePayslip() {
   const now = new Date();
-  const [mo, setMo] = useState(now.getMonth());
-  const [yr, setYr] = useState(now.getFullYear());
+  const [mo, setMo] = useState(now.getMonth() === 0 ? 11 : now.getMonth() - 1);
+  const [yr, setYr] = useState(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
   const [idx, setIdx] = useState(0);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
