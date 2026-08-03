@@ -33,6 +33,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
   const hasInc = (r.incentive || 0) > 0;
   const daily = r.salary / 26;
   const epfMD = r.epfM / 26;
+  const epfWage = r.salary + (r.incentive || 0) + (r.bonus || 0);
   const salNet = Math.round((r.salary + (r.bonus || 0) - r.epfP - r.socsoInv - r.socsoSkbbk - r.eisE - (r.advance || 0)) * 100) / 100;
 
   return (
@@ -57,7 +58,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
             </tbody>
             <tbody className="ep-ded">
               <tr className="ep-hdr"><th className="ep-tl">DEDUCTIONS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr>
-              <tr><td className="ep-tl"><div className="ep-split"><span>EPF</span><span className="ep-nums"><Fv f={`EPF employer (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`EPF employee (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfP)}</Fv></td></tr>
+              <tr><td className="ep-tl"><div className="ep-split"><span>EPF</span><span className="ep-nums"><Fv f={`EPF employer (table lookup on ${nf(epfWage)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`EPF employee (table lookup on ${nf(epfWage)})`}>{nf(r.epfP)}</Fv></td></tr>
               <tr><td className="ep-tl"><div className="ep-split"><span>SOCSO (0.5%)</span><span className="ep-nums"><Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
               <tr><td className="ep-tl ep-skbbk">SOCSO (SKBBK 0.75%)</td><td colSpan="2" className="ep-tr"><Fv f="SOCSO SKBBK employment injury (0.75%)">{nf(r.socsoSkbbk)}</Fv></td></tr>
               <tr><td className="ep-tl"><div className="ep-split"><span>EIS</span><span className="ep-nums"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
