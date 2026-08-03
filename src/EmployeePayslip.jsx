@@ -6,6 +6,7 @@ const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov',
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
 const nf = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr.toString().slice(-2)}`; };
+const vlCls = t => { const l = (t || '').length; return 'ep-vl' + (l > 50 ? ' ep-vl-xs' : l > 36 ? ' ep-vl-sm' : ''); };
 const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2.toString().slice(-2)}`; };
 const fmtAbs = v => { const n = parseFloat(v); if (!n) return '-'; const w = Math.floor(n); const h = (n % 1) >= 0.5; let s = ''; if (w > 0) s += w; if (h) s += '½'; return s + (n > 1 ? ' DAYS' : ' DAY'); };
 
@@ -41,8 +42,8 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
         <div className={hasInc ? 'ep-sal' : 'ep-sal ep-sal-full'}>
           <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
           <div className="ep-info">
-            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={'ep-vl'}>{r.name}</span></div>
-            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={'ep-vl'}>{r.position}</span></div>
+            <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
+            <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={vlCls(r.position)}>{r.position}</span></div>
             <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
             {r.bankAcc ? <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={'ep-vl'}>{r.bankAcc}</span></div> : <div className="ep-row ep-spacer">&nbsp;</div>}
           </div>
@@ -78,8 +79,8 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
           <div className="ep-inc">
             <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
             <div className="ep-info">
-              <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={'ep-vl'}>{r.name}</span></div>
-              <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={'ep-vl'}>{r.position}</span></div>
+              <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
+              <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={vlCls(r.position)}>{r.position}</span></div>
               <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{incDay(mo, yr)}</span></div>
               <div className="ep-row ep-spacer">&nbsp;</div>
             </div>
@@ -300,6 +301,8 @@ const CSS = `
 .ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .ep-lb{width:40%;flex-shrink:0;font-size:1em}
 .ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center;word-wrap:break-word}
+.ep-vl-sm{font-size:.82em}
+.ep-vl-xs{font-size:.7em}
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
 .ep-abs-in{width:3em;font-size:inherit;border:1px solid #d4d4d8;border-radius:3px;padding:1px 4px;text-align:center;font-family:inherit}
 .ep-abs-in::-webkit-inner-spin-button,.ep-abs-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
