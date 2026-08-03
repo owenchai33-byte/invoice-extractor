@@ -64,12 +64,10 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <tr className="ep-xtra"><td className="ep-tl">ABSENCE{' '}<input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td colSpan="2" className="ep-tr"></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
+            <tbody className="ep-net-body">
+              <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"><div className="ep-net-bx"></div></td></tr>
+            </tbody>
           </table>
-
-          <div className="ep-netbox">
-            <span className="ep-net-lb">NET PAY</span>
-            <span className="ep-net-bx"></span>
-          </div>
         </div>
 
         {/* Incentive side */}
@@ -84,15 +82,13 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
 
             <table className="ep-tbl">
               <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
-              <tbody>
+              <tbody className="ep-inc-body">
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
+              <tbody className="ep-net-body">
+                <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"><div className="ep-net-bx"></div></td></tr>
+              </tbody>
             </table>
-
-            <div className="ep-netbox">
-              <span className="ep-net-lb">NET PAY</span>
-              <span className="ep-net-bx"></span>
-            </div>
           </div>
         )}
       </div>
@@ -275,16 +271,16 @@ const CSS = `
 .ep-tl{text-align:left}
 .ep-tm{text-align:right;font-size:.9em}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
-.ep-tbl tbody:last-child tr:last-child td{border-bottom:1px solid #000}
+.ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
 .ep-hdr th{border:1px solid #000}
 .ep-bonus td{color:#c00}
 .ep-ded td{font-size:.92em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
 /* ─── NET PAY ─── */
-.ep-netbox{display:flex;align-items:center;margin-top:1em;font-weight:700;font-size:1em;height:3.5em}
-.ep-net-lb{width:40%;flex-shrink:0}
-.ep-net-bx{flex:1;height:100%;border:2px solid #000;box-sizing:border-box}
+.ep-tbl .ep-net-body td{border:none;padding:.5em .4em;font-weight:700;font-size:1em;vertical-align:middle}
+.ep-net-lb{text-align:left}
+.ep-net-bx{width:100%;height:2.5em;border:2px solid #000;box-sizing:border-box}
 
 /* ─── Print ─── */
 .ep-print{display:none}
@@ -294,7 +290,8 @@ const CSS = `
   .ep-print{display:block}
   .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
   .ep-page .ep-card{font-size:10.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
-  .ep-page .ep-netbox{margin-top:.4em;height:2.8em}
+  .ep-page .ep-net-bx{height:2em}
+  .ep-page .ep-net-body td{padding:.2em .4em}
   .ep-page .ep-compact{grid-column:span 1}
   .ep-abs-pr{display:inline}
   .fv-wrap{border-bottom:none;cursor:default}
