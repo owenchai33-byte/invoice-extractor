@@ -61,7 +61,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <tr><td className="ep-tl">EIS{' '}<Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
-              <tr className="ep-xtra"><td className="ep-tl">ABSENCE{' '}<input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td colSpan="2" className="ep-tr"></td></tr>
+              <tr className="ep-xtra"><td className="ep-tl">ABSENCE <span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tm"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" /></td><td className="ep-tr"></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
             <tbody className="ep-net-body">
@@ -266,8 +266,8 @@ const CSS = `
 .ep-col-amt{width:45%}
 .ep-tbl th{border:1px solid #000;padding:.15em .4em;font-weight:700}
 .ep-tbl td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .4em}
-.ep-earn td.ep-tm{border-left:none;border-right:none;padding:.2em .4em}
-.ep-earn td.ep-tr{border-left:none}
+.ep-tbl td.ep-tm{border-left:none;border-right:none;padding:.2em .4em}
+.ep-tbl td.ep-tm+td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
 .ep-tm{text-align:right;font-size:.9em}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
