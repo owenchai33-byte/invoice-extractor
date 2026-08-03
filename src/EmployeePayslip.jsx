@@ -136,9 +136,9 @@ export default function EmployeePayslip() {
 
   const printPages = useMemo(() => {
     const pages = [];
-    for (let i = 0; i < rows.length; i += 2) {
-      const items = [{ r: rows[i], half: (rows[i].incentive || 0) > 0 }];
-      if (rows[i + 1]) items.push({ r: rows[i + 1], half: (rows[i + 1].incentive || 0) > 0 });
+    for (let i = 0; i < rows.length; i += 4) {
+      const items = [];
+      for (let j = i; j < Math.min(i + 4, rows.length); j++) items.push({ r: rows[j], half: (rows[j].incentive || 0) > 0 });
       pages.push({ items });
     }
     return pages;
@@ -326,8 +326,9 @@ const CSS = `
   .ep-root{background:#fff}
   .ep-print{display:block}
   .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
-  .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
-  .ep-page .ep-net-body .ep-net-td{height:1.8em}
+  .ep-page .ep-card{font-size:8.5pt;padding:2mm 5mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 1}
+  .ep-page .ep-halves{gap:3mm}
+  .ep-page .ep-net-body .ep-net-td{height:1.5em}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
