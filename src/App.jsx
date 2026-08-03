@@ -7,8 +7,7 @@ import EmployeePayslip from './EmployeePayslip';
 
 const SECTIONS = [
   { id: 'af', label: 'Account & Finance', tabs: [
-    { id: 'choonhua', label: 'Choon Hua' },
-    { id: 'yhs', label: 'YHS' },
+    { id: 'invoice', label: 'Payment Summary' },
   ]},
   { id: 'hr', label: 'Human Resource', tabs: [
     { id: 'payroll', label: 'Payroll' },
@@ -24,14 +23,14 @@ const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", syst
 
 export default function App() {
   const [active, setActive] = useState(() => {
-    try { const v = localStorage.getItem('sabrina_active'); return v === 'invoice' ? 'choonhua' : (v || 'choonhua'); }
-    catch { return 'choonhua'; }
+    try { const v = localStorage.getItem('sabrina_active'); return (v === 'choonhua' || v === 'yhs') ? 'invoice' : (v || 'invoice'); }
+    catch { return 'invoice'; }
   });
   const [time, setTime] = useState(() => new Date());
 
   useEffect(() => {
     try { localStorage.setItem('sabrina_active', active); } catch {}
-    const titles = { choonhua: 'CJK Choon Hua Payment Summary', yhs: 'CJK YHS Payment Summary', payroll: 'CJK Payroll', contract: 'CJK Contracts', payslip: 'CJK Payslips', epayslip: 'CJK Employee Payslips' };
+    const titles = { invoice: 'CJK Payment Summary', payroll: 'CJK Payroll', contract: 'CJK Contracts', payslip: 'CJK Payslips', epayslip: 'CJK Employee Payslips' };
     document.title = titles[active] || 'Sabrina OS';
   }, [active]);
 
@@ -240,7 +239,7 @@ export default function App() {
 
       {/* ─── Content ─── */}
       <main>
-        {(active === 'choonhua' || active === 'yhs') && <InvoicesWorkspace supplier={active} />}
+        {active === 'invoice' && <InvoicesWorkspace />}
         {active === 'payroll' && <Payroll />}
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && <Payslip />}
