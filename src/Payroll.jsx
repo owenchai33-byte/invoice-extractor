@@ -785,7 +785,7 @@ export default function Payroll(){
       <div className="bar np">
         <h1>HQ PAYROLL</h1>
         <div className="mnav">
-          <button className="mbtn" onClick={()=>{if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);}}>&#9664;</button>
+          <button className="mbtn" disabled={mo===6&&yr===2026} onClick={()=>{if(mo===6&&yr===2026)return;if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);}}>&#9664;</button>
           <div className="mlbl">{MONTHS[mo]} {yr}</div>
           <button className="mbtn" onClick={()=>{if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1);}}>&#9654;</button>
         </div>

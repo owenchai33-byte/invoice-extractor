@@ -179,7 +179,8 @@ export default function EmployeePayslip() {
   });
   useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [curPage]);
 
-  const changeMonth = d => { setIdx(0); if (d < 0) { if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
+  const atMin = mo === 6 && yr === 2026;
+  const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
 
   useEffect(() => { document.title = `CJK Employee Payslips - ${MONTHS[mo]} ${yr}`; }, [mo, yr]);
 
@@ -190,7 +191,7 @@ export default function EmployeePayslip() {
       <div className="ep-bar no-print">
         <h1>EMPLOYEE PAYSLIP</h1>
         <div className="ep-mnav">
-          <button className="ep-mbtn" onClick={() => changeMonth(-1)}>&#9664;</button>
+          <button className="ep-mbtn" disabled={atMin} onClick={() => changeMonth(-1)}>&#9664;</button>
           <div className="ep-mlbl">{MONTHS[mo]} {yr}</div>
           <button className="ep-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
         </div>
