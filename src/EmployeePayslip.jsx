@@ -235,7 +235,7 @@ export default function EmployeePayslip() {
                 } else {
                   const pair = [it];
                   if (idx + 1 < pg.items.length && !pg.items[idx + 1].half) { pair.push(pg.items[idx + 1]); idx += 2; } else { idx++; }
-                  els.push(<div className="ep-pair" key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} />)}</div>);
+                  els.push(<div className={"ep-pair" + (pair.length === 1 ? " ep-pair-single" : "")} key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} />)}</div>);
                 }
               }
               return <div className="ep-page" key={pi}>{els}</div>;
@@ -345,6 +345,7 @@ const CSS = `
   .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2;min-height:0}
   .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 10mm;box-sizing:border-box;min-height:0;overflow:hidden}
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
+  .ep-pair-single{grid-column:span 1;padding:3mm 10mm}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
