@@ -159,6 +159,8 @@ export default function EmployeePayslip() {
   const curPage = Math.min(idx, maxPage);
   const go = d => setIdx(i => Math.min(maxPage, Math.max(0, i + d)));
   const staffPage = useMemo(() => { const m = {}; screenPages.forEach((p, pi) => p.items.forEach(it => { m[it.r.id] = pi; })); return m; }, [screenPages]);
+  const [printMode, setPrintMode] = useState(null);
+  useEffect(() => { if (printMode) { window.print(); setPrintMode(null); } }, [printMode]);
 
   useEffect(() => {
     const h = e => {
@@ -188,7 +190,8 @@ export default function EmployeePayslip() {
         </div>
         <div className="ep-acts">
           <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
-          <button className="ep-btn" onClick={() => window.print()}>Print all (2 per page)</button>
+          <button className="ep-btn ep-btn-o" onClick={() => setPrintMode('current')}>Print current</button>
+          <button className="ep-btn" onClick={() => setPrintMode('all')}>Print all</button>
         </div>
       </div>
 
@@ -215,7 +218,7 @@ export default function EmployeePayslip() {
           </div>
 
           <div className="ep-print">
-            {printPages.map((pg, pi) => (
+            {(printMode === 'current' ? [{ items: screenPages[curPage].items }] : printPages).map((pg, pi) => (
               <div className="ep-page" key={pi}>
                 {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
               </div>
@@ -238,6 +241,8 @@ const CSS = `
 .ep-count{font-size:12px;color:#71717a;font-variant-numeric:tabular-nums}
 .ep-btn{border:1px solid #18181b;background:#18181b;color:#fff;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
 .ep-btn:hover{background:#000}
+.ep-btn-o{background:#fff;color:#18181b}
+.ep-btn-o:hover{background:#f4f4f5}
 
 .ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 72px 120px}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
