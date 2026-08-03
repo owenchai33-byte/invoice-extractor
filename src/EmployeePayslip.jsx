@@ -34,6 +34,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
   const daily = r.salary / 26;
   const epfMD = r.epfM / 26;
   const epfWage = r.salary + (r.incentive || 0) + (r.bonus || 0);
+  const socsoWage = r.salary + (r.incentive || 0);
   const salNet = Math.round((r.salary + (r.bonus || 0) - r.epfP - r.socsoInv - r.socsoSkbbk - r.eisE - (r.advance || 0)) * 100) / 100;
 
   return (
@@ -59,9 +60,9 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
             <tbody className="ep-ded">
               <tr className="ep-hdr"><th className="ep-tl">DEDUCTIONS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr>
               <tr><td className="ep-tl"><div className="ep-split"><span>EPF</span><span className="ep-nums"><Fv f={`EPF employer (table lookup on ${nf(epfWage)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`EPF employee (table lookup on ${nf(epfWage)})`}>{nf(r.epfP)}</Fv></td></tr>
-              <tr><td className="ep-tl"><div className="ep-split"><span>SOCSO (0.5%)</span><span className="ep-nums"><Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
-              <tr><td className="ep-tl ep-skbbk">SOCSO (SKBBK 0.75%)</td><td colSpan="2" className="ep-tr"><Fv f="SOCSO SKBBK employment injury (0.75%)">{nf(r.socsoSkbbk)}</Fv></td></tr>
-              <tr><td className="ep-tl"><div className="ep-split"><span>EIS</span><span className="ep-nums"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
+              <tr><td className="ep-tl"><div className="ep-split"><span>SOCSO (0.5%)</span><span className="ep-nums"><Fv f={`SOCSO employer (table lookup on ${nf(socsoWage)})`}>{nf(r.socsoM)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`SOCSO Invalidity 0.5% (table lookup on ${nf(socsoWage)})`}>{nf(r.socsoInv)}</Fv></td></tr>
+              <tr><td className="ep-tl ep-skbbk">SOCSO (SKBBK 0.75%)</td><td colSpan="2" className="ep-tr"><Fv f={`SOCSO L24 0.75% (table lookup on ${nf(socsoWage)})`}>{nf(r.socsoSkbbk)}</Fv></td></tr>
+              <tr><td className="ep-tl"><div className="ep-split"><span>EIS</span><span className="ep-nums"><Fv f={`EIS employer (table lookup on ${nf(socsoWage)})`}>{nf(r.eisE)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`EIS employee (table lookup on ${nf(socsoWage)})`}>{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td className="ep-tm"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tr"></td></tr>
