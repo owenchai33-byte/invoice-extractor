@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_TS, SAMPLE_STAFF, fmt } from './Payroll';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -101,6 +101,7 @@ export default function Payslip() {
   const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
   const stripRef = useRef(null);
+  const updTs = localStorage.getItem(LS_TS) || '';
 
   // Pull staff + monthly data straight from payroll storage
   const staff = useMemo(() => load(LS_S, SAMPLE_STAFF), []);
@@ -187,6 +188,7 @@ export default function Payslip() {
           <button className="ps-mbtn" disabled={atMin} onClick={() => changeMonth(-1)}>&#9664;</button>
           <div className="ps-mlbl">{MONTHS[mo]} {yr}</div>
           <button className="ps-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
+          {updTs&&<span style={{fontSize:11,color:'#a1a1aa',marginLeft:8,whiteSpace:'nowrap'}}>Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="ps-batch-wrap" ref={batchRef}>
           <button className="ps-btn ps-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>

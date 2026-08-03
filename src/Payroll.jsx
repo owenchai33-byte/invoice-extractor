@@ -165,9 +165,9 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks';
+export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated';
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
-function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
+function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));localStorage.setItem(LS_TS,new Date().toISOString());}
 // Module-level migration: bank account numbers (runs on import so EmployeePayslip picks them up)
 (function(){
   if(typeof localStorage==='undefined')return;
@@ -278,6 +278,7 @@ const CSS=`
 .mbtn{width:32px;height:32px;border:1px solid #d4d4d8;background:#fff;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;color:#71717a}
 .mbtn:hover{background:#f4f4f5}
 .mlbl{font-size:14px;font-weight:600;min-width:140px;text-align:center}
+.upd-ts{font-size:11px;color:#a1a1aa;margin-left:8px;white-space:nowrap}
 .acts{display:flex;gap:8px;margin-left:auto}
 .b{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
 .b:active{transform:scale(.97)}
@@ -520,6 +521,9 @@ export default function Payroll(){
   useEffect(()=>{saveJ(LS_PT,pt);},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);},[pd]);
   useEffect(()=>{saveJ(LS_SB,sb);},[sb]);
+  const[updTs,setUpdTs]=useState(()=>localStorage.getItem(LS_TS)||'');
+  useEffect(()=>{const h=()=>setUpdTs(localStorage.getItem(LS_TS)||'');window.addEventListener('storage',h);return()=>window.removeEventListener('storage',h);},[]);
+  useEffect(()=>{setUpdTs(localStorage.getItem(LS_TS)||'');},[staff,pd,pt,sb]);
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   // Per-month editable remarks (defined here because they key off `mk`).
   const remarks=remAll[mk]||[''];
@@ -788,6 +792,7 @@ export default function Payroll(){
           <button className="mbtn" disabled={mo===6&&yr===2026} onClick={()=>{if(mo===6&&yr===2026)return;if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);}}>&#9664;</button>
           <div className="mlbl">{MONTHS[mo]} {yr}</div>
           <button className="mbtn" onClick={()=>{if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1);}}>&#9654;</button>
+          {updTs&&<span className="upd-ts">Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="acts">
           <button className="b bo" onClick={()=>setPan(true)}>Manage Staff</button>

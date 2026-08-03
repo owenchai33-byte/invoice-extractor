@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_TS, SAMPLE_STAFF, fmt } from './Payroll';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -114,6 +114,7 @@ export default function EmployeePayslip() {
   const [idx, setIdx] = useState(0);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
+  const updTs = localStorage.getItem(LS_TS) || '';
 
   useEffect(() => {
     const check = () => setWide(window.innerWidth > 1200);
@@ -194,6 +195,7 @@ export default function EmployeePayslip() {
           <button className="ep-mbtn" disabled={atMin} onClick={() => changeMonth(-1)}>&#9664;</button>
           <div className="ep-mlbl">{MONTHS[mo]} {yr}</div>
           <button className="ep-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
+          {updTs&&<span style={{fontSize:11,color:'#a1a1aa',marginLeft:8,whiteSpace:'nowrap'}}>Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="ep-acts">
           <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
