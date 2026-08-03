@@ -136,15 +136,11 @@ export default function EmployeePayslip() {
 
   const printPages = useMemo(() => {
     const pages = [];
-    let cur = { items: [], slots: 0 };
-    rows.forEach(r => {
-      const half = (r.incentive || 0) > 0;
-      const size = half ? 2 : 1;
-      if (cur.slots + size > 4) { pages.push(cur); cur = { items: [], slots: 0 }; }
-      cur.items.push({ r, half });
-      cur.slots += size;
-    });
-    if (cur.items.length > 0) pages.push(cur);
+    for (let i = 0; i < rows.length; i += 2) {
+      const items = [{ r: rows[i], half: (rows[i].incentive || 0) > 0 }];
+      if (rows[i + 1]) items.push({ r: rows[i + 1], half: (rows[i + 1].incentive || 0) > 0 });
+      pages.push({ items });
+    }
     return pages;
   }, [rows]);
 
@@ -310,7 +306,6 @@ const CSS = `
 .ep-split{display:flex;justify-content:space-between;align-items:baseline}
 .ep-nums{font-variant-numeric:tabular-nums;text-align:right}
 .ep-skbbk{white-space:nowrap}
-.ep-compact .ep-skbbk{font-size:.75em}
 .ep-tm{text-align:right;font-size:.9em}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
@@ -333,7 +328,6 @@ const CSS = `
   .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
   .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
-  .ep-page .ep-compact{grid-column:span 1}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
