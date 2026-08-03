@@ -179,7 +179,7 @@ export default function App() {
       {/* ─── Sub-tabs ─── */}
       {(() => {
         const sec = SECTIONS.find(s => s.id === TAB_TO_SECTION[active]);
-        if (!sec || sec.tabs.length <= 1) return null;
+        if (!sec) return null;
         return (
           <div className="sabrina-nav" style={{
             background: '#fff',
