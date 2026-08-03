@@ -56,10 +56,10 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
             </tbody>
             <tbody className="ep-ded">
               <tr className="ep-hdr"><th className="ep-tl">DEDUCTIONS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr>
-              <tr><td className="ep-tl">EPF{' '}<Fv f={`EPF employer (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></td><td colSpan="2" className="ep-tr"><Fv f={`EPF employee (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfP)}</Fv></td></tr>
-              <tr><td className="ep-tl">SOCSO (0.5%) <Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></td><td colSpan="2" className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
+              <tr><td className="ep-tl ep-split"><span>EPF</span><span className="ep-nums"><Fv f={`EPF employer (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfM)}</Fv>/<Fv f={`EPF employer \xf7 26 = ${nf(r.epfM)} \xf7 26`}>{nf(epfMD)}</Fv></span></td><td colSpan="2" className="ep-tr"><Fv f={`EPF employee (table lookup on salary ${nf(r.salary)})`}>{nf(r.epfP)}</Fv></td></tr>
+              <tr><td className="ep-tl ep-split"><span>SOCSO (0.5%)</span><span className="ep-nums"><Fv f="SOCSO employer contribution">{nf(r.socsoM)}</Fv></span></td><td colSpan="2" className="ep-tr"><Fv f="SOCSO employee invaliditi contribution">{nf(r.socsoInv)}</Fv></td></tr>
               <tr><td className="ep-tl">SOCSO (SKBBK)</td><td colSpan="2" className="ep-tr"><Fv f="SOCSO SKBBK employment injury (0.75%)">{nf(r.socsoSkbbk)}</Fv></td></tr>
-              <tr><td className="ep-tl">EIS{' '}<Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
+              <tr><td className="ep-tl ep-split"><span>EIS</span><span className="ep-nums"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></span></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td className="ep-tm"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tr"></td></tr>
@@ -306,6 +306,8 @@ const CSS = `
 .ep-tbl td.ep-tm{border-left:none;border-right:none;padding:.2em .4em}
 .ep-tbl td.ep-tm+td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
+.ep-split{display:flex;justify-content:space-between;align-items:baseline}
+.ep-nums{font-variant-numeric:tabular-nums;text-align:right}
 .ep-tm{text-align:right;font-size:.9em}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
