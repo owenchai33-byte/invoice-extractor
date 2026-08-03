@@ -145,10 +145,25 @@ export default function EmployeePayslip() {
     return pages;
   }, [rows]);
 
-  const step = wide ? 2 : 1;
-  const maxIdx = Math.max(0, rows.length - step);
-  const cur = Math.min(wide ? (idx % 2 === 0 ? idx : Math.max(0, idx - 1)) : idx, maxIdx);
-  const go = d => setIdx(Math.min(maxIdx, Math.max(0, cur + d * step)));
+  const screenPages = useMemo(() => {
+    if (!wide) return rows.map(r => ({ items: [{ r, half: (r.incentive || 0) > 0 }] }));
+    const pages = [];
+    let pg = { items: [], slots: 0 };
+    rows.forEach(r => {
+      const half = (r.incentive || 0) > 0;
+      const size = half ? 2 : 1;
+      if (pg.slots + size > 4) { pages.push(pg); pg = { items: [], slots: 0 }; }
+      pg.items.push({ r, half });
+      pg.slots += size;
+    });
+    if (pg.items.length > 0) pages.push(pg);
+    return pages;
+  }, [rows, wide]);
+
+  const maxPage = Math.max(0, screenPages.length - 1);
+  const curPage = Math.min(idx, maxPage);
+  const go = d => setIdx(i => Math.min(maxPage, Math.max(0, i + d)));
+  const staffPage = useMemo(() => { const m = {}; screenPages.forEach((p, pi) => p.items.forEach(it => { m[it.r.id] = pi; })); return m; }, [screenPages]);
 
   useEffect(() => {
     const h = e => {
@@ -159,7 +174,7 @@ export default function EmployeePayslip() {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   });
-  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [cur]);
+  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [curPage]);
 
   const changeMonth = d => { setIdx(0); if (d < 0) { if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
 
@@ -177,7 +192,7 @@ export default function EmployeePayslip() {
           <button className="ep-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
         </div>
         <div className="ep-acts">
-          <span className="ep-count">{rows.length ? (wide ? `Page ${cur / 2 + 1} / ${Math.ceil(rows.length / 2)}` : `${cur + 1} / ${rows.length}`) : '0'}</span>
+          <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
           <button className="ep-btn" onClick={() => window.print()}>Print all (2 per page)</button>
         </div>
       </div>
@@ -187,17 +202,16 @@ export default function EmployeePayslip() {
       ) : (
         <>
           <div className="ep-stage no-print">
-            <button className="ep-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
+            <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              <EpCard r={rows[cur]} mo={mo} yr={yr} absVal={getAbs(rows[cur].id)} onAbsChange={v => setAbsV(rows[cur].id, v)} />
-              {wide && rows[cur + 1] && <EpCard r={rows[cur + 1]} mo={mo} yr={yr} absVal={getAbs(rows[cur + 1].id)} onAbsChange={v => setAbsV(rows[cur + 1].id, v)} />}
+              {screenPages[curPage].items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={wide && !it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
             </div>
-            <button className="ep-arrow" disabled={cur >= maxIdx} onClick={() => go(1)}>&#9654;</button>
+            <button className="ep-arrow" disabled={curPage >= maxPage} onClick={() => go(1)}>&#9654;</button>
           </div>
 
           <div className="ep-strip no-print" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + ((wide ? (i === cur || i === cur + 1) : i === cur) ? " on" : "")} onClick={() => setIdx(wide ? Math.floor(i / 2) * 2 : i)} title={r.name}>
+              <button key={r.id} className={"thumb" + (staffPage[r.id] === curPage ? " on" : "")} onClick={() => setIdx(staffPage[r.id])} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
@@ -237,8 +251,9 @@ const CSS = `
 .ep-arrow:hover:not(:disabled){background:#f4f4f5}
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
-.ep-pagewrap{display:flex;gap:0;padding:0;align-items:stretch;justify-content:center}
-.ep-pagewrap .ep-card{width:100%;max-width:21cm;padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11.5px}
+.ep-pagewrap{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:42cm;margin:0 auto}
+.ep-pagewrap .ep-card{padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:11.5px;grid-column:span 2}
+.ep-pagewrap .ep-compact{grid-column:span 1}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
