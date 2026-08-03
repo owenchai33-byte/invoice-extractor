@@ -309,7 +309,7 @@ const CSS = `
 .ep-tl{text-align:left}
 .ep-split{display:flex;justify-content:space-between;align-items:baseline}
 .ep-nums{font-variant-numeric:tabular-nums;text-align:right}
-.ep-skbbk{font-size:.65em;white-space:nowrap}
+.ep-ded td.ep-skbbk{font-size:.65em;white-space:nowrap}
 .ep-tm{text-align:right;font-size:.9em}
 .ep-tr{text-align:right;font-variant-numeric:tabular-nums}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
