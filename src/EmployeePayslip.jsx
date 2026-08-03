@@ -223,11 +223,22 @@ export default function EmployeePayslip() {
           </div>
 
           <div className="ep-print">
-            {(printMode === 'current' ? [{ items: screenPages[curPage].items.filter(it => it.r.id === sel) }] : printPages).map((pg, pi) => (
-              <div className="ep-page" key={pi}>
-                {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
-              </div>
-            ))}
+            {(printMode === 'current' ? [{ items: screenPages[curPage].items.filter(it => it.r.id === sel) }] : printPages).map((pg, pi) => {
+              const els = [];
+              let idx = 0;
+              while (idx < pg.items.length) {
+                const it = pg.items[idx];
+                if (it.half) {
+                  els.push(<EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={false} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />);
+                  idx++;
+                } else {
+                  const pair = [it];
+                  if (idx + 1 < pg.items.length && !pg.items[idx + 1].half) { pair.push(pg.items[idx + 1]); idx += 2; } else { idx++; }
+                  els.push(<div className="ep-pair" key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} />)}</div>);
+                }
+              }
+              return <div className="ep-page" key={pi}>{els}</div>;
+            })}
           </div>
         </>
       )}
@@ -329,7 +340,8 @@ const CSS = `
   .ep-print{display:block}
   .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:148.5mm 148.5mm;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:297mm;width:210mm;box-sizing:border-box;overflow:hidden}
   .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2;min-height:0}
-  .ep-page .ep-compact{grid-column:span 1;padding-left:5mm;padding-right:5mm}
+  .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 10mm;box-sizing:border-box;min-height:0;overflow:hidden}
+  .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
