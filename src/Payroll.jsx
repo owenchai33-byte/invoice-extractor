@@ -274,11 +274,11 @@ const CSS=`
 .pr{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#18181b;background:#f4f4f5;min-height:100vh}
 .bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 .bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0}
-.mnav{display:flex;align-items:center;gap:4px;margin-left:auto}
+.mnav{display:flex;align-items:center;gap:4px}
 .mbtn{width:32px;height:32px;border:1px solid #d4d4d8;background:#fff;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;color:#71717a}
 .mbtn:hover{background:#f4f4f5}
 .mlbl{font-size:14px;font-weight:600;min-width:140px;text-align:center}
-.acts{display:flex;gap:8px;margin-left:16px}
+.acts{display:flex;gap:8px;margin-left:auto}
 .b{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
 .b:active{transform:scale(.97)}
 .bd{background:#18181b;color:#fff}.bd:hover{background:#27272a}
