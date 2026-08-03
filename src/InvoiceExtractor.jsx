@@ -1612,8 +1612,8 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
           <div className="table-scroll" style={{overflowX:'auto',marginTop:14}}>
           <table style={{width:'100%',minWidth:760,borderCollapse:'collapse',tableLayout:'fixed'}}>
             <colgroup>
-              <col style={{width:'4%'}}/>
-              <col style={{width:'16%'}}/>
+              <col style={{width:'5%'}}/>
+              <col style={{width:'15%'}}/>
               <col style={{width:'15%'}}/>
               <col style={{width:'14%'}}/>
               <col style={{width:'13%'}}/>
@@ -1621,7 +1621,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
               <col style={{width:'13%'}}/>
             </colgroup>
             <thead><tr>
-              <th style={{...T.th,width:42}}>NO.</th>
+              <th style={{...T.th,width:48}}>NO.</th>
               <th style={{...T.th,width:86}}>DATE</th>
               <th style={{...T.th,width:120}}>INVOICE NO.</th>
               <th style={{...T.th,width:88}}>AMOUNT</th>
