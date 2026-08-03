@@ -346,7 +346,7 @@ const CSS = `
   .ep-page .ep-card{font-size:11.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2;min-height:0}
   .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 10mm;box-sizing:border-box;min-height:0;overflow:hidden}
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
-  .ep-page .ep-pair-single{grid-column:span 1}
+  .ep-pair-single>.ep-card{flex:none;width:calc(50% - 5mm)}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
