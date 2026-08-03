@@ -307,7 +307,7 @@ const CSS = `
   .ep-page .ep-card{font-size:10.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-page .ep-compact{grid-column:span 1}
-  .ep-abs-pr{display:inline}
+  .ep-abs-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
