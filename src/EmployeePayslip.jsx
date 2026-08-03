@@ -85,15 +85,15 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
             </div>
 
             <table className="ep-tbl">
-              <colgroup><col style={{width:'40%'}}/><col style={{width:'60%'}}/></colgroup>
-              <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
+              <colgroup><col className="ep-col-lbl"/><col className="ep-col-mid"/><col className="ep-col-amt"/></colgroup>
+              <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody className="ep-inc-body">
-                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
+                <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tm"></td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
               <tbody className="ep-net-body">
-                <tr className="ep-net-gap"><td colSpan="2"></td></tr>
-                <tr className="ep-net-gap"><td colSpan="2"></td></tr>
-                <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"></td></tr>
+                <tr className="ep-net-gap"><td colSpan="3"></td></tr>
+                <tr className="ep-net-gap"><td colSpan="3"></td></tr>
+                <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"></td></tr>
               </tbody>
             </table>
           </div>
