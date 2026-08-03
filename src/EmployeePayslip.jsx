@@ -67,6 +67,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
             <tbody className="ep-net-body">
+              <tr className="ep-net-gap"><td colSpan="3"></td></tr>
               <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"></td></tr>
             </tbody>
           </table>
@@ -80,6 +81,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
               <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
               <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{incDay(mo, yr)}</span></div>
+              <div className="ep-row ep-spacer">&nbsp;</div>
             </div>
 
             <table className="ep-tbl">
@@ -88,6 +90,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
               <tbody className="ep-net-body">
+                <tr className="ep-net-gap"><td colSpan="2"></td></tr>
                 <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"></td></tr>
               </tbody>
             </table>
@@ -282,6 +285,7 @@ const CSS = `
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
 /* ─── NET PAY ─── */
+.ep-net-gap td{border:none!important;height:.6em;padding:0}
 .ep-tbl .ep-net-body .ep-net-lb{border:none;padding:.3em .4em;text-align:left;font-weight:700;font-size:1em;vertical-align:middle}
 .ep-tbl .ep-net-body .ep-net-td{border:2px solid #000;height:2.5em;padding:0;box-sizing:border-box}
 
