@@ -145,17 +145,13 @@ export default function EmployeePayslip() {
   }, [rows]);
 
   const screenPages = useMemo(() => {
-    if (!wide) return rows.map(r => ({ items: [{ r, half: (r.incentive || 0) > 0 }] }));
+    if (!wide) return rows.map(r => ({ items: [{ r }] }));
     const pages = [];
-    let pg = { items: [], slots: 0 };
-    rows.forEach(r => {
-      const half = (r.incentive || 0) > 0;
-      const size = half ? 2 : 1;
-      if (pg.slots + size > 4) { pages.push(pg); pg = { items: [], slots: 0 }; }
-      pg.items.push({ r, half });
-      pg.slots += size;
-    });
-    if (pg.items.length > 0) pages.push(pg);
+    for (let i = 0; i < rows.length; i += 2) {
+      const items = [{ r: rows[i] }];
+      if (rows[i + 1]) items.push({ r: rows[i + 1] });
+      pages.push({ items });
+    }
     return pages;
   }, [rows, wide]);
 
@@ -203,7 +199,7 @@ export default function EmployeePayslip() {
           <div className="ep-stage no-print">
             <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              {screenPages[curPage].items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={wide && !it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
+              {screenPages[curPage].items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
             </div>
             <button className="ep-arrow" disabled={curPage >= maxPage} onClick={() => go(1)}>&#9654;</button>
           </div>
@@ -250,9 +246,8 @@ const CSS = `
 .ep-arrow:hover:not(:disabled){background:#f4f4f5}
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
-.ep-pagewrap{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:42cm;margin:0 auto}
-.ep-pagewrap .ep-card{padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:13px;grid-column:span 2}
-.ep-pagewrap .ep-compact{grid-column:span 1}
+.ep-pagewrap{display:flex;gap:0;padding:0;align-items:stretch;justify-content:center}
+.ep-pagewrap .ep-card{width:100%;max-width:21cm;padding:1.2em 1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:13px}
 
 .ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 .thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
