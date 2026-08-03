@@ -45,7 +45,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
             <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={fitCls(r.name,'ep-vl')}>{r.name}</span></div>
             <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={fitCls(r.position,'ep-vl')}>{r.position}</span></div>
             <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
-            {r.bankAcc && <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={fitCls(r.bankAcc,'ep-vl')}>{r.bankAcc}</span></div>}
+            {r.bankAcc ? <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={fitCls(r.bankAcc,'ep-vl')}>{r.bankAcc}</span></div> : <div className="ep-row ep-spacer">&nbsp;</div>}
           </div>
 
           <table className="ep-tbl">
@@ -67,6 +67,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
             <tbody className="ep-net-body">
+              <tr className="ep-net-gap"><td colSpan="3"></td></tr>
               <tr className="ep-net-gap"><td colSpan="3"></td></tr>
               <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"></td></tr>
             </tbody>
@@ -90,6 +91,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
               <tbody className="ep-net-body">
+                <tr className="ep-net-gap"><td colSpan="2"></td></tr>
                 <tr className="ep-net-gap"><td colSpan="2"></td></tr>
                 <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"></td></tr>
               </tbody>
