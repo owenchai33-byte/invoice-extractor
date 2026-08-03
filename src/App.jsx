@@ -168,25 +168,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Subtle context line */}
-        <div style={{
-          maxWidth: 1480,
-          margin: '0 auto',
-          padding: '0 24px 8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <span style={{
-            fontSize: 10.5,
-            fontWeight: 500,
-            color: '#a3a3a3',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-          }}>
-            {FEATURES.find(f => f.id === active)?.hint}
-          </span>
-        </div>
       </header>
 
       {/* ─── Content ─── */}
