@@ -65,7 +65,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
             <tbody className="ep-net-body">
-              <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"><div className="ep-net-bx"></div></td></tr>
+              <tr><td className="ep-net-lb">NET PAY</td><td colSpan="2" className="ep-net-td"></td></tr>
             </tbody>
           </table>
         </div>
@@ -86,7 +86,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
               <tbody className="ep-net-body">
-                <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"><div className="ep-net-bx"></div></td></tr>
+                <tr><td className="ep-net-lb">NET PAY</td><td className="ep-net-td"></td></tr>
               </tbody>
             </table>
           </div>
@@ -278,9 +278,8 @@ const CSS = `
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
 /* ─── NET PAY ─── */
-.ep-tbl .ep-net-body td{border:none;padding:.5em .4em;font-weight:700;font-size:1em;vertical-align:middle}
-.ep-net-lb{text-align:left}
-.ep-net-bx{width:100%;height:2.5em;border:2px solid #000;box-sizing:border-box}
+.ep-tbl .ep-net-body .ep-net-lb{border:none;padding:.3em .4em;text-align:left;font-weight:700;font-size:1em;vertical-align:middle}
+.ep-tbl .ep-net-body .ep-net-td{border:2px solid #000;height:2.5em;padding:0;box-sizing:border-box}
 
 /* ─── Print ─── */
 .ep-print{display:none}
@@ -290,8 +289,7 @@ const CSS = `
   .ep-print{display:block}
   .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
   .ep-page .ep-card{font-size:10.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
-  .ep-page .ep-net-bx{height:2em}
-  .ep-page .ep-net-body td{padding:.2em .4em}
+  .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-page .ep-compact{grid-column:span 1}
   .ep-abs-pr{display:inline}
   .fv-wrap{border-bottom:none;cursor:default}
