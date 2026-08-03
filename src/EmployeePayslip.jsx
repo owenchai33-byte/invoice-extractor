@@ -8,6 +8,7 @@ const nf = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimu
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr.toString().slice(-2)}`; };
 const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2.toString().slice(-2)}`; };
 const fitCls = (txt, base) => { const len = (txt || '').length; if (len > 34) return base + ' ep-xs'; if (len > 22) return base + ' ep-sm'; return base; };
+const fmtAbs = v => { const n = parseFloat(v); if (!n) return '-'; const w = Math.floor(n); const h = (n % 1) >= 0.5; let s = ''; if (w > 0) s += w; if (h) s += '½'; return s + (n > 1 ? ' DAYS' : ' DAY'); };
 
 function Fv({ f, children }) {
   const [show, setShow] = useState(false);
@@ -26,7 +27,7 @@ function Fv({ f, children }) {
   );
 }
 
-function EpCard({ r, mo, yr, compact }) {
+function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
   const hasInc = (r.incentive || 0) > 0;
   const daily = r.salary / 26;
   const epfMD = r.epfM / 26;
@@ -60,7 +61,7 @@ function EpCard({ r, mo, yr, compact }) {
               <tr><td className="ep-tl">EIS{' '}<Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td><td colSpan="2" className="ep-tr"><Fv f="EIS employee contribution">{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
-              <tr className="ep-xtra"><td className="ep-tl">ABSENCE{'   '}-</td><td colSpan="2" className="ep-tr"></td></tr>
+              <tr className="ep-xtra"><td className="ep-tl">ABSENCE{' '}<input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td colSpan="2" className="ep-tr"></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
             </tbody>
           </table>
@@ -109,6 +110,10 @@ export default function EmployeePayslip() {
   const staff = useMemo(() => load(LS_S, SAMPLE_STAFF), []);
   const pd = useMemo(() => load(LS_P, {}), []);
   const showBonus = useMemo(() => { const v = localStorage.getItem(LS_SB); return v === null ? true : JSON.parse(v); }, []);
+  const [abs, setAbs] = useState(() => load('cjk_absence', {}));
+  const absK = sid => `${yr}-${String(mo + 1).padStart(2, '0')}-${sid}`;
+  const getAbs = sid => abs[absK(sid)] || '';
+  const setAbsV = (sid, v) => { const k = absK(sid); const next = { ...abs, [k]: v }; setAbs(next); try { localStorage.setItem('cjk_absence', JSON.stringify(next)); } catch {} };
 
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);
@@ -175,8 +180,8 @@ export default function EmployeePayslip() {
           <div className="ep-stage no-print">
             <button className="ep-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              <EpCard r={pairs[cur][0]} mo={mo} yr={yr} />
-              {pairs[cur][1] && <EpCard r={pairs[cur][1]} mo={mo} yr={yr} />}
+              <EpCard r={pairs[cur][0]} mo={mo} yr={yr} absVal={getAbs(pairs[cur][0].id)} onAbsChange={v => setAbsV(pairs[cur][0].id, v)} />
+              {pairs[cur][1] && <EpCard r={pairs[cur][1]} mo={mo} yr={yr} absVal={getAbs(pairs[cur][1].id)} onAbsChange={v => setAbsV(pairs[cur][1].id, v)} />}
             </div>
             <button className="ep-arrow" disabled={cur >= pairs.length - 1} onClick={() => go(1)}>&#9654;</button>
           </div>
@@ -194,7 +199,7 @@ export default function EmployeePayslip() {
           <div className="ep-print">
             {printPages.map((pg, pi) => (
               <div className="ep-page" key={pi}>
-                {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} />)}
+                {pg.items.map(it => <EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} />)}
               </div>
             ))}
           </div>
@@ -253,6 +258,10 @@ const CSS = `
 .ep-sm{font-size:.78em;white-space:nowrap}
 .ep-xs{font-size:.62em;white-space:nowrap}
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}
+.ep-abs-in{width:3em;font-size:inherit;border:1px solid #d4d4d8;border-radius:3px;padding:1px 4px;text-align:center;font-family:inherit}
+.ep-abs-in::-webkit-inner-spin-button,.ep-abs-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.ep-abs-in{-moz-appearance:textfield}
+.ep-abs-pr{display:none}
 
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
@@ -286,7 +295,8 @@ const CSS = `
   .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;height:100vh;box-sizing:border-box}
   .ep-page .ep-card{font-size:10.5pt;padding:3mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2}
   .ep-page .ep-netbox{margin-top:.4em;height:2.8em}
-  .ep-page .ep-compact{grid-column:span 1;font-size:8pt;padding:3mm 5mm}
+  .ep-page .ep-compact{grid-column:span 1}
+  .ep-abs-pr{display:inline}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
