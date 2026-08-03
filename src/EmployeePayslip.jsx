@@ -85,6 +85,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange }) {
             </div>
 
             <table className="ep-tbl">
+              <colgroup><col style={{width:'40%'}}/><col style={{width:'60%'}}/></colgroup>
               <thead><tr><th className="ep-tl">EARNINGS</th><th className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody className="ep-inc-body">
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
