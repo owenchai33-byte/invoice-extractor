@@ -273,7 +273,7 @@ const CSS=`
 *{box-sizing:border-box}
 .pr{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#18181b;background:#f4f4f5;min-height:100vh}
 .pr-locked input,.pr-locked select,.pr-locked textarea,.pr-locked .editable{pointer-events:none;opacity:.6}
-.pr-locked .b.bo:not([title*="lock"]):not(.mbtn){opacity:.5;pointer-events:none}
+.pr-locked .b.bo:not([title*="lock"]):not(.mbtn):not(.pr-act){opacity:.5;pointer-events:none}
 .bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 .bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0}
 .mnav{display:flex;align-items:center;gap:4px}
@@ -803,7 +803,7 @@ export default function Payroll(){
           <button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?'🔒 Locked':'🔓 Editing'}</button>
           <button className="b bo" disabled={locked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
-          <button className="b bo" onClick={()=>window.print()}>Print</button>
+          <button className="b bo pr-act" onClick={()=>window.print()}>Print</button>
         </div>
       </div>
       <div className="body">
