@@ -218,7 +218,9 @@ const CSS = `
 .ep-btn:hover{background:#000}
 
 .ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 16px 120px}
-.ep-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.ep-stage>.ep-arrow:first-child{left:12px}
+.ep-stage>.ep-arrow:last-child{right:12px}
 .ep-arrow:hover:not(:disabled){background:#f4f4f5}
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
