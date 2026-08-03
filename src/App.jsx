@@ -5,13 +5,19 @@ import ContractGenerator from './ContractGenerator';
 import Payslip from './Payslip';
 import EmployeePayslip from './EmployeePayslip';
 
-const FEATURES = [
-  { id: 'invoice',  label: 'Payment Summary',  hint: 'Supplier invoices' },
-  { id: 'payroll',  label: 'Payroll',   hint: 'Monthly statements' },
-  { id: 'contract', label: 'Contracts', hint: 'Employment contracts' },
-  { id: 'payslip',  label: 'Payslip',   hint: 'Staff payslips' },
-  { id: 'epayslip', label: 'Employee Payslip', hint: 'Salary + incentive breakdown' },
+const SECTIONS = [
+  { id: 'af', label: 'Account & Finance', tabs: [
+    { id: 'invoice', label: 'Payment Summary' },
+  ]},
+  { id: 'hr', label: 'Human Resource', tabs: [
+    { id: 'payroll', label: 'Payroll' },
+    { id: 'payslip', label: 'Payslip' },
+    { id: 'epayslip', label: 'Employee Payslip' },
+    { id: 'contract', label: 'Contracts' },
+  ]},
 ];
+const TAB_TO_SECTION = {};
+SECTIONS.forEach(s => s.tabs.forEach(t => { TAB_TO_SECTION[t.id] = s.id; }));
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
 
@@ -104,32 +110,32 @@ export default function App() {
           {/* Divider */}
           <div style={{ width: 1, height: 18, background: 'rgba(0,0,0,0.08)' }} />
 
-          {/* Feature switcher */}
+          {/* Section switcher */}
           <nav style={{ display: 'flex', gap: 2, flex: 1 }}>
-            {FEATURES.map(f => {
-              const isActive = active === f.id;
+            {SECTIONS.map(s => {
+              const isSec = TAB_TO_SECTION[active] === s.id;
               return (
                 <button
-                  key={f.id}
-                  onClick={() => setActive(f.id)}
+                  key={s.id}
+                  onClick={() => setActive(s.tabs[0].id)}
                   style={{
                     position: 'relative',
                     background: 'transparent',
                     border: 'none',
-                    padding: '6px 12px',
+                    padding: '6px 14px',
                     borderRadius: 6,
                     fontSize: 13,
-                    fontWeight: isActive ? 600 : 500,
+                    fontWeight: isSec ? 700 : 500,
                     fontFamily: 'inherit',
-                    color: isActive ? '#0a0a0a' : '#737373',
+                    color: isSec ? '#0a0a0a' : '#737373',
                     cursor: 'pointer',
                     transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
                     letterSpacing: '-0.005em',
                   }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#0a0a0a'; }}
-                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#737373'; }}
+                  onMouseEnter={e => { if (!isSec) e.currentTarget.style.color = '#0a0a0a'; }}
+                  onMouseLeave={e => { if (!isSec) e.currentTarget.style.color = '#737373'; }}
                 >
-                  {isActive && (
+                  {isSec && (
                     <div style={{
                       position: 'absolute',
                       inset: 0,
@@ -138,7 +144,7 @@ export default function App() {
                       zIndex: -1,
                     }} />
                   )}
-                  {f.label}
+                  {s.label}
                 </button>
               );
             })}
@@ -169,6 +175,67 @@ export default function App() {
         </div>
 
       </header>
+
+      {/* ─── Sub-tabs ─── */}
+      {(() => {
+        const sec = SECTIONS.find(s => s.id === TAB_TO_SECTION[active]);
+        if (!sec || sec.tabs.length <= 1) return null;
+        return (
+          <div className="sabrina-nav" style={{
+            background: '#fff',
+            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            position: 'sticky',
+            top: 52,
+            zIndex: 99,
+          }}>
+            <div style={{
+              maxWidth: 1480,
+              margin: '0 auto',
+              padding: '0 24px',
+              display: 'flex',
+              gap: 2,
+              height: 40,
+              alignItems: 'center',
+            }}>
+              {sec.tabs.map(t => {
+                const isActive = active === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setActive(t.id)}
+                    style={{
+                      position: 'relative',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '4px 12px',
+                      borderRadius: 5,
+                      fontSize: 12.5,
+                      fontWeight: isActive ? 600 : 500,
+                      fontFamily: 'inherit',
+                      color: isActive ? '#0a0a0a' : '#737373',
+                      cursor: 'pointer',
+                      transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#0a0a0a'; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#737373'; }}
+                  >
+                    {isActive && (
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.04)',
+                        borderRadius: 5,
+                        zIndex: -1,
+                      }} />
+                    )}
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── Content ─── */}
       <main>
