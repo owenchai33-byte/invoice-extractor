@@ -518,7 +518,7 @@ export default function Payroll(){
   // "+ Add row" appends more. Empty rows are dropped from print + Excel so no wasted space.
   const[remAll,setRemAll]=useState(()=>loadJ(LS_R,{}));
   useEffect(()=>{saveJ(LS_R,remAll);},[remAll]);
-  useEffect(()=>{document.title=`CJK Payroll - ${MONTHS[mo]} ${yr}`;},[mo,yr]);
+  useEffect(()=>{document.title=`HQ STAFF PAYROLL - ${MONTHS[mo].slice(0,3)}'${String(yr).slice(-2)}`;},[mo,yr]);
   const _skip=useRef(true);
   const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();localStorage.setItem(LS_TS,t);setUpdTs(t);}};
   useEffect(()=>{saveJ(LS_S,staff);_touch();},[staff]);

@@ -187,7 +187,7 @@ export default function EmployeePayslip() {
   const atMin = mo === 6 && yr === 2026;
   const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
 
-  useEffect(() => { document.title = `CJK Employee Payslips - ${MONTHS[mo]} ${yr}`; }, [mo, yr]);
+  useEffect(() => { document.title = `HQ STAFF EMPLOYEE PAYSLIP - ${MONTHS[mo].slice(0,3).toUpperCase()}'${String(yr).slice(-2)}`; }, [mo, yr]);
 
   return (
     <div className="ep-root">
