@@ -166,7 +166,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
 export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin';
-export function readMonthTs(mo,yr){const k=`${yr}-${String(mo+1).padStart(2,'0')}`;const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{try{const d=new Date(raw);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===k?raw:'';}catch{return '';}}}
+export function readMonthTs(mo,yr){const k=`${yr}-${String(mo+1).padStart(2,'0')}`;const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{return '';}}
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // Module-level migration: bank account numbers (runs on import so EmployeePayslip picks them up)
@@ -526,7 +526,7 @@ export default function Payroll(){
   useEffect(()=>{document.title=`HQ STAFF PAYROLL - ${MONTHS[mo].slice(0,3)}'${String(yr).slice(-2)}`;},[mo,yr]);
   const _skip=useRef(true);
   const _tsKey=()=>`${yr}-${String(mo+1).padStart(2,'0')}`;
-  const _readTs=k=>{const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{try{const d=new Date(raw);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===k?raw:'';}catch{return '';}}};
+  const _readTs=k=>{const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{return '';}};
   const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_TS)||'{}');}catch{}o[k]=t;localStorage.setItem(LS_TS,JSON.stringify(o));setUpdTs(t);}};
   useEffect(()=>{saveJ(LS_S,staff);_touch();},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);_touch();},[pt]);
