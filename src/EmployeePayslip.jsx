@@ -65,7 +65,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
               <tr><td className="ep-tl"><div className="ep-split"><span>EIS</span><span className="ep-nums"><Fv f={`EIS employer (table lookup on ${nf(socsoWage)})`}>{nf(r.eisE)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`EIS employee (table lookup on ${nf(socsoWage)})`}>{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
-              <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td colSpan="2" className="ep-tr ep-abs-td"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td></tr>
+              <tr className={"ep-xtra"+(showStart&&!othVal&&locked?' ep-abs-last':'')}><td className="ep-tl">ABSENCE</td><td colSpan="2" className="ep-tr ep-abs-td"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td></tr>
               <tr className={"ep-xtra"+(showStart&&!othVal&&locked?' ep-oth-hide':'')}><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr ep-oth-td">{showStart&&!locked&&<><span className="ep-oth-lbl">START</span><input type="text" className="ep-oth-in no-print" value={othVal || ''} onChange={e => onOthChange(e.target.value)} /></>}{showStart&&othVal&&<><span className="ep-oth-lbl ep-oth-lbl-pr">START</span><span className="ep-oth-pr">{othVal}</span></>}</td></tr>
             </tbody>
             <tbody className="ep-net-body">
@@ -324,6 +324,7 @@ const CSS = `
 .ep-abs-pr{display:none}
 .ep-abs-td{text-align:left!important}
 .ep-oth-td{text-align:left!important}
+.ep-abs-last td{border-bottom:1px solid #000}
 .ep-oth-hide{display:none}
 .ep-oth-lbl{font-size:inherit;margin-right:4px}
 .ep-oth-lbl-pr{display:none}
