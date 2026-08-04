@@ -874,7 +874,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           )}
         </div>
         <div className="stats np">
-          <div className="st"><div className="stl">Total Staff</div><div className="stv">{staff.length}</div></div>
+          <div className="st"><div className="stl">Total Staff</div><div className="stv">{visibleStaff.length}</div></div>
           <div className="st"><div className="stl">Total Earnings</div><div className="stv" style={{color:'#059669'}}>RM {fmt(gT[4]+(gT[5]||0)+(gT[6]||0))}</div></div>
           <div className="st"><div className="stl">Total Deductions</div><div className="stv" style={{color:'#dc2626'}}>RM {fmt((gT[8]||0)+(gT[11]||0)+(gT[13]||0)+(gT[15]||0))}</div></div>
           <div className="st"><div className="stl">Net Payroll</div><div className="stv">RM {fmt(gT[16]||0)}</div></div>
