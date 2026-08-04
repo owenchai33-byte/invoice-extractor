@@ -506,8 +506,9 @@ export default function Payroll(){
       localStorage.setItem(MIG,'1');
     }
     const sampleIds=new Set(SAMPLE_STAFF.map(s=>s.id));
-    const noStart=['NUR SALINA'];
+    const noStart=['NUR SALINA','ERRA ERYCA'];
     d.forEach(s=>{if(s.status==='probationary'&&!s.addedMonth&&!sampleIds.has(s.id)&&!noStart.some(n=>s.name.includes(n)))s.addedMonth='2026-07';});
+    d.forEach(s=>{if(noStart.some(n=>s.name.includes(n)))delete s.addedMonth;});
     saveJ(LS_S,d);
     return d;
   });
