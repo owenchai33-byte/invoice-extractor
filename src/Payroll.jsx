@@ -236,7 +236,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   const cashStart=row;wR(pc);if(pb.length){sc(row,0,'PROBATIONARY STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
   tR('CASH:',cT,{sum:[cashStart,cashEnd]});const cashSub=row-1;
   tR('TOTAL:',gT,{add:[bankSub,cashSub]});
-  notes.forEach(n=>{sc(row,0,n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
+  notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
   row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;
   sc(row,4,'WAGES/ DAY');sc(row,5,'DAY');sc(row,15,'ADVANCE');sc(row,16,'NET PAY');row++;
   const ptStart=row;
@@ -258,6 +258,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
         if(/^TOTAL/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'FFF0A6'}}; }
         else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'EFEFEF'}}; }
         else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='PROBATIONARY STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
+        else if(/inactive/i.test(t0)){ st.font={bold:true}; st.alignment.horizontal='left'; }
       }
       if(cell.z) st.numFmt=cell.z;
       cell.s=st;
