@@ -510,6 +510,7 @@ export default function Payroll(){
     d.forEach(s=>{if(s.status==='probationary'&&!s.addedMonth&&!sampleIds.has(s.id)&&!noStart.some(n=>s.name.includes(n)))s.addedMonth='2026-07';});
     d.forEach(s=>{if(noStart.some(n=>s.name.includes(n)))delete s.addedMonth;});
     d=d.filter(s=>!s.name.includes('JEE SWEE EN'));
+    const seenIc=new Set();d=d.filter(s=>{if(seenIc.has(s.ic))return false;seenIc.add(s.ic);return true;});
     if(!d.some(s=>s.name.includes('JANET SOON'))){const j=SAMPLE_STAFF.find(s=>s.id==='s22');if(j)d.push({...j,status:'probationary',addedMonth:'2026-07'});}
     saveJ(LS_S,d);
     return d;
