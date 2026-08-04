@@ -568,7 +568,7 @@ export default function Payroll({canUndo, onUndo}){
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const isMonthLocked=mk<currentMK;
-  const effectiveLocked=locked||isMonthLocked;
+  useEffect(()=>{if(isMonthLocked)setLocked(true);},[mk]);
   const isHidden=useCallback(id=>(hidden[mk]||[]).includes(id),[hidden,mk]);
   const hideForMonth=useCallback(id=>{setHidden(h=>{const list=[...(h[mk]||[])];if(!list.includes(id))list.push(id);return{...h,[mk]:list};});},[mk]);
   const showForMonth=useCallback(id=>{setHidden(h=>{const list=(h[mk]||[]).filter(x=>x!==id);return{...h,[mk]:list};});},[mk]);
@@ -834,7 +834,7 @@ export default function Payroll({canUndo, onUndo}){
   useEffect(()=>{window.addEventListener('keydown',onGridKey);return()=>window.removeEventListener('keydown',onGridKey);});
   useEffect(()=>{if(cur){const el=document.querySelector('.selc');if(el)el.scrollIntoView({block:'nearest',inline:'nearest'});}},[cur]);
   return(
-    <div className={"pr"+(effectiveLocked?" pr-locked":"")}>
+    <div className={"pr"+(locked?" pr-locked":"")}>
       <style>{CSS}</style>
       <div className="bar np">
         <h1>HQ PAYROLL</h1>
@@ -845,12 +845,9 @@ export default function Payroll({canUndo, onUndo}){
           {updTs&&<span className="upd-ts">Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="acts">
-          {isMonthLocked
-            ?<button className="b bo" disabled title="Past months are auto-locked" style={{cursor:'not-allowed'}}>🔒 Month Locked</button>
-            :<button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?'🔒 Locked':'🔓 Editing'}</button>
-          }
+          <button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?(isMonthLocked?'🔒 Month Locked':'🔒 Locked'):'🔓 Editing'}</button>
           {onUndo&&<button className="b bo pr-act" disabled={!canUndo} onClick={onUndo} title="Undo last change" style={!canUndo?{opacity:.4,cursor:'default'}:undefined}>↩ Undo</button>}
-          <button className="b bo" disabled={effectiveLocked} onClick={()=>setPan(true)}>Manage Staff</button>
+          <button className="b bo" disabled={locked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
           <button className="b bo pr-act" onClick={()=>window.print()}>Print</button>
         </div>
