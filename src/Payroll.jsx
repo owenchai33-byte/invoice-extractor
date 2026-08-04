@@ -228,13 +228,15 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:mc(7)},e:{r:3,c:mc(15)}});
   sc(3,16,'NET PAY');mg.push({s:{r:3,c:L},e:{r:4,c:L}});
   ['NO','NAME','IC NO','POSITION','BASIC SALARY','INCENTIVE',bL,'EPF (M)','EPF (P)','JUMLAH EPF','SOCSO (M)','SOCSO (P)','JUMLAH SOCSO','EIS (M/P)','JUMLAH EIS','ADVANCE'].forEach((h,i)=>sc(4,i,h));
+  const viewMK=`${yr}-${String(mo+1).padStart(2,'0')}`;
+  const hlRows=new Set();
   let row=5,sn=1;
-  const wR=rows=>{rows.forEach(s=>{sc(row,0,sn);sc(row,1,s.name);sc(row,2,s.ic);sc(row,3,s.position);sc(row,4,s.salary);sc(row,5,s.incentive||0);sc(row,6,s.bonus||0);sc(row,7,s.epfM);sc(row,8,s.epfP);sc(row,9,s.epfM+s.epfP,`${A1(row,7)}+${A1(row,8)}`);sc(row,10,s.socsoM);sc(row,11,s.socsoP);sc(row,12,s.socsoM+s.socsoP,`${A1(row,10)}+${A1(row,11)}`);sc(row,13,s.eisE);sc(row,14,s.eisE*2,`${A1(row,13)}*2`);sc(row,15,s.advance||0);sc(row,16,s.netPay,`${A1(row,4)}+${A1(row,5)}${sb?'+'+A1(row,6):''}-${A1(row,8)}-${A1(row,11)}-${A1(row,13)}-${A1(row,15)}`);sn++;row++;});};
+  const wR=rows=>{rows.forEach(s=>{if(s.addedMonth===viewMK)hlRows.add(row);sc(row,0,sn);sc(row,1,s.name);sc(row,2,s.ic);sc(row,3,s.position);sc(row,4,s.salary);sc(row,5,s.incentive||0);sc(row,6,s.bonus||0);sc(row,7,s.epfM);sc(row,8,s.epfP);sc(row,9,s.epfM+s.epfP,`${A1(row,7)}+${A1(row,8)}`);sc(row,10,s.socsoM);sc(row,11,s.socsoP);sc(row,12,s.socsoM+s.socsoP,`${A1(row,10)}+${A1(row,11)}`);sc(row,13,s.eisE);sc(row,14,s.eisE*2,`${A1(row,13)}*2`);sc(row,15,s.advance||0);sc(row,16,s.netPay,`${A1(row,4)}+${A1(row,5)}${sb?'+'+A1(row,6):''}-${A1(row,8)}-${A1(row,11)}-${A1(row,13)}-${A1(row,15)}`);sn++;row++;});};
   // BANK TRANSFER / CASH subtotals = SUM of their staff block; TOTAL = bank + cash (live formulas)
   const tR=(l,t,opt)=>{sc(row,0,l);mg.push({s:{r:row,c:0},e:{r:row,c:3}});[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>{let f;if(opt&&opt.sum&&opt.sum[1]>=opt.sum[0])f=`SUM(${A1(opt.sum[0],c)}:${A1(opt.sum[1],c)})`;else if(opt&&opt.add)f=`${A1(opt.add[0],c)}+${A1(opt.add[1],c)}`;sc(row,c,t[c]||0,f);});row++;};
   const bankStart=row;wR(bR);const bankEnd=row-1;tR('BANK TRANSFER:',bT,{sum:[bankStart,bankEnd]});const bankSub=row-1;
   const pc=cR.filter(s=>s.status==='permanent'),pb=cR.filter(s=>s.status==='probationary');
-  const cashStart=row;wR(pc);if(pb.length){sc(row,0,'NEW STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
+  const cashStart=row;wR(pc);if(pb.length){sc(row,0,'PROBATIONARY STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
   tR('CASH:',cT,{sum:[cashStart,cashEnd]});const cashSub=row-1;
   tR('TOTAL:',gT,{add:[bankSub,cashSub]});
   notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
@@ -260,8 +262,9 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
         const c0=ws[X.utils.encode_cell({r:R,c:0})]; const t0=(c0&&typeof c0.v==='string')?c0.v.trim():'';
         if(/^TOTAL/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'FFF0A6'}}; }
         else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'EFEFEF'}}; }
-        else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='NEW STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
+        else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='PROBATIONARY STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
         else if(/inactive/i.test(t0)){ st.font={bold:true}; st.alignment.horizontal='left'; }
+        if(C===1&&hlRows.has(R)){ st.fill={fgColor:{rgb:'FFF9C4'}}; }
       }
       if(cell.z) st.numFmt=cell.z;
       cell.s=st;
@@ -743,7 +746,7 @@ export default function Payroll(){
           {n}
         </span>
       </td>
-      <td style={{fontWeight:600,color:'#000'}} title={r.name}>{r.name}</td>
+      <td style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
       <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
@@ -908,7 +911,7 @@ export default function Payroll(){
                 <TR l="BANK TRANSFER:" t={bT} c="tr"/>
                 <tr className="gh"><td colSpan={sb?17:16}>Cash</td></tr>
                 {pc.map(r=><Row key={r.id} r={r}/>)}
-                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>NEW STAFF</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
+                {pb.length>0&&<><tr className="ph"><td colSpan={sb?17:16}>PROBATIONARY STAFF</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
                 <TR l="CASH:" t={cT} c="tr"/>
                 <TR l="TOTAL:" t={gT} c="gr"/>
               </tbody>
