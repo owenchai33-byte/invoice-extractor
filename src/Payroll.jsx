@@ -252,8 +252,8 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   for(let R=_rng.s.r;R<=_rng.e.r;R++){
     for(let C=_rng.s.c;C<=_rng.e.c;C++){
       const a=X.utils.encode_cell({r:R,c:C}); let cell=ws[a]; if(!cell){cell={t:'s',v:''};ws[a]=cell;}
-      const st={border:_bd,alignment:{vertical:'center',wrapText:R===4}};
-      if(R<=4){ st.font={bold:true,sz:R===0?12:R===1?11:10}; st.alignment.horizontal= R===2 ? 'left' : 'center'; if(R>=2) st.fill={fgColor:{rgb:'E9E9E9'}}; }
+      const st={border:R===0?{}:R===1?{bottom:_thin}:_bd,alignment:{vertical:'center',wrapText:R===4}};
+      if(R<=4){ st.font={bold:true,sz:R===0?12:11}; st.alignment.horizontal= R===2 ? 'left' : 'center'; if(R>=2) st.fill={fgColor:{rgb:'E9E9E9'}}; }
       else {
         st.alignment.horizontal = C>=4 ? 'right' : (C===1||C===3 ? 'left' : 'center');
         const c0=ws[X.utils.encode_cell({r:R,c:0})]; const t0=(c0&&typeof c0.v==='string')?c0.v.trim():'';
