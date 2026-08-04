@@ -43,8 +43,12 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [showRestore, setShowRestore] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [canUndo, setCanUndo] = useState(false);
   const fileRef = useRef(null);
   const menuRef = useRef(null);
+  const undoStack = useRef([]);
+  const skipUndo = useRef(false);
+  const debounceRef = useRef(null);
 
   useEffect(() => {
     checkAndRestore().then(r => { if (r === 'available') setShowRestore(true); });
@@ -52,7 +56,25 @@ export default function App() {
 
   useEffect(() => {
     const orig = localStorage.setItem.bind(localStorage);
-    const patched = function(k, v) { orig(k, v); saveBackup(); };
+    const snap = () => { const d = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); d[k] = orig.call(localStorage, k) || localStorage.getItem(k); } return d; };
+    const snapGet = () => { const d = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); d[k] = localStorage.getItem(k); } return d; };
+    let pending = null;
+    const patched = function(k, v) {
+      if (!skipUndo.current && !k.startsWith('cjk_backup')) {
+        if (!pending) pending = snapGet();
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          if (pending) {
+            undoStack.current.push(pending);
+            if (undoStack.current.length > 20) undoStack.current.shift();
+            setCanUndo(true);
+            pending = null;
+          }
+        }, 500);
+      }
+      orig(k, v);
+      saveBackup();
+    };
     localStorage.setItem = patched;
     return () => { localStorage.setItem = orig; };
   }, []);
@@ -91,6 +113,18 @@ export default function App() {
     } catch { setToast('❌ Invalid backup file'); setTimeout(() => setToast(''), 3000); }
     e.target.value = '';
     setShowMenu(false);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (!undoStack.current.length) return;
+    const prev = undoStack.current.pop();
+    skipUndo.current = true;
+    localStorage.clear();
+    Object.entries(prev).forEach(([k, v]) => localStorage.setItem(k, v));
+    skipUndo.current = false;
+    setCanUndo(undoStack.current.length > 0);
+    setToast('↩ Undone');
+    setTimeout(() => { setToast(''); window.location.reload(); }, 800);
   }, []);
 
   const timeStr = time.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -249,6 +283,13 @@ export default function App() {
               </div>}
               <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileRestore} />
             </div>
+            <button onClick={handleUndo} disabled={!canUndo} style={{
+              background: 'none', border: '1px solid #e5e5e5', borderRadius: 4, padding: '2px 8px',
+              fontSize: 11, color: canUndo ? '#737373' : '#d4d4d4', cursor: canUndo ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }} title="Undo last change">
+              ↩ Undo
+            </button>
             <div style={{ width: 1, height: 14, background: 'rgba(0,0,0,0.08)' }} />
             <span style={{ color: '#a3a3a3' }}>{dateStr}</span>
             <span style={{ fontWeight: 500 }}>{timeStr}</span>
