@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_TS, SAMPLE_STAFF, fmt, readMonthTs } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, SAMPLE_STAFF, fmt } from './Payroll';
+const LS_EP_TS = 'cjk_ep_updated';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -116,9 +117,11 @@ export default function EmployeePayslip() {
   const [idx, setIdx] = useState(0);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
-  const [updTs, setUpdTs] = useState(() => readMonthTs(mo, yr));
-  useEffect(() => { setUpdTs(readMonthTs(mo, yr)); }, [mo, yr]);
-  const _touchTs = () => { const t = new Date().toISOString(); const k = `${yr}-${String(mo+1).padStart(2,'0')}`; let o = {}; try { o = JSON.parse(localStorage.getItem(LS_TS) || '{}'); } catch {} o[k] = t; localStorage.setItem(LS_TS, JSON.stringify(o)); setUpdTs(t); };
+  const _epTsKey = () => `${yr}-${String(mo+1).padStart(2,'0')}`;
+  const _readEpTs = k => { const raw = localStorage.getItem(LS_EP_TS); if (!raw) return ''; try { const o = JSON.parse(raw); return o[k] || ''; } catch { return ''; } };
+  const [updTs, setUpdTs] = useState(() => _readEpTs(_epTsKey()));
+  useEffect(() => { setUpdTs(_readEpTs(_epTsKey())); }, [mo, yr]);
+  const _touchTs = () => { const t = new Date().toISOString(); const k = _epTsKey(); let o = {}; try { o = JSON.parse(localStorage.getItem(LS_EP_TS) || '{}'); } catch {} o[k] = t; localStorage.setItem(LS_EP_TS, JSON.stringify(o)); setUpdTs(t); };
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
 
