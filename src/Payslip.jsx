@@ -9,8 +9,8 @@ const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.get
 
 const fitCls = (txt, base) => {
   const len = (txt || '').length;
-  if (len > 42) return base + ' si-xs';
-  if (len > 30) return base + ' si-sm';
+  if (len > 40) return base + ' si-xs';
+  if (len > 26) return base + ' si-sm';
   return base;
 };
 
