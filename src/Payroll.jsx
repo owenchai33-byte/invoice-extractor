@@ -512,13 +512,14 @@ export default function Payroll(){
     d=d.filter(s=>!s.name.includes('JEE SWEE EN'));
     const seenIc=new Set();d=d.filter(s=>{if(seenIc.has(s.ic))return false;seenIc.add(s.ic);return true;});
     if(!d.some(s=>s.name.includes('JANET SOON'))){const j=SAMPLE_STAFF.find(s=>s.id==='s22');if(j)d.push({...j,status:'probationary',addedMonth:'2026-07'});}
+    d.forEach(s=>{if(s.defAdvance&&s.defAdvance<0)s.defAdvance=0;});
     saveJ(LS_S,d);
     return d;
   });
   const[hidden,setHidden]=useState(()=>loadJ(LS_H,{}));
   useEffect(()=>{saveJ(LS_H,hidden);},[hidden]);
   const[pt,setPt]=useState(()=>loadJ(LS_PT,SAMPLE_PT));
-  const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
+  const[pd,setPd]=useState(()=>{const p=loadJ(LS_P,{});Object.values(p).forEach(m=>{if(m&&typeof m==='object')Object.values(m).forEach(s=>{if(s&&s.advance<0)s.advance=0;});});saveJ(LS_P,p);return p;});
   const[bl,setBl]=useState('GAWAI BONUS');
   // Show/hide the bonus column. Defaults ON (preserves prior behavior); when OFF
   // the column is dropped everywhere and bonus is treated as 0 in EPF/net.
