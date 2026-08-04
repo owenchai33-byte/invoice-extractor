@@ -166,7 +166,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin';
+export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin',LS_H='cjk_staff_hidden';
 export function readMonthTs(mo,yr){const k=`${yr}-${String(mo+1).padStart(2,'0')}`;const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{return '';}}
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
@@ -509,9 +509,14 @@ export default function Payroll(){
     const noStart=['ERRA ERYCA'];
     d.forEach(s=>{if(s.status==='probationary'&&!s.addedMonth&&!sampleIds.has(s.id)&&!noStart.some(n=>s.name.includes(n)))s.addedMonth='2026-07';});
     d.forEach(s=>{if(noStart.some(n=>s.name.includes(n)))delete s.addedMonth;});
+    const knownIds=new Set(d.map(s=>s.id));
+    let recovered=false;
+    SAMPLE_STAFF.forEach(s=>{if(!knownIds.has(s.id)){d.push(s);recovered=true;}});
     saveJ(LS_S,d);
     return d;
   });
+  const[hidden,setHidden]=useState(()=>loadJ(LS_H,{}));
+  useEffect(()=>{saveJ(LS_H,hidden);},[hidden]);
   const[pt,setPt]=useState(()=>loadJ(LS_PT,SAMPLE_PT));
   const[pd,setPd]=useState(()=>loadJ(LS_P,{}));
   const[bl,setBl]=useState('GAWAI BONUS');
@@ -559,6 +564,11 @@ export default function Payroll(){
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
+  const isHidden=useCallback(id=>(hidden[mk]||[]).includes(id),[hidden,mk]);
+  const hideForMonth=useCallback(id=>{setHidden(h=>{const list=[...(h[mk]||[])];if(!list.includes(id))list.push(id);return{...h,[mk]:list};});},[mk]);
+  const showForMonth=useCallback(id=>{setHidden(h=>{const list=(h[mk]||[]).filter(x=>x!==id);return{...h,[mk]:list};});},[mk]);
+  const visibleStaff=useMemo(()=>staff.filter(s=>!isHidden(s.id)),[staff,isHidden]);
+  const hiddenStaff=useMemo(()=>staff.filter(s=>isHidden(s.id)),[staff,isHidden]);
   // Per-month editable remarks (defined here because they key off `mk`).
   const remarks=remAll[mk]||[''];
   const setRemark=(i,v)=>setRemAll(p=>{const c=[...(p[mk]||[''])];c[i]=v;return{...p,[mk]:c};});
@@ -568,20 +578,21 @@ export default function Payroll(){
   const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
   const comp=useCallback(s=>computeStaffMonth(s, pd[mk]?.[s.id], ref, sb),[ref,pd,mk,sb]);
-  const bS=useMemo(()=>staff.filter(s=>s.method==='bank').map(comp),[staff,comp]);
-  const cS=useMemo(()=>staff.filter(s=>s.method==='cash').map(comp),[staff,comp]);
+  const bS=useMemo(()=>visibleStaff.filter(s=>s.method==='bank').map(comp),[visibleStaff,comp]);
+  const cS=useMemo(()=>visibleStaff.filter(s=>s.method==='cash').map(comp),[visibleStaff,comp]);
   const ptR=useMemo(()=>pt.map(s=>{const m=gM(s.id),w=m.wagePerDay||s.wagePerDay||0,d=m.daysWorked||0,a=m.advance||0;return{...s,wagePerDay:w,daysWorked:d,advance:a,netPay:Math.round((w*d-a)*100)/100};}),[pt,gM]);
   function sumR(rows){const t={};[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>t[c]=0);rows.forEach(r=>{t[4]+=r.salary;t[5]+=r.incentive;t[6]+=r.bonus;t[7]+=r.epfM;t[8]+=r.epfP;t[9]+=r.epfM+r.epfP;t[10]+=r.socsoM;t[11]+=r.socsoP;t[12]+=r.socsoM+r.socsoP;t[13]+=r.eisE;t[14]+=r.eisE*2;t[15]+=r.advance;t[16]+=r.netPay;});Object.keys(t).forEach(k=>t[k]=Math.round(t[k]*100)/100);return t;}
   const bT=useMemo(()=>sumR(bS),[bS]),cT=useMemo(()=>sumR(cS),[cS]);
   const gT=useMemo(()=>{const t={};Object.keys(bT).forEach(k=>t[k]=Math.round((bT[k]+cT[k])*100)/100);return t;},[bT,cT]);
   const ptT=useMemo(()=>({advance:ptR.reduce((s,r)=>s+r.advance,0),netPay:ptR.reduce((s,r)=>s+r.netPay,0)}),[ptR]);
-  const notes=useMemo(()=>[...bS,...cS].filter(r=>r.underAge).map(r=>{
-    const firstName = (r.name||'(unnamed)').split(' ')[0];
-    return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;
-  }),[bS,cS]);
+  const notes=useMemo(()=>{
+    const n=[...bS,...cS].filter(r=>r.underAge).map(r=>{const firstName=(r.name||'(unnamed)').split(' ')[0];return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;});
+    hiddenStaff.forEach(s=>n.push(`INACTIVE STAFF: ${s.name}`));
+    return n;
+  },[bS,cS,hiddenStaff]);
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase(),addedMonth:`${yr}-${String(mo+1).padStart(2,'0')}`}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});};
-  const delS=id=>{setStaff(p=>p.filter(s=>s.id!==id));};
+  const delS=id=>{hideForMonth(id);};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
   // Reorder staff via drag and drop.
@@ -980,8 +991,9 @@ export default function Payroll(){
                 {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});}}>Cancel</button>}
               </div>
             </div>
-            <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({staff.length})</div>
-            {staff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span><label style={{fontSize:11,display:'flex',alignItems:'center',gap:3,cursor:'pointer'}}><input type="checkbox" checked={s.status==='probationary'} onChange={()=>setStaff(p=>p.map(x=>x.id===s.id?{...x,status:x.status==='probationary'?'permanent':'probationary'}:x))}/><span className={`tag ${s.status==='probationary'?'tgp':'tgg'}`} style={{margin:0}}>{s.status==='probationary'?'PROB':'PERM'}</span></label><button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#92400e'}} onClick={()=>convertFTtoPT(s)} title="Move to Part-Time">→ PT</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Del</button></div>)}
+            <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({visibleStaff.length})</div>
+            {visibleStaff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span><label style={{fontSize:11,display:'flex',alignItems:'center',gap:3,cursor:'pointer'}}><input type="checkbox" checked={s.status==='probationary'} onChange={()=>setStaff(p=>p.map(x=>x.id===s.id?{...x,status:x.status==='probationary'?'permanent':'probationary'}:x))}/><span className={`tag ${s.status==='probationary'?'tgp':'tgg'}`} style={{margin:0}}>{s.status==='probationary'?'PROB':'PERM'}</span></label><button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#92400e'}} onClick={()=>convertFTtoPT(s)} title="Move to Part-Time">→ PT</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Hide</button></div>)}
+            {hiddenStaff.length>0&&<><div style={{fontSize:12,fontWeight:700,margin:'16px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#a3a3a3'}}>Hidden this month ({hiddenStaff.length})</div>{hiddenStaff.map(s=><div className="si" key={s.id} style={{opacity:0.6}}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#16a34a'}} onClick={()=>showForMonth(s.id)}>Restore</button></div>)}</>}
             <div style={{fontSize:12,fontWeight:700,margin:'20px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Part-Time ({pt.length})<button className="b bg" style={{marginLeft:8,fontSize:11}} onClick={()=>setPtf(!ptf)}>+ Add</button></div>
             {ptf&&<div style={{background:'#fafafa',borderRadius:8,padding:12,marginBottom:12,border:'1px solid #e4e4e7'}}>
               <div style={{fontSize:11,fontWeight:700,marginBottom:10,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>{eidPT?'Edit Part-Time':'Add Part-Time'}</div>

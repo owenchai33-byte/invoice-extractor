@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_H, SAMPLE_STAFF, fmt } from './Payroll';
 const LS_EP_TS = 'cjk_ep_updated';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -145,11 +145,14 @@ export default function EmployeePayslip() {
   const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
   const canShowStart = (r) => r.status === 'probationary' && r.addedMonth === viewMK;
 
+  const hiddenData = useMemo(() => load(LS_H, {}), []);
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);
-    const all = staff.map(s => computeStaffMonth(s, pd[mk]?.[s.id], ref, showBonus));
+    const hiddenIds = hiddenData[mk] || [];
+    const visible = staff.filter(s => !hiddenIds.includes(s.id));
+    const all = visible.map(s => computeStaffMonth(s, pd[mk]?.[s.id], ref, showBonus));
     return [...all.filter(r => r.method === 'bank'), ...all.filter(r => r.method === 'cash')];
-  }, [staff, pd, showBonus, mo, yr]);
+  }, [staff, pd, showBonus, mo, yr, hiddenData]);
 
   const printPages = useMemo(() => {
     const pages = [];
