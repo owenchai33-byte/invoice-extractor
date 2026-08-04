@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import InvoicesWorkspace from './InvoicesWorkspace';
 import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
 import Payslip from './Payslip';
 import EmployeePayslip from './EmployeePayslip';
+import { saveBackup, checkWeeklyDownload, downloadBackup, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 const SECTIONS = [
   { id: 'af', label: 'Account & Finance', tabs: [
@@ -37,6 +38,59 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 60_000);
     return () => clearInterval(id);
+  }, []);
+
+  const [toast, setToast] = useState('');
+  const [showRestore, setShowRestore] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const fileRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    checkAndRestore().then(r => { if (r === 'available') setShowRestore(true); });
+  }, []);
+
+  useEffect(() => {
+    const orig = localStorage.setItem.bind(localStorage);
+    const patched = function(k, v) { orig(k, v); saveBackup(); };
+    localStorage.setItem = patched;
+    return () => { localStorage.setItem = orig; };
+  }, []);
+
+  useEffect(() => {
+    if (checkWeeklyDownload()) {
+      const t = setTimeout(() => {
+        downloadBackup();
+        setToast('✅ Weekly backup saved to Downloads');
+        setTimeout(() => setToast(''), 4000);
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const h = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [showMenu]);
+
+  const handleRestore = useCallback(async () => {
+    await restoreFromBackup();
+    setShowRestore(false);
+    window.location.reload();
+  }, []);
+
+  const handleFileRestore = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await restoreFromFile(file);
+      setToast('✅ Data restored from file');
+      setTimeout(() => { setToast(''); window.location.reload(); }, 1500);
+    } catch { setToast('❌ Invalid backup file'); setTimeout(() => setToast(''), 3000); }
+    e.target.value = '';
+    setShowMenu(false);
   }, []);
 
   const timeStr = time.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -168,6 +222,33 @@ export default function App() {
               }} />
               <span style={{ fontWeight: 500 }}>Online</span>
             </div>
+            <div style={{ position: 'relative' }} ref={menuRef}>
+              <button onClick={() => setShowMenu(!showMenu)} style={{
+                background: 'none', border: '1px solid #e5e5e5', borderRadius: 4, padding: '2px 8px',
+                fontSize: 11, color: '#737373', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+              }} title="Backup & Restore">
+                <span style={{ fontSize: 13 }}>🛡</span> Backup
+              </button>
+              {showMenu && <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: 6,
+                background: '#fff', border: '1px solid #e5e5e5', borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: 4, minWidth: 180, zIndex: 200,
+              }}>
+                <button onClick={() => { downloadBackup(); setToast('✅ Backup downloaded'); setTimeout(() => setToast(''), 3000); setShowMenu(false); }} style={{
+                  display: 'block', width: '100%', padding: '8px 12px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: 12, cursor: 'pointer', borderRadius: 4, color: '#171717',
+                }} onMouseEnter={e => e.target.style.background='#f5f5f5'} onMouseLeave={e => e.target.style.background='none'}>
+                  ⬇ Download Backup
+                </button>
+                <button onClick={() => { fileRef.current?.click(); }} style={{
+                  display: 'block', width: '100%', padding: '8px 12px', border: 'none', background: 'none',
+                  textAlign: 'left', fontSize: 12, cursor: 'pointer', borderRadius: 4, color: '#171717',
+                }} onMouseEnter={e => e.target.style.background='#f5f5f5'} onMouseLeave={e => e.target.style.background='none'}>
+                  ⬆ Restore from File
+                </button>
+              </div>}
+              <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileRestore} />
+            </div>
             <div style={{ width: 1, height: 14, background: 'rgba(0,0,0,0.08)' }} />
             <span style={{ color: '#a3a3a3' }}>{dateStr}</span>
             <span style={{ fontWeight: 500 }}>{timeStr}</span>
@@ -265,6 +346,38 @@ export default function App() {
         /* Refined text selection */
         ::selection { background: rgba(10,10,10,0.12); color: #0a0a0a; }
       `}</style>
+
+      {toast && <div style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        background: '#171717', color: '#fff', padding: '10px 20px', borderRadius: 8,
+        fontSize: 13, fontWeight: 500, zIndex: 9999, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+      }}>{toast}</div>}
+
+      {showRestore && <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          background: '#fff', borderRadius: 12, padding: 24, maxWidth: 380, textAlign: 'center',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+          <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Data Missing</h3>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#525252' }}>
+            Your app data appears to be empty, but a backup was found. Would you like to restore it?
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <button onClick={handleRestore} style={{
+              padding: '8px 20px', background: '#171717', color: '#fff', border: 'none',
+              borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600,
+            }}>Restore Backup</button>
+            <button onClick={() => setShowRestore(false)} style={{
+              padding: '8px 20px', background: '#f5f5f5', color: '#525252', border: 'none',
+              borderRadius: 6, fontSize: 13, cursor: 'pointer',
+            }}>Skip</button>
+          </div>
+        </div>
+      </div>}
     </div>
   );
 }
