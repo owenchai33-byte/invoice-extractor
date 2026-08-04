@@ -494,7 +494,7 @@ function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
   );
 }
 
-export default function Payroll(){
+export default function Payroll({canUndo, onUndo}){
   const now=new Date();
   const[mo,setMo]=useState(()=>{try{const v=localStorage.getItem('cjk_ep_mo');return v!==null?Number(v):now.getMonth();}catch{return now.getMonth();}}),[yr,setYr]=useState(()=>{try{const v=localStorage.getItem('cjk_ep_yr');return v!==null?Number(v):now.getFullYear();}catch{return now.getFullYear();}});
   useEffect(()=>{try{localStorage.setItem('cjk_ep_mo',mo);localStorage.setItem('cjk_ep_yr',yr);}catch{}},[mo,yr]);
@@ -849,6 +849,7 @@ export default function Payroll(){
             ?<button className="b bo" disabled title="Past months are auto-locked" style={{cursor:'not-allowed'}}>🔒 Month Locked</button>
             :<button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?'🔒 Locked':'🔓 Editing'}</button>
           }
+          {onUndo&&<button className="b bo pr-act" disabled={!canUndo} onClick={onUndo} title="Undo last change" style={!canUndo?{opacity:.4,cursor:'default'}:undefined}>↩ Undo</button>}
           <button className="b bo" disabled={effectiveLocked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
           <button className="b bo pr-act" onClick={()=>window.print()}>Print</button>

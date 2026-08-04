@@ -283,13 +283,6 @@ export default function App() {
               </div>}
               <input ref={fileRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileRestore} />
             </div>
-            <button onClick={handleUndo} disabled={!canUndo} style={{
-              background: 'none', border: '1px solid #e5e5e5', borderRadius: 4, padding: '2px 8px',
-              fontSize: 11, color: canUndo ? '#737373' : '#d4d4d4', cursor: canUndo ? 'pointer' : 'default',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }} title="Undo last change">
-              ↩ Undo
-            </button>
             <div style={{ width: 1, height: 14, background: 'rgba(0,0,0,0.08)' }} />
             <span style={{ color: '#a3a3a3' }}>{dateStr}</span>
             <span style={{ fontWeight: 500 }}>{timeStr}</span>
@@ -362,7 +355,7 @@ export default function App() {
       {/* ─── Content ─── */}
       <main>
         {active === 'invoice' && <InvoicesWorkspace />}
-        {active === 'payroll' && <Payroll />}
+        {active === 'payroll' && <Payroll canUndo={canUndo} onUndo={handleUndo} />}
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && <Payslip />}
         {active === 'epayslip' && <EmployeePayslip />}
