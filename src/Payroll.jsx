@@ -490,7 +490,8 @@ export default function Payroll(){
       localStorage.setItem(MIG,'1');
     }
     const sampleIds=new Set(SAMPLE_STAFF.map(s=>s.id));
-    d.forEach(s=>{if(s.status==='probationary'&&!s.addedMonth&&!sampleIds.has(s.id))s.addedMonth='2026-07';});
+    const noStart=['NUR SALINA'];
+    d.forEach(s=>{if(s.status==='probationary'&&!s.addedMonth&&!sampleIds.has(s.id)&&!noStart.some(n=>s.name.includes(n)))s.addedMonth='2026-07';});
     saveJ(LS_S,d);
     return d;
   });
