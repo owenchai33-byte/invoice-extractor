@@ -272,7 +272,7 @@ export default function EmployeePayslip() {
 const CSS = `
 .ep-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 .ep-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
-.ep-bar h1{font-size:15px;font-weight:700;letter-spacing:-.01em;margin:0;color:#18181b}
+.ep-bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0;color:#18181b}
 .ep-mnav{display:flex;align-items:center;gap:8px}
 .ep-mbtn{border:1px solid #e4e4e7;background:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;color:#52525b;font-size:11px}
 .ep-mlbl{font-size:13px;font-weight:600;min-width:120px;text-align:center;color:#18181b}
