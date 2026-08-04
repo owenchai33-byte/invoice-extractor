@@ -44,9 +44,11 @@ export default function App() {
   const [showRestore, setShowRestore] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const fileRef = useRef(null);
   const menuRef = useRef(null);
   const undoStack = useRef([]);
+  const redoStack = useRef([]);
   const skipUndo = useRef(false);
   const debounceRef = useRef(null);
 
@@ -68,6 +70,8 @@ export default function App() {
             undoStack.current.push(pending);
             if (undoStack.current.length > 20) undoStack.current.shift();
             setCanUndo(true);
+            redoStack.current = [];
+            setCanRedo(false);
             pending = null;
           }
         }, 500);
@@ -115,8 +119,14 @@ export default function App() {
     setShowMenu(false);
   }, []);
 
+  const snapNow = useCallback(() => {
+    const d = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); d[k] = localStorage.getItem(k); } return d;
+  }, []);
+
   const handleUndo = useCallback(() => {
     if (!undoStack.current.length) return;
+    redoStack.current.push(snapNow());
+    setCanRedo(true);
     const prev = undoStack.current.pop();
     skipUndo.current = true;
     localStorage.clear();
@@ -125,7 +135,21 @@ export default function App() {
     setCanUndo(undoStack.current.length > 0);
     setToast('↩ Undone');
     setTimeout(() => { setToast(''); window.location.reload(); }, 800);
-  }, []);
+  }, [snapNow]);
+
+  const handleRedo = useCallback(() => {
+    if (!redoStack.current.length) return;
+    undoStack.current.push(snapNow());
+    setCanUndo(true);
+    const next = redoStack.current.pop();
+    skipUndo.current = true;
+    localStorage.clear();
+    Object.entries(next).forEach(([k, v]) => localStorage.setItem(k, v));
+    skipUndo.current = false;
+    setCanRedo(redoStack.current.length > 0);
+    setToast('↪ Redone');
+    setTimeout(() => { setToast(''); window.location.reload(); }, 800);
+  }, [snapNow]);
 
   const timeStr = time.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: false });
   const dateStr = time.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -355,7 +379,7 @@ export default function App() {
       {/* ─── Content ─── */}
       <main>
         {active === 'invoice' && <InvoicesWorkspace />}
-        {active === 'payroll' && <Payroll canUndo={canUndo} onUndo={handleUndo} />}
+        {active === 'payroll' && <Payroll canUndo={canUndo} onUndo={handleUndo} canRedo={canRedo} onRedo={handleRedo} />}
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && <Payslip />}
         {active === 'epayslip' && <EmployeePayslip />}
