@@ -7,7 +7,7 @@ const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; 
 const nf = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr.toString().slice(-2)}`; };
 const vlCls = t => { const l = (t || '').length; return 'ep-vl' + (l > 50 ? ' ep-vl-xs' : l > 36 ? ' ep-vl-sm' : ''); };
-const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; return `11-${MON3[m2]}-${y2.toString().slice(-2)}`; };
+const incDay = (mo, yr) => { const m2 = (mo + 1) % 12; const y2 = mo === 11 ? yr + 1 : yr; const d = new Date(y2, m2, 11); const day = d.getDay() === 0 ? 12 : 11; return `${day}-${MON3[m2]}-${y2.toString().slice(-2)}`; };
 const fmtAbs = v => { const n = parseFloat(v); if (!n) return '-'; const w = Math.floor(n); const h = (n % 1) >= 0.5; let s = ''; if (w > 0) s += w; if (h) s += '½'; return s + (n > 1 ? ' DAYS' : ' DAY'); };
 
 if (typeof localStorage !== 'undefined') { try { const _sv = JSON.parse(localStorage.getItem(LS_S)); if (_sv) { const _df = Object.fromEntries(SAMPLE_STAFF.map(s => [s.id, s])); let _ch = false; _sv.forEach(s => { const d = _df[s.id]; if (d?.bankAcc && !s.bankAcc) { s.bankAcc = d.bankAcc; _ch = true; } }); if (_ch) localStorage.setItem(LS_S, JSON.stringify(_sv)); } } catch {} }
@@ -89,7 +89,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
 
             <table className="ep-tbl">
               <colgroup><col className="ep-col-lbl"/><col className="ep-col-mid"/><col className="ep-col-amt"/></colgroup>
-              <thead><tr><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
+              <thead><tr className="ep-hdr"><th className="ep-tl">EARNINGS</th><th colSpan="2" className="ep-tr">AMOUNT (RM)</th></tr></thead>
               <tbody className="ep-inc-body">
                 <tr><td className="ep-tl">INCENTIVE</td><td className="ep-tm"></td><td className="ep-tr"><Fv f="Monthly incentive payment">{nf(r.incentive)}</Fv></td></tr>
               </tbody>
