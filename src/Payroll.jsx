@@ -526,7 +526,7 @@ export default function Payroll(){
   useEffect(()=>{document.title=`HQ STAFF PAYROLL - ${MONTHS[mo].slice(0,3)}'${String(yr).slice(-2)}`;},[mo,yr]);
   const _skip=useRef(true);
   const _tsKey=()=>`${yr}-${String(mo+1).padStart(2,'0')}`;
-  const _readTs=k=>{try{const v=localStorage.getItem(LS_TS);if(!v)return '';const o=JSON.parse(v);return o[k]||'';}catch{return v||'';}};
+  const _readTs=k=>{try{const v=localStorage.getItem(LS_TS);if(!v)return '';const o=JSON.parse(v);return o[k]||'';}catch{return '';}};
   const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();const k=_tsKey();try{const o=JSON.parse(localStorage.getItem(LS_TS)||'{}');o[k]=t;localStorage.setItem(LS_TS,JSON.stringify(o));}catch{localStorage.setItem(LS_TS,JSON.stringify({[k]:t}));}setUpdTs(t);}};
   useEffect(()=>{saveJ(LS_S,staff);_touch();},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);_touch();},[pt]);
