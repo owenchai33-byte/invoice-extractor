@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_TS, LS_PIN, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, SAMPLE_STAFF, fmt, readMonthTs } from './Payroll';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -116,7 +116,7 @@ export default function EmployeePayslip() {
   const [idx, setIdx] = useState(0);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
-  const updTs = localStorage.getItem(LS_TS) || '';
+  const updTs = readMonthTs(mo, yr);
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
 

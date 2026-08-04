@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_TS, LS_PIN, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, SAMPLE_STAFF, fmt, readMonthTs } from './Payroll';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -101,7 +101,7 @@ export default function Payslip() {
   const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
   const stripRef = useRef(null);
-  const updTs = localStorage.getItem(LS_TS) || '';
+  const updTs = readMonthTs(mo, yr);
 
   // Pull staff + monthly data straight from payroll storage
   const staff = useMemo(() => load(LS_S, SAMPLE_STAFF), []);

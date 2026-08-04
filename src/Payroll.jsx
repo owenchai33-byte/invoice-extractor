@@ -166,6 +166,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
 export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin';
+export function readMonthTs(mo,yr){const k=`${yr}-${String(mo+1).padStart(2,'0')}`;try{const v=localStorage.getItem(LS_TS);if(!v)return '';const o=JSON.parse(v);return o[k]||'';}catch{return '';}}
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
 // Module-level migration: bank account numbers (runs on import so EmployeePayslip picks them up)
@@ -520,13 +521,16 @@ export default function Payroll(){
   useEffect(()=>{saveJ(LS_R,remAll);},[remAll]);
   useEffect(()=>{document.title=`HQ STAFF PAYROLL - ${MONTHS[mo].slice(0,3)}'${String(yr).slice(-2)}`;},[mo,yr]);
   const _skip=useRef(true);
-  const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();localStorage.setItem(LS_TS,t);setUpdTs(t);}};
+  const _tsKey=()=>`${yr}-${String(mo+1).padStart(2,'0')}`;
+  const _readTs=k=>{try{const v=localStorage.getItem(LS_TS);if(!v)return '';const o=JSON.parse(v);return o[k]||'';}catch{return v||'';}};
+  const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();const k=_tsKey();try{const o=JSON.parse(localStorage.getItem(LS_TS)||'{}');o[k]=t;localStorage.setItem(LS_TS,JSON.stringify(o));}catch{localStorage.setItem(LS_TS,JSON.stringify({[k]:t}));}setUpdTs(t);}};
   useEffect(()=>{saveJ(LS_S,staff);_touch();},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);_touch();},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);_touch();},[pd]);
   useEffect(()=>{saveJ(LS_SB,sb);_touch();},[sb]);
   useEffect(()=>{_skip.current=false;},[]);
-  const[updTs,setUpdTs]=useState(()=>localStorage.getItem(LS_TS)||'');
+  const[updTs,setUpdTs]=useState(()=>_readTs(_tsKey()));
+  useEffect(()=>{setUpdTs(_readTs(_tsKey()));},[mo,yr]);
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
