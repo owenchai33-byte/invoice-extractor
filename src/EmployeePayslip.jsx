@@ -368,8 +368,6 @@ const CSS = `
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
   .ep-pair-single>.ep-card{flex:none;width:calc(50% - 5mm)}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
-  .ep-page .ep-card{padding:2mm 5mm}
-  .ep-page .ep-pair{padding:2mm 5mm}
   .ep-abs-pr{display:inline!important}
   .ep-oth-lbl-pr{display:inline!important}
   .ep-oth-pr{display:inline!important}
