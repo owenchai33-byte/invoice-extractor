@@ -799,7 +799,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
     return(
     <tr className={c}>
-      <td colSpan={4} style={{fontWeight:700,textAlign:/BANK|CASH/i.test(l)?'right':undefined}}>{l}</td>
+      <td colSpan={4} style={{fontWeight:700,textAlign:/BANK|CASH|TOTAL/i.test(l)?'right':undefined}}>{l}</td>
       {cell(4)}{cell(5)}{sb&&cell(6)}
       {cell(7)}{cell(8)}{cell(9)}
       {cell(10)}{cell(11)}{cell(12)}
