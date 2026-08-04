@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, SAMPLE_STAFF, fmt, readMonthTs } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_TS, SAMPLE_STAFF, fmt, readMonthTs } from './Payroll';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -116,7 +116,9 @@ export default function EmployeePayslip() {
   const [idx, setIdx] = useState(0);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
-  const updTs = readMonthTs(mo, yr);
+  const [updTs, setUpdTs] = useState(() => readMonthTs(mo, yr));
+  useEffect(() => { setUpdTs(readMonthTs(mo, yr)); }, [mo, yr]);
+  const _touchTs = () => { const t = new Date().toISOString(); const k = `${yr}-${String(mo+1).padStart(2,'0')}`; let o = {}; try { o = JSON.parse(localStorage.getItem(LS_TS) || '{}'); } catch {} o[k] = t; localStorage.setItem(LS_TS, JSON.stringify(o)); setUpdTs(t); };
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
 
@@ -132,11 +134,11 @@ export default function EmployeePayslip() {
   const [abs, setAbs] = useState(() => load('cjk_absence', {}));
   const absK = sid => `${yr}-${String(mo + 1).padStart(2, '0')}-${sid}`;
   const getAbs = sid => abs[absK(sid)] || '';
-  const setAbsV = (sid, v) => { const k = absK(sid); const next = { ...abs, [k]: v }; setAbs(next); try { localStorage.setItem('cjk_absence', JSON.stringify(next)); } catch {} };
+  const setAbsV = (sid, v) => { const k = absK(sid); const next = { ...abs, [k]: v }; setAbs(next); try { localStorage.setItem('cjk_absence', JSON.stringify(next)); } catch {} _touchTs(); };
   const [oth, setOth] = useState(() => load('cjk_ep_others', {}));
   const othK = sid => `${yr}-${String(mo + 1).padStart(2, '0')}-${sid}`;
   const getOth = sid => oth[othK(sid)] || '';
-  const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} };
+  const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} _touchTs(); };
   const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
   const canShowStart = (r) => r.status === 'probationary' && r.addedMonth === viewMK;
 
