@@ -268,6 +268,8 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   }
   const cols=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12];if(!sb)cols.splice(6,1);
   ws['!cols']=cols.map(w=>({wch:w}));
+  ws['!pageSetup']={orientation:'landscape',paperSize:9,fitToWidth:1,fitToHeight:0};
+  ws['!margins']={left:0,right:0,top:0.4,bottom:0.4,header:0,footer:0};
   X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ STAFF PAYROLL - ${MON_S[mo]}'${String(yr).slice(-2)}.xlsx`);
 }
 // ═══════════════════════════════════════════════════════════════
