@@ -326,6 +326,7 @@ const CSS = `
 .slip-box .cl-long{font-size:.75em;white-space:nowrap}
 .slip-box th:first-child,.slip-box td:first-child{border-left-color:#000}
 .slip-box th:last-child,.slip-box td:last-child{border-right-color:#000}
+.slip-box th:nth-child(3),.slip-box td:nth-child(3){border-left-color:#000}
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
