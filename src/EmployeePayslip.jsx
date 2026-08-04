@@ -29,7 +29,7 @@ function Fv({ f, children }) {
   );
 }
 
-function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
+function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, locked }) {
   const hasInc = (r.incentive || 0) > 0;
   const daily = r.salary / 26;
   const epfMD = r.epfM / 26;
@@ -66,7 +66,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, locked }) {
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
               <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td className="ep-tm"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tr"></td></tr>
-              <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr"></td></tr>
+              <tr className="ep-xtra"><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr">{r.status==='probationary'&&<><input type="text" className="ep-oth-in no-print" value={othVal || ''} onChange={e => onOthChange(e.target.value)} placeholder="(fill in) start" disabled={locked} /><span className="ep-oth-pr">{othVal||''}</span></>}</td></tr>
             </tbody>
             <tbody className="ep-net-body">
               <tr className="ep-net-gap"><td colSpan="3"></td></tr>
@@ -133,6 +133,10 @@ export default function EmployeePayslip() {
   const absK = sid => `${yr}-${String(mo + 1).padStart(2, '0')}-${sid}`;
   const getAbs = sid => abs[absK(sid)] || '';
   const setAbsV = (sid, v) => { const k = absK(sid); const next = { ...abs, [k]: v }; setAbs(next); try { localStorage.setItem('cjk_absence', JSON.stringify(next)); } catch {} };
+  const [oth, setOth] = useState(() => load('cjk_ep_others', {}));
+  const othK = sid => `${yr}-${String(mo + 1).padStart(2, '0')}-${sid}`;
+  const getOth = sid => oth[othK(sid)] || '';
+  const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} };
 
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);
@@ -216,7 +220,7 @@ export default function EmployeePayslip() {
           <div className="ep-stage no-print">
             <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
-              {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} locked={locked} /></div>)}
+              {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} othVal={getOth(it.r.id)} onOthChange={v => setOthV(it.r.id, v)} locked={locked} /></div>)}
             </div>
             <button className="ep-arrow" disabled={curPage >= maxPage} onClick={() => go(1)}>&#9654;</button>
           </div>
@@ -238,12 +242,12 @@ export default function EmployeePayslip() {
               while (idx < pg.items.length) {
                 const it = pg.items[idx];
                 if (it.half) {
-                  els.push(<EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={false} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} locked={locked} />);
+                  els.push(<EpCard key={it.r.id} r={it.r} mo={mo} yr={yr} compact={false} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} othVal={getOth(it.r.id)} onOthChange={v => setOthV(it.r.id, v)} locked={locked} />);
                   idx++;
                 } else {
                   const pair = [it];
                   if (idx + 1 < pg.items.length && !pg.items[idx + 1].half) { pair.push(pg.items[idx + 1]); idx += 2; } else { idx++; }
-                  els.push(<div className={"ep-pair" + (pair.length === 1 ? " ep-pair-single" : "")} key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} locked={locked} />)}</div>);
+                  els.push(<div className={"ep-pair" + (pair.length === 1 ? " ep-pair-single" : "")} key={'p-' + pair[0].r.id}>{pair.map(p => <EpCard key={p.r.id} r={p.r} mo={mo} yr={yr} compact={true} absVal={getAbs(p.r.id)} onAbsChange={v => setAbsV(p.r.id, v)} othVal={getOth(p.r.id)} onOthChange={v => setOthV(p.r.id, v)} locked={locked} />)}</div>);
                 }
               }
               return <div className="ep-page" key={pi}>{els}</div>;
@@ -316,6 +320,8 @@ const CSS = `
 .ep-abs-in::-webkit-inner-spin-button,.ep-abs-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .ep-abs-in{-moz-appearance:textfield}
 .ep-abs-pr{display:none}
+.ep-oth-in{width:8em;font-size:inherit;border:1px solid #d4d4d8;border-radius:3px;padding:1px 4px;text-align:center;font-family:inherit}
+.ep-oth-pr{display:none}
 
 /* ─── Tables ─── */
 .ep-tbl{width:100%;border-collapse:collapse;font-size:1em;table-layout:fixed}
@@ -356,6 +362,7 @@ const CSS = `
   .ep-pair-single>.ep-card{flex:none;width:calc(50% - 5mm)}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
+  .ep-oth-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
   @page{size:A4 portrait;margin:0}
