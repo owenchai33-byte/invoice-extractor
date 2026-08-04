@@ -237,12 +237,14 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   tR('CASH:',cT,{sum:[cashStart,cashEnd]});const cashSub=row-1;
   tR('TOTAL:',gT,{add:[bankSub,cashSub]});
   notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
+  if(ptR.length>0){
   row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;
   sc(row,4,'WAGES/ DAY');sc(row,5,'DAY');sc(row,15,'ADVANCE');sc(row,16,'NET PAY');row++;
   const ptStart=row;
   ptR.forEach((s,i)=>{sc(row,0,i+1);sc(row,1,s.name);sc(row,2,s.ic);sc(row,4,s.wagePerDay||0);sc(row,5,s.daysWorked||0);sc(row,15,s.advance||0);sc(row,16,s.netPay||0,`${A1(row,4)}*${A1(row,5)}-${A1(row,15)}`);row++;});
   const ptEnd=row-1;
   sc(row,0,'TOTAL:');mg.push({s:{r:row,c:0},e:{r:row,c:3}});sc(row,15,ptT.advance||0,ptEnd>=ptStart?`SUM(${A1(ptStart,15)}:${A1(ptEnd,15)})`:undefined);sc(row,16,ptT.netPay||0,ptEnd>=ptStart?`SUM(${A1(ptStart,16)}:${A1(ptEnd,16)})`:undefined);
+  }
   ws['!ref']=X.utils.encode_range({s:{r:0,c:0},e:{r:row,c:L}});ws['!merges']=mg;
   // ── Styling: borders on every cell, bold shaded headers, shaded subtotal/total rows ──
   const _thin={style:'thin',color:{rgb:'AAAAAA'}}, _bd={top:_thin,bottom:_thin,left:_thin,right:_thin};
