@@ -308,7 +308,7 @@ const CSS = `
 .ep-info{margin-bottom:.6em}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .ep-lb{width:40%;flex-shrink:0;font-size:1em}
-.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center;word-wrap:break-word}
+.ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center;word-wrap:break-word;overflow:hidden;line-height:1.25;max-height:2.5em}
 .ep-vl-sm{font-size:.82em}
 .ep-vl-xs{font-size:.7em}
 .ep-xtra td{border-top:none;font-size:.92em;padding:.15em .4em}

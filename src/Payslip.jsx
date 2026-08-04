@@ -9,8 +9,8 @@ const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.get
 
 const fitCls = (txt, base) => {
   const len = (txt || '').length;
-  if (len > 34) return base + ' si-xs';
-  if (len > 22) return base + ' si-sm';
+  if (len > 42) return base + ' si-xs';
+  if (len > 30) return base + ' si-sm';
   return base;
 };
 
@@ -310,10 +310,10 @@ const CSS = `
 .slip-info{font-size:1em;margin-bottom:.8em}
 .slip-info-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .si-lb{width:20%;flex-shrink:0}
-.si-vl{width:30%;flex-shrink:0;font-weight:700;text-align:center}
+.si-vl{width:30%;flex-shrink:0;font-weight:700;text-align:center;word-wrap:break-word;overflow:hidden;line-height:1.25;max-height:2.5em}
 .si-vr{width:30%;flex-shrink:0;text-align:center;font-weight:700}
-.si-sm{font-size:.82em;white-space:nowrap}
-.si-xs{font-size:.72em}
+.si-sm{font-size:.82em}
+.si-xs{font-size:.7em}
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:1em}
