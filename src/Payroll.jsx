@@ -566,6 +566,9 @@ export default function Payroll(){
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
+  const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const isMonthLocked=mk<currentMK;
+  const effectiveLocked=locked||isMonthLocked;
   const isHidden=useCallback(id=>(hidden[mk]||[]).includes(id),[hidden,mk]);
   const hideForMonth=useCallback(id=>{setHidden(h=>{const list=[...(h[mk]||[])];if(!list.includes(id))list.push(id);return{...h,[mk]:list};});},[mk]);
   const showForMonth=useCallback(id=>{setHidden(h=>{const list=(h[mk]||[]).filter(x=>x!==id);return{...h,[mk]:list};});},[mk]);
@@ -831,7 +834,7 @@ export default function Payroll(){
   useEffect(()=>{window.addEventListener('keydown',onGridKey);return()=>window.removeEventListener('keydown',onGridKey);});
   useEffect(()=>{if(cur){const el=document.querySelector('.selc');if(el)el.scrollIntoView({block:'nearest',inline:'nearest'});}},[cur]);
   return(
-    <div className={"pr"+(locked?" pr-locked":"")}>
+    <div className={"pr"+(effectiveLocked?" pr-locked":"")}>
       <style>{CSS}</style>
       <div className="bar np">
         <h1>HQ PAYROLL</h1>
@@ -842,8 +845,11 @@ export default function Payroll(){
           {updTs&&<span className="upd-ts">Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="acts">
-          <button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?'🔒 Locked':'🔓 Editing'}</button>
-          <button className="b bo" disabled={locked} onClick={()=>setPan(true)}>Manage Staff</button>
+          {isMonthLocked
+            ?<button className="b bo" disabled title="Past months are auto-locked" style={{cursor:'not-allowed'}}>🔒 Month Locked</button>
+            :<button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?'🔒 Locked':'🔓 Editing'}</button>
+          }
+          <button className="b bo" disabled={effectiveLocked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
           <button className="b bo pr-act" onClick={()=>window.print()}>Print</button>
         </div>
