@@ -65,7 +65,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
               <tr><td className="ep-tl"><div className="ep-split"><span>EIS</span><span className="ep-nums"><Fv f={`EIS employer (table lookup on ${nf(socsoWage)})`}>{nf(r.eisE)}</Fv></span></div></td><td colSpan="2" className="ep-tr"><Fv f={`EIS employee (table lookup on ${nf(socsoWage)})`}>{nf(r.eisE)}</Fv></td></tr>
               <tr><td className="ep-tl">ADVANCE</td><td colSpan="2" className="ep-tr"><Fv f="Monthly advance deduction">{nf(r.advance || 0)}</Fv></td></tr>
               <tr className="ep-sub"><td className="ep-tl"></td><td colSpan="2" className="ep-tr"><Fv f={`${nf(r.salary)}${r.bonus > 0 ? ' + ' + nf(r.bonus) : ''} − ${nf(r.epfP)} − ${nf(r.socsoInv)} − ${nf(r.socsoSkbbk)} − ${nf(r.eisE)}${(r.advance || 0) > 0 ? ' − ' + nf(r.advance) : ''}`}>{nf(salNet)}</Fv></td></tr>
-              <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td className="ep-tm ep-abs-td"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td><td className="ep-tr"></td></tr>
+              <tr className="ep-xtra"><td className="ep-tl">ABSENCE</td><td colSpan="2" className="ep-tr ep-abs-td"><input type="number" step="0.5" min="0" className="ep-abs-in no-print" value={absVal || ''} onChange={e => onAbsChange(e.target.value)} placeholder="-" disabled={locked} /><span className="ep-abs-pr">{fmtAbs(absVal)}</span></td></tr>
               <tr className={"ep-xtra"+(showStart&&!othVal&&locked?' ep-oth-hide':'')}><td className="ep-tl">OTHERS</td><td colSpan="2" className="ep-tr ep-oth-td">{showStart&&!locked&&<><span className="ep-oth-lbl">START</span><input type="text" className="ep-oth-in no-print" value={othVal || ''} onChange={e => onOthChange(e.target.value)} /></>}{showStart&&othVal&&<><span className="ep-oth-lbl ep-oth-lbl-pr">START</span><span className="ep-oth-pr">{othVal}</span></>}</td></tr>
             </tbody>
             <tbody className="ep-net-body">
@@ -362,12 +362,14 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:100vh;width:100%;box-sizing:border-box;overflow:hidden}
+  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:148.5mm 148.5mm;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:297mm;width:210mm;box-sizing:border-box;overflow:hidden}
   .ep-page .ep-card{font-size:11.5pt;padding:3mm 5mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;grid-column:span 2;min-height:0}
   .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 5mm;box-sizing:border-box;min-height:0;overflow:hidden}
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
   .ep-pair-single>.ep-card{flex:none;width:calc(50% - 5mm)}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
+  .ep-page .ep-card{padding:2mm 5mm}
+  .ep-page .ep-pair{padding:2mm 5mm}
   .ep-abs-pr{display:inline!important}
   .ep-oth-lbl-pr{display:inline!important}
   .ep-oth-pr{display:inline!important}
