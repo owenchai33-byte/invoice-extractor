@@ -533,6 +533,7 @@ export default function Payroll(){
   useEffect(()=>{saveJ(LS_P,pd);_touch();},[pd]);
   useEffect(()=>{saveJ(LS_SB,sb);_touch();},[sb]);
   useEffect(()=>{_skip.current=false;},[]);
+  useEffect(()=>{const raw=localStorage.getItem(LS_TS);if(raw){try{JSON.parse(raw);}catch{const k=_tsKey();localStorage.setItem(LS_TS,JSON.stringify({[k]:raw}));setUpdTs(raw);}}},[]);
   const[updTs,setUpdTs]=useState(()=>_readTs(_tsKey()));
   useEffect(()=>{setUpdTs(_readTs(_tsKey()));},[mo,yr]);
   const[locked,setLocked]=useState(true);
