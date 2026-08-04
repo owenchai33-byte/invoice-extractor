@@ -413,6 +413,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
+  .notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
   @page{size:A4 landscape;margin:0}
 }
 .po{display:none}
@@ -905,7 +906,7 @@ export default function Payroll(){
             ))}
           </div>
           {/* Print-only: only non-empty remarks, so blank rows never waste space */}
-          {remFilled.length>0&&<div className="notes print-only">{remFilled.map((r,i)=><p key={i}>{r}</p>)}</div>}
+          {remFilled.length>0&&<div className="notes print-only">{remFilled.map((r,i)=><p key={i} className={/inactive/i.test(r)?'rem-inactive':''}>{/inactive/i.test(r)?`* ${r}`:r}</p>)}</div>}
         </div>
         {hbShow && (
           <div className="hbar no-print" ref={hbRef} onScroll={onHbScroll} title="Scroll the table left / right">
