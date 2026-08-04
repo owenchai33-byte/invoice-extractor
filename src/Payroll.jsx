@@ -233,7 +233,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   const tR=(l,t,opt)=>{sc(row,0,l);mg.push({s:{r:row,c:0},e:{r:row,c:3}});[4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(c=>{let f;if(opt&&opt.sum&&opt.sum[1]>=opt.sum[0])f=`SUM(${A1(opt.sum[0],c)}:${A1(opt.sum[1],c)})`;else if(opt&&opt.add)f=`${A1(opt.add[0],c)}+${A1(opt.add[1],c)}`;sc(row,c,t[c]||0,f);});row++;};
   const bankStart=row;wR(bR);const bankEnd=row-1;tR('BANK TRANSFER:',bT,{sum:[bankStart,bankEnd]});const bankSub=row-1;
   const pc=cR.filter(s=>s.status==='permanent'),pb=cR.filter(s=>s.status==='probationary');
-  const cashStart=row;wR(pc);if(pb.length){sc(row,0,'PROBATIONARY STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
+  const cashStart=row;wR(pc);if(pb.length){sc(row,0,'NEW STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
   tR('CASH:',cT,{sum:[cashStart,cashEnd]});const cashSub=row-1;
   tR('TOTAL:',gT,{add:[bankSub,cashSub]});
   notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
@@ -259,7 +259,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
         const c0=ws[X.utils.encode_cell({r:R,c:0})]; const t0=(c0&&typeof c0.v==='string')?c0.v.trim():'';
         if(/^TOTAL/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'FFF0A6'}}; }
         else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'EFEFEF'}}; }
-        else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='PROBATIONARY STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
+        else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='NEW STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
         else if(/inactive/i.test(t0)){ st.font={bold:true}; st.alignment.horizontal='left'; }
       }
       if(cell.z) st.numFmt=cell.z;
