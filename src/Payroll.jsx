@@ -530,7 +530,7 @@ export default function Payroll(){
   const _skip=useRef(true);
   const _tsKey=()=>`${yr}-${String(mo+1).padStart(2,'0')}`;
   const _readTs=k=>{const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{return '';}};
-  const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_TS)||'{}');}catch{}o[k]=t;localStorage.setItem(LS_TS,JSON.stringify(o));setUpdTs(t);}};
+  const _touch=()=>{if(!_skip.current){const t=new Date().toISOString();const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_TS)||'{}');}catch{}o[k]=t;localStorage.setItem(LS_TS,JSON.stringify(o));setUpdTs(t);let ep={};try{ep=JSON.parse(localStorage.getItem('cjk_ep_updated')||'{}');}catch{}ep[k]=t;localStorage.setItem('cjk_ep_updated',JSON.stringify(ep));}};
   useEffect(()=>{saveJ(LS_S,staff);_touch();},[staff]);
   useEffect(()=>{saveJ(LS_PT,pt);_touch();},[pt]);
   useEffect(()=>{saveJ(LS_P,pd);_touch();},[pd]);
