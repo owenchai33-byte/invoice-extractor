@@ -264,7 +264,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   }
   const cols=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12];if(!sb)cols.splice(6,1);
   ws['!cols']=cols.map(w=>({wch:w}));
-  X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ_STAFF_PAYROLL_${yr}_${mn}.xlsx`);
+  X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ STAFF PAYROLL - ${MON_S[mo]}'${String(yr).slice(-2)}.xlsx`);
 }
 // ═══════════════════════════════════════════════════════════════
 // STYLES
