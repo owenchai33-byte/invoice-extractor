@@ -355,6 +355,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .tgg{background:#e5e7eb;color:#374151}
 .notes{padding:8px 14px;background:#fffbeb;border-top:1px solid #fcd34d}
 .notes p{margin:0 0 3px;font-size:11px;color:#92400e;font-style:italic}
+.notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:80}
 .pn{position:fixed;top:0;right:0;bottom:0;width:460px;max-width:100vw;background:#fff;z-index:90;overflow-y:auto;box-shadow:-8px 0 24px rgba(0,0,0,.1)}
 .pnh{padding:20px 24px;border-bottom:1px solid #e4e4e7;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2}
@@ -930,7 +931,7 @@ export default function Payroll(){
               </tbody>
             </table>
           </div>
-          {notes.length>0&&<div className="notes">{notes.map((n,i)=><p key={i}>{n}</p>)}</div>}
+          {notes.length>0&&<div className="notes">{notes.map((n,i)=><p key={i} className={/inactive/i.test(n)?'rem-inactive':''}>{/inactive/i.test(n)?`* ${n}`:n}</p>)}</div>}
           {/* Editable remarks (screen only) */}
           <div className="remsec no-print">
             <div className="remhd"><span className="sht">Remarks</span><button className="b bo" onClick={addRemark}>+ Add row</button></div>
