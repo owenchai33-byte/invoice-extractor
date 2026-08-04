@@ -509,9 +509,8 @@ export default function Payroll(){
     const noStart=['ERRA ERYCA'];
     d.forEach(s=>{if(s.status==='probationary'&&!s.addedMonth&&!sampleIds.has(s.id)&&!noStart.some(n=>s.name.includes(n)))s.addedMonth='2026-07';});
     d.forEach(s=>{if(noStart.some(n=>s.name.includes(n)))delete s.addedMonth;});
-    const knownIds=new Set(d.map(s=>s.id));
-    let recovered=false;
-    SAMPLE_STAFF.forEach(s=>{if(!knownIds.has(s.id)){d.push(s);recovered=true;}});
+    d=d.filter(s=>!s.name.includes('JEE SWEE EN'));
+    if(!d.some(s=>s.name.includes('JANET SOON'))){const j=SAMPLE_STAFF.find(s=>s.id==='s22');if(j)d.push({...j,status:'probationary',addedMonth:'2026-07'});}
     saveJ(LS_S,d);
     return d;
   });
