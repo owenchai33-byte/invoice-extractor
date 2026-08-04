@@ -137,9 +137,8 @@ export default function EmployeePayslip() {
   const othK = sid => `${yr}-${String(mo + 1).padStart(2, '0')}-${sid}`;
   const getOth = sid => oth[othK(sid)] || '';
   const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} };
-  const curMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
-  const isFirstMonth = (sid) => { if (!sid) return false; return !Object.keys(oth).some(k => k.endsWith(`-${sid}`) && k.slice(0, 7) < curMK && oth[k]); };
-  const canShowStart = (r) => r.status === 'probationary' && isFirstMonth(r.id);
+  const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
+  const canShowStart = (r) => r.status === 'probationary' && (r.addedMonth === viewMK || !!getOth(r.id));
 
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);

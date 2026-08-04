@@ -558,7 +558,7 @@ export default function Payroll(){
     const firstName = (r.name||'(unnamed)').split(' ')[0];
     return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;
   }),[bS,cS]);
-  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});setEid(null);};
+  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase(),addedMonth:`${yr}-${String(mo+1).padStart(2,'0')}`}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});};
   const delS=id=>{setStaff(p=>p.filter(s=>s.id!==id));};
   // Inline update of staff salary from the payroll table
