@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import * as XLSXStyle from 'xlsx-js-style';   // styled Excel export (borders, bold, fills)
+import JSZip from 'jszip';
 // ═══════════════════════════════════════════════════════════════
 // STATUTORY TABLES — Malaysia
 // Sources: PERKESO SOCSO+SKBBK (June 2026), PERKESO EIS Akta 800
@@ -268,9 +269,19 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   }
   const cols=[5,35,18,32,14,12,14,10,10,12,10,10,14,10,12,10,12];if(!sb)cols.splice(6,1);
   ws['!cols']=cols.map(w=>({wch:w}));
-  ws['!pageSetup']={orientation:'landscape',paperSize:9,fitToWidth:1,fitToHeight:0};
   ws['!margins']={left:0,right:0,top:0.4,bottom:0.4,header:0,footer:0};
-  X.utils.book_append_sheet(wb,ws,MON_S[mo]);X.writeFile(wb,`HQ STAFF PAYROLL - ${MON_S[mo]}'${String(yr).slice(-2)}.xlsx`);
+  X.utils.book_append_sheet(wb,ws,MON_S[mo]);
+  const buf=X.write(wb,{type:'array',bookType:'xlsx'});
+  const fname=`HQ STAFF PAYROLL - ${MON_S[mo]}'${String(yr).slice(-2)}.xlsx`;
+  JSZip.loadAsync(buf).then(zip=>{
+    const sf='xl/worksheets/sheet1.xml';
+    return zip.file(sf).async('string').then(xml=>{
+      xml=xml.replace('<dimension','<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+      xml=xml.replace('</worksheet>','<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/></worksheet>');
+      zip.file(sf,xml);
+      return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    });
+  }).then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();URL.revokeObjectURL(a.href);});
 }
 // ═══════════════════════════════════════════════════════════════
 // STYLES
