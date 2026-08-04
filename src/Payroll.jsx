@@ -545,7 +545,7 @@ export default function Payroll(){
   const onHbScroll=()=>{if(hbRef.current&&twRef.current)twRef.current.scrollLeft=hbRef.current.scrollLeft;};
   // Editable remarks below the table, saved per month. Defaults to one empty row;
   // "+ Add row" appends more. Empty rows are dropped from print + Excel so no wasted space.
-  const[remAll,setRemAll]=useState(()=>loadJ(LS_R,{}));
+  const[remAll,setRemAll]=useState(()=>{const r=loadJ(LS_R,{});const jk='2026-07';if(!(r[jk]||[]).some(x=>/SWEE EN/i.test(x))){r[jk]=[...(r[jk]||[]),'INACTIVE STAFF: JEE SWEE EN'].filter(Boolean);}return r;});
   useEffect(()=>{saveJ(LS_R,remAll);},[remAll]);
   useEffect(()=>{document.title=`HQ STAFF PAYROLL - ${MONTHS[mo].slice(0,3)}'${String(yr).slice(-2)}`;},[mo,yr]);
   const _skip=useRef(true);
