@@ -138,7 +138,7 @@ export default function EmployeePayslip() {
   const getOth = sid => oth[othK(sid)] || '';
   const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} };
   const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
-  const canShowStart = (r) => r.status === 'probationary' && (r.addedMonth === viewMK || !!getOth(r.id));
+  const canShowStart = (r) => r.status === 'probationary' && r.addedMonth === viewMK;
 
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);
