@@ -399,12 +399,29 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
     y += 2;
 
     const cols = ['NO', 'MERCHANT NAME', 'TXN DATE', 'SETTLE DATE', 'TID', 'BTH', 'APPR CODE', 'STAN #', 'GROSS AMT'];
-    const body = txnRows.map(r => [
-      r[0], String(r[1] || '').substring(0, 20),
-      String(r[2] || '').substring(0, 16), String(r[3] || '').substring(0, 16),
-      r[4] || '', r[8] || '', r[9] || '', r[11] || '',
-      typeof r[13] === 'number' ? r[13].toFixed(2) : (r[13] || '')
-    ]);
+
+    const grouped = new Map();
+    txnRows.forEach(r => {
+      const dateKey = String(r[2] || 'Unknown');
+      if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+      grouped.get(dateKey).push(r);
+    });
+
+    const body = [];
+    const subtotalRowIndices = new Set();
+    for (const [dateKey, group] of grouped) {
+      group.forEach(r => {
+        body.push([
+          r[0], String(r[1] || '').substring(0, 20),
+          String(r[2] || '').substring(0, 16), String(r[3] || '').substring(0, 16),
+          r[4] || '', r[8] || '', r[9] || '', r[11] || '',
+          typeof r[13] === 'number' ? r[13].toFixed(2) : (r[13] || '')
+        ]);
+      });
+      const dayTotal = group.reduce((sum, r) => sum + (typeof r[13] === 'number' ? r[13] : 0), 0);
+      subtotalRowIndices.add(body.length);
+      body.push(['', '', '', '', '', '', '', 'Daily Total:', dayTotal.toFixed(2)]);
+    }
 
     autoTable(doc, {
       startY: y,
@@ -414,7 +431,13 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
       headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 6 },
       columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 30 }, 8: { halign: 'right' } },
       margin: { left: 5, right: 5 },
-      theme: 'grid'
+      theme: 'grid',
+      didParseCell: (data) => {
+        if (data.section === 'body' && subtotalRowIndices.has(data.row.index)) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [245, 245, 245];
+        }
+      }
     });
 
     let finalY = doc.lastAutoTable?.finalY || y + 20;
