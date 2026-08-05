@@ -759,7 +759,7 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `EPAY D - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  a.download = `EPAY SALES SUMMARY - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1143,7 +1143,7 @@ export default function MerchantReport() {
                 Outlets: {EPAY_OUTLET_ORDER.filter(o => epResult.byOutlet.get(o)?.length > 0).map(o => `${o} (${epResult.byOutlet.get(o).length})`).join(', ')}
               </div>
               {epResult.warnings.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
-              <button className="mr-btn" onClick={doEpDownload}>Download EPAY D - {MON_S[epResult.month]}'{String(epResult.year).slice(-2)}</button>
+              <button className="mr-btn" onClick={doEpDownload}>Download EPAY SALES SUMMARY - {MON_S[epResult.month]}'{String(epResult.year).slice(-2)}</button>
             </div>
           )}
         </div>
