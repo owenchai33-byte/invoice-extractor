@@ -189,33 +189,34 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
   const fname = `SPAY ${outlet || 'HQ'} - ${MON_S[month]}'${String(year).slice(-2)}.xlsx`;
 
-  JSZip.loadAsync(buf).then(zip => {
-    const ssf = 'xl/sharedStrings.xml';
-    const sf = 'xl/worksheets/sheet1.xml';
-    return zip.file(ssf).async('string').then(ssxml => {
-      ssxml = ssxml.replace(
-        '<t>C.J.K. CHAI JEE KIONG TRADING SDN BHD</t>',
-        '<r><rPr><b/><i/><sz val="16"/><rFont val="Arial"/></rPr><t>C.J.K.</t></r>' +
-        '<r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t xml:space="preserve"> CHAI JEE KIONG TRADING SDN BHD</t></r>'
-      );
-      zip.file(ssf, ssxml);
-      return zip.file(sf).async('string');
-    }).then(xml => {
-      if (xml.includes('<sheetPr')) {
-        xml = xml.replace(/<sheetPr[^>]*>/, '$&<pageSetUpPr fitToPage="1"/>');
-      } else if (xml.includes('<sheetPr/>')) {
-        xml = xml.replace('<sheetPr/>', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
-      } else {
-        xml = xml.replace('<dimension', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+  JSZip.loadAsync(buf).then(async (zip) => {
+    try {
+      const ssFile = zip.file('xl/sharedStrings.xml');
+      if (ssFile) {
+        let ssxml = await ssFile.async('string');
+        ssxml = ssxml.replace(
+          '<t>C.J.K. CHAI JEE KIONG TRADING SDN BHD</t>',
+          '<r><rPr><b/><i/><sz val="16"/><rFont val="Arial"/></rPr><t>C.J.K.</t></r>' +
+          '<r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t xml:space="preserve"> CHAI JEE KIONG TRADING SDN BHD</t></r>'
+        );
+        zip.file('xl/sharedStrings.xml', ssxml);
       }
-      xml = xml.replace(/<pageSetup[^/]*\/>/g, '');
-      xml = xml.replace(/<pageMargins[^/]*\/>/,
-        '$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0" scale="100"/>');
-      zip.file(sf, xml);
-      return zip.generateAsync({
-        type: 'blob',
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
+    } catch (_) {}
+    let xml = await zip.file('xl/worksheets/sheet1.xml').async('string');
+    if (xml.includes('<sheetPr/>')) {
+      xml = xml.replace('<sheetPr/>', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+    } else if (xml.includes('<sheetPr')) {
+      xml = xml.replace(/<sheetPr([^>]*)>/, '<sheetPr$1><pageSetUpPr fitToPage="1"/>');
+    } else {
+      xml = xml.replace('<dimension', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+    }
+    xml = xml.replace(/<pageSetup[^/]*\/>/g, '');
+    xml = xml.replace(/<pageMargins[^/]*\/>/,
+      '$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0" scale="100"/>');
+    zip.file('xl/worksheets/sheet1.xml', xml);
+    return zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
   }).then(blob => {
     const a = document.createElement('a');
@@ -223,7 +224,7 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
     a.download = fname;
     a.click();
     URL.revokeObjectURL(a.href);
-  });
+  }).catch(err => { console.error('Excel download error:', err); });
 }
 
 const CSS = `
