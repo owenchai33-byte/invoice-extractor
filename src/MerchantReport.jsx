@@ -365,6 +365,24 @@ async function processMyKasihZip(arrayBuffer) {
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
 
+  for (const excel of excels) {
+    const rows = excel.rows;
+    const dataHeaderIdx = rows.findIndex(r => r[0] === 'NO');
+    if (dataHeaderIdx < 0) continue;
+    const allDataRows = rows.slice(dataHeaderIdx + 1).filter(r => r.length > 0 && r.some(v => v != null && v !== ''));
+    const txnRows = allDataRows.filter(r => !isNaN(parseInt(r[0])));
+    const totalRow = allDataRows.find(r => r.some(v => typeof v === 'string' && /^TOTAL GROSS AMT$/i.test(String(v).trim())));
+    if (!totalRow) continue;
+    const txnSum = txnRows.reduce((sum, r) => sum + (typeof r[13] === 'number' ? r[13] : 0), 0);
+    const grossFilled = totalRow.filter(v => v != null && v !== '');
+    const grossAmt = grossFilled.length > 0 ? grossFilled[grossFilled.length - 1] : null;
+    if (typeof grossAmt === 'number' && Math.abs(txnSum - grossAmt) > 0.01) {
+      const settleRow = rows.find(r => r[0] === 'SETTLEMENT DATE');
+      const period = settleRow ? String(settleRow[2] || settleRow[1] || '').trim() : excel.name;
+      warnings.push(`Amount mismatch in ${period}: daily sum ${txnSum.toFixed(2)} ≠ TOTAL GROSS AMT ${grossAmt.toFixed(2)}`);
+    }
+  }
+
   return { excels, pdfs, year, month, outlet: detectedOutlet || 'HQ', warnings };
 }
 
@@ -751,7 +769,7 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>MyKasih</h2>
-          <p>Upload the zip file from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF. Dates outside expected month will trigger an alert.</p>
+          <p>Upload the zip file from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF. Dates outside expected month and amount mismatches will trigger an alert.</p>
           <div
             className={`mr-upload${mkDragging ? ' drag' : ''}`}
             onClick={() => mkFileRef.current?.click()}
