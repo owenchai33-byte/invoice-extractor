@@ -229,9 +229,16 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
 }
 
 const CP_OUTLETS = ['HQ', 'KC', 'ST', 'TH'];
+const CP_OUTLET_MAP = {
+  '162259': 'HQ',
+  '162250': 'KC',
+  '162260': 'ST',
+  '162249': 'TH',
+};
 
 async function processCardPayZip(arrayBuffer) {
   const pdfs = [];
+  let detectedOutlet = null;
   async function collectPDFs(z) {
     for (const [path, f] of Object.entries(z.files)) {
       if (f.dir) continue;
@@ -242,6 +249,10 @@ async function processCardPayZip(arrayBuffer) {
       } else if (/^StatementOfAccount.*\.pdf$/i.test(name)) {
         const dateMatch = name.match(/(\d{4}-\d{2}-\d{2})/);
         const date = dateMatch ? dateMatch[1] : '0000-00-00';
+        const midMatch = name.match(/_(\d{6})\.pdf$/);
+        if (midMatch && CP_OUTLET_MAP[midMatch[1]] && !detectedOutlet) {
+          detectedOutlet = CP_OUTLET_MAP[midMatch[1]];
+        }
         pdfs.push({ name, date, buf: await f.async('arraybuffer') });
       }
     }
@@ -254,7 +265,7 @@ async function processCardPayZip(arrayBuffer) {
     const m = pdfs[0].date.match(/^(\d{4})-(\d{2})/);
     if (m) { year = parseInt(m[1]); month = parseInt(m[2]) - 1; }
   }
-  return { pdfs, year, month };
+  return { pdfs, year, month, outlet: detectedOutlet || 'HQ' };
 }
 
 async function mergeCardPayPDFs(pdfs, outlet, month, year) {
@@ -309,7 +320,6 @@ export default function MerchantReport() {
   const [cpError, setCpError] = useState('');
   const [cpLoading, setCpLoading] = useState(false);
   const [cpDragging, setCpDragging] = useState(false);
-  const [cpOutlet, setCpOutlet] = useState('HQ');
   const cpFileRef = useRef(null);
 
   const handleFile = (file) => {
@@ -381,7 +391,7 @@ export default function MerchantReport() {
 
   const doCpDownload = () => {
     if (!cpResult) return;
-    mergeCardPayPDFs(cpResult.pdfs, cpOutlet, cpResult.month, cpResult.year);
+    mergeCardPayPDFs(cpResult.pdfs, cpResult.outlet, cpResult.month, cpResult.year);
   };
 
   return (
@@ -427,13 +437,7 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>CardPay</h2>
-          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF.</p>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, marginRight: 8 }}>Outlet:</label>
-            <select className="mr-select" value={cpOutlet} onChange={(e) => setCpOutlet(e.target.value)}>
-              {CP_OUTLETS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
+          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF. Outlet is auto-detected from merchant ID.</p>
           <div
             className={`mr-upload${cpDragging ? ' drag' : ''}`}
             onClick={() => cpFileRef.current?.click()}
@@ -461,7 +465,8 @@ export default function MerchantReport() {
               <div className="mr-result-title">Ready to download</div>
               <div className="mr-result-info">{cpResult.pdfs.length} Statement of Account PDFs found</div>
               <div className="mr-result-info">Date range: {cpResult.pdfs[0]?.date} to {cpResult.pdfs[cpResult.pdfs.length - 1]?.date}</div>
-              <div className="mr-result-info">Download as: CARDPAY D {cpOutlet} - {MON_S[cpResult.month]}'{String(cpResult.year).slice(-2)}.pdf</div>
+              <div className="mr-result-info">Outlet detected: {cpResult.outlet}</div>
+              <div className="mr-result-info">Download as: CARDPAY D {cpResult.outlet} - {MON_S[cpResult.month]}'{String(cpResult.year).slice(-2)}.pdf</div>
               <button className="mr-btn" onClick={doCpDownload}>Download Merged PDF</button>
             </div>
           )}
