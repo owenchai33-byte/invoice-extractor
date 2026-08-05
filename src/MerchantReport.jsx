@@ -449,8 +449,8 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
       const label = filled.slice(0, -1).join(' ');
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
-      doc.text(label, 120, finalY, { align: 'right' });
-      doc.text(typeof val === 'number' ? val.toFixed(2) : String(val || ''), 195, finalY, { align: 'right' });
+      doc.text(label, 170, finalY, { align: 'right' });
+      doc.text(typeof val === 'number' ? val.toFixed(2) : String(val || ''), 200, finalY, { align: 'right' });
       finalY += 4;
     });
   }
