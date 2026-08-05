@@ -8,8 +8,8 @@ const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV'
 const SPAY_OUTLETS = {
   'M100006137': 'HQ',
   'M100006143': 'KC',
-  'M100006140': 'SATOK',
-  'M100006142': 'TRINITY',
+  'M100006140': 'ST',
+  'M100006142': 'TH',
 };
 
 const SPAY_KEEP = [
