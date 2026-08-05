@@ -64,6 +64,23 @@ function processSpay(rawRows) {
   if (allMids.size > 1) {
     warnings.push(`Mixed outlets detected: ${[...allMids].join(', ')}. Please check your file — each file should contain one outlet only.`);
   }
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const wrongDates = rawRows.filter(r => {
+    const d = r['Settlement Date'];
+    if (!d || typeof d !== 'string') return false;
+    const m = d.trim().match(/^(\d{4})-(\d{2})/);
+    if (!m) return false;
+    const dy = parseInt(m[1]), dm = parseInt(m[2]) - 1;
+    return !((dm === month && dy === year) || (dm === prevMonth && dy === prevYear));
+  });
+  if (wrongDates.length > 0) {
+    const months = [...new Set(wrongDates.map(r => {
+      const m = r['Settlement Date'].trim().match(/^(\d{4})-(\d{2})/);
+      return `${MON_S[parseInt(m[2]) - 1]}'${m[1].slice(-2)}`;
+    }))];
+    warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
+  }
   const mid = rawRows[0]?.['Merchant ID'] || '';
   const outlet = SPAY_OUTLETS[mid.trim()] || 'HQ';
   const title = `${outlet} SARAWAK PAY ${MONTHS[month]} ${year}`;
@@ -275,6 +292,21 @@ async function processCardPayZip(arrayBuffer) {
   const warnings = [];
   if (detectedOutlets.size > 1) {
     warnings.push(`Mixed outlets detected: ${[...detectedOutlets].join(', ')}. Please check your zip — each zip should contain one outlet only.`);
+  }
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const wrongDatePdfs = pdfs.filter(p => {
+    const m = p.date.match(/^(\d{4})-(\d{2})/);
+    if (!m) return false;
+    const py = parseInt(m[1]), pm = parseInt(m[2]) - 1;
+    return !((pm === month && py === year) || (pm === prevMonth && py === prevYear));
+  });
+  if (wrongDatePdfs.length > 0) {
+    const months = [...new Set(wrongDatePdfs.map(p => {
+      const m = p.date.match(/^(\d{4})-(\d{2})/);
+      return `${MON_S[parseInt(m[2]) - 1]}'${m[1].slice(-2)}`;
+    }))];
+    warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
   const outlet = detectedOutlets.size > 0 ? [...detectedOutlets][0] : 'HQ';
   return { pdfs, year, month, outlet, warnings };
@@ -747,7 +779,7 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>CardPay</h2>
-          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF.</p>
+          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF. Dates outside expected month will trigger an alert.</p>
           <div
             className={`mr-upload${cpDragging ? ' drag' : ''}`}
             onClick={() => cpFileRef.current?.click()}
