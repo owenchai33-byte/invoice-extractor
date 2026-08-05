@@ -3,6 +3,14 @@ import * as XLSXStyle from 'xlsx-js-style';
 import JSZip from 'jszip';
 
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+const SPAY_OUTLETS = {
+  'M100006137': 'HQ',
+  'M100006143': 'KC',
+  'M100006140': 'SATOK',
+  'M100006142': 'TRINITY',
+};
 
 const SPAY_KEEP = [
   'Serial No.','Merchant ID','Merchant Name','Settlement Date','Settlement No.',
@@ -48,7 +56,9 @@ function processSpay(rawRows) {
   });
   const keepCols = SPAY_KEEP.filter(h => headers.includes(h) && !allZeroCols.has(h));
   const { year, month } = detectMonth(rawRows);
-  const title = `HQ SARAWAK PAY ${MONTHS[month]} ${year}`;
+  const mid = rawRows[0]?.['Merchant ID'] || '';
+  const outlet = SPAY_OUTLETS[mid.trim()] || 'HQ';
+  const title = `${outlet} SARAWAK PAY ${MONTHS[month]} ${year}`;
   const dataRows = rawRows.map(r => {
     return keepCols.map(col => {
       let v = r[col];
@@ -68,10 +78,10 @@ function processSpay(rawRows) {
     return null;
   });
 
-  return { keepCols, title, dataRows, sums, year, month };
+  return { keepCols, title, dataRows, sums, year, month, outlet };
 }
 
-function buildExcel(keepCols, title, dataRows, sums, month, year) {
+function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   const X = XLSXStyle;
   const wb = X.utils.book_new();
   const ws = {};
@@ -153,27 +163,27 @@ function buildExcel(keepCols, title, dataRows, sums, month, year) {
   ws['!merges'] = mg;
 
   const rowHt = [];
-  for (let i = 0; i <= totalRows; i++) rowHt.push({ hpt: i <= 1 ? 24 : 22 });
+  for (let i = 0; i <= totalRows; i++) rowHt.push({ hpt: i <= 1 ? 28 : 24 });
   ws['!rows'] = rowHt;
 
   const colWidths = keepCols.map(h => {
-    if (h === 'Merchant Name') return { wch: 22 };
-    if (h === 'Settlement No.') return { wch: 28 };
-    if (h === 'Settlement Bank') return { wch: 30 };
-    if (h === 'Settlement Date' || h === 'Status Date') return { wch: 16 };
-    if (h === 'Status') return { wch: 22 };
-    if (h === 'Bank Account') return { wch: 14 };
-    if (SPAY_NUMERIC.has(h)) return { wch: 16 };
-    return { wch: 12 };
+    if (h === 'Merchant Name') return { wch: 26 };
+    if (h === 'Settlement No.') return { wch: 30 };
+    if (h === 'Settlement Bank') return { wch: 32 };
+    if (h === 'Settlement Date' || h === 'Status Date') return { wch: 18 };
+    if (h === 'Status') return { wch: 24 };
+    if (h === 'Bank Account') return { wch: 18 };
+    if (h === 'Merchant ID') return { wch: 18 };
+    if (SPAY_NUMERIC.has(h)) return { wch: 18 };
+    return { wch: 14 };
   });
   ws['!cols'] = colWidths;
-  ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0, footer: 0 };
+  ws['!margins'] = { left: 0, right: 0, top: 0.5, bottom: 0.5, header: 0, footer: 0 };
 
-  const mon = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  X.utils.book_append_sheet(wb, ws, mon[month]);
+  X.utils.book_append_sheet(wb, ws, MON_S[month]);
 
   const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
-  const fname = `SPAY_HQ_-_${mon[month]}_${String(year).slice(-2)}.xlsx`;
+  const fname = `SPAY ${outlet || 'HQ'} - ${MON_S[month]}'${String(year).slice(-2)}.xlsx`;
 
   JSZip.loadAsync(buf).then(zip => {
     const sf = 'xl/worksheets/sheet1.xml';
@@ -243,8 +253,8 @@ export default function MerchantReport() {
 
         const headers = Object.keys(rawRows[0]);
         if (headers.includes('Settlement No.') || headers.includes('Merchant ID')) {
-          const { keepCols, title, dataRows, sums, year, month } = processSpay(rawRows);
-          setResult({ type: 'SPAY', keepCols, title, dataRows, sums, year, month, rows: rawRows.length });
+          const { keepCols, title, dataRows, sums, year, month, outlet } = processSpay(rawRows);
+          setResult({ type: 'SPAY', keepCols, title, dataRows, sums, year, month, outlet, rows: rawRows.length });
         } else {
           setError('Could not detect merchant format. Make sure the file has the original headers from the portal.');
         }
@@ -264,7 +274,7 @@ export default function MerchantReport() {
 
   const doDownload = () => {
     if (!result) return;
-    buildExcel(result.keepCols, result.title, result.dataRows, result.sums, result.month, result.year);
+    buildExcel(result.keepCols, result.title, result.dataRows, result.sums, result.month, result.year, result.outlet);
   };
 
   return (
