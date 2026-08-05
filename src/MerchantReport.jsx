@@ -103,13 +103,9 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
     ws[ref] = cell;
   };
 
-  const compRef = X.utils.encode_cell({ r: 0, c: 0 });
-  ws[compRef] = {
-    t: 's',
-    v: 'C.J.K. CHAI JEE KIONG TRADING SDN BHD',
-    r: '<r><rPr><b/><i/><sz val="16"/><rFont val="Arial"/></rPr><t>C.J.K.</t></r><r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t> CHAI JEE KIONG TRADING SDN BHD</t></r>',
-    s: { font: headerFont, alignment: { horizontal: 'center', vertical: 'center' } }
-  };
+  sc(0, 0, 'C.J.K. CHAI JEE KIONG TRADING SDN BHD', {
+    font: headerFont, alignment: { horizontal: 'center', vertical: 'center' }
+  });
   mg.push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } });
 
   sc(1, 0, title, {
@@ -194,8 +190,17 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   const fname = `SPAY ${outlet || 'HQ'} - ${MON_S[month]}'${String(year).slice(-2)}.xlsx`;
 
   JSZip.loadAsync(buf).then(zip => {
-    const sf = 'xl/worksheets/sheet1.xml';
-    return zip.file(sf).async('string').then(xml => {
+    const ssf = 'xl/sharedStrings.xml';
+    return zip.file(ssf).async('string').then(ssxml => {
+      ssxml = ssxml.replace(
+        '<t>C.J.K. CHAI JEE KIONG TRADING SDN BHD</t>',
+        '<r><rPr><b/><i/><sz val="16"/><rFont val="Arial"/></rPr><t>C.J.K.</t></r>' +
+        '<r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t xml:space="preserve"> CHAI JEE KIONG TRADING SDN BHD</t></r>'
+      );
+      zip.file(ssf, ssxml);
+      const sf = 'xl/worksheets/sheet1.xml';
+      return zip.file(sf).async('string');
+    }).then(xml => {
       if (xml.includes('<sheetPr')) {
         xml = xml.replace(/<sheetPr[^>]*>/, '$&<pageSetUpPr fitToPage="1"/>');
       } else if (xml.includes('<sheetPr/>')) {
