@@ -650,6 +650,21 @@ async function processEpayFiles(files) {
     const parts = mid.date.split('/');
     month = parseInt(parts[1]) - 1;
     year = parseInt(parts[2]);
+  } else if (periodSales.length > 0) {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(periodSales[0].buf) }).promise;
+      const page = await pdf.getPage(1);
+      const content = await page.getTextContent();
+      const text = content.items.map(i => i.str).join(' ');
+      const fm = text.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i);
+      if (fm) {
+        const idx = MONTHS.findIndex(m => m.toLowerCase() === fm[1].toLowerCase());
+        if (idx >= 0) { month = idx; year = parseInt(fm[2]); }
+      } else {
+        const dm = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        if (dm) { month = parseInt(dm[2]) - 1; year = parseInt(dm[3]); }
+      }
+    } catch (e) { /* fallback to current date */ }
   }
 
   const warnings = [];
