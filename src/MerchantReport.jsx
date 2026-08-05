@@ -452,8 +452,14 @@ const CSS = `
 .mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 .mr-bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0;color:#18181b}
-.mr-body{max-width:1200px;margin:0 auto;padding:24px;display:flex;flex-wrap:wrap;gap:16px}
-.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;flex:1 1 280px;min-width:260px}
+.mr-body{max-width:1200px;margin:0 auto;padding:24px;position:relative}
+.mr-scroll{display:flex;gap:16px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;-ms-overflow-style:none;scrollbar-width:none}
+.mr-scroll::-webkit-scrollbar{display:none}
+.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;min-width:320px;flex:0 0 calc(33.333% - 11px);scroll-snap-align:start}
+.mr-nav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:#18181b;color:#fff;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;opacity:.8}
+.mr-nav:hover{opacity:1}
+.mr-nav.left{left:4px}
+.mr-nav.right{right:4px}
 .mr-card h2{font-size:14px;font-weight:700;margin:0 0 4px;color:#18181b}
 .mr-card p{font-size:12px;color:#71717a;margin:0 0 20px}
 .mr-upload{border:2px dashed #d4d4d8;border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .15s}
@@ -492,6 +498,14 @@ export default function MerchantReport() {
   const [mkLoading, setMkLoading] = useState(false);
   const [mkDragging, setMkDragging] = useState(false);
   const mkFileRef = useRef(null);
+  const scrollRef = useRef(null);
+
+  const scrollCards = (dir) => {
+    if (!scrollRef.current) return;
+    const card = scrollRef.current.querySelector('.mr-card');
+    const w = card ? card.offsetWidth + 16 : 340;
+    scrollRef.current.scrollBy({ left: dir * w, behavior: 'smooth' });
+  };
 
   const handleFile = (file) => {
     if (!file) return;
@@ -611,6 +625,9 @@ export default function MerchantReport() {
         <h1>POS MERCHANT REPORT</h1>
       </div>
       <div className="mr-body">
+        <button className="mr-nav left" onClick={() => scrollCards(-1)}>‹</button>
+        <button className="mr-nav right" onClick={() => scrollCards(1)}>›</button>
+        <div className="mr-scroll" ref={scrollRef}>
         <div className="mr-card">
           <h2>Sarawak Pay (SPAY)</h2>
           <p>Upload the settlement report from the SPAY portal. It will be formatted with company header, totals, and print-ready layout.</p>
@@ -723,6 +740,7 @@ export default function MerchantReport() {
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
