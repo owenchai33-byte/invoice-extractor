@@ -191,6 +191,7 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
 
   JSZip.loadAsync(buf).then(zip => {
     const ssf = 'xl/sharedStrings.xml';
+    const sf = 'xl/worksheets/sheet1.xml';
     return zip.file(ssf).async('string').then(ssxml => {
       ssxml = ssxml.replace(
         '<t>C.J.K. CHAI JEE KIONG TRADING SDN BHD</t>',
@@ -198,7 +199,6 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
         '<r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t xml:space="preserve"> CHAI JEE KIONG TRADING SDN BHD</t></r>'
       );
       zip.file(ssf, ssxml);
-      const sf = 'xl/worksheets/sheet1.xml';
       return zip.file(sf).async('string');
     }).then(xml => {
       if (xml.includes('<sheetPr')) {
