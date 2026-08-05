@@ -402,7 +402,7 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
 
     const grouped = new Map();
     txnRows.forEach(r => {
-      const dateKey = String(r[2] || 'Unknown');
+      const dateKey = String(r[2] || 'Unknown').substring(0, 10);
       if (!grouped.has(dateKey)) grouped.set(dateKey, []);
       grouped.get(dateKey).push(r);
     });
