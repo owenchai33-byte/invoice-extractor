@@ -850,6 +850,46 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+function buildEpayOutletPDF(txns, outletName, month, year) {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const cols = ['No.', 'Date & Time', 'Terminal ID', 'Operator', 'Retailer Name', 'Store Name', 'Retailer Ref', 'Txn. No.', 'Narrative', 'SN / ETU Txn No.', 'Topup Ref', 'Value'];
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`EPAY Transaction Detail — ${outletName}`, 148.5, 10, { align: 'center' });
+  const grouped = new Map();
+  txns.forEach(t => { if (!grouped.has(t.date)) grouped.set(t.date, []); grouped.get(t.date).push(t); });
+  const body = [];
+  const dailyTotalIndices = new Set();
+  let rowNo = 1;
+  for (const [dateKey, group] of grouped) {
+    const dayTotal = group.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
+    group.forEach((t, idx) => {
+      body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+      if (idx === group.length - 1) {
+        body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
+        dailyTotalIndices.add(body.length - 1);
+      }
+    });
+  }
+  autoTable(doc, {
+    startY: 14, head: [cols], body,
+    styles: { fontSize: 5, cellPadding: 1, lineColor: [180, 180, 180], lineWidth: 0.1, overflow: 'linebreak' },
+    headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 5 },
+    columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 30 }, 2: { cellWidth: 16 }, 3: { cellWidth: 16 }, 4: { cellWidth: 26 }, 5: { cellWidth: 30 }, 6: { cellWidth: 32 }, 7: { cellWidth: 18 }, 8: { cellWidth: 'auto' }, 9: { cellWidth: 30 }, 10: { cellWidth: 20 }, 11: { cellWidth: 16, halign: 'right' } },
+    margin: { left: 5, right: 5 }, theme: 'grid',
+    didParseCell: (data) => { if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 255, 230]; } }
+  });
+  const blob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `EPAY D ${outletName} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 const CSS = `
 .mr-root{background:#fafafa;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -1066,6 +1106,17 @@ export default function MerchantReport() {
     }
   };
 
+  const doEpOutletDownload = (outlet) => {
+    if (!epResult) return;
+    const txns = epResult.byOutlet.get(outlet);
+    if (!txns || !txns.length) return;
+    try {
+      buildEpayOutletPDF(txns, outlet, epResult.month, epResult.year);
+    } catch (e) {
+      setEpError('Download failed: ' + e.message);
+    }
+  };
+
   return (
     <div className="mr-root">
       <style>{CSS}</style>
@@ -1228,6 +1279,15 @@ export default function MerchantReport() {
               </div>
               {epResult.warnings.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
               <button className="mr-btn" onClick={doEpDownload}>Download EPAY SALES SUMMARY - {MON_S[epResult.month]}'{String(epResult.year).slice(-2)}</button>
+              {epResult.txnCount > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  {['KC', 'ST', 'TH'].filter(o => epResult.byOutlet.get(o)?.length > 0).map(o => (
+                    <button key={o} className="mr-btn" style={{ fontSize: 12, padding: '6px 14px' }} onClick={() => doEpOutletDownload(o)}>
+                      EPAY D {o}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
