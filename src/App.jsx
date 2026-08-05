@@ -4,11 +4,13 @@ import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
 import Payslip from './Payslip';
 import EmployeePayslip from './EmployeePayslip';
+import MerchantReport from './MerchantReport';
 import { saveBackup, checkWeeklyDownload, downloadBackup, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 const SECTIONS = [
   { id: 'af', label: 'Account & Finance', tabs: [
     { id: 'invoice', label: 'Payment Summary' },
+    { id: 'merchant', label: 'POS Merchant Report' },
   ]},
   { id: 'hr', label: 'Human Resource', tabs: [
     { id: 'payroll', label: 'Payroll' },
@@ -383,6 +385,7 @@ export default function App() {
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && <Payslip />}
         {active === 'epayslip' && <EmployeePayslip />}
+        {active === 'merchant' && <MerchantReport />}
       </main>
 
       <style>{`

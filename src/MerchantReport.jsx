@@ -1,0 +1,301 @@
+import { useState, useRef } from 'react';
+import * as XLSXStyle from 'xlsx-js-style';
+import JSZip from 'jszip';
+
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+
+const SPAY_KEEP = [
+  'Serial No.','Merchant ID','Merchant Name','Settlement Date','Settlement No.',
+  'Settlement Bank','Bank Account','Transaction Amount','Platform Amount',
+  'Institution Amount','Merchant Amount','Actual Amount','Refund Amount',
+  'Settlement Amount','Merchant Fee','User Fee','Status','Status Date'
+];
+const SPAY_ALWAYS_HIDE = new Set();
+const SPAY_NUMERIC = new Set([
+  'Transaction Amount','Platform Amount','Institution Amount','Merchant Amount',
+  'Actual Amount','Refund Amount','Settlement Amount','Merchant Fee','User Fee'
+]);
+const SPAY_SUM = new Set([
+  'Transaction Amount','Refund Amount','Settlement Amount','Merchant Fee',
+  'Platform Amount','Institution Amount','Merchant Amount','Actual Amount','User Fee'
+]);
+
+function detectMonth(rows) {
+  for (const r of rows) {
+    const d = r['Settlement Date'];
+    if (d && typeof d === 'string') {
+      const m = d.trim().match(/^(\d{4})-(\d{2})/);
+      if (m) return { year: parseInt(m[1]), month: parseInt(m[2]) - 1 };
+    }
+  }
+  return { year: new Date().getFullYear(), month: new Date().getMonth() };
+}
+
+function parseNum(v) {
+  if (v == null || v === '') return 0;
+  const s = String(v).replace(/,/g, '').trim();
+  if (s === '-' || s === '') return 0;
+  return parseFloat(s) || 0;
+}
+
+function processSpay(rawRows) {
+  const headers = Object.keys(rawRows[0] || {});
+  const numericCols = headers.filter(h => SPAY_NUMERIC.has(h));
+  const allZeroCols = new Set();
+  numericCols.forEach(col => {
+    const allZero = rawRows.every(r => parseNum(r[col]) === 0);
+    if (allZero) allZeroCols.add(col);
+  });
+  const keepCols = SPAY_KEEP.filter(h => headers.includes(h) && !allZeroCols.has(h));
+  const { year, month } = detectMonth(rawRows);
+  const title = `HQ SARAWAK PAY ${MONTHS[month]} ${year}`;
+  const dataRows = rawRows.map(r => {
+    return keepCols.map(col => {
+      let v = r[col];
+      if (SPAY_NUMERIC.has(col)) {
+        const n = parseNum(v);
+        if (n === 0) return '-';
+        return n;
+      }
+      return v || '';
+    });
+  });
+  const sums = keepCols.map(col => {
+    if (SPAY_SUM.has(col) && !allZeroCols.has(col)) {
+      const total = rawRows.reduce((s, r) => s + parseNum(r[col]), 0);
+      return Math.round(total * 100) / 100;
+    }
+    return null;
+  });
+
+  return { keepCols, title, dataRows, sums, year, month };
+}
+
+function buildExcel(keepCols, title, dataRows, sums, month, year) {
+  const X = XLSXStyle;
+  const wb = X.utils.book_new();
+  const ws = {};
+  const mg = [];
+  const colCount = keepCols.length;
+  const lastCol = colCount - 1;
+  const _thin = { style: 'thin', color: { rgb: 'AAAAAA' } };
+  const _bd = { top: _thin, bottom: _thin, left: _thin, right: _thin };
+  const font = { name: 'Arial', sz: 10 };
+  const boldFont = { name: 'Arial', sz: 10, bold: true };
+  const headerFont = { name: 'Arial', sz: 12, bold: true };
+  const titleFont = { name: 'Arial', sz: 11, bold: true };
+
+  const sc = (r, c, v, style) => {
+    const ref = X.utils.encode_cell({ r, c });
+    const cell = { v, t: typeof v === 'number' ? 'n' : 's' };
+    if (typeof v === 'number') cell.z = '#,##0.00';
+    if (style) cell.s = style;
+    ws[ref] = cell;
+  };
+
+  sc(0, 0, 'C.J.K. CHAI JEE KIONG TRADING SDN BHD', {
+    font: headerFont, alignment: { horizontal: 'center', vertical: 'center' }
+  });
+  mg.push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } });
+
+  sc(1, 0, title, {
+    font: titleFont, alignment: { horizontal: 'center', vertical: 'center' }
+  });
+  mg.push({ s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } });
+
+  keepCols.forEach((h, c) => {
+    sc(2, c, h, {
+      font: boldFont,
+      border: _bd,
+      fill: { fgColor: { rgb: 'E9E9E9' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+    });
+  });
+
+  dataRows.forEach((row, ri) => {
+    row.forEach((v, ci) => {
+      const isNum = typeof v === 'number';
+      sc(3 + ri, ci, v === '-' ? '-' : v, {
+        font,
+        border: _bd,
+        alignment: {
+          horizontal: isNum ? 'right' : (v === '-' ? 'center' : 'left'),
+          vertical: 'center'
+        },
+        ...(isNum ? { numFmt: '#,##0.00' } : {})
+      });
+    });
+  });
+
+  const sumRow = 3 + dataRows.length + 1;
+  sc(sumRow - 1, 0, '', { font }); // empty row
+  sums.forEach((v, ci) => {
+    if (v !== null) {
+      sc(sumRow, ci, v, {
+        font: boldFont,
+        border: { top: { style: 'medium', color: { rgb: '000000' } }, bottom: { style: 'double', color: { rgb: '000000' } } },
+        alignment: { horizontal: 'right' },
+        numFmt: '#,##0.00'
+      });
+    }
+  });
+
+  const totalRows = sumRow + 1;
+  ws['!ref'] = X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRows, c: lastCol } });
+  ws['!merges'] = mg;
+
+  const colWidths = keepCols.map(h => {
+    if (h === 'Merchant Name') return { wch: 22 };
+    if (h === 'Settlement No.') return { wch: 28 };
+    if (h === 'Settlement Bank') return { wch: 30 };
+    if (h === 'Settlement Date' || h === 'Status Date') return { wch: 16 };
+    if (h === 'Status') return { wch: 22 };
+    if (h === 'Bank Account') return { wch: 14 };
+    if (SPAY_NUMERIC.has(h)) return { wch: 16 };
+    return { wch: 12 };
+  });
+  ws['!cols'] = colWidths;
+  ws['!margins'] = { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0, footer: 0 };
+
+  const mon = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  X.utils.book_append_sheet(wb, ws, mon[month]);
+
+  const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
+  const fname = `SPAY_HQ_-_${mon[month]}_${String(year).slice(-2)}.xlsx`;
+
+  JSZip.loadAsync(buf).then(zip => {
+    const sf = 'xl/worksheets/sheet1.xml';
+    return zip.file(sf).async('string').then(xml => {
+      xml = xml.replace('<dimension', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+      xml = xml.replace(/<pageMargins[^/]*\/>/,
+        '$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>');
+      zip.file(sf, xml);
+      return zip.generateAsync({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+    });
+  }).then(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
+
+const CSS = `
+.mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+.mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
+.mr-bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0;color:#18181b}
+.mr-body{max-width:900px;margin:0 auto;padding:24px}
+.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:32px;margin-bottom:16px}
+.mr-card h2{font-size:14px;font-weight:700;margin:0 0 4px;color:#18181b}
+.mr-card p{font-size:12px;color:#71717a;margin:0 0 20px}
+.mr-upload{border:2px dashed #d4d4d8;border-radius:8px;padding:40px;text-align:center;cursor:pointer;transition:all .15s}
+.mr-upload:hover{border-color:#2563eb;background:#eff6ff}
+.mr-upload.drag{border-color:#2563eb;background:#eff6ff}
+.mr-icon{font-size:32px;margin-bottom:8px}
+.mr-label{font-size:13px;font-weight:600;color:#18181b}
+.mr-hint{font-size:11px;color:#a1a1aa;margin-top:4px}
+.mr-result{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-top:16px}
+.mr-result-title{font-size:13px;font-weight:700;color:#166534;margin:0 0 8px}
+.mr-result-info{font-size:12px;color:#15803d;margin:0 0 4px}
+.mr-btn{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#18181b;color:#fff;margin-top:12px}
+.mr-btn:hover{background:#27272a}
+.mr-btn:active{transform:scale(.97)}
+.mr-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-top:16px;font-size:12px;color:#dc2626}
+@media print{.mr-root{display:none}}
+`;
+
+export default function MerchantReport() {
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef(null);
+
+  const handleFile = (file) => {
+    if (!file) return;
+    setError('');
+    setResult(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSXStyle.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rawRows = XLSXStyle.utils.sheet_to_json(ws, { raw: true });
+
+        if (!rawRows.length) { setError('File appears to be empty.'); return; }
+
+        const headers = Object.keys(rawRows[0]);
+        if (headers.includes('Settlement No.') || headers.includes('Merchant ID')) {
+          const { keepCols, title, dataRows, sums, year, month } = processSpay(rawRows);
+          setResult({ type: 'SPAY', keepCols, title, dataRows, sums, year, month, rows: rawRows.length });
+        } else {
+          setError('Could not detect merchant format. Make sure the file has the original headers from the portal.');
+        }
+      } catch (err) {
+        setError('Could not read file: ' + (err.message || 'unknown error'));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const doDownload = () => {
+    if (!result) return;
+    buildExcel(result.keepCols, result.title, result.dataRows, result.sums, result.month, result.year);
+  };
+
+  return (
+    <div className="mr-root">
+      <style>{CSS}</style>
+      <div className="mr-bar">
+        <h1>POS MERCHANT REPORT</h1>
+      </div>
+      <div className="mr-body">
+        <div className="mr-card">
+          <h2>Sarawak Pay (SPAY)</h2>
+          <p>Upload the settlement report from the SPAY portal. It will be formatted with company header, totals, and print-ready layout.</p>
+          <div
+            className={`mr-upload${dragging ? ' drag' : ''}`}
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+          >
+            <div className="mr-icon">📄</div>
+            <div className="mr-label">Click to upload or drag & drop</div>
+            <div className="mr-hint">Accepts .xls / .xlsx files from SPAY portal</div>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xls,.xlsx"
+            style={{ display: 'none' }}
+            onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
+          />
+
+          {error && <div className="mr-error">{error}</div>}
+
+          {result && (
+            <div className="mr-result">
+              <div className="mr-result-title">Ready to download</div>
+              <div className="mr-result-info">{result.title}</div>
+              <div className="mr-result-info">{result.rows} transactions · {result.keepCols.length} columns (zero-value columns hidden)</div>
+              <button className="mr-btn" onClick={doDownload}>Download Formatted Excel</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
