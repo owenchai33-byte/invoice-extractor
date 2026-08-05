@@ -296,9 +296,10 @@ const MK_OUTLET_MAP = {
 function parseMkDate(s) {
   if (!s || typeof s !== 'string') return null;
   const m = s.match(/^(\d{2})-(\d{2})-(\d{4})/);
-  if (m) return { day: parseInt(m[1]), month: parseInt(m[2]) - 1, year: parseInt(m[3]) };
-  const m2 = s.match(/(\d{4})(\d{2})(\d{2})/);
-  if (m2) return { day: parseInt(m2[3]), month: parseInt(m2[2]) - 1, year: parseInt(m2[1]) };
+  if (m) {
+    const mo = parseInt(m[2]) - 1;
+    if (mo >= 0 && mo <= 11) return { day: parseInt(m[1]), month: mo, year: parseInt(m[3]) };
+  }
   return null;
 }
 
@@ -352,11 +353,16 @@ async function processMyKasihZip(arrayBuffer) {
     if (m) { year = parseInt(m[1]); month = parseInt(m[2]) - 1; }
   }
 
-  const wrongMonthDates = allDates.filter(d => d.month !== month);
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const wrongMonthDates = allDates.filter(d =>
+    d.month >= 0 && d.month <= 11 &&
+    !((d.month === month && d.year === year) || (d.month === prevMonth && d.year === prevYear))
+  );
   const warnings = [];
   if (wrongMonthDates.length > 0) {
-    const months = [...new Set(wrongMonthDates.map(d => `${MON_S[d.month]}'${String(d.year).slice(-2)}`))];
-    warnings.push(`Found dates from other months: ${months.join(', ')}. Please check these entries.`);
+    const months = [...new Set(wrongMonthDates.map(d => `${MON_S[d.month] || '??'}'${String(d.year).slice(-2)}`))];
+    warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
 
   return { excels, pdfs, year, month, outlet: detectedOutlet || 'HQ', warnings };
