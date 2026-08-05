@@ -407,9 +407,16 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
       grouped.get(dateKey).push(r);
     });
 
+    const sortedKeys = [...grouped.keys()].sort((a, b) => {
+      const [da, ma, ya] = a.split('-').map(Number);
+      const [db, mb, yb] = b.split('-').map(Number);
+      return (ya - yb) || (ma - mb) || (da - db);
+    });
+
     const body = [];
     const subtotalRowIndices = new Set();
-    for (const [dateKey, group] of grouped) {
+    for (const dateKey of sortedKeys) {
+      const group = grouped.get(dateKey);
       group.forEach(r => {
         body.push([
           r[0], String(r[1] || '').substring(0, 20),
