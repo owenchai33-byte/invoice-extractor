@@ -93,7 +93,7 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   const font = { name: 'Arial', sz: 14 };
   const boldFont = { name: 'Arial', sz: 14, bold: true };
   const headerFont = { name: 'Arial', sz: 16, bold: true };
-  const titleFont = { name: 'Arial', sz: 14, bold: true };
+  const titleFont = { name: 'Arial', sz: 16, bold: true };
 
   const sc = (r, c, v, style) => {
     const ref = X.utils.encode_cell({ r, c });
@@ -103,9 +103,13 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
     ws[ref] = cell;
   };
 
-  sc(0, 0, 'C.J.K. CHAI JEE KIONG TRADING SDN BHD', {
-    font: headerFont, alignment: { horizontal: 'center', vertical: 'center' }
-  });
+  const compRef = X.utils.encode_cell({ r: 0, c: 0 });
+  ws[compRef] = {
+    t: 's',
+    v: 'C.J.K. CHAI JEE KIONG TRADING SDN BHD',
+    r: '<r><rPr><b/><i/><sz val="16"/><rFont val="Arial"/></rPr><t>C.J.K.</t></r><r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t> CHAI JEE KIONG TRADING SDN BHD</t></r>',
+    s: { font: headerFont, alignment: { horizontal: 'center', vertical: 'center' } }
+  };
   mg.push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } });
 
   sc(1, 0, title, {
@@ -163,7 +167,11 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   ws['!merges'] = mg;
 
   const rowHt = [];
-  for (let i = 0; i <= totalRows; i++) rowHt.push({ hpt: i <= 1 ? 28 : 24 });
+  for (let i = 0; i <= totalRows; i++) {
+    if (i <= 1) rowHt.push({ hpt: 28 });
+    else if (i === 2) rowHt.push({ hpt: 36 });
+    else rowHt.push({ hpt: 24 });
+  }
   ws['!rows'] = rowHt;
 
   const colWidths = keepCols.map(h => {
