@@ -80,10 +80,10 @@ function buildExcel(keepCols, title, dataRows, sums, month, year) {
   const lastCol = colCount - 1;
   const _thin = { style: 'thin', color: { rgb: 'AAAAAA' } };
   const _bd = { top: _thin, bottom: _thin, left: _thin, right: _thin };
-  const font = { name: 'Arial', sz: 10 };
-  const boldFont = { name: 'Arial', sz: 10, bold: true };
-  const headerFont = { name: 'Arial', sz: 12, bold: true };
-  const titleFont = { name: 'Arial', sz: 11, bold: true };
+  const font = { name: 'Arial', sz: 14 };
+  const boldFont = { name: 'Arial', sz: 14, bold: true };
+  const headerFont = { name: 'Arial', sz: 16, bold: true };
+  const titleFont = { name: 'Arial', sz: 14, bold: true };
 
   const sc = (r, c, v, style) => {
     const ref = X.utils.encode_cell({ r, c });
@@ -128,21 +128,33 @@ function buildExcel(keepCols, title, dataRows, sums, month, year) {
   });
 
   const sumRow = 3 + dataRows.length + 1;
-  sc(sumRow - 1, 0, '', { font }); // empty row
+  sc(sumRow - 1, 0, '', { font });
+  const dataStart = 4, dataEnd = 3 + dataRows.length;
   sums.forEach((v, ci) => {
     if (v !== null) {
-      sc(sumRow, ci, v, {
-        font: boldFont,
-        border: { top: { style: 'medium', color: { rgb: '000000' } }, bottom: { style: 'double', color: { rgb: '000000' } } },
-        alignment: { horizontal: 'right' },
-        numFmt: '#,##0.00'
-      });
+      const colLetter = X.utils.encode_col(ci);
+      const ref = X.utils.encode_cell({ r: sumRow, c: ci });
+      ws[ref] = {
+        t: 'n', v,
+        f: `SUM(${colLetter}${dataStart}:${colLetter}${dataEnd})`,
+        z: '#,##0.00',
+        s: {
+          font: boldFont,
+          border: { top: { style: 'medium', color: { rgb: '000000' } }, bottom: { style: 'double', color: { rgb: '000000' } } },
+          alignment: { horizontal: 'right' },
+          numFmt: '#,##0.00'
+        }
+      };
     }
   });
 
   const totalRows = sumRow + 1;
   ws['!ref'] = X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRows, c: lastCol } });
   ws['!merges'] = mg;
+
+  const rowHt = [];
+  for (let i = 0; i <= totalRows; i++) rowHt.push({ hpt: i <= 1 ? 24 : 22 });
+  ws['!rows'] = rowHt;
 
   const colWidths = keepCols.map(h => {
     if (h === 'Merchant Name') return { wch: 22 };
