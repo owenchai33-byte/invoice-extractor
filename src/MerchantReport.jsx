@@ -614,13 +614,43 @@ async function extractEpayTransactions(arrayBuffer) {
   return transactions;
 }
 
+function extractEpayTransactionsFromExcel(arrayBuffer) {
+  const wb = XLSXStyle.read(arrayBuffer, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSXStyle.utils.sheet_to_json(ws, { header: 1 });
+  const transactions = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.length < 11) continue;
+    const dt = String(r[0] || '');
+    const dtMatch = dt.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+)$/);
+    if (!dtMatch) continue;
+    const narrative = String(r[7] || '');
+    const val = typeof r[10] === 'number' ? r[10] : parseFloat(String(r[10] || '0').replace(/,/g, ''));
+    transactions.push({
+      date: dtMatch[1],
+      time: dtMatch[2],
+      terminalId: String(r[1]),
+      operator: String(r[2] || ''),
+      narrative,
+      details: narrative,
+      value: isNaN(val) ? 0 : val
+    });
+  }
+  return transactions;
+}
+
 async function processEpayFiles(files) {
   const periodSales = [];
   const allTxns = [];
 
   for (const file of files) {
     const buf = await file.arrayBuffer();
-    if (/TransactionDetail/i.test(file.name)) {
+    const isExcel = /\.xlsx?$/i.test(file.name);
+    if (isExcel) {
+      const txns = extractEpayTransactionsFromExcel(buf);
+      allTxns.push(...txns);
+    } else if (/TransactionDetail/i.test(file.name)) {
       const txns = await extractEpayTransactions(buf);
       allTxns.push(...txns);
     } else {
