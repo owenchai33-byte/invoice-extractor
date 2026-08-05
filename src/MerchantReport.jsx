@@ -3,7 +3,7 @@ import * as XLSXStyle from 'xlsx-js-style';
 import JSZip from 'jszip';
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -406,7 +406,7 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
       typeof r[13] === 'number' ? r[13].toFixed(2) : (r[13] || '')
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [cols],
       body,
