@@ -593,7 +593,7 @@ async function extractEpayTransactions(arrayBuffer) {
       if (!m) continue;
       const details = m[4];
       const opMatch = details.match(/^(\w+)\s/);
-      const narMatch = details.match(/(Sold:\s*.+?\([^)]+\))/);
+      const narMatch = details.match(/((?:Sold|Paid):\s*.+?\([^)]+\))/);
       transactions.push({
         date: m[1],
         time: m[2],
@@ -696,14 +696,16 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
     const body = [];
     const dailyTotalIndices = new Set();
-    const outletStartIdx = 0;
+    const paidRowIndices = new Set();
     let rowNo = 1;
 
     for (const [dateKey, group] of grouped) {
-      const dayTotal = group.reduce((s, t) => s + t.value, 0);
+      const dayTotal = group.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
       group.forEach((t, idx) => {
+        const isPaid = /^Paid:/i.test(t.narrative);
         const isLast = idx === group.length - 1;
         body.push([rowNo++, t.date, t.time, t.operator, t.narrative, t.value.toFixed(2)]);
+        if (isPaid) paidRowIndices.add(body.length - 1);
         if (isLast) {
           dailyTotalIndices.add(body.length - 1);
           body.push(['', '', '', '', `Daily Total (${dateKey}):`, dayTotal.toFixed(2)]);
@@ -729,6 +731,10 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
       margin: { left: 8, right: 8 },
       theme: 'grid',
       didParseCell: (data) => {
+        if (data.section === 'body' && paidRowIndices.has(data.row.index)) {
+          data.cell.styles.fillColor = [255, 230, 230];
+          data.cell.styles.textColor = [180, 0, 0];
+        }
         if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) {
           data.cell.styles.fontStyle = 'bold';
           data.cell.styles.fillColor = [255, 255, 230];
