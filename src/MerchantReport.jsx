@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import * as XLSXStyle from 'xlsx-js-style';
 import JSZip from 'jszip';
 import { PDFDocument } from 'pdf-lib';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -284,6 +286,165 @@ async function mergeCardPayPDFs(pdfs, outlet, month, year) {
   URL.revokeObjectURL(a.href);
 }
 
+const MK_OUTLET_MAP = {
+  'M0000009610': 'HQ',
+};
+
+function parseMkDate(s) {
+  if (!s || typeof s !== 'string') return null;
+  const m = s.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (m) return { day: parseInt(m[1]), month: parseInt(m[2]) - 1, year: parseInt(m[3]) };
+  const m2 = s.match(/(\d{4})(\d{2})(\d{2})/);
+  if (m2) return { day: parseInt(m2[3]), month: parseInt(m2[2]) - 1, year: parseInt(m2[1]) };
+  return null;
+}
+
+async function processMyKasihZip(arrayBuffer) {
+  const excels = [];
+  const pdfs = [];
+  let detectedOutlet = null;
+  const allDates = [];
+
+  async function collect(z) {
+    for (const [path, f] of Object.entries(z.files)) {
+      if (f.dir) continue;
+      const name = path.split('/').pop();
+      if (name.endsWith('.zip')) {
+        const nested = await JSZip.loadAsync(await f.async('arraybuffer'));
+        await collect(nested);
+      } else if (/\.xlsx?$/i.test(name) && /^INV/i.test(name)) {
+        const dateMatch = name.match(/(\d{8})\./);
+        const date = dateMatch ? dateMatch[1] : '00000000';
+        const buf = await f.async('arraybuffer');
+        const wb = XLSXStyle.read(new Uint8Array(buf), { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSXStyle.utils.sheet_to_json(ws, { header: 1 });
+        const midRow = rows.find(r => r[0] === 'MID');
+        if (midRow && midRow[2] && MK_OUTLET_MAP[midRow[2]] && !detectedOutlet) {
+          detectedOutlet = MK_OUTLET_MAP[midRow[2]];
+        }
+        rows.forEach(r => {
+          if (r[2] && typeof r[2] === 'string') {
+            const d = parseMkDate(r[2]);
+            if (d) allDates.push(d);
+          }
+        });
+        excels.push({ name, date, rows });
+      } else if (/\.pdf$/i.test(name)) {
+        const dateMatch = name.match(/(\d{8})\./);
+        const date = dateMatch ? dateMatch[1] : '00000000';
+        pdfs.push({ name, date, buf: await f.async('arraybuffer') });
+      }
+    }
+  }
+
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  await collect(zip);
+  excels.sort((a, b) => a.date.localeCompare(b.date));
+  pdfs.sort((a, b) => a.date.localeCompare(b.date));
+
+  let year = new Date().getFullYear(), month = new Date().getMonth();
+  if (excels.length > 0) {
+    const m = excels[0].date.match(/^(\d{4})(\d{2})/);
+    if (m) { year = parseInt(m[1]); month = parseInt(m[2]) - 1; }
+  }
+
+  const wrongMonthDates = allDates.filter(d => d.month !== month);
+  const warnings = [];
+  if (wrongMonthDates.length > 0) {
+    const months = [...new Set(wrongMonthDates.map(d => `${MON_S[d.month]}'${String(d.year).slice(-2)}`))];
+    warnings.push(`Found dates from other months: ${months.join(', ')}. Please check these entries.`);
+  }
+
+  return { excels, pdfs, year, month, outlet: detectedOutlet || 'HQ', warnings };
+}
+
+function buildMyKasihExcelPDF(excels, outlet, month, year) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  let firstPage = true;
+
+  for (const excel of excels) {
+    const rows = excel.rows;
+    const headerRows = rows.slice(0, 4);
+    const dataHeaderRow = rows.find(r => r[0] === 'NO');
+    const dataHeaderIdx = rows.indexOf(dataHeaderRow);
+    if (dataHeaderIdx < 0) continue;
+
+    const dataRows = rows.slice(dataHeaderIdx + 1).filter(r => r.length > 0 && r[0] != null && r[0] !== '');
+    const totalRows = dataRows.filter(r => typeof r[0] !== 'number' && isNaN(parseInt(r[0])));
+    const txnRows = dataRows.filter(r => !isNaN(parseInt(r[0])));
+
+    if (!firstPage) doc.addPage();
+    firstPage = false;
+
+    let y = 10;
+    headerRows.forEach(r => {
+      const text = r.filter(v => v != null).join('  ');
+      if (text.trim()) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(text, 105, y, { align: 'center' });
+        y += 5;
+      }
+    });
+    y += 2;
+
+    const cols = ['NO', 'MERCHANT NAME', 'TXN DATE', 'SETTLE DATE', 'TID', 'BTH', 'APPR CODE', 'STAN #', 'GROSS AMT'];
+    const body = txnRows.map(r => [
+      r[0], String(r[1] || '').substring(0, 20),
+      String(r[2] || '').substring(0, 16), String(r[3] || '').substring(0, 16),
+      r[4] || '', r[8] || '', r[9] || '', r[11] || '',
+      typeof r[13] === 'number' ? r[13].toFixed(2) : (r[13] || '')
+    ]);
+
+    doc.autoTable({
+      startY: y,
+      head: [cols],
+      body,
+      styles: { fontSize: 6, cellPadding: 1, lineColor: [170, 170, 170], lineWidth: 0.1 },
+      headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 6 },
+      columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 30 }, 8: { halign: 'right' } },
+      margin: { left: 5, right: 5 },
+      theme: 'grid'
+    });
+
+    let finalY = doc.lastAutoTable?.finalY || y + 20;
+    finalY += 4;
+    totalRows.forEach(r => {
+      const label = r.filter(v => v != null && v !== '').slice(0, -1).join(' ');
+      const val = r[r.length - 1];
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, 120, finalY, { align: 'right' });
+      doc.text(typeof val === 'number' ? val.toFixed(2) : String(val || ''), 195, finalY, { align: 'right' });
+      finalY += 4;
+    });
+  }
+
+  const blob = doc.output('blob');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `MYKASIH D ${outlet} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function mergeMyKasihInvoicePDFs(pdfs, outlet, month, year) {
+  const merged = await PDFDocument.create();
+  for (const p of pdfs) {
+    const doc = await PDFDocument.load(p.buf);
+    const pages = await merged.copyPages(doc, doc.getPageIndices());
+    pages.forEach(page => merged.addPage(page));
+  }
+  const bytes = await merged.save();
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `MYKASIH MDR ${outlet} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 const CSS = `
 .mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -307,6 +468,7 @@ const CSS = `
 .mr-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-top:16px;font-size:12px;color:#dc2626}
 .mr-select{padding:6px 10px;border-radius:6px;border:1px solid #d4d4d8;font-size:13px;font-weight:600;background:#fff;margin-right:8px}
 .mr-loading{font-size:12px;color:#71717a;margin-top:12px}
+.mr-warn{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:#92400E}
 @media print{.mr-root{display:none}}
 `;
 
@@ -321,6 +483,12 @@ export default function MerchantReport() {
   const [cpLoading, setCpLoading] = useState(false);
   const [cpDragging, setCpDragging] = useState(false);
   const cpFileRef = useRef(null);
+
+  const [mkResult, setMkResult] = useState(null);
+  const [mkError, setMkError] = useState('');
+  const [mkLoading, setMkLoading] = useState(false);
+  const [mkDragging, setMkDragging] = useState(false);
+  const mkFileRef = useRef(null);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -392,6 +560,45 @@ export default function MerchantReport() {
   const doCpDownload = () => {
     if (!cpResult) return;
     mergeCardPayPDFs(cpResult.pdfs, cpResult.outlet, cpResult.month, cpResult.year);
+  };
+
+  const handleMkFile = async (file) => {
+    if (!file) return;
+    setMkError('');
+    setMkResult(null);
+    setMkLoading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const res = await processMyKasihZip(buf);
+      if (!res.excels.length && !res.pdfs.length) {
+        setMkError('No Terminal Activity Reports or Invoice PDFs found in the zip.');
+      } else {
+        if (res.warnings.length > 0) {
+          alert('⚠️ Date Warning\n\n' + res.warnings.join('\n'));
+        }
+        setMkResult(res);
+      }
+    } catch (err) {
+      setMkError('Could not process zip: ' + (err.message || 'unknown error'));
+    }
+    setMkLoading(false);
+  };
+
+  const handleMkDrop = (e) => {
+    e.preventDefault();
+    setMkDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleMkFile(file);
+  };
+
+  const doMkExcelDownload = () => {
+    if (!mkResult) return;
+    buildMyKasihExcelPDF(mkResult.excels, mkResult.outlet, mkResult.month, mkResult.year);
+  };
+
+  const doMkInvoiceDownload = () => {
+    if (!mkResult) return;
+    mergeMyKasihInvoicePDFs(mkResult.pdfs, mkResult.outlet, mkResult.month, mkResult.year);
   };
 
   return (
@@ -468,6 +675,49 @@ export default function MerchantReport() {
               <div className="mr-result-info">Outlet detected: {cpResult.outlet}</div>
               <div className="mr-result-info">Download as: CARDPAY D {cpResult.outlet} - {MON_S[cpResult.month]}'{String(cpResult.year).slice(-2)}.pdf</div>
               <button className="mr-btn" onClick={doCpDownload}>Download Merged PDF</button>
+            </div>
+          )}
+        </div>
+
+        <div className="mr-card" style={{ maxWidth: '100%', flexBasis: '100%' }}>
+          <h2>MyKasih</h2>
+          <p>Upload the zip file from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF. Dates outside expected month will trigger an alert.</p>
+          <div
+            className={`mr-upload${mkDragging ? ' drag' : ''}`}
+            onClick={() => mkFileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setMkDragging(true); }}
+            onDragLeave={() => setMkDragging(false)}
+            onDrop={handleMkDrop}
+          >
+            <div className="mr-icon">📦</div>
+            <div className="mr-label">Click to upload or drag & drop</div>
+            <div className="mr-hint">Accepts .zip files from MyKasih portal (nested zips supported)</div>
+          </div>
+          <input
+            ref={mkFileRef}
+            type="file"
+            accept=".zip"
+            style={{ display: 'none' }}
+            onChange={(e) => { handleMkFile(e.target.files?.[0]); e.target.value = ''; }}
+          />
+
+          {mkLoading && <div className="mr-loading">Extracting and processing files...</div>}
+          {mkError && <div className="mr-error">{mkError}</div>}
+
+          {mkResult && (
+            <div className="mr-result">
+              <div className="mr-result-title">Ready to download</div>
+              <div className="mr-result-info">Outlet detected: {mkResult.outlet}</div>
+              <div className="mr-result-info">{mkResult.excels.length} Terminal Activity Reports · {mkResult.pdfs.length} Invoice PDFs</div>
+              {mkResult.warnings.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <button className="mr-btn" onClick={doMkExcelDownload} disabled={!mkResult.excels.length}>
+                  Download MYKASIH D {mkResult.outlet}
+                </button>
+                <button className="mr-btn" onClick={doMkInvoiceDownload} disabled={!mkResult.pdfs.length}>
+                  Download MYKASIH MDR {mkResult.outlet}
+                </button>
+              </div>
             </div>
           )}
         </div>
