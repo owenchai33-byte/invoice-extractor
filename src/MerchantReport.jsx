@@ -574,21 +574,27 @@ async function extractEpayTransactions(arrayBuffer) {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
+    const items = content.items.filter(item => item.str.trim());
+    const dateItem = items.find(it => /^Date/i.test(it.str));
+    const valItem = items.find(it => /^Value$/i.test(it.str));
+    const landscape = dateItem && valItem && Math.abs(dateItem.transform[4] - valItem.transform[4]) < 10;
+    const rowAxis = landscape ? 4 : 5;
+    const colAxis = landscape ? 5 : 4;
     const rowMap = new Map();
-    content.items.forEach(item => {
-      if (!item.str.trim()) return;
-      const y = Math.round(item.transform[5]);
-      let matchY = null;
-      for (const ky of rowMap.keys()) {
-        if (Math.abs(ky - y) < 3) { matchY = ky; break; }
+    items.forEach(item => {
+      const pos = Math.round(item.transform[rowAxis]);
+      let matchPos = null;
+      for (const k of rowMap.keys()) {
+        if (Math.abs(k - pos) < 3) { matchPos = k; break; }
       }
-      const key = matchY !== null ? matchY : y;
+      const key = matchPos !== null ? matchPos : pos;
       if (!rowMap.has(key)) rowMap.set(key, []);
-      rowMap.get(key).push({ x: item.transform[4], text: item.str });
+      rowMap.get(key).push({ col: item.transform[colAxis], text: item.str });
     });
-    for (const [, items] of [...rowMap.entries()].sort((a, b) => b[0] - a[0])) {
-      const sorted = items.sort((a, b) => a.x - b.x);
-      const lineText = sorted.map(i => i.text).join(' ').trim();
+    const sortedRows = [...rowMap.entries()].sort((a, b) => landscape ? a[0] - b[0] : b[0] - a[0]);
+    for (const [, rowItems] of sortedRows) {
+      const sorted = rowItems.sort((a, b) => a.col - b.col);
+      const lineText = sorted.map(it => it.text).join(' ').trim();
       const m = lineText.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2}\s+[AP]M)\s+(\d{8})\s+(.*?)\s+([\d,]+\.\d{2})$/);
       if (!m) continue;
       const details = m[4];
