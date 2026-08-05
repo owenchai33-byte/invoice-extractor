@@ -813,7 +813,8 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
   for (const ps of periodSales) {
     try {
-      const psDoc = await pdfjsLib.getDocument({ data: new Uint8Array(ps.buf) }).promise;
+      const copy = new Uint8Array(ps.buf).slice(0);
+      const psDoc = await pdfjsLib.getDocument({ data: copy }).promise;
       const page = await psDoc.getPage(1);
       const content = await page.getTextContent();
       const text = content.items.map(it => it.str).join(' ');
