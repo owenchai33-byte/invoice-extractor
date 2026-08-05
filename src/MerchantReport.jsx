@@ -623,6 +623,7 @@ export default function MerchantReport() {
       <style>{CSS}</style>
       <div className="mr-bar">
         <h1>POS MERCHANT REPORT</h1>
+        <span style={{ fontSize: 11, color: '#a1a1aa', fontWeight: 400 }}>Outlet is auto-detected from merchant ID</span>
       </div>
       <div className="mr-body">
         <button className="mr-nav left" onClick={() => scrollCards(-1)}>‹</button>
@@ -664,7 +665,7 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>CardPay</h2>
-          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF. Outlet is auto-detected from merchant ID.</p>
+          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF.</p>
           <div
             className={`mr-upload${cpDragging ? ' drag' : ''}`}
             onClick={() => cpFileRef.current?.click()}
