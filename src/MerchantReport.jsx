@@ -568,6 +568,8 @@ const EPAY_OUTLET_MAP = {
 };
 const EPAY_OUTLET_ORDER = ['HQ', 'KC', 'ST', 'TH'];
 
+const EPAY_COL_KEYS = ['dateTime', 'terminalId', 'operator', 'retailerName', 'storeName', 'retailerRef', 'txnNo', 'narrative', 'snEtuTxnNo', 'topupRef', 'value'];
+
 async function extractEpayTransactions(arrayBuffer) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
   const transactions = [];
@@ -577,7 +579,8 @@ async function extractEpayTransactions(arrayBuffer) {
     const items = content.items.filter(item => item.str.trim());
     const dateItem = items.find(it => /^Date/i.test(it.str));
     const valItem = items.find(it => /^Value$/i.test(it.str));
-    const landscape = dateItem && valItem && Math.abs(dateItem.transform[4] - valItem.transform[4]) < 10;
+    if (!dateItem || !valItem) continue;
+    const landscape = Math.abs(dateItem.transform[4] - valItem.transform[4]) < 10;
     const rowAxis = landscape ? 4 : 5;
     const colAxis = landscape ? 5 : 4;
     const rowMap = new Map();
@@ -591,23 +594,38 @@ async function extractEpayTransactions(arrayBuffer) {
       if (!rowMap.has(key)) rowMap.set(key, []);
       rowMap.get(key).push({ col: item.transform[colAxis], text: item.str });
     });
+    const headerRow = [...rowMap.entries()].find(([, ri]) =>
+      ri.some(it => /^Date/i.test(it.text)) && ri.some(it => /^Value$/i.test(it.text))
+    );
+    if (!headerRow) continue;
+    const headerSorted = headerRow[1].sort((a, b) => a.col - b.col);
+    const colPositions = headerSorted.map((h, idx) => ({ key: EPAY_COL_KEYS[idx] || `col${idx}`, col: h.col }));
     const sortedRows = [...rowMap.entries()].sort((a, b) => landscape ? a[0] - b[0] : b[0] - a[0]);
-    for (const [, rowItems] of sortedRows) {
+    for (const [rowKey, rowItems] of sortedRows) {
+      if (rowKey === headerRow[0]) continue;
       const sorted = rowItems.sort((a, b) => a.col - b.col);
-      const lineText = sorted.map(it => it.text).join(' ').trim();
-      const m = lineText.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2}\s+[AP]M)\s+(\d{8})\s+(.*?)\s+([\d,]+\.\d{2})$/);
-      if (!m) continue;
-      const details = m[4];
-      const opMatch = details.match(/^(\w+)\s/);
-      const narMatch = details.match(/((?:Sold|Paid):\s*.+?\([^)]+\))/);
+      const firstText = sorted[0]?.text || '';
+      if (!/^\d{2}\/\d{2}\/\d{4}/.test(firstText)) continue;
+      const rowData = {};
+      for (const item of sorted) {
+        let nearest = null, dist = Infinity;
+        for (const cp of colPositions) {
+          const d = Math.abs(item.col - cp.col);
+          if (d < dist) { dist = d; nearest = cp.key; }
+        }
+        if (nearest) rowData[nearest] = rowData[nearest] ? rowData[nearest] + ' ' + item.text : item.text;
+      }
+      const dt = rowData.dateTime || '';
+      const dtMatch = dt.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+)$/);
+      if (!dtMatch) continue;
       transactions.push({
-        date: m[1],
-        time: m[2],
-        terminalId: m[3],
-        operator: opMatch ? opMatch[1] : '',
-        narrative: narMatch ? narMatch[1] : '',
-        details,
-        value: parseFloat(m[5].replace(/,/g, ''))
+        date: dtMatch[1], time: dtMatch[2],
+        terminalId: rowData.terminalId || '', operator: rowData.operator || '',
+        retailerName: rowData.retailerName || '', storeName: rowData.storeName || '',
+        retailerRef: rowData.retailerRef || '', txnNo: rowData.txnNo || '',
+        narrative: rowData.narrative || '', snEtuTxnNo: rowData.snEtuTxnNo || '',
+        topupRef: rowData.topupRef || '', details: rowData.narrative || '',
+        value: parseFloat((rowData.value || '0').replace(/,/g, ''))
       });
     }
   }
@@ -628,12 +646,12 @@ function extractEpayTransactionsFromExcel(arrayBuffer) {
     const narrative = String(r[7] || '');
     const val = typeof r[10] === 'number' ? r[10] : parseFloat(String(r[10] || '0').replace(/,/g, ''));
     transactions.push({
-      date: dtMatch[1],
-      time: dtMatch[2],
-      terminalId: String(r[1]),
-      operator: String(r[2] || ''),
-      narrative,
-      details: narrative,
+      date: dtMatch[1], time: dtMatch[2],
+      terminalId: String(r[1]), operator: String(r[2] || ''),
+      retailerName: String(r[3] || ''), storeName: String(r[4] || ''),
+      retailerRef: String(r[5] || ''), txnNo: String(r[6] || ''),
+      narrative, snEtuTxnNo: String(r[8] || ''),
+      topupRef: String(r[9] || ''), details: narrative,
       value: isNaN(val) ? 0 : val
     });
   }
@@ -724,9 +742,8 @@ async function processEpayFiles(files) {
 
 async function buildEpayPDF(periodSales, byOutlet, month, year) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const cols = ['No.', 'Date', 'Time', 'Operator', 'Narrative', 'Value'];
+  const cols = ['No.', 'Date & Time', 'Terminal ID', 'Operator', 'Retailer Name', 'Store Name', 'Retailer Ref', 'Txn. No.', 'Narrative', 'SN / ETU Txn No.', 'Topup Ref', 'Value'];
   let firstPage = true;
-  let globalNo = 1;
 
   for (const outlet of EPAY_OUTLET_ORDER) {
     const txns = byOutlet.get(outlet);
@@ -747,19 +764,14 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
     const body = [];
     const dailyTotalIndices = new Set();
-    const paidRowIndices = new Set();
     let rowNo = 1;
 
     for (const [dateKey, group] of grouped) {
       const dayTotal = group.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
       group.forEach((t, idx) => {
-        const isPaid = /^Paid:/i.test(t.narrative);
-        const isLast = idx === group.length - 1;
-        body.push([rowNo++, t.date, t.time, t.operator, t.narrative, t.value.toFixed(2)]);
-        if (isPaid) paidRowIndices.add(body.length - 1);
-        if (isLast) {
-          dailyTotalIndices.add(body.length - 1);
-          body.push(['', '', '', '', `Daily Total (${dateKey}):`, dayTotal.toFixed(2)]);
+        body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+        if (idx === group.length - 1) {
+          body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
           dailyTotalIndices.add(body.length - 1);
         }
       });
@@ -769,23 +781,25 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
       startY: 14,
       head: [cols],
       body,
-      styles: { fontSize: 7, cellPadding: 1.5, lineColor: [180, 180, 180], lineWidth: 0.1 },
-      headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      styles: { fontSize: 5, cellPadding: 1, lineColor: [180, 180, 180], lineWidth: 0.1, overflow: 'linebreak' },
+      headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 5 },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 24 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 'auto' },
-        5: { cellWidth: 22, halign: 'right' }
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 16 },
+        3: { cellWidth: 16 },
+        4: { cellWidth: 26 },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 32 },
+        7: { cellWidth: 18 },
+        8: { cellWidth: 'auto' },
+        9: { cellWidth: 30 },
+        10: { cellWidth: 20 },
+        11: { cellWidth: 16, halign: 'right' }
       },
-      margin: { left: 8, right: 8 },
+      margin: { left: 5, right: 5 },
       theme: 'grid',
       didParseCell: (data) => {
-        if (data.section === 'body' && paidRowIndices.has(data.row.index)) {
-          data.cell.styles.fillColor = [255, 230, 230];
-          data.cell.styles.textColor = [180, 0, 0];
-        }
         if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) {
           data.cell.styles.fontStyle = 'bold';
           data.cell.styles.fillColor = [255, 255, 230];
@@ -796,6 +810,18 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
   const txnBytes = doc.output('arraybuffer');
   const merged = await PDFDocument.create();
+
+  for (const ps of periodSales) {
+    try {
+      const psDoc = await pdfjsLib.getDocument({ data: new Uint8Array(ps.buf) }).promise;
+      const page = await psDoc.getPage(1);
+      const content = await page.getTextContent();
+      const text = content.items.map(it => it.str).join(' ');
+      const dm = text.match(/(\d{2})\/(\d{2})\/(\d{4})\s+to\s/);
+      ps.sortKey = dm ? parseInt(dm[3]) * 10000 + parseInt(dm[2]) * 100 + parseInt(dm[1]) : 0;
+    } catch (_) { ps.sortKey = 0; }
+  }
+  periodSales.sort((a, b) => a.sortKey - b.sortKey);
 
   for (const ps of periodSales) {
     try {
