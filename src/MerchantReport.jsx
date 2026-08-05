@@ -379,9 +379,9 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
     const dataHeaderIdx = rows.indexOf(dataHeaderRow);
     if (dataHeaderIdx < 0) continue;
 
-    const dataRows = rows.slice(dataHeaderIdx + 1).filter(r => r.length > 0 && r[0] != null && r[0] !== '');
-    const totalRows = dataRows.filter(r => typeof r[0] !== 'number' && isNaN(parseInt(r[0])));
-    const txnRows = dataRows.filter(r => !isNaN(parseInt(r[0])));
+    const allDataRows = rows.slice(dataHeaderIdx + 1).filter(r => r.length > 0 && r.some(v => v != null && v !== ''));
+    const txnRows = allDataRows.filter(r => !isNaN(parseInt(r[0])));
+    const totalRows = allDataRows.filter(r => isNaN(parseInt(r[0])) && r.some(v => typeof v === 'string' && /TOTAL|LESS|NET/i.test(v)));
 
     if (!firstPage) doc.addPage();
     firstPage = false;
@@ -443,8 +443,10 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
     let finalY = doc.lastAutoTable?.finalY || y + 20;
     finalY += 4;
     totalRows.forEach(r => {
-      const label = r.filter(v => v != null && v !== '').slice(0, -1).join(' ');
-      const val = r[r.length - 1];
+      const filled = r.filter(v => v != null && v !== '');
+      if (filled.length < 1) return;
+      const val = filled[filled.length - 1];
+      const label = filled.slice(0, -1).join(' ');
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.text(label, 120, finalY, { align: 'right' });
