@@ -59,6 +59,11 @@ function processSpay(rawRows) {
   });
   const keepCols = SPAY_KEEP.filter(h => headers.includes(h) && !allZeroCols.has(h));
   const { year, month } = detectMonth(rawRows);
+  const allMids = new Set(rawRows.map(r => SPAY_OUTLETS[(r['Merchant ID'] || '').trim()]).filter(Boolean));
+  const warnings = [];
+  if (allMids.size > 1) {
+    warnings.push(`Mixed outlets detected: ${[...allMids].join(', ')}. Please check your file — each file should contain one outlet only.`);
+  }
   const mid = rawRows[0]?.['Merchant ID'] || '';
   const outlet = SPAY_OUTLETS[mid.trim()] || 'HQ';
   const title = `${outlet} SARAWAK PAY ${MONTHS[month]} ${year}`;
@@ -81,7 +86,7 @@ function processSpay(rawRows) {
     return null;
   });
 
-  return { keepCols, title, dataRows, sums, year, month, outlet };
+  return { keepCols, title, dataRows, sums, year, month, outlet, warnings };
 }
 
 function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
@@ -240,7 +245,7 @@ const CP_OUTLET_MAP = {
 
 async function processCardPayZip(arrayBuffer) {
   const pdfs = [];
-  let detectedOutlet = null;
+  const detectedOutlets = new Set();
   async function collectPDFs(z) {
     for (const [path, f] of Object.entries(z.files)) {
       if (f.dir) continue;
@@ -252,8 +257,8 @@ async function processCardPayZip(arrayBuffer) {
         const dateMatch = name.match(/(\d{4}-\d{2}-\d{2})/);
         const date = dateMatch ? dateMatch[1] : '0000-00-00';
         const midMatch = name.match(/_(\d{6})\.pdf$/);
-        if (midMatch && CP_OUTLET_MAP[midMatch[1]] && !detectedOutlet) {
-          detectedOutlet = CP_OUTLET_MAP[midMatch[1]];
+        if (midMatch && CP_OUTLET_MAP[midMatch[1]]) {
+          detectedOutlets.add(CP_OUTLET_MAP[midMatch[1]]);
         }
         pdfs.push({ name, date, buf: await f.async('arraybuffer') });
       }
@@ -267,7 +272,12 @@ async function processCardPayZip(arrayBuffer) {
     const m = pdfs[0].date.match(/^(\d{4})-(\d{2})/);
     if (m) { year = parseInt(m[1]); month = parseInt(m[2]) - 1; }
   }
-  return { pdfs, year, month, outlet: detectedOutlet || 'HQ' };
+  const warnings = [];
+  if (detectedOutlets.size > 1) {
+    warnings.push(`Mixed outlets detected: ${[...detectedOutlets].join(', ')}. Please check your zip — each zip should contain one outlet only.`);
+  }
+  const outlet = detectedOutlets.size > 0 ? [...detectedOutlets][0] : 'HQ';
+  return { pdfs, year, month, outlet, warnings };
 }
 
 async function mergeCardPayPDFs(pdfs, outlet, month, year) {
@@ -306,7 +316,7 @@ function parseMkDate(s) {
 async function processMyKasihZip(arrayBuffer) {
   const excels = [];
   const pdfs = [];
-  let detectedOutlet = null;
+  const detectedOutlets = new Set();
   const allDates = [];
 
   async function collect(z) {
@@ -324,8 +334,8 @@ async function processMyKasihZip(arrayBuffer) {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSXStyle.utils.sheet_to_json(ws, { header: 1 });
         const midRow = rows.find(r => r[0] === 'MID');
-        if (midRow && midRow[2] && MK_OUTLET_MAP[midRow[2]] && !detectedOutlet) {
-          detectedOutlet = MK_OUTLET_MAP[midRow[2]];
+        if (midRow && midRow[2] && MK_OUTLET_MAP[midRow[2]]) {
+          detectedOutlets.add(MK_OUTLET_MAP[midRow[2]]);
         }
         rows.forEach(r => {
           if (r[2] && typeof r[2] === 'string') {
@@ -360,6 +370,9 @@ async function processMyKasihZip(arrayBuffer) {
     !((d.month === month && d.year === year) || (d.month === prevMonth && d.year === prevYear))
   );
   const warnings = [];
+  if (detectedOutlets.size > 1) {
+    warnings.push(`Mixed outlets detected: ${[...detectedOutlets].join(', ')}. Please check your zip — each zip should contain one outlet only.`);
+  }
   if (wrongMonthDates.length > 0) {
     const months = [...new Set(wrongMonthDates.map(d => `${MON_S[d.month] || '??'}'${String(d.year).slice(-2)}`))];
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
@@ -383,7 +396,8 @@ async function processMyKasihZip(arrayBuffer) {
     }
   }
 
-  return { excels, pdfs, year, month, outlet: detectedOutlet || 'HQ', warnings };
+  const outlet = detectedOutlets.size > 0 ? [...detectedOutlets][0] : 'HQ';
+  return { excels, pdfs, year, month, outlet, warnings };
 }
 
 function buildMyKasihExcelPDF(excels, outlet, month, year) {
@@ -586,8 +600,8 @@ export default function MerchantReport() {
 
         const headers = Object.keys(rawRows[0]);
         if (headers.includes('Settlement No.') || headers.includes('Merchant ID')) {
-          const { keepCols, title, dataRows, sums, year, month, outlet } = processSpay(rawRows);
-          setResult({ type: 'SPAY', keepCols, title, dataRows, sums, year, month, outlet, rows: rawRows.length });
+          const { keepCols, title, dataRows, sums, year, month, outlet, warnings } = processSpay(rawRows);
+          setResult({ type: 'SPAY', keepCols, title, dataRows, sums, year, month, outlet, warnings, rows: rawRows.length });
         } else {
           setError('Could not detect merchant format. Make sure the file has the original headers from the portal.');
         }
@@ -725,6 +739,7 @@ export default function MerchantReport() {
               <div className="mr-result-title">Ready to download</div>
               <div className="mr-result-info">{result.title}</div>
               <div className="mr-result-info">{result.rows} transactions · {result.keepCols.length} columns (zero-value columns hidden)</div>
+              {result.warnings?.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
               <button className="mr-btn" onClick={doDownload}>Download Formatted Excel</button>
             </div>
           )}
@@ -762,6 +777,7 @@ export default function MerchantReport() {
               <div className="mr-result-info">Date range: {cpResult.pdfs[0]?.date} to {cpResult.pdfs[cpResult.pdfs.length - 1]?.date}</div>
               <div className="mr-result-info">Outlet detected: {cpResult.outlet}</div>
               <div className="mr-result-info">Download as: CARDPAY D {cpResult.outlet} - {MON_S[cpResult.month]}'{String(cpResult.year).slice(-2)}.pdf</div>
+              {cpResult.warnings?.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
               <button className="mr-btn" onClick={doCpDownload}>Download Merged PDF</button>
             </div>
           )}
