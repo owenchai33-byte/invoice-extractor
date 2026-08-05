@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import * as XLSXStyle from 'xlsx-js-style';
 import JSZip from 'jszip';
+import { PDFDocument } from 'pdf-lib';
 
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -227,6 +228,51 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   }).catch(err => { console.error('Excel download error:', err); });
 }
 
+const CP_OUTLETS = ['HQ', 'KC', 'ST', 'TH'];
+
+async function processCardPayZip(arrayBuffer) {
+  const pdfs = [];
+  async function collectPDFs(z) {
+    for (const [path, f] of Object.entries(z.files)) {
+      if (f.dir) continue;
+      const name = path.split('/').pop();
+      if (name.endsWith('.zip')) {
+        const nested = await JSZip.loadAsync(await f.async('arraybuffer'));
+        await collectPDFs(nested);
+      } else if (/^StatementOfAccount.*\.pdf$/i.test(name)) {
+        const dateMatch = name.match(/(\d{4}-\d{2}-\d{2})/);
+        const date = dateMatch ? dateMatch[1] : '0000-00-00';
+        pdfs.push({ name, date, buf: await f.async('arraybuffer') });
+      }
+    }
+  }
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  await collectPDFs(zip);
+  pdfs.sort((a, b) => a.date.localeCompare(b.date));
+  let year = new Date().getFullYear(), month = new Date().getMonth();
+  if (pdfs.length > 0) {
+    const m = pdfs[0].date.match(/^(\d{4})-(\d{2})/);
+    if (m) { year = parseInt(m[1]); month = parseInt(m[2]) - 1; }
+  }
+  return { pdfs, year, month };
+}
+
+async function mergeCardPayPDFs(pdfs, outlet, month, year) {
+  const merged = await PDFDocument.create();
+  for (const p of pdfs) {
+    const doc = await PDFDocument.load(p.buf);
+    const pages = await merged.copyPages(doc, doc.getPageIndices());
+    pages.forEach(page => merged.addPage(page));
+  }
+  const bytes = await merged.save();
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `CARDPAY D ${outlet} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 const CSS = `
 .mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -248,6 +294,8 @@ const CSS = `
 .mr-btn:hover{background:#27272a}
 .mr-btn:active{transform:scale(.97)}
 .mr-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-top:16px;font-size:12px;color:#dc2626}
+.mr-select{padding:6px 10px;border-radius:6px;border:1px solid #d4d4d8;font-size:13px;font-weight:600;background:#fff;margin-right:8px}
+.mr-loading{font-size:12px;color:#71717a;margin-top:12px}
 @media print{.mr-root{display:none}}
 `;
 
@@ -256,6 +304,13 @@ export default function MerchantReport() {
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef(null);
+
+  const [cpResult, setCpResult] = useState(null);
+  const [cpError, setCpError] = useState('');
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpDragging, setCpDragging] = useState(false);
+  const [cpOutlet, setCpOutlet] = useState('HQ');
+  const cpFileRef = useRef(null);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -298,6 +353,37 @@ export default function MerchantReport() {
     buildExcel(result.keepCols, result.title, result.dataRows, result.sums, result.month, result.year, result.outlet);
   };
 
+  const handleCpFile = async (file) => {
+    if (!file) return;
+    setCpError('');
+    setCpResult(null);
+    setCpLoading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const res = await processCardPayZip(buf);
+      if (!res.pdfs.length) {
+        setCpError('No StatementOfAccount PDFs found in the zip file.');
+      } else {
+        setCpResult(res);
+      }
+    } catch (err) {
+      setCpError('Could not process zip: ' + (err.message || 'unknown error'));
+    }
+    setCpLoading(false);
+  };
+
+  const handleCpDrop = (e) => {
+    e.preventDefault();
+    setCpDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleCpFile(file);
+  };
+
+  const doCpDownload = () => {
+    if (!cpResult) return;
+    mergeCardPayPDFs(cpResult.pdfs, cpOutlet, cpResult.month, cpResult.year);
+  };
+
   return (
     <div className="mr-root">
       <style>{CSS}</style>
@@ -335,6 +421,48 @@ export default function MerchantReport() {
               <div className="mr-result-info">{result.title}</div>
               <div className="mr-result-info">{result.rows} transactions · {result.keepCols.length} columns (zero-value columns hidden)</div>
               <button className="mr-btn" onClick={doDownload}>Download Formatted Excel</button>
+            </div>
+          )}
+        </div>
+
+        <div className="mr-card">
+          <h2>CardPay</h2>
+          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF.</p>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, marginRight: 8 }}>Outlet:</label>
+            <select className="mr-select" value={cpOutlet} onChange={(e) => setCpOutlet(e.target.value)}>
+              {CP_OUTLETS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div
+            className={`mr-upload${cpDragging ? ' drag' : ''}`}
+            onClick={() => cpFileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setCpDragging(true); }}
+            onDragLeave={() => setCpDragging(false)}
+            onDrop={handleCpDrop}
+          >
+            <div className="mr-icon">📦</div>
+            <div className="mr-label">Click to upload or drag & drop</div>
+            <div className="mr-hint">Accepts .zip files from CardPay portal (nested zips supported)</div>
+          </div>
+          <input
+            ref={cpFileRef}
+            type="file"
+            accept=".zip"
+            style={{ display: 'none' }}
+            onChange={(e) => { handleCpFile(e.target.files?.[0]); e.target.value = ''; }}
+          />
+
+          {cpLoading && <div className="mr-loading">Extracting and sorting PDFs...</div>}
+          {cpError && <div className="mr-error">{cpError}</div>}
+
+          {cpResult && (
+            <div className="mr-result">
+              <div className="mr-result-title">Ready to download</div>
+              <div className="mr-result-info">{cpResult.pdfs.length} Statement of Account PDFs found</div>
+              <div className="mr-result-info">Date range: {cpResult.pdfs[0]?.date} to {cpResult.pdfs[cpResult.pdfs.length - 1]?.date}</div>
+              <div className="mr-result-info">Download as: CARDPAY D {cpOutlet} - {MON_S[cpResult.month]}'{String(cpResult.year).slice(-2)}.pdf</div>
+              <button className="mr-btn" onClick={doCpDownload}>Download Merged PDF</button>
             </div>
           )}
         </div>
