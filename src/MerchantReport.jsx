@@ -287,7 +287,10 @@ async function mergeCardPayPDFs(pdfs, outlet, month, year) {
 }
 
 const MK_OUTLET_MAP = {
-  'M0000009610': 'HQ',
+  'M0000009610': 'HQ', 'M9610': 'HQ',
+  'M0000009611': 'KC',  'M9611': 'KC',
+  'M0000009612': 'ST',  'M9612': 'ST',
+  'M0000009613': 'TH',  'M9613': 'TH',
 };
 
 function parseMkDate(s) {
