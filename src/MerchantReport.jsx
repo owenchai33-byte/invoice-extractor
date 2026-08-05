@@ -449,13 +449,13 @@ async function mergeMyKasihInvoicePDFs(pdfs, outlet, month, year) {
 }
 
 const CSS = `
-.mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+.mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 .mr-bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0;color:#18181b}
-.mr-body{max-width:1200px;margin:0 auto;padding:24px;position:relative}
-.mr-scroll{display:flex;gap:16px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;-ms-overflow-style:none;scrollbar-width:none}
+.mr-body{max-width:1200px;margin:0 auto;padding:24px;position:relative;flex:1;display:flex;flex-direction:column}
+.mr-scroll{display:flex;gap:16px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;-ms-overflow-style:none;scrollbar-width:none;flex:1}
 .mr-scroll::-webkit-scrollbar{display:none}
-.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;min-width:320px;flex:0 0 calc(33.333% - 11px);scroll-snap-align:start}
+.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;min-width:320px;flex:0 0 calc(33.333% - 11px);scroll-snap-align:start;display:flex;flex-direction:column}
 .mr-nav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:#18181b;color:#fff;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;opacity:.8}
 .mr-nav:hover{opacity:1}
 .mr-nav.left{left:4px}
