@@ -736,7 +736,7 @@ export default function MerchantReport() {
       <style>{CSS}</style>
       <div className="mr-bar">
         <h1>POS MERCHANT REPORT</h1>
-        <span style={{ fontSize: 11, color: '#a1a1aa', fontWeight: 400 }}>Outlet is auto-detected from merchant ID</span>
+        <span style={{ fontSize: 11, color: '#a1a1aa', fontWeight: 400 }}>Outlet is auto-detected from merchant ID · Mixed outlets, unexpected dates, and amount mismatches will trigger alerts</span>
       </div>
       <div className="mr-body">
         <button className="mr-nav left" onClick={() => scrollCards(-1)}>‹</button>
@@ -779,7 +779,7 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>CardPay</h2>
-          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF. Dates outside expected month will trigger an alert.</p>
+          <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF.</p>
           <div
             className={`mr-upload${cpDragging ? ' drag' : ''}`}
             onClick={() => cpFileRef.current?.click()}
@@ -817,7 +817,7 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>MyKasih</h2>
-          <p>Upload the zip file from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF. Dates outside expected month and amount mismatches will trigger an alert.</p>
+          <p>Upload the zip file from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF.</p>
           <div
             className={`mr-upload${mkDragging ? ' drag' : ''}`}
             onClick={() => mkFileRef.current?.click()}
