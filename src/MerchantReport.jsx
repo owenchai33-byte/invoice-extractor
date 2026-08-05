@@ -4,6 +4,10 @@ import JSZip from 'jszip';
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -556,6 +560,212 @@ async function mergeMyKasihInvoicePDFs(pdfs, outlet, month, year) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+const EPAY_OUTLET_MAP = {
+  '80059855': 'HQ',
+  '80059858': 'KC',
+  '80059857': 'ST',
+  '80059860': 'TH',
+};
+const EPAY_OUTLET_ORDER = ['HQ', 'KC', 'ST', 'TH'];
+
+async function extractEpayTransactions(arrayBuffer) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  const transactions = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const rowMap = new Map();
+    content.items.forEach(item => {
+      if (!item.str.trim()) return;
+      const y = Math.round(item.transform[5]);
+      let matchY = null;
+      for (const ky of rowMap.keys()) {
+        if (Math.abs(ky - y) < 3) { matchY = ky; break; }
+      }
+      const key = matchY !== null ? matchY : y;
+      if (!rowMap.has(key)) rowMap.set(key, []);
+      rowMap.get(key).push({ x: item.transform[4], text: item.str });
+    });
+    for (const [, items] of [...rowMap.entries()].sort((a, b) => b[0] - a[0])) {
+      const sorted = items.sort((a, b) => a.x - b.x);
+      const lineText = sorted.map(i => i.text).join(' ').trim();
+      const m = lineText.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2}\s+[AP]M)\s+(\d{8})\s+(.*?)\s+([\d,]+\.\d{2})$/);
+      if (!m) continue;
+      const details = m[4];
+      const opMatch = details.match(/^(\w+)\s/);
+      const narMatch = details.match(/(Sold:\s*.+?\([^)]+\))/);
+      transactions.push({
+        date: m[1],
+        time: m[2],
+        terminalId: m[3],
+        operator: opMatch ? opMatch[1] : '',
+        narrative: narMatch ? narMatch[1] : '',
+        details,
+        value: parseFloat(m[5].replace(/,/g, ''))
+      });
+    }
+  }
+  return transactions;
+}
+
+async function processEpayFiles(files) {
+  const periodSales = [];
+  const allTxns = [];
+
+  for (const file of files) {
+    const buf = await file.arrayBuffer();
+    if (/TransactionDetail/i.test(file.name)) {
+      const txns = await extractEpayTransactions(buf);
+      allTxns.push(...txns);
+    } else {
+      periodSales.push({ name: file.name, buf });
+    }
+  }
+
+  const byOutlet = new Map();
+  EPAY_OUTLET_ORDER.forEach(o => byOutlet.set(o, []));
+  for (const txn of allTxns) {
+    const outlet = EPAY_OUTLET_MAP[txn.terminalId] || 'Unknown';
+    if (!byOutlet.has(outlet)) byOutlet.set(outlet, []);
+    byOutlet.get(outlet).push(txn);
+  }
+  for (const [, txns] of byOutlet) {
+    txns.sort((a, b) => {
+      const [da, ma, ya] = a.date.split('/').map(Number);
+      const [db, mb, yb] = b.date.split('/').map(Number);
+      const cmp = (ya - yb) || (ma - mb) || (da - db);
+      if (cmp !== 0) return cmp;
+      return a.time.localeCompare(b.time);
+    });
+  }
+
+  let year = new Date().getFullYear(), month = new Date().getMonth();
+  if (allTxns.length > 0) {
+    const sorted = [...allTxns].sort((a, b) => {
+      const [da, ma, ya] = a.date.split('/').map(Number);
+      const [db, mb, yb] = b.date.split('/').map(Number);
+      return (ya - yb) || (ma - mb) || (da - db);
+    });
+    const mid = sorted[Math.floor(sorted.length / 2)];
+    const parts = mid.date.split('/');
+    month = parseInt(parts[1]) - 1;
+    year = parseInt(parts[2]);
+  }
+
+  const warnings = [];
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const wrongDates = allTxns.filter(t => {
+    const parts = t.date.split('/');
+    const dm = parseInt(parts[1]) - 1, dy = parseInt(parts[2]);
+    return !((dm === month && dy === year) || (dm === prevMonth && dy === prevYear));
+  });
+  if (wrongDates.length > 0) {
+    const months = [...new Set(wrongDates.map(t => {
+      const p = t.date.split('/');
+      return `${MON_S[parseInt(p[1]) - 1]}'${p[2].slice(-2)}`;
+    }))];
+    warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check.`);
+  }
+
+  return { periodSales, byOutlet, year, month, warnings, txnCount: allTxns.length, psCount: periodSales.length };
+}
+
+async function buildEpayPDF(periodSales, byOutlet, month, year) {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const cols = ['No.', 'Date', 'Time', 'Operator', 'Narrative', 'Value'];
+  let firstPage = true;
+  let globalNo = 1;
+
+  for (const outlet of EPAY_OUTLET_ORDER) {
+    const txns = byOutlet.get(outlet);
+    if (!txns || !txns.length) continue;
+
+    if (!firstPage) doc.addPage();
+    firstPage = false;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`EPAY Transaction Detail — ${outlet}`, 148.5, 10, { align: 'center' });
+
+    const grouped = new Map();
+    txns.forEach(t => {
+      if (!grouped.has(t.date)) grouped.set(t.date, []);
+      grouped.get(t.date).push(t);
+    });
+
+    const body = [];
+    const dailyTotalIndices = new Set();
+    const outletStartIdx = 0;
+    let rowNo = 1;
+
+    for (const [dateKey, group] of grouped) {
+      const dayTotal = group.reduce((s, t) => s + t.value, 0);
+      group.forEach((t, idx) => {
+        const isLast = idx === group.length - 1;
+        body.push([rowNo++, t.date, t.time, t.operator, t.narrative, t.value.toFixed(2)]);
+        if (isLast) {
+          dailyTotalIndices.add(body.length - 1);
+          body.push(['', '', '', '', `Daily Total (${dateKey}):`, dayTotal.toFixed(2)]);
+          dailyTotalIndices.add(body.length - 1);
+        }
+      });
+    }
+
+    autoTable(doc, {
+      startY: 14,
+      head: [cols],
+      body,
+      styles: { fontSize: 7, cellPadding: 1.5, lineColor: [180, 180, 180], lineWidth: 0.1 },
+      headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 24 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 'auto' },
+        5: { cellWidth: 22, halign: 'right' }
+      },
+      margin: { left: 8, right: 8 },
+      theme: 'grid',
+      didParseCell: (data) => {
+        if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [255, 255, 230];
+        }
+      }
+    });
+  }
+
+  const txnBytes = doc.output('arraybuffer');
+  const merged = await PDFDocument.create();
+
+  for (const ps of periodSales) {
+    try {
+      const psDoc = await PDFDocument.load(ps.buf);
+      const pages = await merged.copyPages(psDoc, psDoc.getPageIndices());
+      pages.forEach(p => merged.addPage(p));
+    } catch (_) {}
+  }
+
+  try {
+    const txnDoc = await PDFDocument.load(txnBytes);
+    const pages = await merged.copyPages(txnDoc, txnDoc.getPageIndices());
+    pages.forEach(p => merged.addPage(p));
+  } catch (_) {}
+
+  const bytes = await merged.save();
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `EPAY D - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 const CSS = `
 .mr-root{background:#fafafa;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -606,6 +816,12 @@ export default function MerchantReport() {
   const [mkLoading, setMkLoading] = useState(false);
   const [mkDragging, setMkDragging] = useState(false);
   const mkFileRef = useRef(null);
+
+  const [epResult, setEpResult] = useState(null);
+  const [epError, setEpError] = useState('');
+  const [epLoading, setEpLoading] = useState(false);
+  const [epDragging, setEpDragging] = useState(false);
+  const epFileRef = useRef(null);
   const scrollRef = useRef(null);
 
   const scrollCards = (dir) => {
@@ -731,6 +947,41 @@ export default function MerchantReport() {
     mergeMyKasihInvoicePDFs(mkResult.pdfs, mkResult.outlet, mkResult.month, mkResult.year);
   };
 
+  const handleEpFiles = async (fileList) => {
+    const files = [...fileList].filter(f => /\.pdf$/i.test(f.name));
+    if (!files.length) { setEpError('No PDF files found.'); return; }
+    setEpError('');
+    setEpResult(null);
+    setEpLoading(true);
+    try {
+      const res = await processEpayFiles(files);
+      if (!res.txnCount && !res.psCount) {
+        setEpError('No transaction data or period sales found in the uploaded files.');
+      } else {
+        setEpResult(res);
+      }
+    } catch (err) {
+      setEpError('Could not process files: ' + (err.message || 'unknown error'));
+    }
+    setEpLoading(false);
+  };
+
+  const handleEpDrop = (e) => {
+    e.preventDefault();
+    setEpDragging(false);
+    if (e.dataTransfer.files?.length) handleEpFiles(e.dataTransfer.files);
+  };
+
+  const doEpDownload = async () => {
+    if (!epResult) return;
+    try {
+      await buildEpayPDF(epResult.periodSales, epResult.byOutlet, epResult.month, epResult.year);
+    } catch (e) {
+      console.error('EPAY download error:', e);
+      setEpError('Download failed: ' + e.message);
+    }
+  };
+
   return (
     <div className="mr-root">
       <style>{CSS}</style>
@@ -854,6 +1105,45 @@ export default function MerchantReport() {
                   Download MYKASIH MDR {mkResult.outlet}
                 </button>
               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mr-card">
+          <h2>ePay</h2>
+          <p>Upload all PDFs from ePay portal (Period Sales + Transaction Detail). Transaction Details will be grouped by outlet, sorted by date, with daily totals.</p>
+          <div
+            className={`mr-upload${epDragging ? ' drag' : ''}`}
+            onClick={() => epFileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setEpDragging(true); }}
+            onDragLeave={() => setEpDragging(false)}
+            onDrop={handleEpDrop}
+          >
+            <div className="mr-icon">📑</div>
+            <div className="mr-label">Click to upload or drag & drop</div>
+            <div className="mr-hint">Select multiple PDF files (Period Sales + Transaction Detail by Period)</div>
+          </div>
+          <input
+            ref={epFileRef}
+            type="file"
+            accept=".pdf"
+            multiple
+            style={{ display: 'none' }}
+            onChange={(e) => { handleEpFiles(e.target.files); e.target.value = ''; }}
+          />
+
+          {epLoading && <div className="mr-loading">Processing ePay PDFs...</div>}
+          {epError && <div className="mr-error">{epError}</div>}
+
+          {epResult && (
+            <div className="mr-result">
+              <div className="mr-result-title">Ready to download</div>
+              <div className="mr-result-info">{epResult.psCount} Period Sales · {epResult.txnCount} transactions parsed</div>
+              <div className="mr-result-info">
+                Outlets: {EPAY_OUTLET_ORDER.filter(o => epResult.byOutlet.get(o)?.length > 0).map(o => `${o} (${epResult.byOutlet.get(o).length})`).join(', ')}
+              </div>
+              {epResult.warnings.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
+              <button className="mr-btn" onClick={doEpDownload}>Download EPAY D - {MON_S[epResult.month]}'{String(epResult.year).slice(-2)}</button>
             </div>
           )}
         </div>
