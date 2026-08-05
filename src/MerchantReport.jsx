@@ -431,11 +431,14 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
   }
 
   const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = `MYKASIH D ${outlet} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(a.href);
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 async function mergeMyKasihInvoicePDFs(pdfs, outlet, month, year) {
@@ -447,11 +450,14 @@ async function mergeMyKasihInvoicePDFs(pdfs, outlet, month, year) {
   }
   const bytes = await merged.save();
   const blob = new Blob([bytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = `MYKASIH MDR ${outlet} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(a.href);
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 const CSS = `
@@ -616,7 +622,12 @@ export default function MerchantReport() {
 
   const doMkExcelDownload = () => {
     if (!mkResult) return;
-    buildMyKasihExcelPDF(mkResult.excels, mkResult.outlet, mkResult.month, mkResult.year);
+    try {
+      buildMyKasihExcelPDF(mkResult.excels, mkResult.outlet, mkResult.month, mkResult.year);
+    } catch (e) {
+      console.error('MyKasih D download error:', e);
+      setMkError('Download failed: ' + e.message);
+    }
   };
 
   const doMkInvoiceDownload = () => {
