@@ -1005,8 +1005,8 @@ export default function MerchantReport() {
   };
 
   const handleEpFiles = async (fileList) => {
-    const files = [...fileList].filter(f => /\.pdf$/i.test(f.name));
-    if (!files.length) { setEpError('No PDF files found.'); return; }
+    const files = [...fileList].filter(f => /\.(pdf|xlsx?)$/i.test(f.name));
+    if (!files.length) { setEpError('No PDF or Excel files found.'); return; }
     setEpError('');
     setEpResult(null);
     setEpLoading(true);
@@ -1178,18 +1178,18 @@ export default function MerchantReport() {
           >
             <div className="mr-icon">📑</div>
             <div className="mr-label">Click to upload or drag & drop</div>
-            <div className="mr-hint">Select multiple PDF files (Period Sales + Transaction Detail by Period)</div>
+            <div className="mr-hint">Select multiple files (Period Sales PDF + Transaction Detail PDF or Excel)</div>
           </div>
           <input
             ref={epFileRef}
             type="file"
-            accept=".pdf"
+            accept=".pdf,.xlsx,.xls"
             multiple
             style={{ display: 'none' }}
             onChange={(e) => { handleEpFiles(e.target.files); e.target.value = ''; }}
           />
 
-          {epLoading && <div className="mr-loading">Processing ePay PDFs...</div>}
+          {epLoading && <div className="mr-loading">Processing ePay files...</div>}
           {epError && <div className="mr-error">{epError}</div>}
 
           {epResult && (
