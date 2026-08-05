@@ -288,11 +288,11 @@ const CSS = `
 .mr-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 .mr-bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0;color:#18181b}
-.mr-body{max-width:900px;margin:0 auto;padding:24px}
-.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:32px;margin-bottom:16px}
+.mr-body{max-width:1200px;margin:0 auto;padding:24px;display:flex;flex-wrap:wrap;gap:16px}
+.mr-card{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;flex:1 1 320px;min-width:280px;max-width:50%}
 .mr-card h2{font-size:14px;font-weight:700;margin:0 0 4px;color:#18181b}
 .mr-card p{font-size:12px;color:#71717a;margin:0 0 20px}
-.mr-upload{border:2px dashed #d4d4d8;border-radius:8px;padding:40px;text-align:center;cursor:pointer;transition:all .15s}
+.mr-upload{border:2px dashed #d4d4d8;border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .15s}
 .mr-upload:hover{border-color:#2563eb;background:#eff6ff}
 .mr-upload.drag{border-color:#2563eb;background:#eff6ff}
 .mr-icon{font-size:32px;margin-bottom:8px}
