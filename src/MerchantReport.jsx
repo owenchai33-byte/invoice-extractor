@@ -196,9 +196,16 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
   JSZip.loadAsync(buf).then(zip => {
     const sf = 'xl/worksheets/sheet1.xml';
     return zip.file(sf).async('string').then(xml => {
-      xml = xml.replace('<dimension', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+      if (xml.includes('<sheetPr')) {
+        xml = xml.replace(/<sheetPr[^>]*>/, '$&<pageSetUpPr fitToPage="1"/>');
+      } else if (xml.includes('<sheetPr/>')) {
+        xml = xml.replace('<sheetPr/>', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+      } else {
+        xml = xml.replace('<dimension', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+      }
+      xml = xml.replace(/<pageSetup[^/]*\/>/g, '');
       xml = xml.replace(/<pageMargins[^/]*\/>/,
-        '$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>');
+        '$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0" scale="100"/>');
       zip.file(sf, xml);
       return zip.generateAsync({
         type: 'blob',
