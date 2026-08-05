@@ -155,7 +155,7 @@ function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
         s: {
           font: boldFont,
           border: { top: { style: 'medium', color: { rgb: '000000' } }, bottom: { style: 'double', color: { rgb: '000000' } } },
-          alignment: { horizontal: 'right' },
+          alignment: { horizontal: 'right', vertical: 'center' },
           numFmt: '#,##0.00'
         }
       };
