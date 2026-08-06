@@ -110,150 +110,65 @@ function processSpay(rawRows) {
   return { keepCols, title, dataRows, sums, year, month, outlet, warnings };
 }
 
-function buildExcel(keepCols, title, dataRows, sums, month, year, outlet) {
-  const X = XLSXStyle;
-  const wb = X.utils.book_new();
-  const ws = {};
-  const mg = [];
-  const colCount = keepCols.length;
-  const lastCol = colCount - 1;
-  const _thin = { style: 'thin', color: { rgb: 'AAAAAA' } };
-  const _bd = { top: _thin, bottom: _thin, left: _thin, right: _thin };
-  const font = { name: 'Arial', sz: 14 };
-  const boldFont = { name: 'Arial', sz: 14, bold: true };
-  const headerFont = { name: 'Arial', sz: 16, bold: true };
-  const titleFont = { name: 'Arial', sz: 16, bold: true };
+function buildSpayPDF(keepCols, title, dataRows, sums, month, year, outlet) {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
 
-  const sc = (r, c, v, style) => {
-    const ref = X.utils.encode_cell({ r, c });
-    const cell = { v, t: typeof v === 'number' ? 'n' : 's' };
-    if (typeof v === 'number') cell.z = '#,##0.00';
-    if (style) cell.s = style;
-    ws[ref] = cell;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bolditalic');
+  const cjk = 'C.J.K.';
+  const cjkW = doc.getTextWidth(cjk);
+  doc.setFont('helvetica', 'bold');
+  const rest = ' CHAI JEE KIONG TRADING SDN BHD';
+  const restW = doc.getTextWidth(rest);
+  const totalW = cjkW + restW;
+  const startX = (pageW - totalW) / 2;
+  doc.setFont('helvetica', 'bolditalic');
+  doc.text(cjk, startX, 28);
+  doc.setFont('helvetica', 'bold');
+  doc.text(rest, startX + cjkW, 28);
+
+  doc.setFontSize(10);
+  doc.text(title, pageW / 2, 44, { align: 'center' });
+
+  const fmtNum = (v) => {
+    if (v == null || v === '' || v === '-') return '-';
+    const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/,/g, ''));
+    if (isNaN(n) || n === 0) return '-';
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  sc(0, 0, 'C.J.K. CHAI JEE KIONG TRADING SDN BHD', {
-    font: headerFont, alignment: { horizontal: 'center', vertical: 'center' }
-  });
-  mg.push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } });
+  const body = dataRows.map((row, ri) =>
+    row.map((v, ci) => typeof v === 'number' ? fmtNum(v) : (v || ''))
+  );
 
-  sc(1, 0, title, {
-    font: titleFont, alignment: { horizontal: 'center', vertical: 'center' }
-  });
-  mg.push({ s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } });
+  const sumRowData = sums.map((v, ci) => v !== null ? fmtNum(v) : '');
+  body.push(sumRowData);
 
-  keepCols.forEach((h, c) => {
-    sc(2, c, h, {
-      font: boldFont,
-      border: _bd,
-      fill: { fgColor: { rgb: 'E9E9E9' } },
-      alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
-    });
-  });
+  const lastDataIdx = dataRows.length;
 
-  dataRows.forEach((row, ri) => {
-    row.forEach((v, ci) => {
-      const isNum = typeof v === 'number';
-      sc(3 + ri, ci, v === '-' ? '-' : v, {
-        font,
-        border: _bd,
-        alignment: {
-          horizontal: isNum ? 'right' : (v === '-' ? 'center' : 'left'),
-          vertical: 'center'
-        },
-        ...(isNum ? { numFmt: '#,##0.00' } : {})
-      });
-    });
-  });
-
-  const sumRow = 3 + dataRows.length + 1;
-  sc(sumRow - 1, 0, '', { font });
-  const dataStart = 4, dataEnd = 3 + dataRows.length;
-  sums.forEach((v, ci) => {
-    if (v !== null) {
-      const colLetter = X.utils.encode_col(ci);
-      const ref = X.utils.encode_cell({ r: sumRow, c: ci });
-      ws[ref] = {
-        t: 'n', v,
-        f: `SUM(${colLetter}${dataStart}:${colLetter}${dataEnd})`,
-        z: '#,##0.00',
-        s: {
-          font: boldFont,
-          border: { top: { style: 'medium', color: { rgb: '000000' } }, bottom: { style: 'double', color: { rgb: '000000' } } },
-          alignment: { horizontal: 'right', vertical: 'center' },
-          numFmt: '#,##0.00'
-        }
-      };
-    }
-  });
-
-  const totalRows = sumRow + 1;
-  ws['!ref'] = X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRows, c: lastCol } });
-  ws['!merges'] = mg;
-
-  const rowHt = [];
-  for (let i = 0; i <= totalRows; i++) {
-    if (i <= 1) rowHt.push({ hpt: 28 });
-    else if (i === 2) rowHt.push({ hpt: 36 });
-    else rowHt.push({ hpt: 24 });
-  }
-  ws['!rows'] = rowHt;
-
-  const colWidths = keepCols.map(h => {
-    if (h === 'Merchant Name') return { wch: 26 };
-    if (h === 'Settlement No.') return { wch: 30 };
-    if (h === 'Settlement Bank') return { wch: 32 };
-    if (h === 'Settlement Date' || h === 'Status Date') return { wch: 18 };
-    if (h === 'Status') return { wch: 24 };
-    if (h === 'Bank Account') return { wch: 18 };
-    if (h === 'Merchant ID') return { wch: 18 };
-    if (SPAY_NUMERIC.has(h)) return { wch: 18 };
-    return { wch: 14 };
-  });
-  ws['!cols'] = colWidths;
-  ws['!margins'] = { left: 0, right: 0, top: 0.5, bottom: 0.5, header: 0, footer: 0 };
-
-  X.utils.book_append_sheet(wb, ws, MON_S[month]);
-
-  const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
-  const fname = `SPAY ${outlet || 'HQ'} - ${MON_S[month]}'${String(year).slice(-2)}.xlsx`;
-
-  JSZip.loadAsync(buf).then(async (zip) => {
-    try {
-      const ssFile = zip.file('xl/sharedStrings.xml');
-      if (ssFile) {
-        let ssxml = await ssFile.async('string');
-        ssxml = ssxml.replace(
-          '<t>C.J.K. CHAI JEE KIONG TRADING SDN BHD</t>',
-          '<r><rPr><b/><i/><sz val="16"/><rFont val="Arial"/></rPr><t>C.J.K.</t></r>' +
-          '<r><rPr><b/><sz val="16"/><rFont val="Arial"/></rPr><t xml:space="preserve"> CHAI JEE KIONG TRADING SDN BHD</t></r>'
-        );
-        zip.file('xl/sharedStrings.xml', ssxml);
+  autoTable(doc, {
+    startY: 52,
+    head: [keepCols],
+    body,
+    theme: 'grid',
+    styles: { fontSize: 5.5, cellPadding: 2, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica' },
+    headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 5.5 },
+    columnStyles: keepCols.reduce((acc, h, i) => {
+      if (SPAY_NUMERIC.has(h)) acc[i] = { halign: 'right' };
+      return acc;
+    }, {}),
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.row.index === lastDataIdx) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.lineWidth = { top: 1, bottom: 0.5, left: 0.5, right: 0.5 };
       }
-    } catch (_) {}
-    let xml = await zip.file('xl/worksheets/sheet1.xml').async('string');
-    if (xml.includes('<sheetPr/>')) {
-      xml = xml.replace('<sheetPr/>', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
-    } else if (xml.includes('<sheetPr')) {
-      xml = xml.replace(/<sheetPr([^>]*)>/, '<sheetPr$1><pageSetUpPr fitToPage="1"/>');
-    } else {
-      xml = xml.replace('<dimension', '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
-    }
-    xml = xml.replace(/<pageSetup[^/]*\/>/g, '');
-    xml = xml.replace(/<pageMargins[^/]*\/>/,
-      '$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0" scale="100"/>');
-    zip.file('xl/worksheets/sheet1.xml', xml);
-    return zip.generateAsync({
-      type: 'blob',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-  }).then(blob => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fname;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }).catch(err => { console.error('Excel download error:', err); });
+    },
+    margin: { left: 20, right: 20 },
+  });
+
+  const fname = `SPAY ${outlet || 'HQ'} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  doc.save(fname);
 }
 
 const CP_OUTLETS = ['HQ', 'KC', 'ST', 'TH'];
@@ -890,6 +805,106 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+async function parsePBBStatement(arrayBuffer) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  const allTxns = [];
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(i => i.str.trim());
+
+    const rowMap = new Map();
+    for (const item of items) {
+      const y = Math.round(item.transform[5] * 10) / 10;
+      let matched = false;
+      for (const [ky] of rowMap) {
+        if (Math.abs(ky - y) < 3) { rowMap.get(ky).push(item); matched = true; break; }
+      }
+      if (!matched) rowMap.set(y, [item]);
+    }
+
+    const rows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
+    let currentDate = '';
+    let pendingTxn = null;
+
+    const flushTxn = () => { if (pendingTxn) { allTxns.push(pendingTxn); pendingTxn = null; } };
+
+    for (const [, rowItems] of rows) {
+      const sorted = rowItems.sort((a, b) => a.transform[4] - b.transform[4]);
+      let date = '', text = '', debit = '', credit = '', balance = '';
+
+      for (const item of sorted) {
+        const x = item.transform[4];
+        const v = item.str.trim();
+        if (x < 80) date = v;
+        else if (x < 300) text = text ? text + ' ' + v : v;
+        else if (x < 375) debit = v;
+        else if (x < 460) credit = v;
+        else balance = v;
+      }
+
+      if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) continue;
+      if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) continue;
+
+      if (/balance (from last|b\/f)/i.test(text)) {
+        currentDate = date || currentDate;
+        continue;
+      }
+      if (/balance c\/f/i.test(text)) { flushTxn(); continue; }
+
+      if (date && /^\d{2}\/\d{2}$/.test(date)) currentDate = date;
+
+      const hasAmount = debit || credit;
+
+      if (hasAmount) {
+        flushTxn();
+        const parseAmt = (s) => { if (!s) return 0; return parseFloat(s.replace(/,/g, '')) || 0; };
+        pendingTxn = {
+          date: currentDate,
+          description: text,
+          debit: parseAmt(debit),
+          credit: parseAmt(credit),
+          balance: balance.replace(/,/g, ''),
+          page: p,
+        };
+      } else if (text && pendingTxn) {
+        pendingTxn.description += '\n' + text;
+      }
+    }
+    flushTxn();
+  }
+  return allTxns;
+}
+
+function classifyBankTxns(txns) {
+  const toKeyed = [];
+  const onlineTransfers = [];
+  const depCash = [];
+
+  const TO_KEYED_PATTERNS = [/PROCESS FEE/i, /HANDLING CHARGE/i, /AUDIT CONFIRMATION/i, /AUTOMATED LOAN/i];
+  const ONLINE_PATTERNS = [/DUITNOW QR CR/i, /TSFR FUND CR/i, /DUITNOW CR/i, /IBG CR/i, /IBFT CR/i];
+
+  for (const txn of txns) {
+    const desc = txn.description.split('\n')[0];
+
+    if (TO_KEYED_PATTERNS.some(p => p.test(desc))) {
+      const type = /AUTOMATED LOAN/i.test(desc) ? 'Loan Payment' : 'Bank Charge';
+      toKeyed.push({ ...txn, type });
+    }
+
+    if (txn.credit > 0 && ONLINE_PATTERNS.some(p => p.test(desc))) {
+      onlineTransfers.push(txn);
+    }
+
+    if (/DEP-CASH/i.test(desc) && txn.credit > 0) {
+      depCash.push(txn);
+    }
+  }
+
+  return { toKeyed, onlineTransfers, depCash };
+}
+
 const CSS = `
 .mr-root{background:#fafafa;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -920,6 +935,24 @@ const CSS = `
 .mr-select{padding:6px 10px;border-radius:6px;border:1px solid #d4d4d8;font-size:13px;font-weight:600;background:#fff;margin-right:8px}
 .mr-loading{font-size:12px;color:#71717a;margin-top:12px}
 .mr-warn{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:#92400E}
+.br-section{margin-top:14px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden}
+.br-header{padding:10px 14px;background:#f4f4f5;font-size:12px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.br-header:hover{background:#e4e4e7}
+.br-body{padding:12px 14px}
+.br-table{width:100%;border-collapse:collapse;font-size:11px}
+.br-table th{text-align:left;padding:4px 6px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
+.br-table td{padding:4px 6px;border-bottom:1px solid #e4e4e7;vertical-align:top}
+.br-table tr:last-child td{border-bottom:none}
+.br-amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.br-total{font-weight:700;background:#f0fdf4;font-size:12px}
+.br-total td{padding:6px;border-top:2px solid #15803d}
+.br-check{width:14px;height:14px;cursor:pointer;accent-color:#18181b}
+.br-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px}
+.br-tag.charge{background:#fef2f2;color:#dc2626}
+.br-tag.loan{background:#eff6ff;color:#2563eb}
+.br-desc{white-space:pre-line;max-width:300px}
+.br-page{color:#71717a;font-size:10px}
+.br-count{font-size:11px;color:#71717a;font-weight:400}
 @media print{.mr-root{display:none}}
 `;
 
@@ -946,6 +979,15 @@ export default function MerchantReport() {
   const [epLoading, setEpLoading] = useState(false);
   const [epDragging, setEpDragging] = useState(false);
   const epFileRef = useRef(null);
+
+  const [brResult, setBrResult] = useState(null);
+  const [brError, setBrError] = useState('');
+  const [brLoading, setBrLoading] = useState(false);
+  const [brDragging, setBrDragging] = useState(false);
+  const [brExcluded, setBrExcluded] = useState(new Set());
+  const [brOpen, setBrOpen] = useState({ toKeyed: true, online: true, depCash: true });
+  const brFileRef = useRef(null);
+
   const scrollRef = useRef(null);
 
   const scrollCards = (dir) => {
@@ -993,7 +1035,7 @@ export default function MerchantReport() {
 
   const doDownload = () => {
     if (!result) return;
-    buildExcel(result.keepCols, result.title, result.dataRows, result.sums, result.month, result.year, result.outlet);
+    buildSpayPDF(result.keepCols, result.title, result.dataRows, result.sums, result.month, result.year, result.outlet);
   };
 
   const handleCpFile = async (file) => {
@@ -1117,6 +1159,48 @@ export default function MerchantReport() {
     }
   };
 
+  const handleBrFile = async (file) => {
+    if (!file) return;
+    setBrError('');
+    setBrResult(null);
+    setBrExcluded(new Set());
+    setBrLoading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const txns = await parsePBBStatement(buf);
+      if (!txns.length) {
+        setBrError('No transactions found in this PDF. Make sure it is a Public Bank statement.');
+      } else {
+        const classified = classifyBankTxns(txns);
+        setBrResult({ txns, ...classified, totalTxns: txns.length, totalPages: (await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise).numPages });
+      }
+    } catch (err) {
+      setBrError('Could not read PDF: ' + (err.message || 'unknown error'));
+    }
+    setBrLoading(false);
+  };
+
+  const handleBrDrop = (e) => {
+    e.preventDefault();
+    setBrDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleBrFile(file);
+  };
+
+  const toggleBrSection = (key) => setBrOpen(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const toggleBrExclude = (idx) => {
+    setBrExcluded(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  };
+
+  const fmtAmt = (n) => n ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+
+  const brOnlineTotal = brResult ? brResult.onlineTransfers.reduce((s, t, i) => s + (brExcluded.has(i) ? 0 : t.credit), 0) : 0;
+
   return (
     <div className="mr-root">
       <style>{CSS}</style>
@@ -1158,7 +1242,7 @@ export default function MerchantReport() {
               <div className="mr-result-info">{result.title}</div>
               <div className="mr-result-info">{result.rows} transactions · {result.keepCols.length} columns (zero-value columns hidden)</div>
               {result.warnings?.map((w, i) => <div key={i} className="mr-warn">⚠️ {w}</div>)}
-              <button className="mr-btn" onClick={doDownload}>Download Formatted Excel</button>
+              <button className="mr-btn" onClick={doDownload}>Download SPAY {result.outlet} - {MON_S[result.month]}'{String(result.year).slice(-2)}</button>
             </div>
           )}
         </div>
@@ -1288,6 +1372,150 @@ export default function MerchantReport() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        <div className="mr-card">
+          <h2>Bank Recon</h2>
+          <p>Upload Public Bank statement PDF. Extracts items to key, online transfers, and cash deposits — all processed in your browser, nothing sent anywhere.</p>
+          <div
+            className={`mr-upload${brDragging ? ' drag' : ''}`}
+            onClick={() => brFileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setBrDragging(true); }}
+            onDragLeave={() => setBrDragging(false)}
+            onDrop={handleBrDrop}
+          >
+            <div className="mr-icon">🏦</div>
+            <div className="mr-label">Click to upload or drag & drop</div>
+            <div className="mr-hint">Public Bank statement PDF only</div>
+          </div>
+          <input
+            ref={brFileRef}
+            type="file"
+            accept=".pdf"
+            style={{ display: 'none' }}
+            onChange={(e) => { handleBrFile(e.target.files?.[0]); e.target.value = ''; }}
+          />
+
+          {brLoading && <div className="mr-loading">Reading bank statement...</div>}
+          {brError && <div className="mr-error">{brError}</div>}
+
+          {brResult && (
+            <div style={{ marginTop: 16 }}>
+              <div className="mr-result" style={{ marginTop: 0, marginBottom: 12 }}>
+                <div className="mr-result-title">Statement parsed</div>
+                <div className="mr-result-info">{brResult.totalTxns} transactions across {brResult.totalPages} pages</div>
+                <div className="mr-result-info">
+                  Found: {brResult.toKeyed.length} to key · {brResult.onlineTransfers.length} online transfers · {brResult.depCash.length} cash deposits
+                </div>
+              </div>
+
+              <div className="br-section">
+                <div className="br-header" onClick={() => toggleBrSection('toKeyed')}>
+                  <span>To Key {brResult.toKeyed.length > 0 && <span className="br-count">({brResult.toKeyed.length})</span>}</span>
+                  <span>{brOpen.toKeyed ? '▾' : '▸'}</span>
+                </div>
+                {brOpen.toKeyed && (
+                  <div className="br-body">
+                    {brResult.toKeyed.length === 0 ? (
+                      <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
+                    ) : (
+                      <table className="br-table">
+                        <thead><tr><th>Date</th><th>Description</th><th>Type</th><th className="br-amt">Debit</th><th className="br-amt">Credit</th><th>Pg</th></tr></thead>
+                        <tbody>
+                          {brResult.toKeyed.map((t, i) => (
+                            <tr key={i}>
+                              <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
+                              <td className="br-desc">{t.description}</td>
+                              <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
+                              <td className="br-amt">{t.debit ? fmtAmt(t.debit) : '-'}</td>
+                              <td className="br-amt">{t.credit ? fmtAmt(t.credit) : '-'}</td>
+                              <td className="br-page">p{t.page}</td>
+                            </tr>
+                          ))}
+                          <tr className="br-total">
+                            <td colSpan={3}>Total</td>
+                            <td className="br-amt">{fmtAmt(brResult.toKeyed.reduce((s, t) => s + t.debit, 0))}</td>
+                            <td className="br-amt">{fmtAmt(brResult.toKeyed.reduce((s, t) => s + t.credit, 0))}</td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="br-section">
+                <div className="br-header" onClick={() => toggleBrSection('online')}>
+                  <span>Online Transfers (Credit) {brResult.onlineTransfers.length > 0 && <span className="br-count">({brResult.onlineTransfers.length})</span>}</span>
+                  <span>{brOpen.online ? '▾' : '▸'}</span>
+                </div>
+                {brOpen.online && (
+                  <div className="br-body">
+                    {brResult.onlineTransfers.length === 0 ? (
+                      <div style={{ fontSize: 12, color: '#71717a' }}>No online transfers found</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
+                        <table className="br-table">
+                          <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th>Pg</th></tr></thead>
+                          <tbody>
+                            {brResult.onlineTransfers.map((t, i) => (
+                              <tr key={i} style={brExcluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
+                                <td><input type="checkbox" className="br-check" checked={!brExcluded.has(i)} onChange={() => toggleBrExclude(i)} /></td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
+                                <td className="br-desc">{t.description}</td>
+                                <td className="br-amt">{fmtAmt(t.credit)}</td>
+                                <td className="br-page">p{t.page}</td>
+                              </tr>
+                            ))}
+                            <tr className="br-total">
+                              <td colSpan={3}>Total ({brResult.onlineTransfers.length - brExcluded.size} of {brResult.onlineTransfers.length} included)</td>
+                              <td className="br-amt">{fmtAmt(brOnlineTotal)}</td>
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="br-section">
+                <div className="br-header" onClick={() => toggleBrSection('depCash')}>
+                  <span>Cash Deposits (DEP-CASH) {brResult.depCash.length > 0 && <span className="br-count">({brResult.depCash.length})</span>}</span>
+                  <span>{brOpen.depCash ? '▾' : '▸'}</span>
+                </div>
+                {brOpen.depCash && (
+                  <div className="br-body">
+                    {brResult.depCash.length === 0 ? (
+                      <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
+                    ) : (
+                      <table className="br-table">
+                        <thead><tr><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th>Pg</th></tr></thead>
+                        <tbody>
+                          {brResult.depCash.map((t, i) => (
+                            <tr key={i}>
+                              <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
+                              <td className="br-desc">{t.description}</td>
+                              <td className="br-amt">{fmtAmt(t.credit)}</td>
+                              <td className="br-page">p{t.page}</td>
+                            </tr>
+                          ))}
+                          <tr className="br-total">
+                            <td colSpan={2}>Total ({brResult.depCash.length} deposits)</td>
+                            <td className="br-amt">{fmtAmt(brResult.depCash.reduce((s, t) => s + t.credit, 0))}</td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
