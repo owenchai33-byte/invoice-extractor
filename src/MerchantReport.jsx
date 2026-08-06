@@ -152,10 +152,10 @@ function buildSpayPDF(keepCols, title, dataRows, sums, month, year, outlet) {
     head: [keepCols],
     body,
     theme: 'grid',
-    styles: { fontSize: 5.5, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica', overflow: 'visible' },
+    styles: { fontSize: 5.5, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica', textColor: [0, 0, 0], overflow: 'visible' },
     headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 7, overflow: 'visible' },
     columnStyles: keepCols.reduce((acc, h, i) => {
-      if (SPAY_NUMERIC.has(h)) acc[i] = { halign: 'right' };
+      if (SPAY_NUMERIC.has(h)) acc[i] = { halign: 'right', fontSize: 6 };
       return acc;
     }, {}),
     didParseCell: (data) => {
