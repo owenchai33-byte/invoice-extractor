@@ -365,8 +365,9 @@ const CSS=`
 .t .gh{background:#f4f4f5;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
 .t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
 .t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
-.t .tr td{font-weight:700;background:#EFF6FF;border-top:1px solid #000;border-bottom:1px solid #000;font-size:12px}
-.t .gr td{font-weight:700;background:#F0FDF4;border-top:1px solid #000;border-bottom:1px solid #000;font-size:12px}
+.t .tr td,.t .gr td{border-top:1px solid #000;border-bottom:1px solid #000;font-weight:700;font-size:12px}
+.t .tr td{background:#EFF6FF}
+.t .gr td{background:#F0FDF4}
 .t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
 .drag-handle:hover{background:#f4f4f5}
 .drag-handle:hover span:first-child{color:#71717a!important}
@@ -451,7 +452,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
-  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none}
   /* Allow name, IC, position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
   .t .gh{display:none!important}

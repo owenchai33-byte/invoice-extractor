@@ -124,6 +124,9 @@ export default function EmployeePayslip() {
   const _touchTs = () => { const t = new Date().toISOString(); const k = _epTsKey(); let o = {}; try { o = JSON.parse(localStorage.getItem(LS_EP_TS) || '{}'); } catch {} o[k] = t; localStorage.setItem(LS_EP_TS, JSON.stringify(o)); setUpdTs(t); };
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
+  const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const isMonthLocked=`${yr}-${String(mo+1).padStart(2,'0')}`<currentMK;
+  useEffect(()=>{if(isMonthLocked)setLocked(true);},[mo,yr]);
 
   useEffect(() => {
     const check = () => setWide(window.innerWidth > 1200);
@@ -216,7 +219,7 @@ export default function EmployeePayslip() {
           {updTs&&<span style={{fontSize:11,color:'#a1a1aa',marginLeft:8,whiteSpace:'nowrap'}}>Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
         </div>
         <div className="ep-acts">
-          <button className={"ep-btn "+(locked?"ep-btn-o":"")} onClick={locked?tryUnlock:()=>setLocked(true)} style={{fontSize:12}}>{locked?'🔒 Locked':'🔓 Editing'}</button>
+          <button className={"ep-btn "+(locked?"ep-btn-o":"")} onClick={locked?tryUnlock:()=>setLocked(true)} style={{fontSize:12}}>{locked?(isMonthLocked?'🔒 Month Locked':'🔒 Locked'):'🔓 Editing'}</button>
           <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
           <button className="ep-btn ep-btn-o" onClick={() => setPrintMode('current')}>Print current</button>
           <button className="ep-btn" onClick={() => setPrintMode('all')}>Print all</button>
