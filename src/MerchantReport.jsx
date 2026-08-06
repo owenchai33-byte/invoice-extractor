@@ -152,16 +152,17 @@ function buildSpayPDF(keepCols, title, dataRows, sums, month, year, outlet) {
     head: [keepCols],
     body,
     theme: 'grid',
-    styles: { fontSize: 6.5, cellPadding: { top: 4, bottom: 4, left: 3, right: 3 }, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica' },
-    headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 8 },
+    styles: { fontSize: 5.5, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica', overflow: 'visible' },
+    headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 7, overflow: 'visible' },
     columnStyles: keepCols.reduce((acc, h, i) => {
       if (SPAY_NUMERIC.has(h)) acc[i] = { halign: 'right' };
       return acc;
     }, {}),
     didParseCell: (data) => {
+      data.cell.styles.cellWidth = 'wrap';
       if (data.section === 'body' && data.row.index === lastDataIdx) {
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fontSize = 8;
+        data.cell.styles.fontSize = 7;
         data.cell.styles.lineWidth = { top: 1, bottom: 0.5, left: 0.5, right: 0.5 };
       }
     },
