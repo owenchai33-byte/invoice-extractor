@@ -236,7 +236,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:mc(7)},e:{r:3,c:mc(15)}});
   sc(3,16,'NET PAY');mg.push({s:{r:3,c:mc(16)},e:{r:3,c:L}});
   ['NO','NAME','IC NO','POSITION','BASIC SALARY','INCENTIVE',bL,'EPF (M)','EPF (P)','JUMLAH EPF','SOCSO (M)','SOCSO (P)','JUMLAH SOCSO','EIS (M/P)','JUMLAH EIS','ADVANCE'].forEach((h,i)=>sc(4,i,h));
-  sc(4,16,'BANK STAFF');sc(4,17,'CASH STAFF');
+  sc(4,16,'BANK');sc(4,17,'CASH');
   const viewMK=`${yr}-${String(mo+1).padStart(2,'0')}`;
   const hlRows=new Set();
   let row=5,sn=1;
@@ -973,8 +973,8 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
                   <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jumlah EPF</th>
                   <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jumlah SOCSO</th>
                   <th className="r dh">EIS</th><th className="r dh">Jumlah EIS</th><th className="r dh">Advance</th>
-                  <th className="r nh" style={{fontSize:9,color:'#166534'}}>Bank Staff</th>
-                  <th className="r nh" style={{fontSize:9,color:'#b45309'}}>Cash Staff</th>
+                  <th className="r nh" style={{fontSize:9,color:'#166534'}}>Bank</th>
+                  <th className="r nh" style={{fontSize:9,color:'#b45309'}}>Cash</th>
                 </tr>
               </thead>
               <tbody>
