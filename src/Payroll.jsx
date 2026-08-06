@@ -236,7 +236,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:mc(7)},e:{r:3,c:mc(15)}});
   sc(3,16,'NET PAY');mg.push({s:{r:3,c:mc(16)},e:{r:3,c:L}});
   ['NO','NAME','IC NO','POSITION','BASIC SALARY','INCENTIVE',bL,'EPF (M)','EPF (P)','JUMLAH EPF','SOCSO (M)','SOCSO (P)','JUMLAH SOCSO','EIS (M/P)','JUMLAH EIS','ADVANCE'].forEach((h,i)=>sc(4,i,h));
-  sc(4,16,'BANK');sc(4,17,'CASH');
+  sc(4,16,'BANK STAFF');sc(4,17,'CASH STAFF');
   const viewMK=`${yr}-${String(mo+1).padStart(2,'0')}`;
   const hlRows=new Set();
   let row=5,sn=1;
@@ -245,9 +245,13 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   const wR=(rows,isBank)=>{rows.forEach(s=>{if(s.addedMonth===viewMK)hlRows.add(row);sc(row,0,sn);sc(row,1,s.name);sc(row,2,s.ic);sc(row,3,s.position);sc(row,4,s.salary);sc(row,5,s.incentive||0);sc(row,6,s.bonus||0);sc(row,7,s.epfM);sc(row,8,s.epfP);sc(row,9,s.epfM+s.epfP,`${A1(row,7)}+${A1(row,8)}`);sc(row,10,s.socsoM);sc(row,11,s.socsoP);sc(row,12,s.socsoM+s.socsoP,`${A1(row,10)}+${A1(row,11)}`);sc(row,13,s.eisE);sc(row,14,s.eisE*2,`${A1(row,13)}*2`);sc(row,15,s.advance||0);if(isBank){sc(row,16,_bankAmt(s),`${A1(row,4)}-${A1(row,8)}-${A1(row,11)}-${A1(row,13)}-${A1(row,15)}`);sc(row,17,_cashAmt(s),`${A1(row,5)}${sb?'+'+A1(row,6):''}`)}else{sc(row,16,s.netPay,`${A1(row,4)}+${A1(row,5)}${sb?'+'+A1(row,6):''}-${A1(row,8)}-${A1(row,11)}-${A1(row,13)}-${A1(row,15)}`);}sn++;row++;});};
   // BANK TRANSFER / CASH subtotals = SUM of their staff block; TOTAL = bank + cash (live formulas)
   const tR=(l,t,opt)=>{sc(row,0,l);mg.push({s:{r:row,c:0},e:{r:row,c:3}});[4,5,6,7,8,9,10,11,12,13,14,15,16,17].forEach(c=>{let f;if(opt&&opt.sum&&opt.sum[1]>=opt.sum[0])f=`SUM(${A1(opt.sum[0],c)}:${A1(opt.sum[1],c)})`;else if(opt&&opt.add)f=`${A1(opt.add[0],c)}+${A1(opt.add[1],c)}`;sc(row,c,t[c]||0,f);});row++;};
-  const bankStart=row;wR(bR,true);const bankEnd=row-1;tR('BANK TRANSFER:',bT,{sum:[bankStart,bankEnd]});const bankSub=row-1;
+  const bankStart=row;wR(bR,true);const bankEnd=row-1;
   const bPayoutVal=Math.round(bR.reduce((s,r)=>s+_bankAmt(r)+_cashAmt(r),0)*100)/100;
-  sc(row,0,'BANK STAFF TOTAL PAYOUT:');mg.push({s:{r:row,c:0},e:{r:row,c:mc(15)}});mg.push({s:{r:row,c:mc(16)},e:{r:row,c:L}});sc(row,16,bPayoutVal,`${A1(bankSub,16)}+${A1(bankSub,17)}`);const bankPayoutRow=row;row++;
+  sc(row,0,'BANK STAFF TOTAL PAYOUT:');mg.push({s:{r:row,c:0},e:{r:row,c:3}});
+  [4,5,6,7,8,9,10,11,12,13,14,15].forEach(c=>{sc(row,c,bT[c]||0,bankEnd>=bankStart?`SUM(${A1(bankStart,c)}:${A1(bankEnd,c)})`:undefined);});
+  mg.push({s:{r:row,c:mc(16)},e:{r:row,c:L}});
+  sc(row,16,bPayoutVal,bankEnd>=bankStart?`SUM(${A1(bankStart,16)}:${A1(bankEnd,16)})+SUM(${A1(bankStart,17)}:${A1(bankEnd,17)})`:undefined);
+  const bankSub=row;row++;
   const pc=cR.filter(s=>s.status==='permanent'),pb=cR.filter(s=>s.status==='probationary');
   const cashStart=row;wR(pc);if(pb.length){sc(row,0,'PROBATIONARY STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;wR(pb);}const cashEnd=row-1;
   tR('CASH STAFF TOTAL PAYOUT:',cT,{sum:[cashStart,cashEnd]});const cashSub=row-1;
@@ -256,7 +260,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   [4,5,6,7,8,9,10,11,12,13,14,15].forEach(c=>{sc(row,c,gT[c]||0,`${A1(bankSub,c)}+${A1(cashSub,c)}`);});
   mg.push({s:{r:row,c:mc(16)},e:{r:row,c:L}});
   const grandVal=Math.round((bPayoutVal+(cT[16]||0))*100)/100;
-  sc(row,16,grandVal,`${A1(bankPayoutRow,16)}+${A1(cashSub,16)}`);row++;
+  sc(row,16,grandVal,`${A1(bankSub,16)}+${A1(cashSub,16)}`);row++;
   notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
   if(ptR.length>0){
   row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;
@@ -613,8 +617,6 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const gT=useMemo(()=>{const t={};Object.keys(bT).forEach(k=>t[k]=Math.round((bT[k]+cT[k])*100)/100);return t;},[bT,cT]);
   const bankAmt=useCallback(r=>Math.round((r.salary-r.epfP-r.socsoP-r.eisE-(r.advance||0))*100)/100,[]);
   const cashAmt=useCallback(r=>Math.round(((r.incentive||0)+(r.bonus||0))*100)/100,[]);
-  const bBankTotal=useMemo(()=>Math.round(bS.reduce((s,r)=>s+bankAmt(r),0)*100)/100,[bS,bankAmt]);
-  const bCashTotal=useMemo(()=>Math.round(bS.reduce((s,r)=>s+cashAmt(r),0)*100)/100,[bS,cashAmt]);
   const ptT=useMemo(()=>({advance:ptR.reduce((s,r)=>s+r.advance,0),netPay:ptR.reduce((s,r)=>s+r.netPay,0)}),[ptR]);
   const notes=useMemo(()=>{
     const n=[...bS,...cS].filter(r=>r.underAge).map(r=>{const firstName=(r.name||'(unnamed)').split(' ')[0];return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;});
@@ -817,7 +819,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       }
     </tr>
   );};
-  const TR=({l,t,c,bankSplit,cashOnly})=>{
+  const TR=({l,t,c})=>{
     const ri=totRi[l];
     const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
     const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
@@ -828,14 +830,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       {cell(7)}{cell(8)}{cell(9)}
       {cell(10)}{cell(11)}{cell(12)}
       {cell(13)}{cell(14)}{cell(15)}
-      {bankSplit ? <>
-        <td className="r tcell fxc" style={{color:'#166534',fontWeight:700}}>{fmt(bBankTotal)}</td>
-        <td className="r tcell fxc" style={{color:'#b45309',fontWeight:700}}>{fmt(bCashTotal)}</td>
-      </> : cashOnly ?
-        <td colSpan={2} className={"r tcell fxc"+hl(16)} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
-      :
-        <td colSpan={2} className={"r tcell fxc"+hl(16)} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
-      }
+      <td colSpan={2} className={"r tcell fxc"+hl(16)} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
     </tr>
   );};
   gn=0;
@@ -844,8 +839,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   // navRows = every navigable row in display order (staff + the 3 subtotal/total rows).
   const navRows=[];
   bS.forEach(r=>navRows.push({kind:'ft',r}));
-  navRows.push({kind:'tot',l:'BANK TRANSFER:',t:bT});
-  navRows.push({kind:'tot',l:'BANK STAFF TOTAL PAYOUT:',t:{16:bBankTotal+bCashTotal}});
+  navRows.push({kind:'tot',l:'BANK STAFF TOTAL PAYOUT:',t:bT});
   pc.forEach(r=>navRows.push({kind:'ft',r}));
   pb.forEach(r=>navRows.push({kind:'ft',r}));
   navRows.push({kind:'tot',l:'CASH STAFF TOTAL PAYOUT:',t:cT});
@@ -966,22 +960,18 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
                   <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jumlah EPF</th>
                   <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jumlah SOCSO</th>
                   <th className="r dh">EIS</th><th className="r dh">Jumlah EIS</th><th className="r dh">Advance</th>
-                  <th className="r nh" style={{fontSize:9,color:'#166534'}}>Bank</th>
-                  <th className="r nh" style={{fontSize:9,color:'#b45309'}}>Cash</th>
+                  <th className="r nh" style={{fontSize:9,color:'#166534'}}>Bank Staff</th>
+                  <th className="r nh" style={{fontSize:9,color:'#b45309'}}>Cash Staff</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="gh"><td colSpan={sb?18:17}>Bank Transfer</td></tr>
                 {bS.map(r=><Row key={r.id} r={r} isBank/>)}
-                <TR l="BANK TRANSFER:" t={bT} c="tr" bankSplit/>
-                <tr className="tr" style={{background:'#dbeafe'}}>
-                  <td colSpan={sb?16:15} style={{fontWeight:700,textAlign:'right'}}>BANK STAFF TOTAL PAYOUT:</td>
-                  <td colSpan={2} className="r tcell fxc" style={{fontWeight:700,fontSize:11}}>{fmt(bBankTotal+bCashTotal)}</td>
-                </tr>
+                <TR l="BANK STAFF TOTAL PAYOUT:" t={bT} c="tr"/>
                 <tr className="gh"><td colSpan={sb?18:17}>Cash</td></tr>
                 {pc.map(r=><Row key={r.id} r={r}/>)}
                 {pb.length>0&&<><tr className="ph"><td colSpan={sb?18:17}>PROBATIONARY STAFF</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
-                <TR l="CASH STAFF TOTAL PAYOUT:" t={cT} c="tr" cashOnly/>
+                <TR l="CASH STAFF TOTAL PAYOUT:" t={cT} c="tr"/>
                 <TR l="GRAND TOTAL:" t={gT} c="gr"/>
               </tbody>
             </table>
