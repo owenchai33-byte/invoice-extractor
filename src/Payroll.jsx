@@ -282,8 +282,8 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
       else {
         st.alignment.horizontal = C>=4 ? 'right' : (C===1||C===3 ? 'left' : 'center');
         const c0=ws[X.utils.encode_cell({r:R,c:0})]; const t0=(c0&&typeof c0.v==='string')?c0.v.trim():'';
-        if(/GRAND TOTAL|STAFF TOTAL PAYOUT/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'DCFCE7'}}; if(C<=3) st.alignment.horizontal='right'; }
-        else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'DBEAFE'}}; if(C<=3) st.alignment.horizontal='right'; }
+        if(/GRAND TOTAL|STAFF TOTAL PAYOUT/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'F0FDF4'}}; if(C<=3) st.alignment.horizontal='right'; }
+        else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'EFF6FF'}}; if(C<=3) st.alignment.horizontal='right'; }
         else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='PROBATIONARY STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
         else if(/inactive/i.test(t0)){ st.font={bold:true}; st.alignment.horizontal='left'; }
         if(C===1&&hlRows.has(R)){ st.fill={fgColor:{rgb:'FFF9C4'}}; }
@@ -351,11 +351,11 @@ const CSS=`
 .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal;word-break:break-word;line-height:1.2}
 .t td.r{text-align:center}
 .t tr:hover{background:#fafafa}
-.t .gh{background:#e5e7eb;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
+.t .gh{background:#f4f4f5;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
 .t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
 .t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
-.t .tr td{font-weight:700;background:#DBEAFE;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
-.t .gr td{font-weight:700;background:#DCFCE7;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
+.t .tr td{font-weight:700;background:#EFF6FF;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
+.t .gr td{font-weight:700;background:#F0FDF4;border-top:2px solid #18181b;border-bottom:2px solid #18181b;font-size:12px}
 .t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
 .drag-handle:hover{background:#f4f4f5}
 .drag-handle:hover span:first-child{color:#71717a!important}
@@ -374,7 +374,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .tgb{background:#dbeafe;color:#1e40af}
 .tgc{background:#d1fae5;color:#065f46}
 .tgp{background:#fef3c7;color:#92400e}
-.tgg{background:#e5e7eb;color:#374151}
+.tgg{background:#f4f4f5;color:#374151}
 .notes{padding:8px 14px;background:#fffbeb;border-top:1px solid #fcd34d}
 .notes p{margin:0 0 3px;font-size:11px;color:#92400e;font-style:italic}
 .notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
@@ -445,8 +445,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
-  .t .tr td{background:#DBEAFE!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#DCFCE7!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .tr td{background:#EFF6FF!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#F0FDF4!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t td.hl-new{background:#FFF9C4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
