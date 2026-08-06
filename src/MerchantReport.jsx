@@ -26,6 +26,7 @@ const SPAY_KEEP = [
   'Settlement Amount','Merchant Fee','User Fee','Status','Status Date'
 ];
 const SPAY_ALWAYS_HIDE = new Set();
+const SPAY_ALWAYS_SHOW = new Set(['Refund Amount']);
 const SPAY_NUMERIC = new Set([
   'Transaction Amount','Platform Amount','Institution Amount','Merchant Amount',
   'Actual Amount','Refund Amount','Settlement Amount','Merchant Fee','User Fee'
@@ -58,6 +59,7 @@ function processSpay(rawRows) {
   const numericCols = headers.filter(h => SPAY_NUMERIC.has(h));
   const allZeroCols = new Set();
   numericCols.forEach(col => {
+    if (SPAY_ALWAYS_SHOW.has(col)) return;
     const allZero = rawRows.every(r => parseNum(r[col]) === 0);
     if (allZero) allZeroCols.add(col);
   });
