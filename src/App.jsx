@@ -388,7 +388,7 @@ export default function App() {
         {active === 'payslip' && <Payslip />}
         {active === 'epayslip' && <EmployeePayslip />}
         {active === 'merchant' && <MerchantReport />}
-        {active === 'bankrecon' && <BankRecon />}
+        <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
       </main>
 
       <style>{`
