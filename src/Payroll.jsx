@@ -272,12 +272,12 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   }
   ws['!ref']=X.utils.encode_range({s:{r:0,c:0},e:{r:ptR.length>0?row:row-1,c:L}});ws['!merges']=mg;
   // ── Styling: borders on every cell, bold shaded headers, shaded subtotal/total rows ──
-  const _thin={style:'thin',color:{rgb:'AAAAAA'}}, _bd={top:_thin,bottom:_thin,left:_thin,right:_thin};
+  const _thin={style:'thin',color:{rgb:'AAAAAA'}}, _bd={top:_thin,bottom:_thin,left:_thin,right:_thin}, _blk={style:'thin',color:{rgb:'000000'}}, _blkTB={top:_blk,bottom:_blk};
   const _rng=X.utils.decode_range(ws['!ref']);
   for(let R=_rng.s.r;R<=_rng.e.r;R++){
     for(let C=_rng.s.c;C<=_rng.e.c;C++){
       const a=X.utils.encode_cell({r:R,c:C}); let cell=ws[a]; if(!cell){cell={t:'s',v:''};ws[a]=cell;}
-      const st={border:R===0?{}:R===1?{bottom:_thin}:(R>=notesStart&&R<notesEnd)?{}:_bd,alignment:{vertical:'center',wrapText:R===4}};
+      const st={border:R<=2?_blkTB:(R>=notesStart&&R<notesEnd)?{}:_bd,alignment:{vertical:'center',wrapText:R===4}};
       if(R<=4){ st.font={bold:true,sz:R===0?14:R===1?13:11};if(R===0)st.font.italic=true; st.alignment.horizontal= R===2 ? 'left' : 'center'; if(R>=2) st.fill={fgColor:{rgb:'E9E9E9'}}; }
       else {
         st.alignment.horizontal = C>=4 ? 'right' : (C===1||C===3 ? 'left' : 'center');
