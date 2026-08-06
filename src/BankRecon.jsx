@@ -131,7 +131,7 @@ const CSS = `
 .br-table th{text-align:left;padding:6px 8px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
 .br-table td{padding:6px 8px;border-bottom:1px solid #e4e4e7;vertical-align:top}
 .br-table tr:last-child td{border-bottom:none}
-.br-amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.br-amt{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
 .br-total{font-weight:700;background:#f0fdf4;font-size:12px}
 .br-total td{padding:8px;border-top:2px solid #15803d}
 .br-check{width:14px;height:14px;cursor:pointer;accent-color:#18181b}
@@ -267,22 +267,22 @@ export default function BankRecon() {
                     const dg = dailyGroup(result.toKeyed, t => t.debit || t.credit || 0);
                     return (
                     <table className="br-table">
-                      <thead><tr><th>Date</th><th>Description</th><th>Type</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th><th>Pg</th></tr></thead>
+                      <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Pg</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
                         {result.toKeyed.map((t, i) => (
                           <tr key={i}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
                             <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
+                            <td className="br-page">p{t.page}</td>
                             <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
                             {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
-                            <td className="br-page">p{t.page}</td>
                           </tr>
                         ))}
                         <tr className="br-total">
-                          <td colSpan={3}>Total</td>
+                          <td colSpan={4}>Total</td>
                           <td className="br-amt">{fmtAmt(result.toKeyed.reduce((s, t) => s + (t.debit || t.credit || 0), 0))}</td>
-                          <td></td><td></td>
+                          <td></td>
                         </tr>
                       </tbody>
                     </table>);
@@ -302,22 +302,22 @@ export default function BankRecon() {
                     <>
                       <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
                       <table className="br-table">
-                        <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th><th>Pg</th></tr></thead>
+                        <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                         <tbody>
                           {result.onlineTransfers.map((t, i) => (
                             <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                               <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                               <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                               <td className="br-desc">{t.description}</td>
+                              <td className="br-page">p{t.page}</td>
                               <td className="br-amt">{fmtAmt(t.credit)}</td>
                               {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
-                              <td className="br-page">p{t.page}</td>
                             </tr>
                           ))}
                           <tr className="br-total">
-                            <td colSpan={3}>Total ({result.onlineTransfers.length - excluded.size} of {result.onlineTransfers.length} included)</td>
+                            <td colSpan={4}>Total ({result.onlineTransfers.length - excluded.size} of {result.onlineTransfers.length} included)</td>
                             <td className="br-amt">{fmtAmt(onlineTotal)}</td>
-                            <td></td><td></td>
+                            <td></td>
                           </tr>
                         </tbody>
                       </table>
@@ -336,21 +336,21 @@ export default function BankRecon() {
                     const dg = dailyGroup(result.depCash, t => t.credit || 0);
                     return (
                     <table className="br-table">
-                      <thead><tr><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th><th>Pg</th></tr></thead>
+                      <thead><tr><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
                         {result.depCash.map((t, i) => (
                           <tr key={i}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
+                            <td className="br-page">p{t.page}</td>
                             <td className="br-amt">{fmtAmt(t.credit)}</td>
                             {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
-                            <td className="br-page">p{t.page}</td>
                           </tr>
                         ))}
                         <tr className="br-total">
-                          <td colSpan={2}>Total ({result.depCash.length} deposits)</td>
+                          <td colSpan={3}>Total ({result.depCash.length} deposits)</td>
                           <td className="br-amt">{fmtAmt(result.depCash.reduce((s, t) => s + t.credit, 0))}</td>
-                          <td></td><td></td>
+                          <td></td>
                         </tr>
                       </tbody>
                     </table>);
