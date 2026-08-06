@@ -73,7 +73,7 @@ async function parsePBBStatement(arrayBuffer) {
     }
     flushTxn();
   }
-  return allTxns;
+  return { txns: allTxns, numPages: pdf.numPages };
 }
 
 function classifyBankTxns(txns) {
@@ -162,12 +162,11 @@ export default function BankRecon() {
     setLoading(true);
     try {
       const buf = await file.arrayBuffer();
-      const txns = await parsePBBStatement(buf);
+      const { txns, numPages } = await parsePBBStatement(buf);
       if (!txns.length) {
         setError('No transactions found in this PDF. Make sure it is a Public Bank statement.');
       } else {
         const classified = classifyBankTxns(txns);
-        const numPages = (await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise).numPages;
         setResult({ txns, ...classified, totalTxns: txns.length, totalPages: numPages });
       }
     } catch (err) {
