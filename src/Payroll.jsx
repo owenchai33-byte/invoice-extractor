@@ -407,6 +407,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 @media print{
   .np{display:none!important}
   .no-print{display:none!important}
+  .pt{display:inline!important}
   .dgs{display:none!important}   /* hide drag ⋮⋮ handle on print */
   .pr{background:#fff}
   .body{max-width:100%;padding:1cm 0.5cm;margin:0;box-sizing:border-box}
@@ -422,7 +423,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t:not(.nb) col:nth-child(3){width:7%!important}   /* IC */
   .t:not(.nb) col:nth-child(4){width:12%!important}    /* Position */
   .t:not(.nb) col:nth-child(5){width:5%!important}     /* Salary */
-  .t:not(.nb) col:nth-child(6){width:4%!important}     /* Incent */
+  .t:not(.nb) col:nth-child(6){width:5%!important}     /* Incent */
   .t:not(.nb) col:nth-child(7){width:4%!important}     /* Bonus */
   .t:not(.nb) col:nth-child(8){width:4.3%!important}   /* EPF(M) */
   .t:not(.nb) col:nth-child(9){width:4.3%!important}   /* EPF(P) */
@@ -440,7 +441,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(3){width:7%!important}   /* IC */
   .t.nb col:nth-child(4){width:12%!important}    /* Position */
   .t.nb col:nth-child(5){width:5%!important}     /* Salary */
-  .t.nb col:nth-child(6){width:4%!important}     /* Incent */
+  .t.nb col:nth-child(6){width:5%!important}     /* Incent */
   .t.nb col:nth-child(7){width:4.3%!important}   /* EPF(M) */
   .t.nb col:nth-child(8){width:4.3%!important}   /* EPF(P) */
   .t.nb col:nth-child(9){width:4.5%!important}   /* Jml EPF */
@@ -453,19 +454,21 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
   .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none}
+  .t td:nth-child(n+5){font-size:7pt}
   /* Allow name, IC, position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
+  .t td:nth-child(3){padding-right:6px!important}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
-  .t .tr td{background:#EFF6FF!important;font-size:7.5pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#F0FDF4!important;font-size:7.5pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .tr td{background:#EFF6FF!important;font-size:7pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#F0FDF4!important;font-size:8pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t td.hl-new{background:#FFF9C4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .nh{background:#eff6ff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .i{display:none!important}
-  .pv{display:inline!important;font-size:6.5pt;text-align:right}
+  .pv{display:inline!important;font-size:7pt;text-align:right}
   .tw{overflow:hidden!important}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
@@ -494,6 +497,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .remdel{flex:none;border:none;background:#f4f4f5;color:#71717a;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:12px}
 .remdel:hover{background:#fee2e2;color:#dc2626}
 .pv{display:none}
+.pt{display:none}
 .print-only{display:none}
 @media print{.print-only{display:block!important}}
 /* Keyboard-nav selected cell */
@@ -815,7 +819,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       </td>
       <td className={r.addedMonth===_tsKey()?'hl-new':undefined} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
-      <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
+      <td style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.')}</span></td>
       <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>{_recordEdit(r.name,'salary',r.salary,v);updateSalary(r.id,v);}} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
       <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>{_recordEdit(r.name,'incentive',r.incentive,v);sM(r.id,'incentive',v);}} dec/><span className="pv">{pfmt(r.incentive)}</span></td>
       {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>{_recordEdit(r.name,'bonus',r.bonus,v);sM(r.id,'bonus',v);}}/><span className="pv">{pfmt(r.bonus)}</span></td>}
