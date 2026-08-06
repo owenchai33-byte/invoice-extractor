@@ -414,6 +414,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .sht{font-size:10pt;font-weight:700}
   .stats{display:none!important}
   .t{font-size:6.5pt;table-layout:fixed!important;width:100%;min-width:0!important}
+  .t.ft .dr>td,.t.ft thead tr:last-child>th{position:static!important;left:auto!important;border-right-width:0!important}
   /* Explicit print column widths — sum = 100%. With bonus column (17 cols). */
   .t:not(.nb) col:nth-child(1){width:1.8%!important}   /* # */
   .t:not(.nb) col:nth-child(2){width:19%!important}    /* Name */
