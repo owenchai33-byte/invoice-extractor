@@ -152,8 +152,8 @@ function buildSpayPDF(keepCols, title, dataRows, sums, month, year, outlet) {
     head: [keepCols],
     body,
     theme: 'grid',
-    styles: { fontSize: 5.5, cellPadding: 2, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica' },
-    headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 5.5 },
+    styles: { fontSize: 6.5, cellPadding: { top: 4, bottom: 4, left: 3, right: 3 }, lineColor: [170, 170, 170], lineWidth: 0.5, font: 'helvetica' },
+    headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 6.5 },
     columnStyles: keepCols.reduce((acc, h, i) => {
       if (SPAY_NUMERIC.has(h)) acc[i] = { halign: 'right' };
       return acc;
@@ -805,106 +805,6 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-async function parsePBBStatement(arrayBuffer) {
-  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-  const allTxns = [];
-
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const items = content.items.filter(i => i.str.trim());
-
-    const rowMap = new Map();
-    for (const item of items) {
-      const y = Math.round(item.transform[5] * 10) / 10;
-      let matched = false;
-      for (const [ky] of rowMap) {
-        if (Math.abs(ky - y) < 3) { rowMap.get(ky).push(item); matched = true; break; }
-      }
-      if (!matched) rowMap.set(y, [item]);
-    }
-
-    const rows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
-    let currentDate = '';
-    let pendingTxn = null;
-
-    const flushTxn = () => { if (pendingTxn) { allTxns.push(pendingTxn); pendingTxn = null; } };
-
-    for (const [, rowItems] of rows) {
-      const sorted = rowItems.sort((a, b) => a.transform[4] - b.transform[4]);
-      let date = '', text = '', debit = '', credit = '', balance = '';
-
-      for (const item of sorted) {
-        const x = item.transform[4];
-        const v = item.str.trim();
-        if (x < 80) date = v;
-        else if (x < 300) text = text ? text + ' ' + v : v;
-        else if (x < 375) debit = v;
-        else if (x < 460) credit = v;
-        else balance = v;
-      }
-
-      if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) continue;
-      if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) continue;
-
-      if (/balance (from last|b\/f)/i.test(text)) {
-        currentDate = date || currentDate;
-        continue;
-      }
-      if (/balance c\/f/i.test(text)) { flushTxn(); continue; }
-
-      if (date && /^\d{2}\/\d{2}$/.test(date)) currentDate = date;
-
-      const hasAmount = debit || credit;
-
-      if (hasAmount) {
-        flushTxn();
-        const parseAmt = (s) => { if (!s) return 0; return parseFloat(s.replace(/,/g, '')) || 0; };
-        pendingTxn = {
-          date: currentDate,
-          description: text,
-          debit: parseAmt(debit),
-          credit: parseAmt(credit),
-          balance: balance.replace(/,/g, ''),
-          page: p,
-        };
-      } else if (text && pendingTxn) {
-        pendingTxn.description += '\n' + text;
-      }
-    }
-    flushTxn();
-  }
-  return allTxns;
-}
-
-function classifyBankTxns(txns) {
-  const toKeyed = [];
-  const onlineTransfers = [];
-  const depCash = [];
-
-  const TO_KEYED_PATTERNS = [/PROCESS FEE/i, /HANDLING CHARGE/i, /AUDIT CONFIRMATION/i, /AUTOMATED LOAN/i];
-  const ONLINE_PATTERNS = [/DUITNOW QR CR/i, /TSFR FUND CR/i, /DUITNOW CR/i, /IBG CR/i, /IBFT CR/i];
-
-  for (const txn of txns) {
-    const desc = txn.description.split('\n')[0];
-
-    if (TO_KEYED_PATTERNS.some(p => p.test(desc))) {
-      const type = /AUTOMATED LOAN/i.test(desc) ? 'Loan Payment' : 'Bank Charge';
-      toKeyed.push({ ...txn, type });
-    }
-
-    if (txn.credit > 0 && ONLINE_PATTERNS.some(p => p.test(desc))) {
-      onlineTransfers.push(txn);
-    }
-
-    if (/DEP-CASH/i.test(desc) && txn.credit > 0) {
-      depCash.push(txn);
-    }
-  }
-
-  return { toKeyed, onlineTransfers, depCash };
-}
-
 const CSS = `
 .mr-root{background:#fafafa;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .mr-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -935,24 +835,6 @@ const CSS = `
 .mr-select{padding:6px 10px;border-radius:6px;border:1px solid #d4d4d8;font-size:13px;font-weight:600;background:#fff;margin-right:8px}
 .mr-loading{font-size:12px;color:#71717a;margin-top:12px}
 .mr-warn{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:#92400E}
-.br-section{margin-top:14px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden}
-.br-header{padding:10px 14px;background:#f4f4f5;font-size:12px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
-.br-header:hover{background:#e4e4e7}
-.br-body{padding:12px 14px}
-.br-table{width:100%;border-collapse:collapse;font-size:11px}
-.br-table th{text-align:left;padding:4px 6px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
-.br-table td{padding:4px 6px;border-bottom:1px solid #e4e4e7;vertical-align:top}
-.br-table tr:last-child td{border-bottom:none}
-.br-amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.br-total{font-weight:700;background:#f0fdf4;font-size:12px}
-.br-total td{padding:6px;border-top:2px solid #15803d}
-.br-check{width:14px;height:14px;cursor:pointer;accent-color:#18181b}
-.br-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px}
-.br-tag.charge{background:#fef2f2;color:#dc2626}
-.br-tag.loan{background:#eff6ff;color:#2563eb}
-.br-desc{white-space:pre-line;max-width:300px}
-.br-page{color:#71717a;font-size:10px}
-.br-count{font-size:11px;color:#71717a;font-weight:400}
 @media print{.mr-root{display:none}}
 `;
 
@@ -979,14 +861,6 @@ export default function MerchantReport() {
   const [epLoading, setEpLoading] = useState(false);
   const [epDragging, setEpDragging] = useState(false);
   const epFileRef = useRef(null);
-
-  const [brResult, setBrResult] = useState(null);
-  const [brError, setBrError] = useState('');
-  const [brLoading, setBrLoading] = useState(false);
-  const [brDragging, setBrDragging] = useState(false);
-  const [brExcluded, setBrExcluded] = useState(new Set());
-  const [brOpen, setBrOpen] = useState({ toKeyed: true, online: true, depCash: true });
-  const brFileRef = useRef(null);
 
   const scrollRef = useRef(null);
 
@@ -1158,48 +1032,6 @@ export default function MerchantReport() {
       setEpError('Download failed: ' + e.message);
     }
   };
-
-  const handleBrFile = async (file) => {
-    if (!file) return;
-    setBrError('');
-    setBrResult(null);
-    setBrExcluded(new Set());
-    setBrLoading(true);
-    try {
-      const buf = await file.arrayBuffer();
-      const txns = await parsePBBStatement(buf);
-      if (!txns.length) {
-        setBrError('No transactions found in this PDF. Make sure it is a Public Bank statement.');
-      } else {
-        const classified = classifyBankTxns(txns);
-        setBrResult({ txns, ...classified, totalTxns: txns.length, totalPages: (await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise).numPages });
-      }
-    } catch (err) {
-      setBrError('Could not read PDF: ' + (err.message || 'unknown error'));
-    }
-    setBrLoading(false);
-  };
-
-  const handleBrDrop = (e) => {
-    e.preventDefault();
-    setBrDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleBrFile(file);
-  };
-
-  const toggleBrSection = (key) => setBrOpen(prev => ({ ...prev, [key]: !prev[key] }));
-
-  const toggleBrExclude = (idx) => {
-    setBrExcluded(prev => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx); else next.add(idx);
-      return next;
-    });
-  };
-
-  const fmtAmt = (n) => n ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-  const brOnlineTotal = brResult ? brResult.onlineTransfers.reduce((s, t, i) => s + (brExcluded.has(i) ? 0 : t.credit), 0) : 0;
 
   return (
     <div className="mr-root">
@@ -1376,149 +1208,6 @@ export default function MerchantReport() {
           )}
         </div>
 
-        <div className="mr-card">
-          <h2>Bank Recon</h2>
-          <p>Upload Public Bank statement PDF. Extracts items to key, online transfers, and cash deposits — all processed in your browser, nothing sent anywhere.</p>
-          <div
-            className={`mr-upload${brDragging ? ' drag' : ''}`}
-            onClick={() => brFileRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setBrDragging(true); }}
-            onDragLeave={() => setBrDragging(false)}
-            onDrop={handleBrDrop}
-          >
-            <div className="mr-icon">🏦</div>
-            <div className="mr-label">Click to upload or drag & drop</div>
-            <div className="mr-hint">Public Bank statement PDF only</div>
-          </div>
-          <input
-            ref={brFileRef}
-            type="file"
-            accept=".pdf"
-            style={{ display: 'none' }}
-            onChange={(e) => { handleBrFile(e.target.files?.[0]); e.target.value = ''; }}
-          />
-
-          {brLoading && <div className="mr-loading">Reading bank statement...</div>}
-          {brError && <div className="mr-error">{brError}</div>}
-
-          {brResult && (
-            <div style={{ marginTop: 16 }}>
-              <div className="mr-result" style={{ marginTop: 0, marginBottom: 12 }}>
-                <div className="mr-result-title">Statement parsed</div>
-                <div className="mr-result-info">{brResult.totalTxns} transactions across {brResult.totalPages} pages</div>
-                <div className="mr-result-info">
-                  Found: {brResult.toKeyed.length} to key · {brResult.onlineTransfers.length} online transfers · {brResult.depCash.length} cash deposits
-                </div>
-              </div>
-
-              <div className="br-section">
-                <div className="br-header" onClick={() => toggleBrSection('toKeyed')}>
-                  <span>To Key {brResult.toKeyed.length > 0 && <span className="br-count">({brResult.toKeyed.length})</span>}</span>
-                  <span>{brOpen.toKeyed ? '▾' : '▸'}</span>
-                </div>
-                {brOpen.toKeyed && (
-                  <div className="br-body">
-                    {brResult.toKeyed.length === 0 ? (
-                      <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
-                    ) : (
-                      <table className="br-table">
-                        <thead><tr><th>Date</th><th>Description</th><th>Type</th><th className="br-amt">Debit</th><th className="br-amt">Credit</th><th>Pg</th></tr></thead>
-                        <tbody>
-                          {brResult.toKeyed.map((t, i) => (
-                            <tr key={i}>
-                              <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                              <td className="br-desc">{t.description}</td>
-                              <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
-                              <td className="br-amt">{t.debit ? fmtAmt(t.debit) : '-'}</td>
-                              <td className="br-amt">{t.credit ? fmtAmt(t.credit) : '-'}</td>
-                              <td className="br-page">p{t.page}</td>
-                            </tr>
-                          ))}
-                          <tr className="br-total">
-                            <td colSpan={3}>Total</td>
-                            <td className="br-amt">{fmtAmt(brResult.toKeyed.reduce((s, t) => s + t.debit, 0))}</td>
-                            <td className="br-amt">{fmtAmt(brResult.toKeyed.reduce((s, t) => s + t.credit, 0))}</td>
-                            <td></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="br-section">
-                <div className="br-header" onClick={() => toggleBrSection('online')}>
-                  <span>Online Transfers (Credit) {brResult.onlineTransfers.length > 0 && <span className="br-count">({brResult.onlineTransfers.length})</span>}</span>
-                  <span>{brOpen.online ? '▾' : '▸'}</span>
-                </div>
-                {brOpen.online && (
-                  <div className="br-body">
-                    {brResult.onlineTransfers.length === 0 ? (
-                      <div style={{ fontSize: 12, color: '#71717a' }}>No online transfers found</div>
-                    ) : (
-                      <>
-                        <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
-                        <table className="br-table">
-                          <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th>Pg</th></tr></thead>
-                          <tbody>
-                            {brResult.onlineTransfers.map((t, i) => (
-                              <tr key={i} style={brExcluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
-                                <td><input type="checkbox" className="br-check" checked={!brExcluded.has(i)} onChange={() => toggleBrExclude(i)} /></td>
-                                <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                                <td className="br-desc">{t.description}</td>
-                                <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                <td className="br-page">p{t.page}</td>
-                              </tr>
-                            ))}
-                            <tr className="br-total">
-                              <td colSpan={3}>Total ({brResult.onlineTransfers.length - brExcluded.size} of {brResult.onlineTransfers.length} included)</td>
-                              <td className="br-amt">{fmtAmt(brOnlineTotal)}</td>
-                              <td></td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="br-section">
-                <div className="br-header" onClick={() => toggleBrSection('depCash')}>
-                  <span>Cash Deposits (DEP-CASH) {brResult.depCash.length > 0 && <span className="br-count">({brResult.depCash.length})</span>}</span>
-                  <span>{brOpen.depCash ? '▾' : '▸'}</span>
-                </div>
-                {brOpen.depCash && (
-                  <div className="br-body">
-                    {brResult.depCash.length === 0 ? (
-                      <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
-                    ) : (
-                      <table className="br-table">
-                        <thead><tr><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th>Pg</th></tr></thead>
-                        <tbody>
-                          {brResult.depCash.map((t, i) => (
-                            <tr key={i}>
-                              <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                              <td className="br-desc">{t.description}</td>
-                              <td className="br-amt">{fmtAmt(t.credit)}</td>
-                              <td className="br-page">p{t.page}</td>
-                            </tr>
-                          ))}
-                          <tr className="br-total">
-                            <td colSpan={2}>Total ({brResult.depCash.length} deposits)</td>
-                            <td className="br-amt">{fmtAmt(brResult.depCash.reduce((s, t) => s + t.credit, 0))}</td>
-                            <td></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
         </div>
       </div>
     </div>
