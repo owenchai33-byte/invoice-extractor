@@ -233,7 +233,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   sc(0,0,'C.J.K. CHAI JEE KIONG TRADING SDN BHD');mg.push({s:{r:0,c:0},e:{r:0,c:L}});
   sc(1,0,`HQ STAFF PAYROLL ${mn} ${yr}`);mg.push({s:{r:1,c:0},e:{r:1,c:L}});
   sc(2,0,'FULL-TIME STAFF');mg.push({s:{r:2,c:0},e:{r:2,c:L}});
-  sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:mc(7)},e:{r:3,c:mc(15)}});
+  mg.push({s:{r:3,c:0},e:{r:3,c:3}});sc(3,4,'EARNINGS (+)');mg.push({s:{r:3,c:4},e:{r:3,c:5}});sc(3,7,'DEDUCTIONS (-)');mg.push({s:{r:3,c:mc(7)},e:{r:3,c:mc(15)}});
   sc(3,16,'NET PAY');mg.push({s:{r:3,c:mc(16)},e:{r:3,c:L}});
   ['NO','NAME','IC NO','POSITION','BASIC SALARY','INCENTIVE',bL,'EPF (M)','EPF (P)','JUMLAH EPF','SOCSO (M)','SOCSO (P)','JUMLAH SOCSO','EIS (M/P)','JUMLAH EIS','ADVANCE'].forEach((h,i)=>sc(4,i,h));
   sc(4,16,'BANK');sc(4,17,'CASH');
@@ -261,7 +261,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   mg.push({s:{r:row,c:mc(16)},e:{r:row,c:L}});
   const grandVal=Math.round((bPayoutVal+(cT[16]||0))*100)/100;
   sc(row,16,grandVal,`${A1(bankSub,16)}+${A1(cashSub,16)}`);row++;
-  notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});
+  const notesStart=row;notes.forEach(n=>{sc(row,0,/inactive/i.test(n)?`* ${n}`:n);mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;});const notesEnd=row;
   if(ptR.length>0){
   row++;sc(row,0,'PART-TIME STAFF');mg.push({s:{r:row,c:0},e:{r:row,c:L}});row++;
   sc(row,4,'WAGES/ DAY');sc(row,5,'DAY');sc(row,15,'ADVANCE');sc(row,16,'NET PAY');row++;
@@ -277,7 +277,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
   for(let R=_rng.s.r;R<=_rng.e.r;R++){
     for(let C=_rng.s.c;C<=_rng.e.c;C++){
       const a=X.utils.encode_cell({r:R,c:C}); let cell=ws[a]; if(!cell){cell={t:'s',v:''};ws[a]=cell;}
-      const st={border:R===0?{}:R===1?{bottom:_thin}:_bd,alignment:{vertical:'center',wrapText:R===4}};
+      const st={border:R===0?{}:R===1?{bottom:_thin}:(R>=notesStart&&R<notesEnd)?{}:_bd,alignment:{vertical:'center',wrapText:R===4}};
       if(R<=4){ st.font={bold:true,sz:R===0?12:11}; st.alignment.horizontal= R===2 ? 'left' : 'center'; if(R>=2) st.fill={fgColor:{rgb:'E9E9E9'}}; }
       else {
         st.alignment.horizontal = C>=4 ? 'right' : (C===1||C===3 ? 'left' : 'center');
