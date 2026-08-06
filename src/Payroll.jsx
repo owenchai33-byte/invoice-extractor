@@ -302,6 +302,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
     const sf='xl/worksheets/sheet1.xml';
     return zip.file(sf).async('string').then(xml=>{
       xml=xml.replace('<dimension','<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension');
+      xml=xml.replace(/<sheetView([^>]*?)\/>/,'<sheetView$1><pane xSplit="2" ySplit="5" topLeftCell="C6" activePane="bottomRight" state="frozen"/><selection pane="bottomRight"/></sheetView>');
       xml=xml.replace(/<pageMargins[^/]*\/>/,'$&<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>');
       zip.file(sf,xml);
       return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
