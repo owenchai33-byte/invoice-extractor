@@ -156,7 +156,7 @@ function buildSpayPDF(keepCols, title, dataRows, sums, month, year, outlet) {
     headStyles: { fillColor: [233, 233, 233], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', fontSize: 7, overflow: 'visible' },
     columnStyles: keepCols.reduce((acc, h, i) => {
       if (SPAY_NUMERIC.has(h)) acc[i] = { halign: 'right', fontSize: 7 };
-      if (/date/i.test(h)) acc[i] = { ...(acc[i] || {}), fontSize: 7 };
+      if (/date|merchant id|bank account/i.test(h)) acc[i] = { ...(acc[i] || {}), fontSize: 7 };
       return acc;
     }, {}),
     didParseCell: (data) => {
