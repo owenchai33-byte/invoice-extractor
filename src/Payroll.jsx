@@ -282,7 +282,7 @@ async function exportExcel(mo,yr,bR,cR,bT,cT,gT,ptR,ptT,notes,bL,sb=true){
       else {
         st.alignment.horizontal = C>=4 ? 'right' : (C===1||C===3 ? 'left' : 'center');
         const c0=ws[X.utils.encode_cell({r:R,c:0})]; const t0=(c0&&typeof c0.v==='string')?c0.v.trim():'';
-        if(/GRAND TOTAL|STAFF TOTAL PAYOUT/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'F0FDF4'}}; st.border={..._bd,top:{style:'thin',color:{rgb:'000000'}}}; if(C<=3) st.alignment.horizontal='right'; }
+        if(/GRAND TOTAL|STAFF TOTAL PAYOUT/i.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'F0FDF4'}}; st.border={..._bd,top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}}}; if(C<=3) st.alignment.horizontal='right'; }
         else if(/:$/.test(t0)){ st.font={bold:true}; st.fill={fgColor:{rgb:'EFF6FF'}}; if(C<=3) st.alignment.horizontal='right'; }
         else if(t0==='FULL-TIME STAFF'||t0==='PART-TIME STAFF'||t0==='PROBATIONARY STAFF'){ st.font={bold:true}; st.fill={fgColor:{rgb:'E9E9E9'}}; st.alignment.horizontal='left'; }
         else if(/inactive/i.test(t0)){ st.font={bold:true}; st.alignment.horizontal='left'; }
