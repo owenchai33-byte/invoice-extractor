@@ -120,9 +120,12 @@ const CSS = `
 .br-summary{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px}
 .br-summary-title{font-size:13px;font-weight:700;color:#166534;margin:0 0 8px}
 .br-summary-info{font-size:12px;color:#15803d;margin:0 0 4px}
-.br-section{margin-bottom:16px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden}
-.br-header{padding:12px 16px;background:#f4f4f5;font-size:13px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
-.br-header:hover{background:#e4e4e7}
+.br-tabs{display:flex;gap:0;border-bottom:2px solid #e4e4e7;margin-bottom:16px}
+.br-tab{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:#71717a;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.br-tab:hover{color:#18181b;background:#f4f4f5}
+.br-tab.active{color:#18181b;border-bottom-color:#18181b}
+.br-tab-count{font-size:11px;color:#a1a1aa;font-weight:400;margin-left:4px}
+.br-section{border:1px solid #e4e4e7;border-radius:8px;overflow:hidden}
 .br-body-inner{padding:14px 16px}
 .br-table{width:100%;border-collapse:collapse;font-size:11px}
 .br-table th{text-align:left;padding:6px 8px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
@@ -151,7 +154,7 @@ export default function BankRecon() {
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [excluded, setExcluded] = useState(new Set());
-  const [open, setOpen] = useState({ toKeyed: true, online: true, depCash: true });
+  const [activeTab, setActiveTab] = useState('toKeyed');
   const fileRef = useRef(null);
 
   const handleFile = async (file) => {
@@ -182,7 +185,6 @@ export default function BankRecon() {
     if (file) handleFile(file);
   };
 
-  const toggleSection = (key) => setOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
   const toggleExclude = (idx) => {
     setExcluded(prev => {
@@ -239,12 +241,14 @@ export default function BankRecon() {
               </div>
             </div>
 
-            <div className="br-section">
-              <div className="br-header" onClick={() => toggleSection('toKeyed')}>
-                <span>To Key <span className="br-count">({result.toKeyed.length})</span></span>
-                <span>{open.toKeyed ? '▾' : '▸'}</span>
-              </div>
-              {open.toKeyed && (
+            <div className="br-tabs">
+              <button className={`br-tab${activeTab==='toKeyed'?' active':''}`} onClick={()=>setActiveTab('toKeyed')}>To Key<span className="br-tab-count">({result.toKeyed.length})</span></button>
+              <button className={`br-tab${activeTab==='online'?' active':''}`} onClick={()=>setActiveTab('online')}>Online Transfers<span className="br-tab-count">({result.onlineTransfers.length})</span></button>
+              <button className={`br-tab${activeTab==='depCash'?' active':''}`} onClick={()=>setActiveTab('depCash')}>Cash Deposits<span className="br-tab-count">({result.depCash.length})</span></button>
+            </div>
+
+            {activeTab==='toKeyed' && (
+              <div className="br-section">
                 <div className="br-body-inner">
                   {result.toKeyed.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
@@ -272,15 +276,11 @@ export default function BankRecon() {
                     </table>
                   )}
                 </div>
-              )}
-            </div>
-
-            <div className="br-section">
-              <div className="br-header" onClick={() => toggleSection('online')}>
-                <span>Online Transfers (Credit) <span className="br-count">({result.onlineTransfers.length})</span></span>
-                <span>{open.online ? '▾' : '▸'}</span>
               </div>
-              {open.online && (
+            )}
+
+            {activeTab==='online' && (
+              <div className="br-section">
                 <div className="br-body-inner">
                   {result.onlineTransfers.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No online transfers found</div>
@@ -309,15 +309,11 @@ export default function BankRecon() {
                     </>
                   )}
                 </div>
-              )}
-            </div>
-
-            <div className="br-section">
-              <div className="br-header" onClick={() => toggleSection('depCash')}>
-                <span>Cash Deposits (DEP-CASH) <span className="br-count">({result.depCash.length})</span></span>
-                <span>{open.depCash ? '▾' : '▸'}</span>
               </div>
-              {open.depCash && (
+            )}
+
+            {activeTab==='depCash' && (
+              <div className="br-section">
                 <div className="br-body-inner">
                   {result.depCash.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
@@ -342,8 +338,8 @@ export default function BankRecon() {
                     </table>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>
