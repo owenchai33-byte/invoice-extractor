@@ -139,6 +139,7 @@ const CSS = `
 .br-tag.charge{background:#fef2f2;color:#dc2626}
 .br-tag.loan{background:#eff6ff;color:#2563eb}
 .br-desc{white-space:pre-line;max-width:340px}
+.br-daily{background:#f8fafc;font-weight:600;vertical-align:middle!important;border-left:2px solid #e4e4e7}
 .br-page{color:#71717a;font-size:10px}
 .br-count{font-size:11px;color:#71717a;font-weight:400;margin-left:6px}
 .br-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#dc2626}
@@ -198,6 +199,16 @@ export default function BankRecon() {
 
   const onlineTotal = result ? result.onlineTransfers.reduce((s, t, i) => s + (excluded.has(i) ? 0 : t.credit), 0) : 0;
 
+  const dailyGroup = (items, amtFn) => {
+    const counts = {}, totals = {};
+    items.forEach((t, i) => { counts[t.date] = (counts[t.date] || 0) + 1; totals[t.date] = (totals[t.date] || 0) + amtFn(t, i); });
+    const seen = {};
+    return items.map((t) => {
+      const first = !seen[t.date]; seen[t.date] = true;
+      return first ? { span: counts[t.date], total: totals[t.date] } : null;
+    });
+  };
+
   return (
     <div className="br-root">
       <style>{CSS}</style>
@@ -252,29 +263,30 @@ export default function BankRecon() {
                 <div className="br-body-inner">
                   {result.toKeyed.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
-                  ) : (
+                  ) : (() => {
+                    const dg = dailyGroup(result.toKeyed, t => t.debit || t.credit || 0);
+                    return (
                     <table className="br-table">
-                      <thead><tr><th>Date</th><th>Description</th><th>Type</th><th className="br-amt">Debit</th><th className="br-amt">Credit</th><th>Pg</th></tr></thead>
+                      <thead><tr><th>Date</th><th>Description</th><th>Type</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th><th>Pg</th></tr></thead>
                       <tbody>
                         {result.toKeyed.map((t, i) => (
                           <tr key={i}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
                             <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
-                            <td className="br-amt">{t.debit ? fmtAmt(t.debit) : '-'}</td>
-                            <td className="br-amt">{t.credit ? fmtAmt(t.credit) : '-'}</td>
+                            <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
+                            {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
                             <td className="br-page">p{t.page}</td>
                           </tr>
                         ))}
                         <tr className="br-total">
                           <td colSpan={3}>Total</td>
-                          <td className="br-amt">{fmtAmt(result.toKeyed.reduce((s, t) => s + t.debit, 0))}</td>
-                          <td className="br-amt">{fmtAmt(result.toKeyed.reduce((s, t) => s + t.credit, 0))}</td>
-                          <td></td>
+                          <td className="br-amt">{fmtAmt(result.toKeyed.reduce((s, t) => s + (t.debit || t.credit || 0), 0))}</td>
+                          <td></td><td></td>
                         </tr>
                       </tbody>
-                    </table>
-                  )}
+                    </table>);
+                  })()}
                 </div>
               </div>
             )}
@@ -284,11 +296,13 @@ export default function BankRecon() {
                 <div className="br-body-inner">
                   {result.onlineTransfers.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No online transfers found</div>
-                  ) : (
+                  ) : (() => {
+                    const dg = dailyGroup(result.onlineTransfers, t => t.credit || 0);
+                    return (
                     <>
                       <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
                       <table className="br-table">
-                        <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th>Pg</th></tr></thead>
+                        <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th><th>Pg</th></tr></thead>
                         <tbody>
                           {result.onlineTransfers.map((t, i) => (
                             <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
@@ -296,18 +310,19 @@ export default function BankRecon() {
                               <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                               <td className="br-desc">{t.description}</td>
                               <td className="br-amt">{fmtAmt(t.credit)}</td>
+                              {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
                               <td className="br-page">p{t.page}</td>
                             </tr>
                           ))}
                           <tr className="br-total">
                             <td colSpan={3}>Total ({result.onlineTransfers.length - excluded.size} of {result.onlineTransfers.length} included)</td>
                             <td className="br-amt">{fmtAmt(onlineTotal)}</td>
-                            <td></td>
+                            <td></td><td></td>
                           </tr>
                         </tbody>
                       </table>
-                    </>
-                  )}
+                    </>);
+                  })()}
                 </div>
               </div>
             )}
@@ -317,26 +332,29 @@ export default function BankRecon() {
                 <div className="br-body-inner">
                   {result.depCash.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
-                  ) : (
+                  ) : (() => {
+                    const dg = dailyGroup(result.depCash, t => t.credit || 0);
+                    return (
                     <table className="br-table">
-                      <thead><tr><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th>Pg</th></tr></thead>
+                      <thead><tr><th>Date</th><th>Description</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th><th>Pg</th></tr></thead>
                       <tbody>
                         {result.depCash.map((t, i) => (
                           <tr key={i}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
                             <td className="br-amt">{fmtAmt(t.credit)}</td>
+                            {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
                             <td className="br-page">p{t.page}</td>
                           </tr>
                         ))}
                         <tr className="br-total">
                           <td colSpan={2}>Total ({result.depCash.length} deposits)</td>
                           <td className="br-amt">{fmtAmt(result.depCash.reduce((s, t) => s + t.credit, 0))}</td>
-                          <td></td>
+                          <td></td><td></td>
                         </tr>
                       </tbody>
-                    </table>
-                  )}
+                    </table>);
+                  })()}
                 </div>
               </div>
             )}
