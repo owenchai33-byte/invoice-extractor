@@ -345,9 +345,12 @@ const CSS=`
    narrow / half-screen windows, instead of shrinking the figures to fit. */
 .t.ft{min-width:1320px}
 .t.ft td{background:#fff}
-.t.ft td:nth-child(1),.t.ft td:nth-child(2),.t.ft th:nth-child(1),.t.ft th:nth-child(2){position:sticky;z-index:2}
-.t.ft td:nth-child(1),.t.ft th:nth-child(1){left:0}
-.t.ft td:nth-child(2),.t.ft th:nth-child(2){left:33px;border-right:2px solid #e4e4e7}
+.t.ft .dr>td:nth-child(1),.t.ft .dr>td:nth-child(2){position:sticky;z-index:2}
+.t.ft .dr>td:nth-child(1){left:0}
+.t.ft .dr>td:nth-child(2){left:33px;border-right:2px solid #e4e4e7}
+.t.ft thead tr:last-child>th:nth-child(1),.t.ft thead tr:last-child>th:nth-child(2){position:sticky;z-index:3}
+.t.ft thead tr:last-child>th:nth-child(1){left:0}
+.t.ft thead tr:last-child>th:nth-child(2){left:33px;border-right:2px solid #e4e4e7}
 .t.ft tr:hover td{background:#fafafa}
 .t.ft .gh td{background:#f4f4f5}
 .t.ft .ph td{background:#fef3c7}
@@ -787,6 +790,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
     return(
     <tr
+      className="dr"
       data-sid={r.id}
       style={{
         opacity:isDragging?0.35:1,
