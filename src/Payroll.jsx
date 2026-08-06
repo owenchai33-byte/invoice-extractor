@@ -455,9 +455,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
   .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none}
   .t td:nth-child(n+5){font-size:7pt}
-  /* Allow name, IC, position to wrap so nothing gets cut off */
-  .t td:nth-child(2),.t td:nth-child(3),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
-  .t td:nth-child(3){padding-right:6px!important}
+  /* Allow name and position to wrap so nothing gets cut off */
+  .t td:nth-child(2),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
+  .t td:nth-child(3){padding-right:4px!important}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
