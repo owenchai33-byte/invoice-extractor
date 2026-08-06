@@ -68,7 +68,7 @@ async function parsePBBStatement(arrayBuffer) {
           page: p,
         };
       } else if (text && pendingTxn) {
-        pendingTxn.description += '\n' + text;
+        if (!/computer generated statement/i.test(text)) pendingTxn.description += '\n' + text;
       }
     }
     flushTxn();
@@ -199,13 +199,15 @@ export default function BankRecon() {
 
   const onlineTotal = result ? result.onlineTransfers.reduce((s, t, i) => s + (excluded.has(i) ? 0 : t.credit), 0) : 0;
 
-  const dailyGroup = (items, amtFn) => {
+  const dailyGroup = (items, amtFn, keyFn) => {
+    const gk = keyFn || (t => t.date);
     const counts = {}, totals = {};
-    items.forEach((t, i) => { counts[t.date] = (counts[t.date] || 0) + 1; totals[t.date] = (totals[t.date] || 0) + amtFn(t, i); });
+    items.forEach((t, i) => { const k = gk(t); counts[k] = (counts[k] || 0) + 1; totals[k] = (totals[k] || 0) + amtFn(t, i); });
     const seen = {};
     return items.map((t) => {
-      const first = !seen[t.date]; seen[t.date] = true;
-      return first ? { span: counts[t.date], total: totals[t.date] } : null;
+      const k = gk(t);
+      const first = !seen[k]; seen[k] = true;
+      return first ? { span: counts[k], total: totals[k] } : null;
     });
   };
 
@@ -264,13 +266,15 @@ export default function BankRecon() {
                   {result.toKeyed.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
                   ) : (() => {
-                    const dg = dailyGroup(result.toKeyed, t => t.debit || t.credit || 0);
+                    const dg = dailyGroup(result.toKeyed, t => t.debit || t.credit || 0, t => t.date + '|' + t.type);
+                    const chargeTotal = result.toKeyed.filter(t => t.type !== 'Loan Payment').reduce((s, t) => s + (t.debit || t.credit || 0), 0);
+                    const loanTotal = result.toKeyed.filter(t => t.type === 'Loan Payment').reduce((s, t) => s + (t.debit || t.credit || 0), 0);
                     return (
                     <table className="br-table">
                       <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Pg</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
                         {result.toKeyed.map((t, i) => (
-                          <tr key={i}>
+                          <tr key={i} style={{ background: t.type === 'Loan Payment' ? '#fef2f2' : '#eff6ff' }}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
                             <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
@@ -280,10 +284,15 @@ export default function BankRecon() {
                           </tr>
                         ))}
                         <tr className="br-total">
-                          <td colSpan={4}>Total</td>
-                          <td className="br-amt">{fmtAmt(result.toKeyed.reduce((s, t) => s + (t.debit || t.credit || 0), 0))}</td>
+                          <td colSpan={4}>Bank Charges Total</td>
+                          <td className="br-amt">{fmtAmt(chargeTotal)}</td>
                           <td></td>
                         </tr>
+                        {loanTotal > 0 && <tr className="br-total">
+                          <td colSpan={4}>Loan Payments Total</td>
+                          <td className="br-amt">{fmtAmt(loanTotal)}</td>
+                          <td></td>
+                        </tr>}
                       </tbody>
                     </table>);
                   })()}
