@@ -457,8 +457,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
-  .t .tr td{background:#EFF6FF!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#F0FDF4!important;font-size:7.5pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .tr td{background:#EFF6FF!important;font-size:7.5pt;font-weight:700;border-top:2px solid #000!important;border-bottom:2px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#F0FDF4!important;font-size:7.5pt;font-weight:700;border-top:2px solid #000!important;border-bottom:2px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t td.hl-new{background:#FFF9C4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -471,8 +471,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
   @page{size:A4 landscape;margin:0}
 }
-.po{text-align:center;margin-bottom:6px}.po>div{border-top:1px solid #000;border-bottom:1px solid #000;padding:3px 0}
-@media print{.po{display:block!important;text-align:center;margin-bottom:4px}.po div:first-child{font-size:9pt!important;font-weight:700}.po div:nth-child(2){font-size:8pt!important;font-weight:600}.po div:nth-child(3){font-size:7pt!important;font-weight:700;text-align:left}}
+.po{display:none}
+@media print{.po{display:block!important;text-align:center;margin-bottom:4px}.po>div{border-top:1px solid #000;border-bottom:1px solid #000;padding:2px 0}.po div:first-child{font-size:9pt!important;font-weight:700}.po div:nth-child(2){font-size:8pt!important;font-weight:600}.po div:nth-child(3){font-size:7pt!important;font-weight:700;text-align:left}}
 .fbar{position:sticky;top:78px;z-index:40;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:8px 12px;margin-bottom:12px;min-height:22px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .fxbadge{flex:none;font-family:Georgia,serif;font-style:italic;font-weight:700;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 8px;font-size:13px}
 .fxtxt{font-size:12.5px;color:#18181b;line-height:1.4}
