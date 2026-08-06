@@ -131,7 +131,7 @@ const CSS = `
 .br-table th{text-align:left;padding:6px 8px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
 .br-table td{padding:6px 8px;border-bottom:1px solid #e4e4e7;vertical-align:top}
 .br-table tr:last-child td{border-bottom:none}
-.br-amt{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.br-amt{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}
 .br-total{font-weight:700;background:#f0fdf4;font-size:12px}
 .br-total td{padding:8px;border-top:2px solid #15803d}
 .br-check{width:14px;height:14px;cursor:pointer;accent-color:#18181b}
