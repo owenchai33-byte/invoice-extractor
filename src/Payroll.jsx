@@ -166,7 +166,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
-export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin',LS_H='cjk_staff_hidden';
+export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin',LS_H='cjk_staff_hidden',LS_LE='cjk_payroll_lastedit';
 export function readMonthTs(mo,yr){const k=`${yr}-${String(mo+1).padStart(2,'0')}`;const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{return '';}}
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
@@ -600,7 +600,10 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   useEffect(()=>{_skip.current=false;},[]);
   useEffect(()=>{const raw=localStorage.getItem(LS_TS);if(raw){try{JSON.parse(raw);}catch{const k=_tsKey();localStorage.setItem(LS_TS,JSON.stringify({[k]:raw}));setUpdTs(raw);}}},[]);
   const[updTs,setUpdTs]=useState(()=>_readTs(_tsKey()));
-  useEffect(()=>{setUpdTs(_readTs(_tsKey()));},[mo,yr]);
+  const[lastEdit,setLastEdit]=useState(()=>{try{return JSON.parse(localStorage.getItem(LS_LE)||'{}')[_tsKey()]||null;}catch{return null;}});
+  useEffect(()=>{setUpdTs(_readTs(_tsKey()));try{setLastEdit(JSON.parse(localStorage.getItem(LS_LE)||'{}')[_tsKey()]||null);}catch{setLastEdit(null);}},[mo,yr]);
+  const _FL={salary:'Basic Salary',incentive:'Incentive',bonus:'Bonus',advance:'Advance',wagePerDay:'Wages/Day',daysWorked:'Days'};
+  const _recordEdit=(name,field,from,to)=>{const e={name:name.split(' ')[0],col:_FL[field]||field,from,to};const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_LE)||'{}');}catch{}o[k]=e;localStorage.setItem(LS_LE,JSON.stringify(o));setLastEdit(e);};
   const[locked,setLocked]=useState(true);
   const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
@@ -812,9 +815,9 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       <td className={r.addedMonth===_tsKey()?'hl-new':undefined} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}>{r.position}</td>
-      <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>updateSalary(r.id,v)} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
-      <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>sM(r.id,'incentive',v)} dec/><span className="pv">{pfmt(r.incentive)}</span></td>
-      {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>sM(r.id,'bonus',v)}/><span className="pv">{pfmt(r.bonus)}</span></td>}
+      <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>{_recordEdit(r.name,'salary',r.salary,v);updateSalary(r.id,v);}} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
+      <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>{_recordEdit(r.name,'incentive',r.incentive,v);sM(r.id,'incentive',v);}} dec/><span className="pv">{pfmt(r.incentive)}</span></td>
+      {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>{_recordEdit(r.name,'bonus',r.bonus,v);sM(r.id,'bonus',v);}}/><span className="pv">{pfmt(r.bonus)}</span></td>}
       <td className={"r fxc"+hl(7)} style={{color:'#000'}} onClick={()=>applySel(ri,7)}>{fmt(r.epfM)}</td>
       <td className={"r fxc"+hl(8)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,8)}>{fmt(r.epfP)}</td>
       <td className={"r fxc"+hl(9)} style={{color:'#000'}} onClick={()=>applySel(ri,9)}>{fmt(r.epfM+r.epfP)}</td>
@@ -823,7 +826,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       <td className={"r fxc"+hl(12)} style={{color:'#000'}} onClick={()=>applySel(ri,12)}>{fmt(r.socsoM+r.socsoP)}</td>
       <td className={"r fxc"+hl(13)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,13)}>{fmt(r.eisE)}</td>
       <td className={"r fxc"+hl(14)} style={{color:'#000'}} onClick={()=>applySel(ri,14)}>{fmt(r.eisE*2)}</td>
-      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/><span className="pv">{pfmt(r.advance)}</span></td>
+      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>{_recordEdit(r.name,'advance',r.advance,v);sM(r.id,'advance',v);}} dec/><span className="pv">{pfmt(r.advance)}</span></td>
       {isBank ? <>
         <td className={"r fxc"+hl(16)} style={{fontWeight:700,fontSize:10,whiteSpace:'nowrap',color:'#166534'}} onClick={()=>applySel(ri,16)}>{fmt(bankAmt(r))}</td>
         <td className={"r fxc"} style={{fontWeight:700,fontSize:10,whiteSpace:'nowrap',color:'#b45309'}}>{fmt(cashAmt(r))}</td>
@@ -893,7 +896,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           <button className="mbtn" disabled={mo===6&&yr===2026} onClick={()=>{if(mo===6&&yr===2026)return;if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);}}>&#9664;</button>
           <div className="mlbl">{MONTHS[mo]} {yr}</div>
           <button className="mbtn" onClick={()=>{if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1);}}>&#9654;</button>
-          {updTs&&<span className="upd-ts">Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}</span>}
+          {updTs&&<span className="upd-ts">Updated {new Date(updTs).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:true})}{lastEdit&&<span style={{color:'#71717a'}}> · {lastEdit.name} — {lastEdit.col}: {fmt(lastEdit.from)} → {fmt(lastEdit.to)}</span>}</span>}
         </div>
         <div className="acts">
           <button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?(isMonthLocked?'🔒 Month Locked':'🔒 Locked'):'🔓 Editing'}</button>
@@ -1015,7 +1018,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
             <table className="t">
               <thead><tr><th className="r" style={{width:32}}>#</th><th>Name</th><th>IC No</th><th className="r">Wages/Day</th><th className="r">Days</th><th className="r">Advance</th><th className="r" style={{width:90}}>Net Pay</th></tr></thead>
               <tbody>
-                {ptR.map((r,i)=><tr key={r.id}><td className="r" style={{color:'#a1a1aa'}}>{i+1}</td><td style={{fontWeight:600}}>{r.name}</td><td style={{color:'#71717a',fontSize:12}}>{r.ic}</td><td className="r"><EditableCell value={r.wagePerDay} onCommit={v=>sM(r.id,'wagePerDay',v)}/></td><td className="r"><EditableCell value={r.daysWorked} onCommit={v=>sM(r.id,'daysWorked',v)} width={36}/></td><td className="r"><EditableCell value={r.advance} onCommit={v=>sM(r.id,'advance',v)} dec/></td><td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td></tr>)}
+                {ptR.map((r,i)=><tr key={r.id}><td className="r" style={{color:'#a1a1aa'}}>{i+1}</td><td style={{fontWeight:600}}>{r.name}</td><td style={{color:'#71717a',fontSize:12}}>{r.ic}</td><td className="r"><EditableCell value={r.wagePerDay} onCommit={v=>{_recordEdit(r.name,'wagePerDay',r.wagePerDay,v);sM(r.id,'wagePerDay',v);}}/></td><td className="r"><EditableCell value={r.daysWorked} onCommit={v=>{_recordEdit(r.name,'daysWorked',r.daysWorked,v);sM(r.id,'daysWorked',v);}} width={36}/></td><td className="r"><EditableCell value={r.advance} onCommit={v=>{_recordEdit(r.name,'advance',r.advance,v);sM(r.id,'advance',v);}} dec/></td><td className="r" style={{fontWeight:700,fontSize:14}}>{fmt(r.netPay)}</td></tr>)}
                 <tr className="tr"><td colSpan={5} style={{fontWeight:700}}>TOTAL</td><td className="r">{fmt(ptT.advance)}</td><td className="r">{fmt(ptT.netPay)}</td></tr>
               </tbody>
             </table>
