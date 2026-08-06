@@ -68,7 +68,7 @@ async function parsePBBStatement(arrayBuffer) {
           page: p,
         };
       } else if (text && pendingTxn) {
-        if (!/computer generated statement/i.test(text)) pendingTxn.description += '\n' + text;
+        if (!/computer generated statement|terima kasih|thank you for banking|privacy notice|notis privasi|excellence is our commitment|perhatian|attention/i.test(text)) pendingTxn.description += '\n' + text;
       }
     }
     flushTxn();
@@ -136,8 +136,8 @@ const CSS = `
 .br-total td{padding:8px;border-top:2px solid #15803d}
 .br-check{width:14px;height:14px;cursor:pointer;accent-color:#18181b}
 .br-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
-.br-tag.charge{background:#fef2f2;color:#dc2626}
-.br-tag.loan{background:#eff6ff;color:#2563eb}
+.br-tag.charge{background:#eff6ff;color:#2563eb}
+.br-tag.loan{background:#fef2f2;color:#dc2626}
 .br-desc{white-space:pre-line;max-width:340px}
 .br-daily{background:#f8fafc;font-weight:600;vertical-align:middle!important;border-left:2px solid #e4e4e7}
 .br-page{color:#71717a;font-size:10px}
