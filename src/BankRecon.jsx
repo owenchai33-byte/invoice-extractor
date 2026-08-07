@@ -271,39 +271,49 @@ async function parseMyKasihOutputPDF(buf) {
   return dailies;
 }
 
-const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^DUITNOW TRSF CR\s*/i, /^DUITNOW TRSF\s*/i, /^DUITNOW CR\s*/i, /^TSFR FUND CR[-\s]*(ATM\/EFT\s*)?/i, /^TRSF FUND CR[-\s]*(ATM\/EFT\s*)?/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i, /^ATM\/EFT\s*/i];
 const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
-function cleanQR(text) {
-  return text
-    .replace(/\bDUITQR MCHT TRANSFER\b/gi, '')
-    .replace(/\bDUITNOW QR \w+\b/gi, '')
-    .replace(/\bQR PAYMENT\b/gi, '')
-    .replace(/\bQR PYMT\b/gi, '')
-    .replace(/\bTRANSFER\b/gi, '')
-    .replace(/\bQR\s*REF\s*NO:\s*\d+/gi, '')
-    .replace(/\bQR\b/gi, '')
-    .replace(/\b0+([1-9]\d*)\b/g, '$1')
-    .replace(/\b0+\b/g, '')
-    .replace(/[\s\-]+/g, ' ')
-    .trim();
+const TYPE_MAP = [
+  { pattern: /^DUITNOW QR CR\s*/i, label: 'DUITNOW QR' },
+  { pattern: /^DUITNOW TRSF CR\s*/i, label: 'DUITNOW TRSF' },
+  { pattern: /^DUITNOW TRSF\s*/i, label: 'DUITNOW TRSF' },
+  { pattern: /^DUITNOW CR\s*/i, label: 'DUITNOW' },
+  { pattern: /^TSFR FUND CR[-\s]*(ATM\/EFT\s*)?/i, label: 'FUND TRSF' },
+  { pattern: /^TRSF FUND CR[-\s]*(ATM\/EFT\s*)?/i, label: 'FUND TRSF' },
+  { pattern: /^IBG CR\s*/i, label: 'IBG' },
+  { pattern: /^IBFT CR\s*/i, label: 'IBFT' },
+  { pattern: /^TRSF\s*/i, label: 'TRSF' },
+  { pattern: /^ATM\/EFT\s*/i, label: 'ATM/EFT' },
+];
+function findName(remainder, contLines) {
+  const m = remainder.match(/^\d+\s+(.+)/);
+  if (m) {
+    const candidate = m[1].replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').trim();
+    if (candidate && /[A-Za-z]{2,}/.test(candidate)) return candidate;
+  }
+  for (const line of contLines) {
+    const l = line.trim();
+    if (!l) continue;
+    if (OWN_COMPANY.test(l)) continue;
+    if (/^QR\s*REF\s*NO:/i.test(l)) continue;
+    if (/^\d+$/.test(l)) continue;
+    if (/[A-Za-z]{2,}/.test(l)) return l;
+  }
+  return '';
 }
 function shortDesc(desc) {
   const lines = desc.split('\n');
   const first = lines[0];
-  const contLines = lines.slice(1).map(l => l.trim()).filter(Boolean).filter(l => !OWN_COMPANY.test(l));
-  for (const p of ONLINE_STRIP) {
-    const r = first.replace(p, '');
+  for (const { pattern, label } of TYPE_MAP) {
+    const r = first.replace(pattern, '');
     if (r !== first) {
-      const ref = r.trim();
-      const name = contLines.join(' ');
-      const raw = ref && name ? ref + ' ' + name : name || ref || first;
-      return cleanQR(raw) || first;
+      const name = findName(r.trim(), lines.slice(1));
+      return name ? label + ' ' + name : label;
     }
   }
-  if (contLines.length > 0) {
-    return cleanQR(first + ' ' + contLines.join(' ')) || first;
-  }
-  return cleanQR(first) || first;
+  const contNames = lines.slice(1).map(l => l.trim()).filter(Boolean)
+    .filter(l => !OWN_COMPANY.test(l)).filter(l => /[A-Za-z]{2,}/.test(l));
+  if (contNames.length > 0) return first + ' ' + contNames[0];
+  return first;
 }
 function hasName(short) {
   const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT|ATM|EFT|CASA|TRF)\b/gi, '');
@@ -648,7 +658,7 @@ export default function BankRecon() {
                                 <tr key={i} className={j === 0 ? 'br-dfirst' : ''} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                                   <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
-                                  <td className="br-desc">{(sd => <>{sd}{!hasName(sd) && <span className="br-noname">⚠ NO NAME</span>}</>)(shortDesc(t.description))}<div className="br-tip">{t.description.split('\n').filter(l => !OWN_COMPANY.test(l)).join('\n')}</div></td>
+                                  <td className="br-desc">{(sd => <>{sd}{!hasName(sd) && <span className="br-noname">⚠ NO NAME</span>}</>)(shortDesc(t.description))}<div className="br-tip">{t.description.split('\n').map(l => OWN_COMPANY.test(l) ? l.replace(OWN_COMPANY, '').trim() : l).filter(l => l.trim()).join('\n')}</div></td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
                                   <td className="br-amt br-daily">{j === 0 && fmtAmt(dailyTotal)}</td>
