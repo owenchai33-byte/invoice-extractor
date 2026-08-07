@@ -119,8 +119,17 @@ function groupByDate(items) {
 
 const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
 function shortDesc(desc) {
-  const first = desc.split('\n')[0];
-  for (const p of ONLINE_STRIP) { const r = first.replace(p, ''); if (r !== first) return r.trim() || first; }
+  const lines = desc.split('\n');
+  const first = lines[0];
+  for (const p of ONLINE_STRIP) {
+    const r = first.replace(p, '');
+    if (r !== first) {
+      const stripped = r.trim();
+      const rest = lines.slice(1).map(l => l.trim()).filter(Boolean).join(' ');
+      if (rest) return rest + (stripped ? ' (' + stripped + ')' : '');
+      return stripped || first;
+    }
+  }
   return first;
 }
 
