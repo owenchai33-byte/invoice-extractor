@@ -82,7 +82,7 @@ function classifyBankTxns(txns) {
   const depCash = [];
 
   const TO_KEYED_PATTERNS = [/PROCESS FEE/i, /HANDLING CHARGE/i, /AUDIT CONFIRMATION/i, /AUTOMATED LOAN/i];
-  const ONLINE_PATTERNS = [/DUITNOW QR CR/i, /TSFR FUND CR/i, /DUITNOW CR/i, /IBG CR/i, /IBFT CR/i];
+  const ONLINE_PATTERNS = [/DUITNOW QR CR/i, /TSFR FUND CR/i, /DUITNOW CR/i, /IBG CR/i, /IBFT CR/i, /TRSF/i];
 
   for (const txn of txns) {
     const desc = txn.description.split('\n')[0];
@@ -130,6 +130,7 @@ const CSS = `
 .br-table{width:100%;border-collapse:collapse;font-size:11px}
 .br-table th{text-align:left;padding:6px 8px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
 .br-table td{padding:6px 8px;border-bottom:1px solid #e4e4e7;vertical-align:top}
+.br-date-first td{border-top:2px solid #18181b}
 .br-table tr:last-child td{border-bottom:none}
 .br-amt{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}
 .br-total{font-weight:700;background:#f0fdf4;font-size:12px}
@@ -139,7 +140,7 @@ const CSS = `
 .br-tag.charge{background:#eff6ff;color:#2563eb}
 .br-tag.loan{background:#fef2f2;color:#dc2626}
 .br-desc{white-space:pre-line;max-width:340px}
-.br-daily{background:#f8fafc;font-weight:600;vertical-align:middle!important;border-left:2px solid #e4e4e7}
+.br-daily{background:#eff6ff;font-weight:700;font-size:12px;vertical-align:middle!important;border-left:2px solid #2563eb;color:#1e40af}
 .br-page{color:#71717a;font-size:10px}
 .br-count{font-size:11px;color:#71717a;font-weight:400;margin-left:6px}
 .br-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#dc2626}
@@ -199,15 +200,16 @@ export default function BankRecon() {
 
   const onlineTotal = result ? result.onlineTransfers.reduce((s, t, i) => s + (excluded.has(i) ? 0 : t.credit), 0) : 0;
 
-  const dailyGroup = (items, amtFn, keyFn) => {
+  const dailyGroup = (items, amtFn, keyFn, excludeSet) => {
     const gk = keyFn || (t => t.date);
     const counts = {}, totals = {};
-    items.forEach((t, i) => { const k = gk(t); counts[k] = (counts[k] || 0) + 1; totals[k] = (totals[k] || 0) + amtFn(t, i); });
-    const seen = {};
+    items.forEach((t, i) => { const k = gk(t); counts[k] = (counts[k] || 0) + 1; totals[k] = (totals[k] || 0) + (excludeSet && excludeSet.has(i) ? 0 : amtFn(t, i)); });
+    const seen = {}, dateSeen = {};
     return items.map((t) => {
       const k = gk(t);
       const first = !seen[k]; seen[k] = true;
-      return first ? { span: counts[k], total: totals[k] } : null;
+      const dateFirst = !dateSeen[t.date]; dateSeen[t.date] = true;
+      return { daily: first ? { span: counts[k], total: totals[k] } : null, dateFirst };
     });
   };
 
@@ -250,13 +252,13 @@ export default function BankRecon() {
               <div className="br-summary-title">Statement parsed</div>
               <div className="br-summary-info">{result.totalTxns} transactions across {result.totalPages} pages</div>
               <div className="br-summary-info">
-                Found: {result.toKeyed.length} to key · {result.onlineTransfers.length} online transfers · {result.depCash.length} cash deposits
+                Found: {result.toKeyed.length} to key · {result.onlineTransfers.length} POS DuitNow · {result.depCash.length} cash deposits
               </div>
             </div>
 
             <div className="br-tabs">
               <button className={`br-tab${activeTab==='toKeyed'?' active':''}`} onClick={()=>setActiveTab('toKeyed')}>To Key<span className="br-tab-count">({result.toKeyed.length})</span></button>
-              <button className={`br-tab${activeTab==='online'?' active':''}`} onClick={()=>setActiveTab('online')}>Online Transfers<span className="br-tab-count">({result.onlineTransfers.length})</span></button>
+              <button className={`br-tab${activeTab==='online'?' active':''}`} onClick={()=>setActiveTab('online')}>POS DuitNow<span className="br-tab-count">({result.onlineTransfers.length})</span></button>
               <button className={`br-tab${activeTab==='depCash'?' active':''}`} onClick={()=>setActiveTab('depCash')}>Cash Deposits<span className="br-tab-count">({result.depCash.length})</span></button>
             </div>
 
@@ -274,13 +276,13 @@ export default function BankRecon() {
                       <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Pg</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
                         {result.toKeyed.map((t, i) => (
-                          <tr key={i} style={{ background: t.type === 'Loan Payment' ? '#fef2f2' : '#eff6ff' }}>
+                          <tr key={i} className={dg[i].dateFirst && i > 0 ? 'br-date-first' : ''} style={{ background: t.type === 'Loan Payment' ? '#fef2f2' : '#eff6ff' }}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
                             <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
                             <td className="br-page">p{t.page}</td>
                             <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
-                            {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
+                            {dg[i].daily && <td rowSpan={dg[i].daily.span} className="br-amt br-daily">{fmtAmt(dg[i].daily.total)}</td>}
                           </tr>
                         ))}
                         <tr className="br-total">
@@ -306,7 +308,7 @@ export default function BankRecon() {
                   {result.onlineTransfers.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No online transfers found</div>
                   ) : (() => {
-                    const dg = dailyGroup(result.onlineTransfers, t => t.credit || 0);
+                    const dg = dailyGroup(result.onlineTransfers, t => t.credit || 0, null, excluded);
                     return (
                     <>
                       <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
@@ -314,13 +316,13 @@ export default function BankRecon() {
                         <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                         <tbody>
                           {result.onlineTransfers.map((t, i) => (
-                            <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
+                            <tr key={i} className={dg[i].dateFirst && i > 0 ? 'br-date-first' : ''} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                               <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                               <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                               <td className="br-desc">{t.description}</td>
                               <td className="br-page">p{t.page}</td>
                               <td className="br-amt">{fmtAmt(t.credit)}</td>
-                              {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
+                              {dg[i].daily && <td rowSpan={dg[i].daily.span} className="br-amt br-daily">{fmtAmt(dg[i].daily.total)}</td>}
                             </tr>
                           ))}
                           <tr className="br-total">
@@ -348,12 +350,12 @@ export default function BankRecon() {
                       <thead><tr><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
                         {result.depCash.map((t, i) => (
-                          <tr key={i}>
+                          <tr key={i} className={dg[i].dateFirst && i > 0 ? 'br-date-first' : ''}>
                             <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
                             <td className="br-desc">{t.description}</td>
                             <td className="br-page">p{t.page}</td>
                             <td className="br-amt">{fmtAmt(t.credit)}</td>
-                            {dg[i] && <td rowSpan={dg[i].span} className="br-amt br-daily">{fmtAmt(dg[i].total)}</td>}
+                            {dg[i].daily && <td rowSpan={dg[i].daily.span} className="br-amt br-daily">{fmtAmt(dg[i].daily.total)}</td>}
                           </tr>
                         ))}
                         <tr className="br-total">
