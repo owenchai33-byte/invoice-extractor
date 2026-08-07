@@ -353,7 +353,7 @@ export default function BankRecon() {
                                 <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
                                 <td className="br-page">p{t.page}</td>
                                 <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
-                                {j === 0 && <td rowSpan={g.items.length} className={dailyClass}>{dailyCell}</td>}
+                                <td className={dailyClass}>{j === 0 ? dailyCell : ''}</td>
                               </tr>
                             ))
                           );
@@ -408,7 +408,7 @@ export default function BankRecon() {
                                   <td className="br-desc">{t.description}</td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                  {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>}
+                                  <td className="br-amt br-daily">{j === 0 ? fmtAmt(dailyTotal) : ''}</td>
                                 </tr>
                               ))
                             );
@@ -456,7 +456,7 @@ export default function BankRecon() {
                                 <td className="br-desc">{t.description}</td>
                                 <td className="br-page">p{t.page}</td>
                                 <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>}
+                                <td className="br-amt br-daily">{j === 0 ? fmtAmt(dailyTotal) : ''}</td>
                               </tr>
                             ))
                           );
