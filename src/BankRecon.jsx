@@ -372,7 +372,7 @@ export default function BankRecon() {
                                 <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
                                 <td className="br-page">p{t.page}</td>
                                 <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
-                                {j === 0 && <td rowSpan={g.items.length} className={dailyClass} style={{verticalAlign:'top'}}>{dailyCell}</td>}
+                                <td className={dailyClass}>{j === 0 && dailyCell}</td>
                               </tr>
                             ))
                           );
@@ -427,7 +427,7 @@ export default function BankRecon() {
                                   <td className="br-desc">{shortDesc(t.description)}<div className="br-tip">{t.description.split('\n').filter(l => !OWN_COMPANY.test(l)).join('\n')}</div></td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                  {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'top'}}>{fmtAmt(dailyTotal)}</td>}
+                                  <td className="br-amt br-daily">{j === 0 && fmtAmt(dailyTotal)}</td>
                                 </tr>
                               ))
                             );
@@ -475,7 +475,7 @@ export default function BankRecon() {
                                 <td className="br-desc">{t.description}</td>
                                 <td className="br-page">p{t.page}</td>
                                 <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'top'}}>{fmtAmt(dailyTotal)}</td>}
+                                <td className="br-amt br-daily">{j === 0 && fmtAmt(dailyTotal)}</td>
                               </tr>
                             ))
                           );
