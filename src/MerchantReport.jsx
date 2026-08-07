@@ -54,6 +54,58 @@ function parseNum(v) {
   return parseFloat(s) || 0;
 }
 
+const LS_POS = 'br_pos_daily';
+function savePOSDailies(type, outlet, dailies) {
+  let data = {};
+  try { const s = localStorage.getItem(LS_POS); if (s) data = JSON.parse(s); } catch {}
+  if (!data[type]) data[type] = {};
+  data[type][outlet] = dailies;
+  localStorage.setItem(LS_POS, JSON.stringify(data));
+}
+
+function extractSpayDailies(rawRows) {
+  const dailies = {};
+  for (const r of rawRows) {
+    const d = r['Settlement Date'];
+    const amt = parseNum(r['Settlement Amount']);
+    if (!d || !amt) continue;
+    const m = String(d).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) continue;
+    const key = `${m[3]}/${m[2]}`;
+    dailies[key] = (dailies[key] || 0) + amt;
+  }
+  return dailies;
+}
+
+async function extractCardpayNetAmount(buf) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  for (let p = pdf.numPages; p >= 1; p--) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(i => i.str.trim());
+    items.sort((a, b) => {
+      const dy = b.transform[5] - a.transform[5];
+      if (Math.abs(dy) > 3) return dy;
+      return a.transform[4] - b.transform[4];
+    });
+    const text = items.map(i => i.str.trim()).join(' ');
+    const m = text.match(/Total\s+Net\s+Amount\s*:?\s*([\d,]+\.\d{2})/i);
+    if (m) return parseFloat(m[1].replace(/,/g, ''));
+  }
+  return 0;
+}
+
+function extractMyKasihNet(excelRows) {
+  const dataHeaderIdx = excelRows.findIndex(r => r[0] === 'NO');
+  if (dataHeaderIdx < 0) return 0;
+  const allDataRows = excelRows.slice(dataHeaderIdx + 1).filter(r => r.length > 0 && r.some(v => v != null && v !== ''));
+  const netRow = [...allDataRows].reverse().find(r => r.some(v => typeof v === 'string' && /TOTAL\s*NET/i.test(String(v).trim())));
+  if (!netRow) return 0;
+  const filled = netRow.filter(v => v != null && v !== '');
+  const last = filled[filled.length - 1];
+  return typeof last === 'number' ? last : parseFloat(String(last).replace(/,/g, '')) || 0;
+}
+
 function processSpay(rawRows) {
   const headers = Object.keys(rawRows[0] || {});
   const numericCols = headers.filter(h => SPAY_NUMERIC.has(h));
@@ -895,6 +947,7 @@ export default function MerchantReport() {
         if (headers.includes('Settlement No.') || headers.includes('Merchant ID')) {
           const { keepCols, title, dataRows, sums, year, month, outlet, warnings } = processSpay(rawRows);
           setResult({ type: 'SPAY', keepCols, title, dataRows, sums, year, month, outlet, warnings, rows: rawRows.length });
+          savePOSDailies('spay', outlet, extractSpayDailies(rawRows));
         } else {
           setError('Could not detect merchant format. Make sure the file has the original headers from the portal.');
         }
@@ -929,6 +982,14 @@ export default function MerchantReport() {
         setCpError('No StatementOfAccount PDFs found in the zip file.');
       } else {
         setCpResult(res);
+        const cpDailies = {};
+        for (const p of res.pdfs) {
+          const dm = p.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (!dm) continue;
+          const net = await extractCardpayNetAmount(p.buf);
+          if (net > 0) { const k = `${dm[3]}/${dm[2]}`; cpDailies[k] = (cpDailies[k] || 0) + net; }
+        }
+        savePOSDailies('cardpay', res.outlet, cpDailies);
       }
     } catch (err) {
       setCpError('Could not process zip: ' + (err.message || 'unknown error'));
@@ -963,6 +1024,14 @@ export default function MerchantReport() {
           alert('⚠️ Date Warning\n\n' + res.warnings.join('\n'));
         }
         setMkResult(res);
+        const mkDailies = {};
+        for (const excel of res.excels) {
+          const dm = excel.date.match(/^(\d{4})(\d{2})(\d{2})/);
+          if (!dm) continue;
+          const net = extractMyKasihNet(excel.rows);
+          if (net > 0) { const k = `${dm[3]}/${dm[2]}`; mkDailies[k] = (mkDailies[k] || 0) + net; }
+        }
+        savePOSDailies('mykasih', res.outlet, mkDailies);
       }
     } catch (err) {
       setMkError('Could not process zip: ' + (err.message || 'unknown error'));

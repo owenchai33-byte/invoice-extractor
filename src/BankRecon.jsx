@@ -123,6 +123,35 @@ function groupByDate(items) {
   return groups;
 }
 
+const CP_BANK_IDS = ['162259', '162250', '162260', '162249'];
+
+function matchBankCredits(txns) {
+  const matched = { spay: {}, cardpay: {}, mykasih: {} };
+  for (const t of txns) {
+    if (t.credit <= 0) continue;
+    const desc = t.description.toUpperCase();
+    if (desc.includes('SILICONNET')) {
+      matched.spay[t.date] = (matched.spay[t.date] || 0) + t.credit;
+    } else if (desc.includes('GHL') && CP_BANK_IDS.some(id => desc.includes(id))) {
+      matched.cardpay[t.date] = (matched.cardpay[t.date] || 0) + t.credit;
+    } else if (desc.includes('MYKASIH FOUNDATION')) {
+      matched.mykasih[t.date] = (matched.mykasih[t.date] || 0) + t.credit;
+    }
+  }
+  return matched;
+}
+
+function sumPOSOutlets(typeData) {
+  const totals = {};
+  if (!typeData) return totals;
+  for (const outletData of Object.values(typeData)) {
+    for (const [date, amt] of Object.entries(outletData)) {
+      totals[date] = (totals[date] || 0) + amt;
+    }
+  }
+  return totals;
+}
+
 const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
 const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
 function cleanQR(text) {
@@ -241,6 +270,12 @@ export default function BankRecon() {
   const [collapsed, setCollapsed] = useState(() => new Set(saved.current?.collapsed || []));
   const [activeTab, setActiveTab] = useState('toKeyed');
   const fileRef = useRef(null);
+  const [posData, setPosData] = useState({});
+  const loadPosData = () => { try { const s = localStorage.getItem('br_pos_daily'); setPosData(s ? JSON.parse(s) : {}); } catch { setPosData({}); } };
+
+  useEffect(() => {
+    if (activeTab === 'posBank') loadPosData();
+  }, [activeTab]);
 
   useEffect(() => {
     if (result) {
@@ -357,6 +392,7 @@ export default function BankRecon() {
               <button className={`br-tab${activeTab==='toKeyed'?' active':''}`} onClick={()=>setActiveTab('toKeyed')}>To Key<span className="br-tab-count">({result.toKeyed.length})</span></button>
               <button className={`br-tab${activeTab==='online'?' active':''}`} onClick={()=>setActiveTab('online')}>POS DuitNow<span className="br-tab-count">({result.onlineTransfers.length})</span></button>
               <button className={`br-tab${activeTab==='depCash'?' active':''}`} onClick={()=>setActiveTab('depCash')}>Cash Deposits<span className="br-tab-count">({result.depCash.length})</span></button>
+              <button className={`br-tab${activeTab==='posBank'?' active':''}`} onClick={()=>setActiveTab('posBank')}>POS vs Bank</button>
             </div>
 
             {activeTab==='toKeyed' && (
@@ -531,6 +567,91 @@ export default function BankRecon() {
                         </tr>
                       </tbody>
                     </table></>);
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {activeTab==='posBank' && (
+              <div className="br-section">
+                <div className="br-body-inner">
+                  {(() => {
+                    const bankMatch = matchBankCredits(result.txns);
+                    const types = [
+                      { key: 'spay', label: 'Sarawak Pay (SPAY)', keyword: 'SILICONNET' },
+                      { key: 'cardpay', label: 'Cardpay (GHL)', keyword: 'GHL + outlet ID' },
+                      { key: 'mykasih', label: 'MyKasih', keyword: 'MYKASIH FOUNDATION' },
+                    ];
+                    const hasPOS = posData.spay || posData.cardpay || posData.mykasih;
+                    return (<>
+                      <div style={{ fontSize: 11, color: '#71717a', marginBottom: 12 }}>
+                        Compares POS merchant daily settlements against bank CREDIT entries by keyword.
+                        <button style={{ marginLeft: 8, fontSize: 10, padding: '2px 8px', border: '1px solid #d4d4d8', borderRadius: 4, background: '#fff', cursor: 'pointer' }} onClick={loadPosData}>↻ Refresh POS data</button>
+                      </div>
+                      {hasPOS ? (
+                        <div style={{ fontSize: 11, color: '#166534', background: '#f0fdf4', padding: '8px 12px', borderRadius: 6, marginBottom: 12 }}>
+                          POS data loaded: {[
+                            posData.spay && `Spay (${Object.keys(posData.spay).join(', ')})`,
+                            posData.cardpay && `Cardpay (${Object.keys(posData.cardpay).join(', ')})`,
+                            posData.mykasih && `MyKasih (${Object.keys(posData.mykasih).join(', ')})`,
+                          ].filter(Boolean).join(' · ')}
+                          <button style={{ marginLeft: 12, fontSize: 10, padding: '2px 8px', border: '1px solid #fecaca', borderRadius: 4, background: '#fff', color: '#dc2626', cursor: 'pointer' }}
+                            onClick={() => { if (window.confirm('Clear all POS daily data?')) { localStorage.removeItem('br_pos_daily'); setPosData({}); } }}>Clear POS data</button>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 11, color: '#d97706', background: '#fefce8', padding: '8px 12px', borderRadius: 6, marginBottom: 12 }}>
+                          ⚠ No POS data — upload merchant reports in the POS Merchant Report page first, then come back here.
+                        </div>
+                      )}
+                      {types.map(({ key, label, keyword }) => {
+                        const posDailies = sumPOSOutlets(posData[key]);
+                        const bankDailies = bankMatch[key];
+                        const allDates = [...new Set([...Object.keys(posDailies), ...Object.keys(bankDailies)])].sort((a, b) => {
+                          const [da, ma] = a.split('/').map(Number);
+                          const [db, mb] = b.split('/').map(Number);
+                          return (ma - mb) || (da - db);
+                        });
+                        if (!allDates.length) return null;
+                        const totalPOS = Object.values(posDailies).reduce((s, v) => s + v, 0);
+                        const totalBank = Object.values(bankDailies).reduce((s, v) => s + v, 0);
+                        return (
+                          <div key={key} style={{ marginBottom: 20 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, borderBottom: '1px solid #e4e4e7', paddingBottom: 4 }}>{label} <span style={{ fontSize: 11, color: '#71717a', fontWeight: 400 }}>bank keyword: {keyword}</span></div>
+                            <table className="br-table">
+                              <thead>
+                                <tr><th>Date</th><th className="br-amt">POS Amount</th><th className="br-amt">Bank Credit</th><th className="br-amt">Diff</th><th>Status</th></tr>
+                              </thead>
+                              <tbody>
+                                {allDates.map(d => {
+                                  const pos = posDailies[d] || 0;
+                                  const bank = bankDailies[d] || 0;
+                                  const diff = Math.abs(pos - bank);
+                                  const match = diff < 0.02;
+                                  const posOnly = pos > 0 && bank === 0;
+                                  const bankOnly = bank > 0 && pos === 0;
+                                  return (
+                                    <tr key={d} style={{ background: match ? '#f0fdf4' : posOnly || bankOnly ? '#fefce8' : '#fef2f2' }}>
+                                      <td>{d}</td>
+                                      <td className="br-amt">{pos ? fmtAmt(pos) : <span style={{ color: '#a1a1aa' }}>—</span>}</td>
+                                      <td className="br-amt">{bank ? fmtAmt(bank) : <span style={{ color: '#a1a1aa' }}>—</span>}</td>
+                                      <td className="br-amt" style={{ color: match ? '#166534' : '#dc2626', fontWeight: 600 }}>{match ? '0.00' : fmtAmt(diff)}</td>
+                                      <td style={{ fontSize: 11 }}>{match ? <span style={{ color: '#166534' }}>✓ Match</span> : posOnly ? <span style={{ color: '#d97706' }}>⚠ No bank credit</span> : bankOnly ? <span style={{ color: '#d97706' }}>⚠ No POS data</span> : <span style={{ color: '#dc2626' }}>✗ Mismatch</span>}</td>
+                                    </tr>
+                                  );
+                                })}
+                                <tr className="br-total">
+                                  <td>Total</td>
+                                  <td className="br-amt">{fmtAmt(totalPOS)}</td>
+                                  <td className="br-amt">{fmtAmt(totalBank)}</td>
+                                  <td className="br-amt" style={{ color: Math.abs(totalPOS - totalBank) < 0.02 ? '#166534' : '#dc2626' }}>{fmtAmt(Math.abs(totalPOS - totalBank))}</td>
+                                  <td>{Math.abs(totalPOS - totalBank) < 0.02 ? <span style={{ color: '#166534' }}>✓ Balanced</span> : <span style={{ color: '#dc2626' }}>✗ {fmtAmt(Math.abs(totalPOS - totalBank))} difference</span>}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                    </>);
                   })()}
                 </div>
               </div>
