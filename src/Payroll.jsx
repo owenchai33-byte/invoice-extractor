@@ -454,7 +454,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1;vertical-align:middle!important}
   .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;vertical-align:middle!important}
-  .t td:nth-child(n+5){font-size:7pt}
+  .t td:nth-child(n+5){font-size:7pt!important}
   /* Allow name and position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
   .t td:nth-child(4){padding-left:6px!important}
@@ -833,26 +833,25 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       <td className={"r fxc"+hl(14)} style={{color:'#000'}} onClick={()=>applySel(ri,14)}>{fmt(r.eisE*2)}</td>
       <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>{_recordEdit(r.name,'advance',r.advance,v);sM(r.id,'advance',v);}} dec/><span className="pv">{pfmt(r.advance)}</span></td>
       {isBank ? <>
-        <td className={"r fxc"+hl(16)} style={{fontWeight:700,fontSize:10,whiteSpace:'nowrap',color:'#166534'}} onClick={()=>applySel(ri,16)}>{fmt(bankAmt(r))}</td>
-        <td className={"r fxc"} style={{fontWeight:700,fontSize:10,whiteSpace:'nowrap',color:'#b45309'}}>{fmt(cashAmt(r))}</td>
+        <td className={"r fxc"+hl(16)} style={{fontWeight:700,whiteSpace:'nowrap',color:'#166534'}} onClick={()=>applySel(ri,16)}>{fmt(bankAmt(r))}</td>
+        <td className={"r fxc"} style={{fontWeight:700,whiteSpace:'nowrap',color:'#b45309'}}>{fmt(cashAmt(r))}</td>
       </> :
-        <td colSpan={2} className={"r fxc"+hl(16)} style={{fontWeight:700,fontSize:11,whiteSpace:'nowrap',color:'#000'}} onClick={()=>applySel(ri,16)}>{fmt(r.netPay)}</td>
+        <td colSpan={2} className={"r fxc"+hl(16)} style={{fontWeight:700,whiteSpace:'nowrap',color:'#000'}} onClick={()=>applySel(ri,16)}>{fmt(r.netPay)}</td>
       }
     </tr>
   );};
   const TR=({l,t,c})=>{
     const ri=totRi[l];
-    const fs=c==='gr'?12:10;
     const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
-    const cell=ci=><td className={"r tcell fxc"+hl(ci)} style={{fontSize:fs}} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
+    const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
     return(
     <tr className={c}>
-      <td colSpan={4} style={{fontWeight:700,textAlign:'right',fontSize:fs}}>{l}</td>
+      <td colSpan={4} style={{fontWeight:700,textAlign:'right'}}>{l}</td>
       {cell(4)}{cell(5)}{sb&&cell(6)}
       {cell(7)}{cell(8)}{cell(9)}
       {cell(10)}{cell(11)}{cell(12)}
       {cell(13)}{cell(14)}{cell(15)}
-      <td colSpan={2} className={"r tcell fxc"+hl(16)} style={{fontSize:fs}} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
+      <td colSpan={2} className={"r tcell fxc"+hl(16)} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
     </tr>
   );};
   gn=0;
