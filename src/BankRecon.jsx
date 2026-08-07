@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
@@ -156,6 +156,9 @@ const CSS = `
 .br-tag.loan{background:#fef2f2;color:#dc2626}
 .br-desc{white-space:pre-line;max-width:340px}
 .br-daily{background:#eff6ff;font-weight:700;font-size:12px;vertical-align:middle!important;border-left:2px solid #2563eb;color:#1e40af}
+.br-daily.loan{background:#fef2f2;border-left-color:#dc2626;color:#dc2626}
+.br-clear{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;margin-left:auto}
+.br-clear:hover{background:#dc2626;color:#fff}
 .br-page{color:#71717a;font-size:10px}
 .br-count{font-size:11px;color:#71717a;font-weight:400;margin-left:6px}
 .br-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#dc2626}
@@ -172,15 +175,34 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
+const LS_BR = 'br_saved';
+function loadSaved() {
+  try { const s = localStorage.getItem(LS_BR); if (s) return JSON.parse(s); } catch {} return null;
+}
+
 export default function BankRecon() {
-  const [result, setResult] = useState(null);
+  const saved = useRef(loadSaved());
+  const [result, setResult] = useState(saved.current?.result || null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [excluded, setExcluded] = useState(new Set());
-  const [collapsed, setCollapsed] = useState(new Set());
+  const [excluded, setExcluded] = useState(() => new Set(saved.current?.excluded || []));
+  const [collapsed, setCollapsed] = useState(() => new Set(saved.current?.collapsed || []));
   const [activeTab, setActiveTab] = useState('toKeyed');
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (result) {
+      localStorage.setItem(LS_BR, JSON.stringify({ result, excluded: [...excluded], collapsed: [...collapsed] }));
+    }
+  }, [result, excluded, collapsed]);
+
+  const clearAll = () => {
+    localStorage.removeItem(LS_BR);
+    setResult(null);
+    setExcluded(new Set());
+    setCollapsed(new Set());
+  };
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -237,6 +259,7 @@ export default function BankRecon() {
       <div className="br-bar">
         <h1>BANK RECONCILIATION</h1>
         <span style={{ fontSize: 11, color: '#a1a1aa', fontWeight: 400 }}>Upload Public Bank statement · All processing in browser · Nothing sent to server</span>
+        {result && <button className="br-clear" onClick={() => { if (window.confirm('Clear all bank recon data? This cannot be undone.')) clearAll(); }}>Clear All Data</button>}
       </div>
       <div className="br-body">
         {!result && (
@@ -301,13 +324,20 @@ export default function BankRecon() {
                         {groups.map(g => {
                           const ck = 'tk_' + g.date;
                           const isCollapsed = collapsed.has(ck);
-                          const dailyTotal = g.items.reduce((s, {txn}) => s + (txn.debit || txn.credit || 0), 0);
+                          const loanAmt = g.items.filter(({txn}) => txn.type === 'Loan Payment').reduce((s, {txn}) => s + (txn.debit || txn.credit || 0), 0);
+                          const chargeAmt = g.items.filter(({txn}) => txn.type !== 'Loan Payment').reduce((s, {txn}) => s + (txn.debit || txn.credit || 0), 0);
+                          const hasLoan = loanAmt > 0;
+                          const hasCharge = chargeAmt > 0;
+                          const dailyCell = hasLoan && hasCharge ? (
+                            <><div style={{color:'#dc2626'}}>{fmtAmt(loanAmt)}</div><div style={{color:'#1e40af'}}>{fmtAmt(chargeAmt)}</div></>
+                          ) : fmtAmt(loanAmt + chargeAmt);
+                          const dailyClass = 'br-amt br-daily' + (hasLoan && !hasCharge ? ' loan' : '');
                           return isCollapsed ? (
                             <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
                               <td><span className="br-arrow">▶</span>{g.date}</td>
                               <td colSpan={3}><span className="br-dh-count">{g.items.length} transactions</span></td>
-                              <td className="br-amt">{fmtAmt(dailyTotal)}</td>
-                              <td className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>
+                              <td className="br-amt">{fmtAmt(loanAmt + chargeAmt)}</td>
+                              <td className={dailyClass}>{dailyCell}</td>
                             </tr>
                           ) : (
                             g.items.map(({txn: t, idx: i}, j) => (
@@ -317,7 +347,7 @@ export default function BankRecon() {
                                 <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
                                 <td className="br-page">p{t.page}</td>
                                 <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
-                                {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>}
+                                {j === 0 && <td rowSpan={g.items.length} className={dailyClass}>{dailyCell}</td>}
                               </tr>
                             ))
                           );
