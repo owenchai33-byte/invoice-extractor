@@ -25,6 +25,39 @@ const TAB_TO_SECTION = {};
 SECTIONS.forEach(s => s.tabs.forEach(t => { TAB_TO_SECTION[t.id] = s.id; }));
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
+const APP_PIN = '9069';
+const PIN_TABS = new Set(['payroll', 'payslip']);
+
+function PinGate({ onUnlock }) {
+  const [pin, setPin] = useState('');
+  const [err, setErr] = useState(false);
+  const submit = () => {
+    if (pin === APP_PIN) onUnlock();
+    else { setErr(true); setPin(''); }
+  };
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'80vh',fontFamily:FONT_STACK}}>
+      <div style={{textAlign:'center',padding:40,background:'#fff',borderRadius:12,border:'1px solid #e4e4e7',boxShadow:'0 4px 24px rgba(0,0,0,.06)',minWidth:320}}>
+        <div style={{fontSize:28,marginBottom:8}}>🔒</div>
+        <div style={{fontSize:15,fontWeight:700,marginBottom:4,color:'#18181b'}}>Protected Page</div>
+        <div style={{fontSize:12,color:'#71717a',marginBottom:20}}>Enter PIN to continue</div>
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={4}
+          value={pin}
+          onChange={e => { setErr(false); setPin(e.target.value.replace(/\D/g,'')); }}
+          onKeyDown={e => e.key === 'Enter' && submit()}
+          autoFocus
+          style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${err?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace'}}
+          placeholder="····"
+        />
+        {err && <div style={{fontSize:12,color:'#dc2626',marginTop:8}}>Wrong PIN</div>}
+        <div><button onClick={submit} style={{marginTop:16,padding:'8px 32px',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer',border:'none',background:'#18181b',color:'#fff'}}>Unlock</button></div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [active, setActive] = useState(() => {
@@ -32,8 +65,10 @@ export default function App() {
     catch { return 'invoice'; }
   });
   const [time, setTime] = useState(() => new Date());
+  const [pinUnlocked, setPinUnlocked] = useState(false);
 
   useEffect(() => {
+    setPinUnlocked(false);
     try { localStorage.setItem('sabrina_active', active); } catch {}
     if (active === 'invoice') document.title = 'CJK Payment Summary';
     else if (active === 'contract') document.title = 'CJK Contracts';
@@ -383,9 +418,9 @@ export default function App() {
       {/* ─── Content ─── */}
       <main>
         {active === 'invoice' && <InvoicesWorkspace />}
-        {active === 'payroll' && <Payroll canUndo={canUndo} onUndo={handleUndo} canRedo={canRedo} onRedo={handleRedo} />}
+        {active === 'payroll' && (pinUnlocked ? <Payroll canUndo={canUndo} onUndo={handleUndo} canRedo={canRedo} onRedo={handleRedo} /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'contract' && <ContractGenerator />}
-        {active === 'payslip' && <Payslip />}
+        {active === 'payslip' && (pinUnlocked ? <Payslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'epayslip' && <EmployeePayslip />}
         {active === 'merchant' && <MerchantReport />}
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
