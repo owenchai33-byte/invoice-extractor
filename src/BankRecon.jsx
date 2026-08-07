@@ -378,16 +378,29 @@ export default function BankRecon() {
                               <td className={dailyClass}>{dailyCell}</td>
                             </tr>
                           ) : (
-                            g.items.map(({txn: t, idx: i}, j) => (
-                              <tr key={i} style={{ background: t.type === 'Loan Payment' ? '#fef2f2' : '#eff6ff' }}>
+                            g.items.map(({txn: t, idx: i}, j) => {
+                              const isLoan = t.type === 'Loan Payment';
+                              const isMixed = hasLoan && hasCharge;
+                              const isFirstOfType = j === g.items.findIndex(({txn: x}) => (x.type === 'Loan Payment') === isLoan);
+                              let dtClass = 'br-amt br-daily';
+                              let dtContent = null;
+                              if (isMixed) {
+                                dtClass += isLoan ? ' loan' : '';
+                                if (isFirstOfType) dtContent = (isLoan ? 'L ' : 'C ') + fmtAmt(isLoan ? loanAmt : chargeAmt);
+                              } else {
+                                if (hasLoan) dtClass += ' loan';
+                                if (j === 0) dtContent = fmtAmt(loanAmt + chargeAmt);
+                              }
+                              return (
+                              <tr key={i} style={{ background: isLoan ? '#fef2f2' : '#eff6ff' }}>
                                 <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
                                 <td className="br-desc">{t.description}</td>
-                                <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
+                                <td><span className={`br-tag ${isLoan ? 'loan' : 'charge'}`}>{t.type}</span></td>
                                 <td className="br-page">p{t.page}</td>
                                 <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
-                                <td className={dailyClass}>{j === 0 && dailyCell}</td>
-                              </tr>
-                            ))
+                                <td className={dtClass}>{dtContent}</td>
+                              </tr>);
+                            })
                           );
                         })}
                         <tr className="br-total">
