@@ -287,7 +287,7 @@ const TYPE_MAP = [
 function findName(remainder, contLines) {
   if (remainder) {
     const cleaned = remainder.replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').replace(/^\d+\s*/, '').trim();
-    if (cleaned && /[A-Za-z]{2,}/.test(cleaned)) return cleaned;
+    if (cleaned && hasName(cleaned)) return cleaned;
   }
   for (let i = contLines.length - 1; i >= 0; i--) {
     let l = contLines[i].trim();
@@ -295,7 +295,7 @@ function findName(remainder, contLines) {
     l = l.replace(OWN_COMPANY, '').trim();
     l = l.replace(/^QR\s*REF\s*NO:\s*\S*/i, '').trim();
     if (!l) continue;
-    if (/[A-Za-z]{2,}/.test(l)) return l;
+    if (hasName(l)) return l;
   }
   return '';
 }
@@ -315,7 +315,7 @@ function shortDesc(desc) {
   return first;
 }
 function hasName(short) {
-  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT|ATM|EFT|CASA|TRF)\b/gi, '');
+  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT|ATM|EFT|CASA|TRF)\d*/gi, '');
   const alpha = stripped.replace(/[^A-Za-z]/g, '');
   return alpha.length >= 2;
 }
