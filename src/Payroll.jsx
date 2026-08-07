@@ -387,7 +387,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .tgc{background:#d1fae5;color:#065f46}
 .tgp{background:#fef3c7;color:#92400e}
 .tgg{background:#f4f4f5;color:#374151}
-.notes{padding:8px 14px;background:#fffbeb;border-top:1px solid #fcd34d}
+.notes{padding:8px 14px;background:#fffbeb;border-top:1px solid #000}
 .notes p{margin:0 0 3px;font-size:11px;color:#92400e;font-style:italic}
 .notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:80}
