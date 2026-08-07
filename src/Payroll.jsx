@@ -419,9 +419,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.ft .dr>td,.t.ft thead tr:last-child>th{position:static!important;left:auto!important;border-right-width:0!important}
   /* Explicit print column widths — sum = 100%. With bonus column (17 cols). */
   .t:not(.nb) col:nth-child(1){width:1.8%!important}   /* # */
-  .t:not(.nb) col:nth-child(2){width:19%!important}    /* Name */
+  .t:not(.nb) col:nth-child(2){width:18%!important}    /* Name */
   .t:not(.nb) col:nth-child(3){width:8%!important}   /* IC */
-  .t:not(.nb) col:nth-child(4){width:11%!important}    /* Position */
+  .t:not(.nb) col:nth-child(4){width:12%!important}    /* Position */
   .t:not(.nb) col:nth-child(5){width:5%!important}     /* Salary */
   .t:not(.nb) col:nth-child(6){width:5%!important}     /* Incent */
   .t:not(.nb) col:nth-child(7){width:4%!important}     /* Bonus */
@@ -437,9 +437,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t:not(.nb) col:nth-child(17){width:6%!important}    /* Net Pay */
   /* Same widths with the bonus column hidden (16 cols) — everything after Incent shifts left one. */
   .t.nb col:nth-child(1){width:1.8%!important}   /* # */
-  .t.nb col:nth-child(2){width:19%!important}    /* Name */
+  .t.nb col:nth-child(2){width:18%!important}    /* Name */
   .t.nb col:nth-child(3){width:8%!important}   /* IC */
-  .t.nb col:nth-child(4){width:11%!important}    /* Position */
+  .t.nb col:nth-child(4){width:12%!important}    /* Position */
   .t.nb col:nth-child(5){width:5%!important}     /* Salary */
   .t.nb col:nth-child(6){width:5%!important}     /* Incent */
   .t.nb col:nth-child(7){width:4.3%!important}   /* EPF(M) */
