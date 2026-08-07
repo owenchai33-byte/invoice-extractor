@@ -365,7 +365,7 @@ const CSS=`
 .t .gh{background:#f4f4f5;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
 .t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
 .t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
-.t .tr td,.t .gr td{border-top:1px solid #000;border-bottom:1px solid #000;font-weight:700;font-size:12px}
+.t .tr td,.t .gr td{border-top:1.5px solid #000;border-bottom:1px solid #000;font-weight:700;font-size:12px}
 .t .tr td{background:#EFF6FF}
 .t .gr td{background:#F0FDF4}
 .t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
@@ -457,7 +457,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t td:nth-child(n+5){font-size:7pt}
   /* Allow name and position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
-  .t td:nth-child(3){padding-right:4px!important}
+  .t td:nth-child(4){padding-left:6px!important}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible}
