@@ -315,10 +315,12 @@ export default function BankRecon() {
                   {result.toKeyed.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
                   ) : (() => {
+                    const _tkHelp = <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Captures DEBIT matching PROCESS FEE, HANDLING CHARGE, AUDIT CONFIRMATION, AUTOMATED LOAN. <span style={{color:'#2563eb'}}>Charges in blue</span>, <span style={{color:'#dc2626'}}>Loan in red</span>.</div>;
                     const groups = groupByDate(result.toKeyed);
                     const chargeTotal = result.toKeyed.filter(t => t.type !== 'Loan Payment').reduce((s, t) => s + (t.debit || t.credit || 0), 0);
                     const loanTotal = result.toKeyed.filter(t => t.type === 'Loan Payment').reduce((s, t) => s + (t.debit || t.credit || 0), 0);
-                    return (
+                    return (<>
+                    {_tkHelp}
                     <table className="br-table">
                       <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Pg</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
@@ -367,7 +369,7 @@ export default function BankRecon() {
                           <td></td>
                         </tr>}
                       </tbody>
-                    </table>);
+                    </table></>);
                   })()}
                 </div>
               </div>
@@ -382,7 +384,7 @@ export default function BankRecon() {
                     const groups = groupByDate(result.onlineTransfers);
                     return (
                     <>
-                      <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
+                      <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Extracts every CREDIT matching DUITNOW QR CR, TSFR FUND CR etc. Untick non-retail to exclude from total.</div>
                       <table className="br-table">
                         <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                         <tbody>
@@ -431,7 +433,8 @@ export default function BankRecon() {
                     <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
                   ) : (() => {
                     const groups = groupByDate(result.depCash);
-                    return (
+                    return (<>
+                    <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Captures every CREDIT matching DEP-CASH.</div>
                     <table className="br-table">
                       <thead><tr><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
@@ -464,7 +467,7 @@ export default function BankRecon() {
                           <td></td>
                         </tr>
                       </tbody>
-                    </table>);
+                    </table></>);
                   })()}
                 </div>
               </div>
