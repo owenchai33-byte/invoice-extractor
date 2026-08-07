@@ -118,16 +118,17 @@ function groupByDate(items) {
 }
 
 const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
+const OWN_COMPANY = /CHAI JEE KIONG TRADING SDN\.?\s*BHD\.?/i;
 function shortDesc(desc) {
   const lines = desc.split('\n');
   const first = lines[0];
   for (const p of ONLINE_STRIP) {
     const r = first.replace(p, '');
     if (r !== first) {
-      const stripped = r.trim();
-      const rest = lines.slice(1).map(l => l.trim()).filter(Boolean).join(' ');
-      if (rest) return rest + (stripped ? ' (' + stripped + ')' : '');
-      return stripped || first;
+      const ref = r.trim();
+      const name = lines.slice(1).map(l => l.trim()).filter(Boolean).filter(l => !OWN_COMPANY.test(l)).join(' ');
+      if (ref && name) return ref + ' ' + name;
+      return name || ref || first;
     }
   }
   return first;
@@ -170,8 +171,10 @@ const CSS = `
 .br-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .br-tag.charge{background:#eff6ff;color:#2563eb}
 .br-tag.loan{background:#fef2f2;color:#dc2626}
-.br-desc{white-space:pre-line;max-width:340px}
-.br-daily{background:#eff6ff;font-weight:700;font-size:12px;vertical-align:middle!important;border-left:2px solid #2563eb;color:#1e40af}
+.br-desc{position:relative;max-width:340px;cursor:default}
+.br-desc:hover .br-tip{display:block}
+.br-tip{display:none;position:absolute;left:0;top:100%;z-index:100;background:#18181b;color:#fff;padding:8px 12px;border-radius:6px;font-size:11px;white-space:pre-line;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,.15);pointer-events:none;line-height:1.5}
+.br-daily{background:#eff6ff;font-weight:700;font-size:12px;border-left:2px solid #2563eb;color:#1e40af}
 .br-daily.loan{background:#fef2f2;border-left-color:#dc2626;color:#dc2626}
 .br-daily.mixed{background:#f5f5f4;border-left-color:#a1a1aa}
 .br-clear{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;margin-left:auto}
@@ -421,7 +424,7 @@ export default function BankRecon() {
                                 <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                                   <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
-                                  <td className="br-desc" title={t.description}>{shortDesc(t.description)}</td>
+                                  <td className="br-desc">{shortDesc(t.description)}<div className="br-tip">{t.description}</div></td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
                                   {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'top'}}>{fmtAmt(dailyTotal)}</td>}
