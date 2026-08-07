@@ -415,7 +415,7 @@ export default function BankRecon() {
                                   <td className="br-desc" title={t.description}>{shortDesc(t.description)}</td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                  {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'middle'}}>{fmtAmt(dailyTotal)}</td>}
+                                  {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'top'}}>{fmtAmt(dailyTotal)}</td>}
                                 </tr>
                               ))
                             );
