@@ -289,8 +289,8 @@ function findName(remainder, contLines) {
     const cleaned = remainder.replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').replace(/^\d+\s*/, '').trim();
     if (cleaned && /[A-Za-z]{2,}/.test(cleaned)) return cleaned;
   }
-  for (const line of contLines) {
-    let l = line.trim();
+  for (let i = contLines.length - 1; i >= 0; i--) {
+    let l = contLines[i].trim();
     if (!l || /^\d+$/.test(l)) continue;
     l = l.replace(OWN_COMPANY, '').trim();
     l = l.replace(/^QR\s*REF\s*NO:\s*\S*/i, '').trim();
