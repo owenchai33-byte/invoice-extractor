@@ -157,6 +157,7 @@ const CSS = `
 .br-desc{white-space:pre-line;max-width:340px}
 .br-daily{background:#eff6ff;font-weight:700;font-size:12px;vertical-align:middle!important;border-left:2px solid #2563eb;color:#1e40af}
 .br-daily.loan{background:#fef2f2;border-left-color:#dc2626;color:#dc2626}
+.br-daily.mixed{background:#f5f5f4;border-left-color:#a1a1aa}
 .br-clear{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;margin-left:auto}
 .br-clear:hover{background:#dc2626;color:#fff}
 .br-page{color:#71717a;font-size:10px}
@@ -329,9 +330,12 @@ export default function BankRecon() {
                           const hasLoan = loanAmt > 0;
                           const hasCharge = chargeAmt > 0;
                           const dailyCell = hasLoan && hasCharge ? (
-                            <><div style={{color:'#dc2626'}}>{fmtAmt(loanAmt)}</div><div style={{color:'#1e40af'}}>{fmtAmt(chargeAmt)}</div></>
+                            <>
+                              <div style={{color:'#dc2626',fontSize:11,lineHeight:'1.4'}}>L {fmtAmt(loanAmt)}</div>
+                              <div style={{color:'#2563eb',fontSize:11,lineHeight:'1.4',borderTop:'1px dashed #d4d4d8',marginTop:2,paddingTop:2}}>C {fmtAmt(chargeAmt)}</div>
+                            </>
                           ) : fmtAmt(loanAmt + chargeAmt);
-                          const dailyClass = 'br-amt br-daily' + (hasLoan && !hasCharge ? ' loan' : '');
+                          const dailyClass = 'br-amt br-daily' + (hasLoan && hasCharge ? ' mixed' : hasLoan ? ' loan' : '');
                           return isCollapsed ? (
                             <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
                               <td><span className="br-arrow">▶</span>{g.date}</td>
