@@ -51,23 +51,28 @@ async function parsePBBStatement(arrayBuffer) {
       if (/balance (from last|b\/f)/i.test(text)) {
         currentDate = date || currentDate;
         attachToLast = true;
+        const extra = text.replace(/balance\s+(from last|b\/f)/gi, '').trim();
+        if (extra && !isJunk(extra) && allTxns.length > 0) {
+          allTxns[allTxns.length - 1].description += '\n' + extra;
+        }
         continue;
       }
       if (/balance c\/f/i.test(text)) { flushTxn(); continue; }
 
       if (date && /^\d{2}\/\d{2}$/.test(date)) currentDate = date;
 
-      const hasAmount = debit || credit;
+      const parseAmt = (s) => { if (!s) return 0; return parseFloat(s.replace(/,/g, '')) || 0; };
+      const dVal = parseAmt(debit);
+      const cVal = parseAmt(credit);
 
-      if (hasAmount) {
+      if (dVal > 0 || cVal > 0) {
         attachToLast = false;
         flushTxn();
-        const parseAmt = (s) => { if (!s) return 0; return parseFloat(s.replace(/,/g, '')) || 0; };
         pendingTxn = {
           date: currentDate,
           description: text,
-          debit: parseAmt(debit),
-          credit: parseAmt(credit),
+          debit: dVal,
+          credit: cVal,
           balance: balance.replace(/,/g, ''),
           page: p,
         };
@@ -183,7 +188,8 @@ function shortDesc(desc) {
   return first;
 }
 function hasName(short) {
-  const alpha = short.replace(/[^A-Za-z]/g, '');
+  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT)\b/gi, '');
+  const alpha = stripped.replace(/[^A-Za-z]/g, '');
   return alpha.length >= 2;
 }
 
@@ -250,7 +256,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 2;
+const BR_VER = 3;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
