@@ -26,8 +26,10 @@ async function parsePBBStatement(arrayBuffer) {
     const rows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
     let currentDate = '';
     let pendingTxn = null;
+    let attachToLast = false;
 
     const flushTxn = () => { if (pendingTxn) { allTxns.push(pendingTxn); pendingTxn = null; } };
+    const isJunk = (s) => /computer generated statement|terima kasih|thank you for banking|privacy notice|notis privasi|excellence is our commitment|perhatian|attention/i.test(s);
 
     for (const [, rowItems] of rows) {
       const sorted = rowItems.sort((a, b) => a.transform[4] - b.transform[4]);
@@ -48,6 +50,7 @@ async function parsePBBStatement(arrayBuffer) {
 
       if (/balance (from last|b\/f)/i.test(text)) {
         currentDate = date || currentDate;
+        attachToLast = true;
         continue;
       }
       if (/balance c\/f/i.test(text)) { flushTxn(); continue; }
@@ -57,6 +60,7 @@ async function parsePBBStatement(arrayBuffer) {
       const hasAmount = debit || credit;
 
       if (hasAmount) {
+        attachToLast = false;
         flushTxn();
         const parseAmt = (s) => { if (!s) return 0; return parseFloat(s.replace(/,/g, '')) || 0; };
         pendingTxn = {
@@ -68,7 +72,9 @@ async function parsePBBStatement(arrayBuffer) {
           page: p,
         };
       } else if (text && pendingTxn) {
-        if (!/computer generated statement|terima kasih|thank you for banking|privacy notice|notis privasi|excellence is our commitment|perhatian|attention/i.test(text)) pendingTxn.description += '\n' + text;
+        if (!isJunk(text)) pendingTxn.description += '\n' + text;
+      } else if (text && !pendingTxn && attachToLast && allTxns.length > 0) {
+        if (!isJunk(text)) allTxns[allTxns.length - 1].description += '\n' + text;
       }
     }
     flushTxn();
