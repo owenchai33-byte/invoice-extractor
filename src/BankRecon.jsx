@@ -27,6 +27,7 @@ async function parsePBBStatement(arrayBuffer) {
     let currentDate = '';
     let pendingTxn = null;
     let attachToLast = false;
+    let seenTableHeader = false;
 
     const flushTxn = () => { if (pendingTxn) { allTxns.push(pendingTxn); pendingTxn = null; } };
     const isJunk = (s) => /computer generated statement|terima kasih|thank you for banking|privacy notice|notis privasi|excellence is our commitment|perhatian|attention/i.test(s);
@@ -45,8 +46,9 @@ async function parsePBBStatement(arrayBuffer) {
         else balance = v;
       }
 
-      if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) continue;
-      if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) continue;
+      if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) { seenTableHeader = true; continue; }
+      if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) { seenTableHeader = true; continue; }
+      if (p > 1 && seenTableHeader && !attachToLast && !pendingTxn && allTxns.length > 0) attachToLast = true;
 
       if (/bal(ance)?\s*(from last|b\/f|brought\s*forward)/i.test(text) || /baki\s*(dari|b\/f)/i.test(text)) {
         currentDate = date || currentDate;
@@ -57,7 +59,7 @@ async function parsePBBStatement(arrayBuffer) {
         }
         continue;
       }
-      if (/balance c\/f/i.test(text)) { flushTxn(); continue; }
+      if (/bal(ance)?\s*c\/f/i.test(text) || /baki\s*(c\/f|ke\s*hadapan)/i.test(text)) { flushTxn(); continue; }
 
       if (date && /^\d{2}\/\d{2}$/.test(date)) currentDate = date;
 
@@ -93,7 +95,7 @@ function classifyBankTxns(txns) {
   const depCash = [];
 
   const TO_KEYED_PATTERNS = [/PROCESS FEE/i, /HANDLING CHARGE/i, /AUDIT CONFIRMATION/i, /AUTOMATED LOAN/i];
-  const ONLINE_PATTERNS = [/DUITNOW QR CR/i, /TSFR FUND CR/i, /DUITNOW CR/i, /IBG CR/i, /IBFT CR/i, /TRSF/i];
+  const ONLINE_PATTERNS = [/DUITNOW QR CR/i, /DUITNOW TRSF CR/i, /DUITNOW TRSF/i, /TSFR FUND CR/i, /DUITNOW CR/i, /IBG CR/i, /IBFT CR/i, /TRSF/i, /ATM\/EFT/i];
 
   for (const txn of txns) {
     const desc = txn.description.split('\n')[0];
@@ -373,7 +375,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 4;
+const BR_VER = 5;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
