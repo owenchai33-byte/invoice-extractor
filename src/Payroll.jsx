@@ -461,8 +461,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible;border:none!important}
-  .t .tr td{background:#EFF6FF!important;font-size:7pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;white-space:nowrap!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#F0FDF4!important;font-size:8pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;white-space:nowrap!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .tr td{background:#EFF6FF!important;font-size:7pt!important;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;white-space:nowrap!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#F0FDF4!important;font-size:8pt!important;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;white-space:nowrap!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t td.hl-new{background:#FFF9C4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -842,16 +842,17 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   );};
   const TR=({l,t,c})=>{
     const ri=totRi[l];
+    const fs=c==='gr'?12:10;
     const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
-    const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
+    const cell=ci=><td className={"r tcell fxc"+hl(ci)} style={{fontSize:fs}} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
     return(
     <tr className={c}>
-      <td colSpan={4} style={{fontWeight:700,textAlign:'right'}}>{l}</td>
+      <td colSpan={4} style={{fontWeight:700,textAlign:'right',fontSize:fs}}>{l}</td>
       {cell(4)}{cell(5)}{sb&&cell(6)}
       {cell(7)}{cell(8)}{cell(9)}
       {cell(10)}{cell(11)}{cell(12)}
       {cell(13)}{cell(14)}{cell(15)}
-      <td colSpan={2} className={"r tcell fxc"+hl(16)} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
+      <td colSpan={2} className={"r tcell fxc"+hl(16)} style={{fontSize:fs}} onClick={()=>applySel(ri,16)}>{fmt(t[16])}</td>
     </tr>
   );};
   gn=0;
