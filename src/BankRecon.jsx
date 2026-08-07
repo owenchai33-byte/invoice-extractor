@@ -7,6 +7,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 async function parsePBBStatement(arrayBuffer) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
   const allTxns = [];
+  let currentDate = '';
 
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -24,10 +25,8 @@ async function parsePBBStatement(arrayBuffer) {
     }
 
     const rows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
-    let currentDate = '';
     let pendingTxn = null;
-    let attachToLast = false;
-    let seenTableHeader = false;
+    let pastHeader = false;
 
     const flushTxn = () => { if (pendingTxn) { allTxns.push(pendingTxn); pendingTxn = null; } };
     const isJunk = (s) => /computer generated statement|terima kasih|thank you for banking|privacy notice|notis privasi|excellence is our commitment|perhatian|attention/i.test(s);
@@ -46,13 +45,12 @@ async function parsePBBStatement(arrayBuffer) {
         else balance = v;
       }
 
-      if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) { seenTableHeader = true; continue; }
-      if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) { seenTableHeader = true; continue; }
-      if (p > 1 && seenTableHeader && !attachToLast && !pendingTxn && allTxns.length > 0) attachToLast = true;
+      if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) { pastHeader = true; continue; }
+      if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) { pastHeader = true; continue; }
+      if (!pastHeader) continue;
 
       if (/bal(ance)?\s*(from last|b\/f|brought\s*forward)/i.test(text) || /baki\s*(dari|b\/f)/i.test(text)) {
         currentDate = date || currentDate;
-        attachToLast = true;
         const extra = text.replace(/bal(ance)?\s*(from last|b\/f|brought\s*forward)/gi, '').replace(/baki\s*(dari|b\/f)/gi, '').replace(/statement/gi, '').trim();
         if (extra && !isJunk(extra) && allTxns.length > 0) {
           allTxns[allTxns.length - 1].description += '\n' + extra;
@@ -68,7 +66,6 @@ async function parsePBBStatement(arrayBuffer) {
       const cVal = parseAmt(credit);
 
       if (dVal > 0 || cVal > 0) {
-        attachToLast = false;
         flushTxn();
         pendingTxn = {
           date: currentDate,
@@ -78,10 +75,12 @@ async function parsePBBStatement(arrayBuffer) {
           balance: balance.replace(/,/g, ''),
           page: p,
         };
-      } else if (text && pendingTxn) {
-        if (!isJunk(text)) pendingTxn.description += '\n' + text;
-      } else if (text && !pendingTxn && attachToLast && allTxns.length > 0) {
-        if (!isJunk(text)) allTxns[allTxns.length - 1].description += '\n' + text;
+      } else if (text && !isJunk(text)) {
+        if (pendingTxn) {
+          pendingTxn.description += '\n' + text;
+        } else if (allTxns.length > 0) {
+          allTxns[allTxns.length - 1].description += '\n' + text;
+        }
       }
     }
     flushTxn();
@@ -272,7 +271,7 @@ async function parseMyKasihOutputPDF(buf) {
   return dailies;
 }
 
-const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^DUITNOW TRSF CR\s*/i, /^DUITNOW TRSF\s*/i, /^DUITNOW CR\s*/i, /^TSFR FUND CR\s*/i, /^TRSF FUND CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i, /^ATM\/EFT\s*/i];
+const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^DUITNOW TRSF CR\s*/i, /^DUITNOW TRSF\s*/i, /^DUITNOW CR\s*/i, /^TSFR FUND CR[-\s]*(ATM\/EFT\s*)?/i, /^TRSF FUND CR[-\s]*(ATM\/EFT\s*)?/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i, /^ATM\/EFT\s*/i];
 const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
 function cleanQR(text) {
   return text
@@ -375,7 +374,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 5;
+const BR_VER = 6;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
