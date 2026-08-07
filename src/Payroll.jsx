@@ -611,7 +611,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const _FL={salary:'Basic Salary',incentive:'Incentive',bonus:'Bonus',advance:'Advance',wagePerDay:'Wages/Day',daysWorked:'Days'};
   const _recordEdit=(name,field,from,to)=>{const e={name:name.split(' ')[0],col:_FL[field]||field,from,to};const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_LE)||'{}');}catch{}o[k]=e;localStorage.setItem(LS_LE,JSON.stringify(o));setLastEdit(e);};
   const[locked,setLocked]=useState(true);
-  const tryUnlock=()=>{const stored=localStorage.getItem(LS_PIN);if(!stored){const p=prompt('Set a 4-digit PIN to lock editing:');if(p&&/^\d{4}$/.test(p)){localStorage.setItem(LS_PIN,p);setLocked(false);}else if(p){alert('PIN must be exactly 4 digits.');}}else{const p=prompt('Enter PIN to unlock editing:');if(p===stored)setLocked(false);else if(p)alert('Wrong PIN.');}};
+  const tryUnlock=()=>{const p=prompt('Enter PIN to unlock editing:');if(p==='9069')setLocked(false);else if(p)alert('Wrong PIN.');};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const isMonthLocked=mk<currentMK;

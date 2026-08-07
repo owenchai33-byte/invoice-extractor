@@ -421,7 +421,7 @@ export default function App() {
         {active === 'payroll' && (pinUnlocked ? <Payroll canUndo={canUndo} onUndo={handleUndo} canRedo={canRedo} onRedo={handleRedo} /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && (pinUnlocked ? <Payslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
-        {active === 'epayslip' && <EmployeePayslip />}
+        {active === 'epayslip' && (pinUnlocked ? <EmployeePayslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'merchant' && <MerchantReport />}
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
       </main>
