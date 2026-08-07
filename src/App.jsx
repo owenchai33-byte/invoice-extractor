@@ -79,6 +79,12 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === 'visible' && PIN_TABS.has(active)) setPinUnlocked(false); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [active]);
+
   const [toast, setToast] = useState('');
   const [showRestore, setShowRestore] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
