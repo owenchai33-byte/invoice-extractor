@@ -104,6 +104,19 @@ function classifyBankTxns(txns) {
   return { toKeyed, onlineTransfers, depCash };
 }
 
+function groupByDate(items) {
+  const groups = [];
+  let current = null;
+  items.forEach((t, i) => {
+    if (!current || current.date !== t.date) {
+      current = { date: t.date, items: [] };
+      groups.push(current);
+    }
+    current.items.push({ txn: t, idx: i });
+  });
+  return groups;
+}
+
 const CSS = `
 .br-root{background:#fafafa;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .br-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -117,9 +130,12 @@ const CSS = `
 .br-label{font-size:13px;font-weight:600;color:#18181b}
 .br-hint{font-size:11px;color:#a1a1aa;margin-top:4px}
 .br-privacy{font-size:10px;color:#a1a1aa;margin-top:8px;text-align:center}
-.br-summary{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px}
+.br-summary{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.br-summary-left{flex:1}
 .br-summary-title{font-size:13px;font-weight:700;color:#166534;margin:0 0 8px}
 .br-summary-info{font-size:12px;color:#15803d;margin:0 0 4px}
+.br-upload-new{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #d4d4d8;background:#fff;color:#18181b}
+.br-upload-new:hover{background:#f4f4f5}
 .br-tabs{display:flex;gap:0;border-bottom:2px solid #e4e4e7;margin-bottom:16px}
 .br-tab{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:#71717a;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
 .br-tab:hover{color:#18181b;background:#f4f4f5}
@@ -130,7 +146,6 @@ const CSS = `
 .br-table{width:100%;border-collapse:collapse;font-size:11px}
 .br-table th{text-align:left;padding:6px 8px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
 .br-table td{padding:6px 8px;border-bottom:1px solid #e4e4e7;vertical-align:top}
-.br-date-first td{border-top:2px solid #18181b}
 .br-table tr:last-child td{border-bottom:none}
 .br-amt{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}
 .br-total{font-weight:700;background:#f0fdf4;font-size:12px}
@@ -147,6 +162,13 @@ const CSS = `
 .br-loading{font-size:12px;color:#71717a;margin:12px 0}
 .br-btn{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#18181b;color:#fff;margin-top:8px}
 .br-btn:hover{background:#27272a}
+.br-dh{cursor:pointer;user-select:none;border-top:2px solid #18181b}
+.br-dh:first-child{border-top:none}
+.br-dh:hover{background:#f4f4f5}
+.br-dh td{padding:8px;font-weight:700;font-size:12px;vertical-align:middle}
+.br-dh .br-arrow{display:inline-block;width:14px;font-size:10px;color:#71717a;margin-right:4px;transition:transform .15s}
+.br-dh .br-arrow.open{transform:rotate(90deg)}
+.br-dh-count{font-size:10px;color:#71717a;font-weight:400;margin-left:8px}
 @media print{.br-root{display:none}}
 `;
 
@@ -156,6 +178,7 @@ export default function BankRecon() {
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [excluded, setExcluded] = useState(new Set());
+  const [collapsed, setCollapsed] = useState(new Set());
   const [activeTab, setActiveTab] = useState('toKeyed');
   const fileRef = useRef(null);
 
@@ -164,6 +187,7 @@ export default function BankRecon() {
     setError('');
     setResult(null);
     setExcluded(new Set());
+    setCollapsed(new Set());
     setLoading(true);
     try {
       const buf = await file.arrayBuffer();
@@ -187,7 +211,6 @@ export default function BankRecon() {
     if (file) handleFile(file);
   };
 
-
   const toggleExclude = (idx) => {
     setExcluded(prev => {
       const next = new Set(prev);
@@ -196,22 +219,17 @@ export default function BankRecon() {
     });
   };
 
+  const toggleCollapse = (dateKey) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) next.delete(dateKey); else next.add(dateKey);
+      return next;
+    });
+  };
+
   const fmtAmt = (n) => n ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
 
   const onlineTotal = result ? result.onlineTransfers.reduce((s, t, i) => s + (excluded.has(i) ? 0 : t.credit), 0) : 0;
-
-  const dailyGroup = (items, amtFn, keyFn, excludeSet) => {
-    const gk = keyFn || (t => t.date);
-    const counts = {}, totals = {};
-    items.forEach((t, i) => { const k = gk(t); counts[k] = (counts[k] || 0) + 1; totals[k] = (totals[k] || 0) + (excludeSet && excludeSet.has(i) ? 0 : amtFn(t, i)); });
-    const seen = {}, dateSeen = {};
-    return items.map((t) => {
-      const k = gk(t);
-      const first = !seen[k]; seen[k] = true;
-      const dateFirst = !dateSeen[t.date]; dateSeen[t.date] = true;
-      return { daily: first ? { span: counts[k], total: totals[k] } : null, dateFirst };
-    });
-  };
 
   return (
     <div className="br-root">
@@ -221,27 +239,29 @@ export default function BankRecon() {
         <span style={{ fontSize: 11, color: '#a1a1aa', fontWeight: 400 }}>Upload Public Bank statement · All processing in browser · Nothing sent to server</span>
       </div>
       <div className="br-body">
-        <div className="br-upload-area">
-          <div
-            className={`br-upload${dragging ? ' drag' : ''}`}
-            onClick={() => fileRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-          >
-            <div className="br-icon">🏦</div>
-            <div className="br-label">Click to upload or drag & drop</div>
-            <div className="br-hint">Public Bank statement PDF</div>
+        {!result && (
+          <div className="br-upload-area">
+            <div
+              className={`br-upload${dragging ? ' drag' : ''}`}
+              onClick={() => fileRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+            >
+              <div className="br-icon">🏦</div>
+              <div className="br-label">Click to upload or drag & drop</div>
+              <div className="br-hint">Public Bank statement PDF</div>
+            </div>
+            <div className="br-privacy">🔒 100% browser-side — your bank data never leaves this device</div>
           </div>
-          <div className="br-privacy">🔒 100% browser-side — your bank data never leaves this device</div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".pdf"
-            style={{ display: 'none' }}
-            onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
-          />
-        </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf"
+          style={{ display: 'none' }}
+          onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
+        />
 
         {loading && <div className="br-loading">Reading bank statement...</div>}
         {error && <div className="br-error">{error}</div>}
@@ -249,11 +269,14 @@ export default function BankRecon() {
         {result && (
           <>
             <div className="br-summary">
-              <div className="br-summary-title">Statement parsed</div>
-              <div className="br-summary-info">{result.totalTxns} transactions across {result.totalPages} pages</div>
-              <div className="br-summary-info">
-                Found: {result.toKeyed.length} to key · {result.onlineTransfers.length} POS DuitNow · {result.depCash.length} cash deposits
+              <div className="br-summary-left">
+                <div className="br-summary-title">Statement parsed</div>
+                <div className="br-summary-info">{result.totalTxns} transactions across {result.totalPages} pages</div>
+                <div className="br-summary-info">
+                  Found: {result.toKeyed.length} to key · {result.onlineTransfers.length} POS DuitNow · {result.depCash.length} cash deposits
+                </div>
               </div>
+              <button className="br-upload-new" onClick={() => fileRef.current?.click()}>Upload new</button>
             </div>
 
             <div className="br-tabs">
@@ -268,23 +291,37 @@ export default function BankRecon() {
                   {result.toKeyed.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No bank charges or loan payments found</div>
                   ) : (() => {
-                    const dg = dailyGroup(result.toKeyed, t => t.debit || t.credit || 0, t => t.date + '|' + t.type);
+                    const groups = groupByDate(result.toKeyed);
                     const chargeTotal = result.toKeyed.filter(t => t.type !== 'Loan Payment').reduce((s, t) => s + (t.debit || t.credit || 0), 0);
                     const loanTotal = result.toKeyed.filter(t => t.type === 'Loan Payment').reduce((s, t) => s + (t.debit || t.credit || 0), 0);
                     return (
                     <table className="br-table">
                       <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Pg</th><th className="br-amt">Debit</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
-                        {result.toKeyed.map((t, i) => (
-                          <tr key={i} className={dg[i].dateFirst && i > 0 ? 'br-date-first' : ''} style={{ background: t.type === 'Loan Payment' ? '#fef2f2' : '#eff6ff' }}>
-                            <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                            <td className="br-desc">{t.description}</td>
-                            <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
-                            <td className="br-page">p{t.page}</td>
-                            <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
-                            {dg[i].daily && <td rowSpan={dg[i].daily.span} className="br-amt br-daily">{fmtAmt(dg[i].daily.total)}</td>}
-                          </tr>
-                        ))}
+                        {groups.map(g => {
+                          const ck = 'tk_' + g.date;
+                          const isCollapsed = collapsed.has(ck);
+                          const dailyTotal = g.items.reduce((s, {txn}) => s + (txn.debit || txn.credit || 0), 0);
+                          return isCollapsed ? (
+                            <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
+                              <td><span className="br-arrow">▶</span>{g.date}</td>
+                              <td colSpan={3}><span className="br-dh-count">{g.items.length} transactions</span></td>
+                              <td className="br-amt">{fmtAmt(dailyTotal)}</td>
+                              <td className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>
+                            </tr>
+                          ) : (
+                            g.items.map(({txn: t, idx: i}, j) => (
+                              <tr key={i} style={{ background: t.type === 'Loan Payment' ? '#fef2f2' : '#eff6ff' }}>
+                                <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
+                                <td className="br-desc">{t.description}</td>
+                                <td><span className={`br-tag ${t.type === 'Loan Payment' ? 'loan' : 'charge'}`}>{t.type}</span></td>
+                                <td className="br-page">p{t.page}</td>
+                                <td className="br-amt">{fmtAmt(t.debit || t.credit)}</td>
+                                {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>}
+                              </tr>
+                            ))
+                          );
+                        })}
                         <tr className="br-total">
                           <td colSpan={4}>Bank Charges Total</td>
                           <td className="br-amt">{fmtAmt(chargeTotal)}</td>
@@ -306,25 +343,40 @@ export default function BankRecon() {
               <div className="br-section">
                 <div className="br-body-inner">
                   {result.onlineTransfers.length === 0 ? (
-                    <div style={{ fontSize: 12, color: '#71717a' }}>No online transfers found</div>
+                    <div style={{ fontSize: 12, color: '#71717a' }}>No POS DuitNow transfers found</div>
                   ) : (() => {
-                    const dg = dailyGroup(result.onlineTransfers, t => t.credit || 0, null, excluded);
+                    const groups = groupByDate(result.onlineTransfers);
                     return (
                     <>
                       <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Uncheck items that are not retail trade to exclude from total</div>
                       <table className="br-table">
                         <thead><tr><th style={{ width: 28 }}>✓</th><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                         <tbody>
-                          {result.onlineTransfers.map((t, i) => (
-                            <tr key={i} className={dg[i].dateFirst && i > 0 ? 'br-date-first' : ''} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
-                              <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                              <td className="br-desc">{t.description}</td>
-                              <td className="br-page">p{t.page}</td>
-                              <td className="br-amt">{fmtAmt(t.credit)}</td>
-                              {dg[i].daily && <td rowSpan={dg[i].daily.span} className="br-amt br-daily">{fmtAmt(dg[i].daily.total)}</td>}
-                            </tr>
-                          ))}
+                          {groups.map(g => {
+                            const ck = 'on_' + g.date;
+                            const isCollapsed = collapsed.has(ck);
+                            const tickedCount = g.items.filter(({idx}) => !excluded.has(idx)).length;
+                            const dailyTotal = g.items.reduce((s, {txn, idx}) => s + (excluded.has(idx) ? 0 : txn.credit), 0);
+                            return isCollapsed ? (
+                              <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
+                                <td colSpan={2}><span className="br-arrow">▶</span>{g.date}</td>
+                                <td colSpan={2}><span className="br-dh-count">{tickedCount} of {g.items.length} ticked</span></td>
+                                <td className="br-amt">{fmtAmt(dailyTotal)}</td>
+                                <td className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>
+                              </tr>
+                            ) : (
+                              g.items.map(({txn: t, idx: i}, j) => (
+                                <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
+                                  <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
+                                  <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
+                                  <td className="br-desc">{t.description}</td>
+                                  <td className="br-page">p{t.page}</td>
+                                  <td className="br-amt">{fmtAmt(t.credit)}</td>
+                                  {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>}
+                                </tr>
+                              ))
+                            );
+                          })}
                           <tr className="br-total">
                             <td colSpan={4}>Total ({result.onlineTransfers.length - excluded.size} of {result.onlineTransfers.length} included)</td>
                             <td className="br-amt">{fmtAmt(onlineTotal)}</td>
@@ -344,20 +396,34 @@ export default function BankRecon() {
                   {result.depCash.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
                   ) : (() => {
-                    const dg = dailyGroup(result.depCash, t => t.credit || 0);
+                    const groups = groupByDate(result.depCash);
                     return (
                     <table className="br-table">
                       <thead><tr><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
                       <tbody>
-                        {result.depCash.map((t, i) => (
-                          <tr key={i} className={dg[i].dateFirst && i > 0 ? 'br-date-first' : ''}>
-                            <td style={{ whiteSpace: 'nowrap' }}>{t.date}</td>
-                            <td className="br-desc">{t.description}</td>
-                            <td className="br-page">p{t.page}</td>
-                            <td className="br-amt">{fmtAmt(t.credit)}</td>
-                            {dg[i].daily && <td rowSpan={dg[i].daily.span} className="br-amt br-daily">{fmtAmt(dg[i].daily.total)}</td>}
-                          </tr>
-                        ))}
+                        {groups.map(g => {
+                          const ck = 'dc_' + g.date;
+                          const isCollapsed = collapsed.has(ck);
+                          const dailyTotal = g.items.reduce((s, {txn}) => s + txn.credit, 0);
+                          return isCollapsed ? (
+                            <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
+                              <td><span className="br-arrow">▶</span>{g.date}</td>
+                              <td colSpan={2}><span className="br-dh-count">{g.items.length} deposits</span></td>
+                              <td className="br-amt">{fmtAmt(dailyTotal)}</td>
+                              <td className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>
+                            </tr>
+                          ) : (
+                            g.items.map(({txn: t, idx: i}, j) => (
+                              <tr key={i}>
+                                <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
+                                <td className="br-desc">{t.description}</td>
+                                <td className="br-page">p{t.page}</td>
+                                <td className="br-amt">{fmtAmt(t.credit)}</td>
+                                {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>}
+                              </tr>
+                            ))
+                          );
+                        })}
                         <tr className="br-total">
                           <td colSpan={3}>Total ({result.depCash.length} deposits)</td>
                           <td className="br-amt">{fmtAmt(result.depCash.reduce((s, t) => s + t.credit, 0))}</td>
