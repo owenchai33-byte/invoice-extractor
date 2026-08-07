@@ -119,6 +119,19 @@ function groupByDate(items) {
 
 const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
 const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
+function cleanQR(text) {
+  return text
+    .replace(/\bDUITQR MCHT TRANSFER\b/gi, '')
+    .replace(/\bDUITNOW QR \w+\b/gi, '')
+    .replace(/\bQR PAYMENT\b/gi, '')
+    .replace(/\bQR PYMT\b/gi, '')
+    .replace(/\bTRANSFER\b/gi, '')
+    .replace(/\bQR\b/gi, '')
+    .replace(/\b0{3,}(\d+)\b/g, '$1')
+    .replace(/\b0{3,}\b/g, '')
+    .replace(/[\s\-]+/g, ' ')
+    .trim();
+}
 function shortDesc(desc) {
   const lines = desc.split('\n');
   const first = lines[0];
@@ -127,8 +140,8 @@ function shortDesc(desc) {
     if (r !== first) {
       const ref = r.trim();
       const name = lines.slice(1).map(l => l.trim()).filter(Boolean).filter(l => !OWN_COMPANY.test(l)).join(' ');
-      if (ref && name) return ref + ' ' + name;
-      return name || ref || first;
+      const raw = ref && name ? ref + ' ' + name : name || ref || first;
+      return cleanQR(raw) || first;
     }
   }
   return first;
