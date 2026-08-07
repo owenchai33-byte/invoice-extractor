@@ -151,7 +151,7 @@ const CSS = `
 .br-total{font-weight:700;background:#f0fdf4;font-size:12px}
 .br-total td{padding:8px;border-top:2px solid #15803d}
 .br-check{width:14px;height:14px;cursor:pointer;accent-color:#18181b}
-.br-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.br-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .br-tag.charge{background:#eff6ff;color:#2563eb}
 .br-tag.loan{background:#fef2f2;color:#dc2626}
 .br-desc{white-space:pre-line;max-width:340px}
@@ -160,7 +160,7 @@ const CSS = `
 .br-daily.mixed{background:#f5f5f4;border-left-color:#a1a1aa}
 .br-clear{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;margin-left:auto}
 .br-clear:hover{background:#dc2626;color:#fff}
-.br-page{color:#71717a;font-size:10px}
+.br-page{color:#71717a;font-size:11px}
 .br-count{font-size:11px;color:#71717a;font-weight:400;margin-left:6px}
 .br-error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#dc2626}
 .br-loading{font-size:12px;color:#71717a;margin:12px 0}
