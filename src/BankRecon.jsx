@@ -221,9 +221,14 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
+const BR_VER = 2;
 const LS_BR = 'br_saved';
 function loadSaved() {
-  try { const s = localStorage.getItem(LS_BR); if (s) return JSON.parse(s); } catch {} return null;
+  try {
+    const s = localStorage.getItem(LS_BR);
+    if (s) { const d = JSON.parse(s); if (d && d.v === BR_VER) return d; }
+    localStorage.removeItem(LS_BR);
+  } catch {} return null;
 }
 
 export default function BankRecon() {
@@ -239,7 +244,7 @@ export default function BankRecon() {
 
   useEffect(() => {
     if (result) {
-      localStorage.setItem(LS_BR, JSON.stringify({ result, excluded: [...excluded], collapsed: [...collapsed] }));
+      localStorage.setItem(LS_BR, JSON.stringify({ v: BR_VER, result, excluded: [...excluded], collapsed: [...collapsed] }));
     }
   }, [result, excluded, collapsed]);
 
