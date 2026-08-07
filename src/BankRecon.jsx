@@ -118,7 +118,7 @@ function groupByDate(items) {
 }
 
 const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
-const OWN_COMPANY = /CHAI JEE KIONG TRADING SDN\.?\s*BHD\.?/i;
+const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
 function shortDesc(desc) {
   const lines = desc.split('\n');
   const first = lines[0];
@@ -173,7 +173,7 @@ const CSS = `
 .br-tag.loan{background:#fef2f2;color:#dc2626}
 .br-desc{position:relative;max-width:340px;cursor:default}
 .br-desc:hover .br-tip{display:block}
-.br-tip{display:none;position:absolute;left:0;top:100%;z-index:100;background:#18181b;color:#fff;padding:8px 12px;border-radius:6px;font-size:11px;white-space:pre-line;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,.15);pointer-events:none;line-height:1.5}
+.br-tip{display:none;position:absolute;right:0;top:100%;z-index:100;background:#18181b;color:#fff;padding:8px 12px;border-radius:6px;font-size:11px;white-space:pre-line;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,.15);pointer-events:none;line-height:1.5}
 .br-daily{background:#eff6ff;font-weight:700;font-size:12px;border-left:2px solid #2563eb;color:#1e40af}
 .br-daily.loan{background:#fef2f2;border-left-color:#dc2626;color:#dc2626}
 .br-daily.mixed{background:#f5f5f4;border-left-color:#a1a1aa}
@@ -424,7 +424,7 @@ export default function BankRecon() {
                                 <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                                   <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
-                                  <td className="br-desc">{shortDesc(t.description)}<div className="br-tip">{t.description}</div></td>
+                                  <td className="br-desc">{shortDesc(t.description)}<div className="br-tip">{t.description.split('\n').filter(l => !OWN_COMPANY.test(l)).join('\n')}</div></td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
                                   {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'top'}}>{fmtAmt(dailyTotal)}</td>}
