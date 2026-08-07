@@ -611,7 +611,12 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const _FL={salary:'Basic Salary',incentive:'Incentive',bonus:'Bonus',advance:'Advance',wagePerDay:'Wages/Day',daysWorked:'Days'};
   const _recordEdit=(name,field,from,to)=>{const e={name:name.split(' ')[0],col:_FL[field]||field,from,to};const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_LE)||'{}');}catch{}o[k]=e;localStorage.setItem(LS_LE,JSON.stringify(o));setLastEdit(e);};
   const[locked,setLocked]=useState(true);
-  const tryUnlock=()=>{const p=prompt('Enter PIN to unlock editing:');if(p==='9069')setLocked(false);else if(p)alert('Wrong PIN.');};
+  const[showPin,setShowPin]=useState(false);
+  const[pinVal,setPinVal]=useState('');
+  const[pinErr,setPinErr]=useState(false);
+  const tryUnlock=()=>{setPinVal('');setPinErr(false);setShowPin(true);};
+  const submitPin=()=>{if(pinVal==='9069'){setShowPin(false);setLocked(false);}else{setPinErr(true);setPinVal('');}};
+  const cancelPin=()=>{setShowPin(false);setPinVal('');setPinErr(false);};
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const isMonthLocked=mk<currentMK;
@@ -896,6 +901,19 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   return(
     <div className={"pr"+(locked?" pr-locked":"")}>
       <style>{CSS}</style>
+      {showPin&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}} onClick={cancelPin}>
+        <div style={{background:'#fff',borderRadius:12,padding:32,minWidth:300,textAlign:'center',boxShadow:'0 8px 32px rgba(0,0,0,.15)'}} onClick={e=>e.stopPropagation()}>
+          <div style={{fontSize:24,marginBottom:6}}>🔒</div>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Enter PIN to unlock editing</div>
+          {isMonthLocked&&<div style={{fontSize:11,color:'#dc2626',marginBottom:8}}>Past month — editing locked</div>}
+          <input type="password" inputMode="numeric" maxLength={4} value={pinVal} onChange={e=>{setPinErr(false);setPinVal(e.target.value.replace(/\D/g,''));}} onKeyDown={e=>e.key==='Enter'&&submitPin()} autoFocus style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${pinErr?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace'}} placeholder="····"/>
+          {pinErr&&<div style={{fontSize:12,color:'#dc2626',marginTop:6}}>Wrong PIN</div>}
+          <div style={{marginTop:14,display:'flex',gap:8,justifyContent:'center'}}>
+            <button onClick={cancelPin} style={{padding:'7px 20px',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer',border:'1px solid #d4d4d8',background:'#fff',color:'#18181b'}}>Cancel</button>
+            <button onClick={submitPin} style={{padding:'7px 20px',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer',border:'none',background:'#18181b',color:'#fff'}}>Unlock</button>
+          </div>
+        </div>
+      </div>}
       <div className="bar np">
         <h1>HQ PAYROLL</h1>
         <div className="mnav">
