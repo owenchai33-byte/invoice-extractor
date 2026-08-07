@@ -117,6 +117,13 @@ function groupByDate(items) {
   return groups;
 }
 
+const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
+function shortDesc(desc) {
+  const first = desc.split('\n')[0];
+  for (const p of ONLINE_STRIP) { const r = first.replace(p, ''); if (r !== first) return r.trim() || first; }
+  return first;
+}
+
 const CSS = `
 .br-root{background:#fafafa;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden}
 .br-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
@@ -405,7 +412,7 @@ export default function BankRecon() {
                                 <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                                   <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
-                                  <td className="br-desc">{t.description}</td>
+                                  <td className="br-desc" title={t.description}>{shortDesc(t.description)}</td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
                                   {j === 0 && <td rowSpan={g.items.length} className="br-amt br-daily" style={{verticalAlign:'middle'}}>{fmtAmt(dailyTotal)}</td>}
