@@ -48,10 +48,10 @@ async function parsePBBStatement(arrayBuffer) {
       if (/^(TARIKH|DATE)$/i.test(text) || /^(URUS NIAGA|TRANSACTION)$/i.test(text)) continue;
       if (/DEBIT|KREDIT|CREDIT|BAKI|BALANCE/i.test(text) && !date && !debit && !credit) continue;
 
-      if (/balance (from last|b\/f)/i.test(text)) {
+      if (/bal(ance)?\s*(from last|b\/f|brought\s*forward)/i.test(text) || /baki\s*(dari|b\/f)/i.test(text)) {
         currentDate = date || currentDate;
         attachToLast = true;
-        const extra = text.replace(/balance\s+(from last|b\/f)/gi, '').trim();
+        const extra = text.replace(/bal(ance)?\s*(from last|b\/f|brought\s*forward)/gi, '').replace(/baki\s*(dari|b\/f)/gi, '').replace(/statement/gi, '').trim();
         if (extra && !isJunk(extra) && allTxns.length > 0) {
           allTxns[allTxns.length - 1].description += '\n' + extra;
         }
@@ -157,7 +157,7 @@ function sumPOSOutlets(typeData) {
   return totals;
 }
 
-const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^TSFR FUND CR\s*/i, /^DUITNOW CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i];
+const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^DUITNOW TRSF CR\s*/i, /^DUITNOW TRSF\s*/i, /^DUITNOW CR\s*/i, /^TSFR FUND CR\s*/i, /^TRSF FUND CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i, /^ATM\/EFT\s*/i];
 const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
 function cleanQR(text) {
   return text
@@ -176,19 +176,23 @@ function cleanQR(text) {
 function shortDesc(desc) {
   const lines = desc.split('\n');
   const first = lines[0];
+  const contLines = lines.slice(1).map(l => l.trim()).filter(Boolean).filter(l => !OWN_COMPANY.test(l));
   for (const p of ONLINE_STRIP) {
     const r = first.replace(p, '');
     if (r !== first) {
       const ref = r.trim();
-      const name = lines.slice(1).map(l => l.trim()).filter(Boolean).filter(l => !OWN_COMPANY.test(l)).join(' ');
+      const name = contLines.join(' ');
       const raw = ref && name ? ref + ' ' + name : name || ref || first;
       return cleanQR(raw) || first;
     }
   }
-  return first;
+  if (contLines.length > 0) {
+    return cleanQR(first + ' ' + contLines.join(' ')) || first;
+  }
+  return cleanQR(first) || first;
 }
 function hasName(short) {
-  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT)\b/gi, '');
+  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT|ATM|EFT|CASA|TRF)\b/gi, '');
   const alpha = stripped.replace(/[^A-Za-z]/g, '');
   return alpha.length >= 2;
 }
@@ -256,7 +260,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 3;
+const BR_VER = 4;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
