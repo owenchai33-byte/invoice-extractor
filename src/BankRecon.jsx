@@ -157,6 +157,119 @@ function sumPOSOutlets(typeData) {
   return totals;
 }
 
+function savePOSDailiesBR(type, outlet, dailies) {
+  let data = {};
+  try { const s = localStorage.getItem('br_pos_daily'); if (s) data = JSON.parse(s); } catch {}
+  if (!data[type]) data[type] = {};
+  data[type][outlet] = dailies;
+  localStorage.setItem('br_pos_daily', JSON.stringify(data));
+}
+
+async function parseSpayOutputPDF(buf) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const allItems = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    for (const i of content.items) {
+      if (i.str.trim()) allItems.push({ str: i.str.trim(), x: i.transform[4], y: i.transform[5] });
+    }
+  }
+  const rowMap = new Map();
+  for (const i of allItems) {
+    const y = Math.round(i.y);
+    let ky = null;
+    for (const k of rowMap.keys()) { if (Math.abs(k - y) < 4) { ky = k; break; } }
+    if (ky !== null) rowMap.get(ky).push(i);
+    else rowMap.set(y, [i]);
+  }
+  let headerY = null;
+  for (const [y, items] of rowMap) {
+    if (items.filter(i => /settlement|merchant|serial|transaction|amount|fee|status/i.test(i.str)).length >= 4) {
+      headerY = y; break;
+    }
+  }
+  if (headerY === null) return {};
+  const headerBand = allItems.filter(i => Math.abs(i.y - headerY) < 15);
+  const colGroups = new Map();
+  for (const i of headerBand) {
+    let matched = false;
+    for (const [kx, items] of colGroups) { if (Math.abs(kx - i.x) < 15) { items.push(i); matched = true; break; } }
+    if (!matched) colGroups.set(i.x, [i]);
+  }
+  let dateColX = null, amtColX = null;
+  for (const [x, items] of colGroups) {
+    const t = items.map(i => i.str).join(' ');
+    if (/settlement.*date/i.test(t)) dateColX = x;
+    if (/settlement.*amount/i.test(t)) amtColX = x;
+  }
+  if (dateColX === null || amtColX === null) return {};
+  const dailies = {};
+  for (const [y, items] of rowMap) {
+    if (Math.abs(y - headerY) < 15) continue;
+    let rowDate = null;
+    for (const i of items) { if (/^\d{4}-\d{2}-\d{2}$/.test(i.str)) { rowDate = i.str; break; } }
+    if (!rowDate) continue;
+    let bestAmt = 0, bestDist = Infinity;
+    for (const i of items) {
+      const n = parseFloat(i.str.replace(/,/g, ''));
+      if (!isNaN(n) && n > 0) {
+        const d = Math.abs(i.x - amtColX);
+        if (d < bestDist) { bestDist = d; bestAmt = n; }
+      }
+    }
+    if (bestAmt > 0 && bestDist < 60) {
+      const m = rowDate.match(/(\d{4})-(\d{2})-(\d{2})/);
+      const k = `${m[3]}/${m[2]}`;
+      dailies[k] = (dailies[k] || 0) + bestAmt;
+    }
+  }
+  return dailies;
+}
+
+async function parseCardpayOutputPDF(buf) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const dailies = {};
+  let lastDate = null;
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(i => i.str.trim());
+    items.sort((a, b) => { const dy = b.transform[5] - a.transform[5]; return Math.abs(dy) > 3 ? dy : a.transform[4] - b.transform[4]; });
+    const text = items.map(i => i.str.trim()).join(' ');
+    const dm = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (dm) lastDate = `${dm[3]}/${dm[2]}`;
+    if (!lastDate) { const dm2 = text.match(/(\d{2})\/(\d{2})\/(\d{4})/); if (dm2) lastDate = `${dm2[1]}/${dm2[2]}`; }
+    const nm = text.match(/Total\s+Net\s+Amount\s*:?\s*([\d,]+\.\d{2})/i);
+    if (nm && lastDate) {
+      const amt = parseFloat(nm[1].replace(/,/g, ''));
+      if (amt > 0) dailies[lastDate] = (dailies[lastDate] || 0) + amt;
+    }
+  }
+  return dailies;
+}
+
+async function parseMyKasihOutputPDF(buf) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const dailies = {};
+  let currentDate = null;
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(i => i.str.trim());
+    items.sort((a, b) => { const dy = b.transform[5] - a.transform[5]; return Math.abs(dy) > 3 ? dy : a.transform[4] - b.transform[4]; });
+    const text = items.map(i => i.str.trim()).join(' ');
+    const dm = text.match(/SETTLEMENT\s+DATE\s+(\d{2})-(\d{2})-(\d{4})/i);
+    if (dm) currentDate = `${dm[1]}/${dm[2]}`;
+    const nm = text.match(/TOTAL\s+NET\s+AMT?\s*([\d,]+\.\d{2})/i);
+    if (nm && currentDate) {
+      const amt = parseFloat(nm[1].replace(/,/g, ''));
+      if (amt > 0) dailies[currentDate] = (dailies[currentDate] || 0) + amt;
+    }
+  }
+  return dailies;
+}
+
 const ONLINE_STRIP = [/^DUITNOW QR CR\s*/i, /^DUITNOW TRSF CR\s*/i, /^DUITNOW TRSF\s*/i, /^DUITNOW CR\s*/i, /^TSFR FUND CR\s*/i, /^TRSF FUND CR\s*/i, /^IBG CR\s*/i, /^IBFT CR\s*/i, /^TRSF\s*/i, /^ATM\/EFT\s*/i];
 const OWN_COMPANY = /CHAI JEE KIONG TRADING\s*(SDN\.?\s*BHD\.?|SB\.?)?/i;
 function cleanQR(text) {
@@ -281,7 +394,27 @@ export default function BankRecon() {
   const [activeTab, setActiveTab] = useState('toKeyed');
   const fileRef = useRef(null);
   const [posData, setPosData] = useState({});
+  const [posUploadMsg, setPosUploadMsg] = useState(null);
+  const spayRef = useRef(null);
+  const cpRef = useRef(null);
+  const mkRef = useRef(null);
   const loadPosData = () => { try { const s = localStorage.getItem('br_pos_daily'); setPosData(s ? JSON.parse(s) : {}); } catch { setPosData({}); } };
+  const handlePosUpload = async (type, parser, e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPosUploadMsg(null);
+    try {
+      const dailies = await parser(await file.arrayBuffer());
+      const count = Object.keys(dailies).length;
+      if (!count) { setPosUploadMsg({ text: `No daily data found in ${file.name}`, error: true }); return; }
+      savePOSDailiesBR(type, 'HQ', dailies);
+      loadPosData();
+      setPosUploadMsg({ text: `✓ ${type}: ${count} dates extracted from ${file.name}` });
+    } catch {
+      setPosUploadMsg({ text: `Could not parse ${file.name}`, error: true });
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'posBank') loadPosData();
@@ -598,6 +731,18 @@ export default function BankRecon() {
                         Compares POS merchant daily settlements against bank CREDIT entries by keyword.
                         <button style={{ marginLeft: 8, fontSize: 10, padding: '2px 8px', border: '1px solid #d4d4d8', borderRadius: 4, background: '#fff', cursor: 'pointer' }} onClick={loadPosData}>↻ Refresh POS data</button>
                       </div>
+                      <div style={{ marginBottom: 12, padding: '10px 14px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e4e4e7' }}>
+                        <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6 }}>Upload HQ Merchant Reports (PDF only)</div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button onClick={() => spayRef.current?.click()} style={{ padding: '6px 12px', border: '1px solid #d4d4d8', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>📄 Spay HQ <span style={{ color: '#71717a', fontWeight: 400 }}>(M100006137)</span></button>
+                          <button onClick={() => cpRef.current?.click()} style={{ padding: '6px 12px', border: '1px solid #d4d4d8', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>📄 Cardpay HQ <span style={{ color: '#71717a', fontWeight: 400 }}>(162259)</span></button>
+                          <button onClick={() => mkRef.current?.click()} style={{ padding: '6px 12px', border: '1px solid #d4d4d8', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>📄 MyKasih HQ <span style={{ color: '#71717a', fontWeight: 400 }}>(M9610)</span></button>
+                        </div>
+                        <input ref={spayRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={(e) => handlePosUpload('spay', parseSpayOutputPDF, e)} />
+                        <input ref={cpRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={(e) => handlePosUpload('cardpay', parseCardpayOutputPDF, e)} />
+                        <input ref={mkRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={(e) => handlePosUpload('mykasih', parseMyKasihOutputPDF, e)} />
+                        {posUploadMsg && <div style={{ fontSize: 11, marginTop: 6, color: posUploadMsg.error ? '#dc2626' : '#166534' }}>{posUploadMsg.text}</div>}
+                      </div>
                       {hasPOS ? (
                         <div style={{ fontSize: 11, color: '#166534', background: '#f0fdf4', padding: '8px 12px', borderRadius: 6, marginBottom: 12 }}>
                           POS data loaded: {[
@@ -610,7 +755,7 @@ export default function BankRecon() {
                         </div>
                       ) : (
                         <div style={{ fontSize: 11, color: '#d97706', background: '#fefce8', padding: '8px 12px', borderRadius: 6, marginBottom: 12 }}>
-                          ⚠ No POS data — upload merchant reports in the POS Merchant Report page first, then come back here.
+                          ⚠ No POS data yet — upload your merchant report PDFs above, or use the POS Merchant Report page.
                         </div>
                       )}
                       {types.map(({ key, label, keyword }) => {
