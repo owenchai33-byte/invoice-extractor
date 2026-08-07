@@ -285,17 +285,16 @@ const TYPE_MAP = [
   { pattern: /^ATM\/EFT\s*/i, label: 'ATM/EFT' },
 ];
 function findName(remainder, contLines) {
-  const m = remainder.match(/^\d+\s+(.+)/);
-  if (m) {
-    const candidate = m[1].replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').trim();
-    if (candidate && /[A-Za-z]{2,}/.test(candidate)) return candidate;
+  if (remainder) {
+    const cleaned = remainder.replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').replace(/^\d+\s*/, '').trim();
+    if (cleaned && /[A-Za-z]{2,}/.test(cleaned)) return cleaned;
   }
   for (const line of contLines) {
-    const l = line.trim();
+    let l = line.trim();
+    if (!l || /^\d+$/.test(l)) continue;
+    l = l.replace(OWN_COMPANY, '').trim();
+    l = l.replace(/^QR\s*REF\s*NO:\s*\S*/i, '').trim();
     if (!l) continue;
-    if (OWN_COMPANY.test(l)) continue;
-    if (/^QR\s*REF\s*NO:/i.test(l)) continue;
-    if (/^\d+$/.test(l)) continue;
     if (/[A-Za-z]{2,}/.test(l)) return l;
   }
   return '';
