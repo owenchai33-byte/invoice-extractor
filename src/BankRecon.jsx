@@ -183,6 +183,7 @@ const CSS = `
 .br-table th{text-align:left;padding:6px 8px;border-bottom:2px solid #d4d4d8;font-weight:700;white-space:nowrap}
 .br-table td{padding:6px 8px;border-bottom:1px solid #e4e4e7;vertical-align:top}
 .br-table tr:last-child td{border-bottom:none}
+.br-dfirst td{border-top:2px solid #18181b}
 .br-amt{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}
 .br-total{font-weight:700;background:#f0fdf4;font-size:12px}
 .br-total td{padding:8px;border-top:2px solid #15803d}
@@ -398,7 +399,7 @@ export default function BankRecon() {
                                 if (j === 0) dtContent = fmtAmt(loanAmt + chargeAmt);
                               }
                               return (
-                              <tr key={i} style={{ background: isLoan ? '#fef2f2' : '#eff6ff' }}>
+                              <tr key={i} className={j === 0 ? 'br-dfirst' : ''} style={{ background: isLoan ? '#fef2f2' : '#eff6ff' }}>
                                 <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
                                 <td className="br-desc">{t.description}</td>
                                 <td><span className={`br-tag ${isLoan ? 'loan' : 'charge'}`}>{t.type}</span></td>
@@ -453,7 +454,7 @@ export default function BankRecon() {
                               </tr>
                             ) : (
                               g.items.map(({txn: t, idx: i}, j) => (
-                                <tr key={i} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
+                                <tr key={i} className={j === 0 ? 'br-dfirst' : ''} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                                   <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
                                   <td className="br-desc">{shortDesc(t.description)}<div className="br-tip">{t.description.split('\n').filter(l => !OWN_COMPANY.test(l)).join('\n')}</div></td>
@@ -502,7 +503,7 @@ export default function BankRecon() {
                             </tr>
                           ) : (
                             g.items.map(({txn: t, idx: i}, j) => (
-                              <tr key={i}>
+                              <tr key={i} className={j === 0 ? 'br-dfirst' : ''}>
                                 <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
                                 <td className="br-desc">{t.description}</td>
                                 <td className="br-page">p{t.page}</td>
