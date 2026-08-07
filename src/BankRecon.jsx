@@ -132,9 +132,10 @@ function cleanQR(text) {
     .replace(/\bQR PAYMENT\b/gi, '')
     .replace(/\bQR PYMT\b/gi, '')
     .replace(/\bTRANSFER\b/gi, '')
+    .replace(/\bQR\s*REF\s*NO:\s*\d+/gi, '')
     .replace(/\bQR\b/gi, '')
-    .replace(/\b0{3,}(\d+)\b/g, '$1')
-    .replace(/\b0{3,}\b/g, '')
+    .replace(/\b0+([1-9]\d*)\b/g, '$1')
+    .replace(/\b0+\b/g, '')
     .replace(/[\s\-]+/g, ' ')
     .trim();
 }
@@ -151,6 +152,10 @@ function shortDesc(desc) {
     }
   }
   return first;
+}
+function hasName(short) {
+  const alpha = short.replace(/[^A-Za-z]/g, '');
+  return alpha.length >= 2;
 }
 
 const CSS = `
@@ -192,6 +197,7 @@ const CSS = `
 .br-tag.charge{background:#eff6ff;color:#2563eb}
 .br-tag.loan{background:#fef2f2;color:#dc2626}
 .br-desc{position:relative;max-width:340px;cursor:default}
+.br-noname{color:#dc2626;font-weight:600;font-size:10px;margin-left:6px}
 .br-desc:hover .br-tip{display:block}
 .br-tip{display:none;position:absolute;right:0;top:100%;z-index:100;background:#18181b;color:#fff;padding:8px 12px;border-radius:6px;font-size:11px;white-space:pre-line;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,.15);pointer-events:none;line-height:1.5}
 .br-daily{background:#eff6ff;font-weight:700;font-size:12px;border-left:2px solid #2563eb;color:#1e40af}
@@ -457,7 +463,7 @@ export default function BankRecon() {
                                 <tr key={i} className={j === 0 ? 'br-dfirst' : ''} style={excluded.has(i) ? { opacity: 0.4, textDecoration: 'line-through' } : {}}>
                                   <td><input type="checkbox" className="br-check" checked={!excluded.has(i)} onChange={() => toggleExclude(i)} /></td>
                                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
-                                  <td className="br-desc">{shortDesc(t.description)}<div className="br-tip">{t.description.split('\n').filter(l => !OWN_COMPANY.test(l)).join('\n')}</div></td>
+                                  <td className="br-desc">{(sd => <>{sd}{!hasName(sd) && <span className="br-noname">⚠ NO NAME</span>}</>)(shortDesc(t.description))}<div className="br-tip">{t.description.split('\n').filter(l => !OWN_COMPANY.test(l)).join('\n')}</div></td>
                                   <td className="br-page">p{t.page}</td>
                                   <td className="br-amt">{fmtAmt(t.credit)}</td>
                                   <td className="br-amt br-daily">{j === 0 && fmtAmt(dailyTotal)}</td>
