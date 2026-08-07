@@ -453,7 +453,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1}
-  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none}
+  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;vertical-align:middle}
   .t td:nth-child(n+5){font-size:7pt}
   /* Allow name and position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
@@ -461,8 +461,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t .gh{display:none!important}
   .t .ph{background:#fef3c7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .ph td{padding:2px 4px;font-size:6.5pt;font-weight:700;color:#92400e;overflow:visible;border:none!important}
-  .t .tr td{background:#EFF6FF!important;font-size:7pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .t .gr td{background:#F0FDF4!important;font-size:8pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .tr td{background:#EFF6FF!important;font-size:7pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;white-space:nowrap!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .t .gr td{background:#F0FDF4!important;font-size:8pt;font-weight:700;border-top:1px solid #000!important;border-bottom:1px solid #000!important;white-space:nowrap!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t td.hl-new{background:#FFF9C4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .eh{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .t .dh{background:#fef2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
