@@ -365,9 +365,9 @@ const CSS=`
 .t .gh{background:#f4f4f5;color:#18181b;font-size:10px;font-weight:700;letter-spacing:.05em}
 .t .gh td{padding:4px 8px;border:none;white-space:nowrap;overflow:visible;color:#18181b}
 .t .ph{background:#fef3c7}.t .ph td{padding:3px 8px;border-bottom:1px solid #fcd34d;font-size:10px;font-weight:700;color:#92400e;overflow:visible}
-.t .tr td,.t .gr td{border-top:1.5px solid #000;border-bottom:1px solid #000;font-weight:700;font-size:12px}
+.t .tr td,.t .gr td{border-top:1.5px solid #000;border-bottom:1px solid #000;font-weight:700;font-size:10px}
 .t .tr td{background:#EFF6FF}
-.t .gr td{background:#F0FDF4}
+.t .gr td{background:#F0FDF4;font-size:12px}
 .t .tcell{font-size:9.5px;padding-left:1px;padding-right:1px;letter-spacing:-0.02em}
 .drag-handle:hover{background:#f4f4f5}
 .drag-handle:hover span:first-child{color:#71717a!important}
