@@ -453,7 +453,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
   .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1;vertical-align:middle!important}
-  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;vertical-align:middle!important}
+  .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;border-bottom:1px solid #ccc;vertical-align:middle!important}
+  .t .lb td{border-bottom:1px solid #000!important}
   .t td:nth-child(n+5){font-size:7pt!important}
   /* Allow name and position to wrap so nothing gets cut off */
   .t td:nth-child(2),.t td:nth-child(4){white-space:normal!important;word-break:break-word;line-height:1.15}
@@ -792,14 +793,14 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     setSel({who:l,label:nm,formula:f,value:v});
   };
   let gn=0;
-  const Row=({r,isBank})=>{gn++;const n=gn;
+  const Row=({r,isBank,last})=>{gn++;const n=gn;
     const isDragging=dragId===r.id;
     const isDragOver=dragOverId===r.id&&dragId!==r.id;
     const ri=riOf.get(r.id);
     const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
     return(
     <tr
-      className="dr"
+      className={"dr"+(last?" lb":"")}
       data-sid={r.id}
       style={{
         opacity:isDragging?0.35:1,
@@ -987,11 +988,11 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
               </thead>
               <tbody>
                 <tr className="gh"><td colSpan={sb?18:17}>Bank Transfer</td></tr>
-                {bS.map(r=><Row key={r.id} r={r} isBank/>)}
+                {bS.map((r,i)=><Row key={r.id} r={r} isBank last={i===bS.length-1}/>)}
                 <TR l="BANK STAFF TOTAL PAYOUT:" t={bT} c="tr"/>
                 <tr className="gh"><td colSpan={sb?18:17}>Cash</td></tr>
-                {pc.map(r=><Row key={r.id} r={r}/>)}
-                {pb.length>0&&<><tr className="ph"><td colSpan={sb?18:17}>PROBATIONARY STAFF</td></tr>{pb.map(r=><Row key={r.id} r={r}/>)}</>}
+                {pc.map((r,i)=><Row key={r.id} r={r} last={pb.length===0&&i===pc.length-1}/>)}
+                {pb.length>0&&<><tr className="ph"><td colSpan={sb?18:17}>PROBATIONARY STAFF</td></tr>{pb.map((r,i)=><Row key={r.id} r={r} last={i===pb.length-1}/>)}</>}
                 <TR l="CASH STAFF TOTAL PAYOUT:" t={cT} c="tr"/>
                 <TR l="GRAND TOTAL:" t={gT} c="gr"/>
               </tbody>
