@@ -819,7 +819,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       </td>
       <td className={r.addedMonth===_tsKey()?'hl-new':undefined} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
-      <td style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.')}</span></td>
+      <td style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.').replace(/OPERATIONS/gi,'OPS.')}</span></td>
       <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>{_recordEdit(r.name,'salary',r.salary,v);updateSalary(r.id,v);}} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
       <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>{_recordEdit(r.name,'incentive',r.incentive,v);sM(r.id,'incentive',v);}} dec/><span className="pv">{pfmt(r.incentive)}</span></td>
       {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>{_recordEdit(r.name,'bonus',r.bonus,v);sM(r.id,'bonus',v);}}/><span className="pv">{pfmt(r.bonus)}</span></td>}
