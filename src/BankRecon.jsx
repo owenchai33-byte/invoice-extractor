@@ -609,8 +609,8 @@ export default function BankRecon() {
 
             <div className="br-tabs">
               <button className={`br-tab${activeTab==='toKeyed'?' active':''}`} onClick={()=>setActiveTab('toKeyed')}>To Key<span className="br-tab-count">({result.toKeyed.length})</span></button>
-              <button className={`br-tab${activeTab==='online'?' active':''}`} onClick={()=>setActiveTab('online')}>POS DuitNow<span className="br-tab-count">({result.onlineTransfers.length})</span></button>
               <button className={`br-tab${activeTab==='depCash'?' active':''}`} onClick={()=>setActiveTab('depCash')}>Cash Deposits<span className="br-tab-count">({result.depCash.length})</span></button>
+              <button className={`br-tab${activeTab==='online'?' active':''}`} onClick={()=>setActiveTab('online')}>POS DuitNow<span className="br-tab-count">({result.onlineTransfers.length})</span></button>
               <button className={`br-tab${activeTab==='posBank'?' active':''}`} onClick={()=>setActiveTab('posBank')}>POS vs Bank</button>
             </div>
 
@@ -693,6 +693,53 @@ export default function BankRecon() {
               </div>
             )}
 
+            {activeTab==='depCash' && (
+              <div className="br-section">
+                <div className="br-body-inner">
+                  {result.depCash.length === 0 ? (
+                    <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
+                  ) : (() => {
+                    const groups = groupByDate(result.depCash);
+                    return (<>
+                    <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Captures every CREDIT matching DEP-CASH.</div>
+                    <table className="br-table">
+                      <thead><tr><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
+                      <tbody>
+                        {groups.map(g => {
+                          const ck = 'dc_' + g.date;
+                          const isCollapsed = collapsed.has(ck);
+                          const dailyTotal = g.items.reduce((s, {txn}) => s + txn.credit, 0);
+                          return isCollapsed ? (
+                            <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
+                              <td><span className="br-arrow">▶</span>{g.date}</td>
+                              <td colSpan={2}><span className="br-dh-count">{g.items.length} deposits</span></td>
+                              <td className="br-amt">{fmtAmt(dailyTotal)}</td>
+                              <td className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>
+                            </tr>
+                          ) : (
+                            g.items.map(({txn: t, idx: i}, j) => (
+                              <tr key={i} className={j === 0 ? 'br-dfirst' : ''}>
+                                <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
+                                <td className="br-desc">{t.description}</td>
+                                <td className="br-page">p{t.page}</td>
+                                <td className="br-amt">{fmtAmt(t.credit)}</td>
+                                <td className="br-amt br-daily">{j === 0 && fmtAmt(dailyTotal)}</td>
+                              </tr>
+                            ))
+                          );
+                        })}
+                        <tr className="br-total">
+                          <td colSpan={3}>Total ({result.depCash.length} deposits)</td>
+                          <td className="br-amt">{fmtAmt(result.depCash.reduce((s, t) => s + t.credit, 0))}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </table></>);
+                  })()}
+                </div>
+              </div>
+            )}
+
             {activeTab==='online' && (
               <div className="br-section">
                 <div className="br-body-inner">
@@ -739,53 +786,6 @@ export default function BankRecon() {
                         </tbody>
                       </table>
                     </>);
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {activeTab==='depCash' && (
-              <div className="br-section">
-                <div className="br-body-inner">
-                  {result.depCash.length === 0 ? (
-                    <div style={{ fontSize: 12, color: '#71717a' }}>No DEP-CASH entries found</div>
-                  ) : (() => {
-                    const groups = groupByDate(result.depCash);
-                    return (<>
-                    <div style={{ fontSize: 11, color: '#71717a', marginBottom: 8 }}>Captures every CREDIT matching DEP-CASH.</div>
-                    <table className="br-table">
-                      <thead><tr><th>Date</th><th>Description</th><th>Pg</th><th className="br-amt">Amount</th><th className="br-amt">Daily Total</th></tr></thead>
-                      <tbody>
-                        {groups.map(g => {
-                          const ck = 'dc_' + g.date;
-                          const isCollapsed = collapsed.has(ck);
-                          const dailyTotal = g.items.reduce((s, {txn}) => s + txn.credit, 0);
-                          return isCollapsed ? (
-                            <tr key={ck} className="br-dh" onClick={() => toggleCollapse(ck)}>
-                              <td><span className="br-arrow">▶</span>{g.date}</td>
-                              <td colSpan={2}><span className="br-dh-count">{g.items.length} deposits</span></td>
-                              <td className="br-amt">{fmtAmt(dailyTotal)}</td>
-                              <td className="br-amt br-daily">{fmtAmt(dailyTotal)}</td>
-                            </tr>
-                          ) : (
-                            g.items.map(({txn: t, idx: i}, j) => (
-                              <tr key={i} className={j === 0 ? 'br-dfirst' : ''}>
-                                <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onClick={() => toggleCollapse(ck)}>{j === 0 && <span className="br-arrow open">▶</span>}{t.date}</td>
-                                <td className="br-desc">{t.description}</td>
-                                <td className="br-page">p{t.page}</td>
-                                <td className="br-amt">{fmtAmt(t.credit)}</td>
-                                <td className="br-amt br-daily">{j === 0 && fmtAmt(dailyTotal)}</td>
-                              </tr>
-                            ))
-                          );
-                        })}
-                        <tr className="br-total">
-                          <td colSpan={3}>Total ({result.depCash.length} deposits)</td>
-                          <td className="br-amt">{fmtAmt(result.depCash.reduce((s, t) => s + t.credit, 0))}</td>
-                          <td></td>
-                        </tr>
-                      </tbody>
-                    </table></>);
                   })()}
                 </div>
               </div>
