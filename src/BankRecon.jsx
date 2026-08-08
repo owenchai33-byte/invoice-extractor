@@ -270,6 +270,7 @@ async function parseSpayOutputPDF(buf) {
 async function parseCardpayOutputPDF(buf) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
   const dailies = {};
+  let isMonthly = null;
   let lastDate = null;
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -277,13 +278,24 @@ async function parseCardpayOutputPDF(buf) {
     const items = content.items.filter(i => i.str.trim());
     items.sort((a, b) => { const dy = b.transform[5] - a.transform[5]; return Math.abs(dy) > 3 ? dy : a.transform[4] - b.transform[4]; });
     const text = items.map(i => i.str.trim()).join(' ');
-    const dm = text.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (dm) lastDate = `${dm[3]}/${dm[2]}`;
-    if (!lastDate) { const dm2 = text.match(/(\d{2})\/(\d{2})\/(\d{4})/); if (dm2) lastDate = `${dm2[1]}/${dm2[2]}`; }
-    const nm = text.match(/Total\s+Net\s+Amount\s*:?\s*([\d,]+\.\d{2})/i);
-    if (nm && lastDate) {
-      const amt = parseFloat(nm[1].replace(/,/g, ''));
-      if (amt > 0) dailies[lastDate] = (dailies[lastDate] || 0) + amt;
+    if (isMonthly === null) isMonthly = /MONTHLY\s+STATEMENT/i.test(text);
+    if (isMonthly) {
+      const re = /(\d{2})\/(\d{2})\/\d{4}\s+\S+\s+NORMAL\s+PAYMENT\s+[\d,]+\.\d{2}\s+\([\d,]+\.\d{2}\)\s+[\d,]+\.\d{2}\s+([\d,]+\.\d{2})/g;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        const date = `${m[1]}/${m[2]}`;
+        const net = parseFloat(m[3].replace(/,/g, ''));
+        if (net > 0) dailies[date] = (dailies[date] || 0) + net;
+      }
+    } else {
+      const dm = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (dm) lastDate = `${dm[3]}/${dm[2]}`;
+      if (!lastDate) { const dm2 = text.match(/(\d{2})\/(\d{2})\/(\d{4})/); if (dm2) lastDate = `${dm2[1]}/${dm2[2]}`; }
+      const nm = text.match(/Total\s+Net\s+Amount\s*:?\s*([\d,]+\.\d{2})/i);
+      if (nm && lastDate) {
+        const amt = parseFloat(nm[1].replace(/,/g, ''));
+        if (amt > 0) dailies[lastDate] = (dailies[lastDate] || 0) + amt;
+      }
     }
   }
   return dailies;
