@@ -314,17 +314,14 @@ async function parseMyKasihOutputPDF(buf) {
     const text = items.map(i => i.str.trim()).join(' ');
     if (isActivity === null) isActivity = /TERMINAL\s+ACTIVITY\s+REPORT/i.test(text);
     if (isActivity) {
-      const re = /(\d{2})-(\d{2})-\d{4}\s+\d{2}:\d{2}|Daily\s+Total:\s*([\d,]+\.\d{2})/gi;
+      const re = /SETTLEMENT\s+DATE\s+\d{2}\/\d{2}\/\d{4}\s*-\s*(\d{2})\/(\d{2})\/\d{4}|TOTAL\s+NET\s+AMT?\s*([\d,]+\.\d{2})/gi;
       let m;
       while ((m = re.exec(text)) !== null) {
         if (m[1]) {
           currentDate = `${m[1]}/${m[2]}`;
         } else if (m[3] && currentDate) {
-          const gross = parseFloat(m[3].replace(/,/g, ''));
-          const mdr = Math.round(gross * 0.01 * 100) / 100;
-          const sst = Math.round(mdr * 0.08 * 100) / 100;
-          const net = +(gross - mdr - sst).toFixed(2);
-          if (net > 0) dailies[currentDate] = (dailies[currentDate] || 0) + net;
+          const amt = parseFloat(m[3].replace(/,/g, ''));
+          if (amt > 0) dailies[currentDate] = (dailies[currentDate] || 0) + amt;
         }
       }
     } else {
