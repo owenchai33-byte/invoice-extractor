@@ -147,6 +147,45 @@ function matchBankCredits(txns) {
   return matched;
 }
 
+function findBatchMatches(posDailies, bankDailies) {
+  const dateCmp = (a, b) => {
+    const [da, ma] = a.split('/').map(Number);
+    const [db, mb] = b.split('/').map(Number);
+    return (ma - mb) || (da - db);
+  };
+  const allDates = [...new Set([...Object.keys(posDailies), ...Object.keys(bankDailies)])].sort(dateCmp);
+  const usedPOS = new Set();
+  const usedBank = new Set();
+  const batches = [];
+  for (const bankDate of allDates) {
+    if ((bankDailies[bankDate] || 0) <= 0 || (posDailies[bankDate] || 0) > 0) continue;
+    if (usedBank.has(bankDate)) continue;
+    const bankAmt = bankDailies[bankDate];
+    const bankIdx = allDates.indexOf(bankDate);
+    let sum = 0;
+    const candidates = [];
+    for (let i = bankIdx - 1; i >= 0; i--) {
+      const d = allDates[i];
+      if ((posDailies[d] || 0) <= 0 || (bankDailies[d] || 0) > 0 || usedPOS.has(d)) break;
+      candidates.unshift(d);
+      sum += posDailies[d];
+      if (Math.abs(sum - bankAmt) < 0.02) {
+        batches.push({ posDates: [...candidates], bankDate });
+        candidates.forEach(pd => usedPOS.add(pd));
+        usedBank.add(bankDate);
+        break;
+      }
+      if (sum > bankAmt) break;
+    }
+  }
+  const lookup = {};
+  for (const b of batches) {
+    for (const d of b.posDates) lookup[d] = { type: 'pos', bankDate: b.bankDate, posDates: b.posDates };
+    lookup[b.bankDate] = { type: 'bank', posDates: b.posDates };
+  }
+  return lookup;
+}
+
 function sumPOSOutlets(typeData) {
   const totals = {};
   if (!typeData) return totals;
@@ -771,6 +810,7 @@ export default function BankRecon() {
                       {types.map(({ key, label, keyword }) => {
                         const posDailies = sumPOSOutlets(posData[key]);
                         const bankDailies = bankMatch[key];
+                        const batchLookup = findBatchMatches(posDailies, bankDailies);
                         const allDates = [...new Set([...Object.keys(posDailies), ...Object.keys(bankDailies)])].sort((a, b) => {
                           const [da, ma] = a.split('/').map(Number);
                           const [db, mb] = b.split('/').map(Number);
@@ -794,13 +834,14 @@ export default function BankRecon() {
                                   const match = diff < 0.02;
                                   const posOnly = pos > 0 && bank === 0;
                                   const bankOnly = bank > 0 && pos === 0;
+                                  const batch = batchLookup[d];
                                   return (
-                                    <tr key={d} style={{ background: match ? '#f0fdf4' : posOnly || bankOnly ? '#fefce8' : '#fef2f2' }}>
+                                    <tr key={d} style={{ background: match || batch ? '#f0fdf4' : posOnly || bankOnly ? '#fefce8' : '#fef2f2' }}>
                                       <td>{d}</td>
                                       <td className="br-amt">{pos ? fmtAmt(pos) : <span style={{ color: '#a1a1aa' }}>—</span>}</td>
                                       <td className="br-amt">{bank ? fmtAmt(bank) : <span style={{ color: '#a1a1aa' }}>—</span>}</td>
-                                      <td className="br-amt" style={{ color: match ? '#166534' : '#dc2626', fontWeight: 600 }}>{match ? '0.00' : fmtAmt(diff)}</td>
-                                      <td style={{ fontSize: 11 }}>{match ? <span style={{ color: '#166534' }}>✓ Match</span> : posOnly ? <span style={{ color: '#d97706' }}>⚠ No bank credit</span> : bankOnly ? <span style={{ color: '#d97706' }}>⚠ No POS data</span> : <span style={{ color: '#dc2626' }}>✗ Mismatch</span>}</td>
+                                      <td className="br-amt" style={{ color: match || batch ? '#166534' : '#dc2626', fontWeight: 600 }}>{match ? '0.00' : fmtAmt(diff)}</td>
+                                      <td style={{ fontSize: 11 }}>{match ? <span style={{ color: '#166534' }}>✓ Match</span> : batch ? <span style={{ color: '#166534' }}>{batch.type === 'pos' ? `✓ Batched → ${batch.bankDate}` : `✓ Batch (${batch.posDates.join('+')})`}</span> : posOnly ? <span style={{ color: '#d97706' }}>⚠ No bank credit</span> : bankOnly ? <span style={{ color: '#d97706' }}>⚠ No POS data</span> : <span style={{ color: '#dc2626' }}>✗ Mismatch</span>}</td>
                                     </tr>
                                   );
                                 })}
