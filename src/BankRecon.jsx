@@ -384,7 +384,7 @@ function shortDesc(desc) {
   return first;
 }
 function hasName(short) {
-  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT|ATM|EFT|CASA|TRF)\d*/gi, '');
+  const stripped = short.replace(/\b(DUITNOW|QR|CR|DR|TSFR|FUND|IBG|IBFT|TRSF|PAYMENT|TRANSFER|MCHT|REF|NO|DEP|CASH|PYMT|ATM|EFT|CASA|TRF|CHEQUE|CHQ|CHOQ|PROCESS|FEE|FEES|CHARGE|CHARGES|SST|SRS|COMMISSION|COMM|INTEREST|TAX|STAMP|DUTY)\d*/gi, '');
   const alpha = stripped.replace(/[^A-Za-z]/g, '');
   return alpha.length >= 2;
 }
@@ -452,7 +452,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 6;
+const BR_VER = 7;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
