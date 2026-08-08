@@ -361,6 +361,9 @@ function findName(remainder, contLines) {
     l = l.replace(OWN_COMPANY, '').trim();
     l = l.replace(/^QR\s*REF\s*NO:\s*\S*/i, '').trim();
     if (!l) continue;
+    if (/^\d*\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER|JAN|FEB|MAR|APR|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*\d*$/i.test(l)) continue;
+    l = l.replace(/^[\dX]{6,}\s+/i, '').trim();
+    if (!l) continue;
     if (hasName(l)) return l;
   }
   return '';
