@@ -305,18 +305,36 @@ async function parseMyKasihOutputPDF(buf) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
   const dailies = {};
   let currentDate = null;
+  let isActivity = null;
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
     const items = content.items.filter(i => i.str.trim());
     items.sort((a, b) => { const dy = b.transform[5] - a.transform[5]; return Math.abs(dy) > 3 ? dy : a.transform[4] - b.transform[4]; });
     const text = items.map(i => i.str.trim()).join(' ');
-    const dm = text.match(/SETTLEMENT\s+DATE\s+(\d{2})-(\d{2})-(\d{4})/i);
-    if (dm) currentDate = `${dm[1]}/${dm[2]}`;
-    const nm = text.match(/TOTAL\s+NET\s+AMT?\s*([\d,]+\.\d{2})/i);
-    if (nm && currentDate) {
-      const amt = parseFloat(nm[1].replace(/,/g, ''));
-      if (amt > 0) dailies[currentDate] = (dailies[currentDate] || 0) + amt;
+    if (isActivity === null) isActivity = /TERMINAL\s+ACTIVITY\s+REPORT/i.test(text);
+    if (isActivity) {
+      const re = /(\d{2})-(\d{2})-\d{4}\s+\d{2}:\d{2}|Daily\s+Total:\s*([\d,]+\.\d{2})/gi;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        if (m[1]) {
+          currentDate = `${m[1]}/${m[2]}`;
+        } else if (m[3] && currentDate) {
+          const gross = parseFloat(m[3].replace(/,/g, ''));
+          const mdr = Math.round(gross * 0.01 * 100) / 100;
+          const sst = Math.round(mdr * 0.08 * 100) / 100;
+          const net = +(gross - mdr - sst).toFixed(2);
+          if (net > 0) dailies[currentDate] = (dailies[currentDate] || 0) + net;
+        }
+      }
+    } else {
+      const dm = text.match(/SETTLEMENT\s+DATE\s+(\d{2})-(\d{2})-(\d{4})/i);
+      if (dm) currentDate = `${dm[1]}/${dm[2]}`;
+      const nm = text.match(/TOTAL\s+NET\s+AMT?\s*([\d,]+\.\d{2})/i);
+      if (nm && currentDate) {
+        const amt = parseFloat(nm[1].replace(/,/g, ''));
+        if (amt > 0) dailies[currentDate] = (dailies[currentDate] || 0) + amt;
+      }
     }
   }
   return dailies;
