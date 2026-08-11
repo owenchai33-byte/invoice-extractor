@@ -317,8 +317,8 @@ const CSS = `
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:1em}
-.slip-box th{border-top:1px solid #000;border-bottom:1px solid #000;border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em;text-align:center;font-weight:700}
-.slip-box td{border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em}
+.slip-box th{border-top:1px solid #000;border-bottom:1px solid #000;border-left:1px solid #888;border-right:1px solid #888;padding:.2em .5em;text-align:center;font-weight:700}
+.slip-box td{border-left:1px solid #888;border-right:1px solid #888;padding:.2em .5em}
 .slip-box .hl{width:20%}
 .slip-box .ha{width:30%}
 .slip-box .cl{text-align:left}
