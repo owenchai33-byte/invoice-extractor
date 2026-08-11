@@ -353,7 +353,7 @@ function findName(remainder, contLines) {
     const cleaned = remainder.replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').replace(/^\d+\s*/, '').trim();
     if (cleaned && hasName(cleaned)) return cleaned;
   }
-  for (let i = contLines.length - 1; i >= 0; i--) {
+  for (let i = 0; i < contLines.length; i++) {
     let l = contLines[i].trim();
     if (!l || /^\d+$/.test(l)) continue;
     l = l.replace(OWN_COMPANY, '').trim();
@@ -451,7 +451,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 12;
+const BR_VER = 13;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
