@@ -348,11 +348,21 @@ const TYPE_MAP = [
   { pattern: /^TRSF\s*/i, label: 'TRSF' },
   { pattern: /^ATM\/EFT\s*/i, label: 'ATM/EFT' },
 ];
+function nameSignal(s) {
+  if (/\b(MR|MRS|MS|MISS|MADAM|MDM|ENCIK|EN|PUAN|CIK|DR|DATO|DATIN|DATUK)\b/i.test(s)) return true;
+  if (/\b(BIN|BINTI|BT)\b/i.test(s)) return true;
+  if (/\b[ASD]\/[LPO]\b/i.test(s)) return true;
+  if (/\b(SDN|BHD|ENTERPRISE|TRADING|COMPANY|CORP|MOTOR|INDUSTRIES)\b/i.test(s)) return true;
+  if (/\b(PERSATUAN|PERTUBUHAN|SYARIKAT|KOPERASI)\b/i.test(s)) return true;
+  if (/\bS\/B\b/i.test(s)) return true;
+  return false;
+}
 function findName(remainder, contLines) {
+  const candidates = [];
   if (remainder) {
     let cleaned = remainder.replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').replace(/^\d+\s*/, '').trim();
     cleaned = cleaned.replace(OWN_COMPANY, '').trim();
-    if (cleaned && hasName(cleaned)) return cleaned;
+    if (cleaned && hasName(cleaned)) candidates.push(cleaned);
   }
   for (let i = 0; i < contLines.length; i++) {
     let l = contLines[i].trim();
@@ -368,9 +378,11 @@ function findName(remainder, contLines) {
     if (!l) continue;
     const alphaOnly = l.replace(/[^A-Za-z\s]/g, '').trim();
     if (!/\s/.test(alphaOnly) && /\d{6,}/.test(contLines[i])) continue;
-    if (hasName(l)) return l;
+    if (hasName(l)) candidates.push(l);
   }
-  return '';
+  if (candidates.length === 0) return '';
+  const signaled = candidates.find(c => nameSignal(c));
+  return signaled || candidates[0];
 }
 function shortDesc(desc) {
   const lines = desc.split('\n');
