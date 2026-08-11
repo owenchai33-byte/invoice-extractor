@@ -207,61 +207,59 @@ function savePOSDailiesBR(type, outlet, dailies) {
 
 async function parseSpayOutputPDF(buf) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-  const allItems = [];
+  let dateColX = null, amtColX = null;
+  const dailies = {};
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
-    for (const i of content.items) {
-      if (i.str.trim()) allItems.push({ str: i.str.trim(), x: i.transform[4], y: i.transform[5] });
-    }
-  }
-  const rowMap = new Map();
-  for (const i of allItems) {
-    const y = Math.round(i.y);
-    let ky = null;
-    for (const k of rowMap.keys()) { if (Math.abs(k - y) < 4) { ky = k; break; } }
-    if (ky !== null) rowMap.get(ky).push(i);
-    else rowMap.set(y, [i]);
-  }
-  let headerY = null;
-  for (const [y, items] of rowMap) {
-    if (items.filter(i => /settlement|merchant|serial|transaction|amount|fee|status/i.test(i.str)).length >= 4) {
-      headerY = y; break;
-    }
-  }
-  if (headerY === null) return {};
-  const headerBand = allItems.filter(i => Math.abs(i.y - headerY) < 15);
-  const colGroups = new Map();
-  for (const i of headerBand) {
-    let matched = false;
-    for (const [kx, items] of colGroups) { if (Math.abs(kx - i.x) < 15) { items.push(i); matched = true; break; } }
-    if (!matched) colGroups.set(i.x, [i]);
-  }
-  let dateColX = null, amtColX = null;
-  for (const [x, items] of colGroups) {
-    const t = items.map(i => i.str).join(' ');
-    if (/settlement.*date/i.test(t)) dateColX = x;
-    if (/settlement.*amount/i.test(t)) amtColX = x;
-  }
-  if (dateColX === null || amtColX === null) return {};
-  const dailies = {};
-  for (const [y, items] of rowMap) {
-    if (Math.abs(y - headerY) < 15) continue;
-    let rowDate = null;
-    for (const i of items) { if (/^\d{4}-\d{2}-\d{2}$/.test(i.str)) { rowDate = i.str; break; } }
-    if (!rowDate) continue;
-    let bestAmt = 0, bestDist = Infinity;
+    const items = content.items.filter(i => i.str.trim()).map(i => ({ str: i.str.trim(), x: i.transform[4], y: i.transform[5] }));
+    const rowMap = new Map();
     for (const i of items) {
-      const n = parseFloat(i.str.replace(/,/g, ''));
-      if (!isNaN(n) && n > 0) {
-        const d = Math.abs(i.x - amtColX);
-        if (d < bestDist) { bestDist = d; bestAmt = n; }
-      }
+      const y = Math.round(i.y);
+      let ky = null;
+      for (const k of rowMap.keys()) { if (Math.abs(k - y) < 4) { ky = k; break; } }
+      if (ky !== null) rowMap.get(ky).push(i);
+      else rowMap.set(y, [i]);
     }
-    if (bestAmt > 0 && bestDist < 60) {
-      const m = rowDate.match(/(\d{4})-(\d{2})-(\d{2})/);
-      const k = `${m[3]}/${m[2]}`;
-      dailies[k] = (dailies[k] || 0) + bestAmt;
+    if (dateColX === null) {
+      let headerY = null;
+      for (const [y, ri] of rowMap) {
+        if (ri.filter(i => /settlement|merchant|serial|transaction|amount|fee|status/i.test(i.str)).length >= 4) {
+          headerY = y; break;
+        }
+      }
+      if (headerY === null) continue;
+      const headerBand = items.filter(i => Math.abs(i.y - headerY) < 15);
+      const colGroups = new Map();
+      for (const i of headerBand) {
+        let matched = false;
+        for (const [kx, gi] of colGroups) { if (Math.abs(kx - i.x) < 15) { gi.push(i); matched = true; break; } }
+        if (!matched) colGroups.set(i.x, [i]);
+      }
+      for (const [x, gi] of colGroups) {
+        const t = gi.map(i => i.str).join(' ');
+        if (/settlement.*date/i.test(t)) dateColX = x;
+        if (/settlement.*amount/i.test(t)) amtColX = x;
+      }
+      if (dateColX === null || amtColX === null) { dateColX = null; amtColX = null; continue; }
+    }
+    for (const [, ri] of rowMap) {
+      let rowDate = null;
+      for (const i of ri) { if (/^\d{4}-\d{2}-\d{2}$/.test(i.str)) { rowDate = i.str; break; } }
+      if (!rowDate) continue;
+      let bestAmt = 0, bestDist = Infinity;
+      for (const i of ri) {
+        const n = parseFloat(i.str.replace(/,/g, ''));
+        if (!isNaN(n) && n > 0) {
+          const d = Math.abs(i.x - amtColX);
+          if (d < bestDist) { bestDist = d; bestAmt = n; }
+        }
+      }
+      if (bestAmt > 0 && bestDist < 60) {
+        const m = rowDate.match(/(\d{4})-(\d{2})-(\d{2})/);
+        const k = `${m[3]}/${m[2]}`;
+        dailies[k] = (dailies[k] || 0) + bestAmt;
+      }
     }
   }
   return dailies;
@@ -452,7 +450,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 8;
+const BR_VER = 9;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
