@@ -349,11 +349,10 @@ const TYPE_MAP = [
   { pattern: /^ATM\/EFT\s*/i, label: 'ATM/EFT' },
 ];
 function findName(remainder, contLines) {
-  const candidates = [];
   if (remainder) {
     let cleaned = remainder.replace(/\bQR\s*(PAYMENT|PYMT)\b/gi, '').replace(/\bQR\b/gi, '').replace(/^\d+\s*/, '').trim();
     cleaned = cleaned.replace(OWN_COMPANY, '').trim();
-    if (cleaned && hasName(cleaned)) candidates.push(cleaned);
+    if (cleaned && hasName(cleaned)) return cleaned;
   }
   for (let i = 0; i < contLines.length; i++) {
     let l = contLines[i].trim();
@@ -367,16 +366,11 @@ function findName(remainder, contLines) {
     l = l.replace(/^[\dX]{6,}\s+/i, '').trim();
     l = l.replace(/\s+[\dX]{6,}$/i, '').trim();
     if (!l) continue;
-    if (hasName(l)) candidates.push(l);
+    const alphaOnly = l.replace(/[^A-Za-z\s]/g, '').trim();
+    if (!/\s/.test(alphaOnly) && /\d{6,}/.test(contLines[i])) continue;
+    if (hasName(l)) return l;
   }
-  if (candidates.length === 0) return '';
-  if (candidates.length === 1) return candidates[0];
-  const nameScore = (s) => {
-    const alphaWords = s.split(/\s+/).filter(w => /^[A-Za-z]{2,}$/.test(w)).length;
-    return alphaWords + (/\d{6,}/.test(s) ? -1 : 0);
-  };
-  candidates.sort((a, b) => nameScore(b) - nameScore(a));
-  return candidates[0];
+  return '';
 }
 function shortDesc(desc) {
   const lines = desc.split('\n');
