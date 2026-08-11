@@ -487,7 +487,8 @@ export default function BankRecon() {
       if (!count) { setPosUploadMsg({ text: `No daily data found in ${file.name}`, error: true }); return; }
       savePOSDailiesBR(type, 'HQ', dailies);
       loadPosData();
-      setPosUploadMsg({ text: `✓ ${type}: ${count} dates extracted from ${file.name}` });
+      const preview = Object.entries(dailies).sort().slice(0, 3).map(([d, a]) => `${d}=${a}`).join(', ');
+      setPosUploadMsg({ text: `✓ ${type} v11: ${count} dates from ${file.name} (${preview}…)` });
     } catch {
       setPosUploadMsg({ text: `Could not parse ${file.name}`, error: true });
     }
