@@ -363,6 +363,7 @@ function findName(remainder, contLines) {
     if (!l) continue;
     if (/^\d*\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER|JAN|FEB|MAR|APR|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*\d*$/i.test(l)) continue;
     if (/^\d{8}[A-Z]{4}/.test(l)) continue;
+    if (/^[0-9A-Fa-f]{10,}/.test(l)) continue;
     l = l.replace(/^[\dX]{6,}\s+/i, '').trim();
     l = l.replace(/\s+[\dX]{6,}$/i, '').trim();
     if (!l) continue;
