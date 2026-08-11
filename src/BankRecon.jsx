@@ -349,12 +349,16 @@ const TYPE_MAP = [
   { pattern: /^ATM\/EFT\s*/i, label: 'ATM/EFT' },
 ];
 function nameSignal(s) {
-  if (/\b(MR|MRS|MS|MISS|MADAM|MDM|ENCIK|EN|PUAN|CIK|DR|DATO|DATIN|DATUK)\b/i.test(s)) return true;
+  if (/\b(MR|MRS|MS|MISS|MADAM|MDM|ENCIK|EN|PUAN|CIK|DR|DATO|DATIN|DATUK|TUNKU|TENGKU)\b/i.test(s)) return true;
+  if (/\bTAN\s+SRI\b/i.test(s)) return true;
   if (/\b(BIN|BINTI|BT)\b/i.test(s)) return true;
   if (/\b[ASD]\/[LPO]\b/i.test(s)) return true;
   if (/\b(SDN|BHD|ENTERPRISE|TRADING|COMPANY|CORP|MOTOR|INDUSTRIES)\b/i.test(s)) return true;
   if (/\b(PERSATUAN|PERTUBUHAN|SYARIKAT|KOPERASI)\b/i.test(s)) return true;
   if (/\bS\/B\b/i.test(s)) return true;
+  if (/\b(MUHAMMAD|MOHD|MOHAMAD|AHMAD|ABDUL|ABU|SITI|NUR|NURUL|NOOR|WAN|CHE|NIK)\b/i.test(s)) return true;
+  if (/\b(TAN|LIM|LEE|WONG|CHAN|CHEN|NG|ONG|GOH|TEO|TEOH|LAU|CHIN|CHONG|SIM|YONG|FOO|KOH|CHIENG|TIONG|CHAI|LING|HENG|SIA|LOH|LO|HO|TAY|YEO|YEW|TOH|ANG|SOO|LIEW|PHANG|PANG|KONG|CHANG|CHEW|CHUA|KHOO|KHO|YAP|LEONG|LOKE|FONG|CHEAH|CHOO|CHU|BONG|NGAN|QUEK|SIEW|SOH|TENG|WEE|YEOH|YII|CHUNG|KANG|MAH|MOK|POH|TANG|THAM|TONG|YU|KUEH|LENG|WANG|LI|SAW|SONG|SU|HUNG|LAM|LOW|LIONG|NEO|SEOW|SOON|PEH|OOI|KUA|KOO|PHUA|LAI|CHIA|SEAH|LOK|KWOK|SNG|CHIU|CHOW|DING|ENG|SUNG|TAI|TAM|MAK)\b/i.test(s)) return true;
+  if (/\b(RAJA|KUMAR|DEVI|NAIR|PILLAI|MUTHU|RAJAN|KRISHNAN)\b/i.test(s)) return true;
   return false;
 }
 function findName(remainder, contLines) {
