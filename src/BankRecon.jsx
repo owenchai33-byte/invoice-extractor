@@ -360,6 +360,7 @@ function findName(remainder, contLines) {
     l = l.replace(/^QR\s*REF\s*NO:\s*\S*/i, '').trim();
     if (!l) continue;
     if (/^\d*\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER|JAN|FEB|MAR|APR|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*\d*$/i.test(l)) continue;
+    if (/^\d{8}[A-Z]{4}/.test(l)) continue;
     l = l.replace(/^[\dX]{6,}\s+/i, '').trim();
     if (!l) continue;
     if (hasName(l)) return l;
@@ -450,7 +451,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 11;
+const BR_VER = 12;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
