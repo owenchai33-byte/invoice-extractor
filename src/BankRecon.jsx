@@ -207,7 +207,7 @@ function savePOSDailiesBR(type, outlet, dailies) {
 
 async function parseSpayOutputPDF(buf) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-  let dateColX = null, amtColX = null;
+  let dateColX = null, amtColX = null, refundColX = null;
   const dailies = {};
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -240,8 +240,9 @@ async function parseSpayOutputPDF(buf) {
         const t = gi.map(i => i.str).join(' ');
         if (/settlement.*date/i.test(t)) dateColX = x;
         if (/settlement.*amount/i.test(t)) amtColX = x;
+        if (/refund.*amount/i.test(t)) refundColX = x;
       }
-      if (dateColX === null || amtColX === null) { dateColX = null; amtColX = null; continue; }
+      if (dateColX === null || amtColX === null) { dateColX = null; amtColX = null; refundColX = null; continue; }
     }
     for (const [, ri] of rowMap) {
       let rowDate = null;
@@ -251,6 +252,7 @@ async function parseSpayOutputPDF(buf) {
       for (const i of ri) {
         const n = parseFloat(i.str.replace(/,/g, ''));
         if (!isNaN(n) && n > 0) {
+          if (i.x < amtColX - 5) continue;
           const d = Math.abs(i.x - amtColX);
           if (d < bestDist) { bestDist = d; bestAmt = n; }
         }
@@ -450,7 +452,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 9;
+const BR_VER = 10;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
