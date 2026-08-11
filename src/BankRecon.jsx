@@ -248,16 +248,14 @@ async function parseSpayOutputPDF(buf) {
       let rowDate = null;
       for (const i of ri) { if (/^\d{4}-\d{2}-\d{2}$/.test(i.str)) { rowDate = i.str; break; } }
       if (!rowDate) continue;
-      let bestAmt = 0, bestDist = Infinity;
+      let bestAmt = 0, bestX = -Infinity;
       for (const i of ri) {
         const n = parseFloat(i.str.replace(/,/g, ''));
-        if (!isNaN(n) && n > 0) {
-          if (i.x < amtColX - 5) continue;
-          const d = Math.abs(i.x - amtColX);
-          if (d < bestDist) { bestDist = d; bestAmt = n; }
+        if (!isNaN(n) && n > 0 && Math.abs(i.x - amtColX) < 60) {
+          if (i.x > bestX) { bestX = i.x; bestAmt = n; }
         }
       }
-      if (bestAmt > 0 && bestDist < 60) {
+      if (bestAmt > 0) {
         const m = rowDate.match(/(\d{4})-(\d{2})-(\d{2})/);
         const k = `${m[3]}/${m[2]}`;
         dailies[k] = (dailies[k] || 0) + bestAmt;
@@ -452,7 +450,7 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 10;
+const BR_VER = 11;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
