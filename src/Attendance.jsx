@@ -220,11 +220,23 @@ function processRecords({ records, from, to }) {
 
         let foundBO = null, foundBI = null;
         if (middle.length >= 2) {
-          const cBI = middle[middle.length - 1];
-          const biMin = toMin(cBI);
-          for (let i = middle.length - 2; i >= 0; i--) {
-            const gap = biMin - toMin(middle[i]);
-            if (gap >= 35 && gap <= 55) { foundBO = middle[i]; foundBI = cBI; break; }
+          for (let j = middle.length - 1; j >= 1 && !foundBO; j--) {
+            if (!inBreakWindow(middle[j])) continue;
+            const biMin = toMin(middle[j]);
+            for (let i = j - 1; i >= 0; i--) {
+              if (!inBreakWindow(middle[i])) continue;
+              const gap = biMin - toMin(middle[i]);
+              if (gap >= 35 && gap <= 55) { foundBO = middle[i]; foundBI = middle[j]; break; }
+            }
+          }
+          if (!foundBO) {
+            for (let j = middle.length - 1; j >= 1 && !foundBO; j--) {
+              const biMin = toMin(middle[j]);
+              for (let i = j - 1; i >= 0; i--) {
+                const gap = biMin - toMin(middle[i]);
+                if (gap >= 35 && gap <= 55) { foundBO = middle[i]; foundBI = middle[j]; break; }
+              }
+            }
           }
         }
 
