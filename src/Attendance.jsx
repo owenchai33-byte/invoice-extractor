@@ -279,8 +279,12 @@ function processRecords({ records, from, to }) {
 
         if (day.clockOut) {
           const outM = toMin(day.clockOut);
-          if (outM < endMin) day.earlyOut = endMin - outM;
-          else if (outM > endMin) day.otRef = outM - endMin;
+          if (outM < endMin) {
+            day.earlyOut = endMin - outM;
+          } else if (outM > endMin) {
+            const net = (outM - endMin) - day.lateIn - day.breakExcess;
+            if (net > 0) day.otRef = net;
+          }
         }
       }
 
