@@ -290,6 +290,27 @@ const btn = {
   fontFamily: 'inherit',
 };
 
+function getPayrollOrder() {
+  try {
+    const staff = JSON.parse(localStorage.getItem('cjk_payroll_staff_v3') || '[]');
+    return staff.map(s => s.name.toUpperCase().trim());
+  } catch { return []; }
+}
+
+function sortByPayroll(data) {
+  const order = getPayrollOrder();
+  return Object.keys(data).sort((a, b) => {
+    const nameA = data[a].name.toUpperCase().trim();
+    const nameB = data[b].name.toUpperCase().trim();
+    const idxA = order.indexOf(nameA);
+    const idxB = order.indexOf(nameB);
+    if (idxA === -1 && idxB === -1) return parseInt(a) - parseInt(b);
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
+}
+
 function StatCard({ label, value, warn }) {
   return (
     <div style={{ padding: '8px 12px', background: '#f9fafb', borderRadius: 6 }}>
@@ -315,7 +336,7 @@ export default function Attendance() {
       if (!parsed.records.length) throw new Error('No attendance records found in file');
       const results = processRecords(parsed);
       setData(results);
-      setSelected(Object.keys(results).sort((a, b) => a - b)[0]);
+      setSelected(sortByPayroll(results)[0]);
     } catch (e) {
       setError(e.message || 'Failed to parse file');
     }
@@ -330,7 +351,7 @@ export default function Attendance() {
   }, [handleFile]);
 
   const emp = data && selected ? data[selected] : null;
-  const empIds = data ? Object.keys(data).sort((a, b) => a - b) : [];
+  const empIds = data ? sortByPayroll(data) : [];
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>

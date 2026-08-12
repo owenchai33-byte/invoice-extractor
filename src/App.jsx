@@ -16,8 +16,8 @@ const SECTIONS = [
     { id: 'bankrecon', label: 'Bank Recon' },
   ]},
   { id: 'hr', label: 'Human Resource', tabs: [
-    { id: 'payroll', label: 'Payroll' },
     { id: 'attendance', label: 'Attendance' },
+    { id: 'payroll', label: 'Payroll' },
     { id: 'payslip', label: 'Payslip' },
     { id: 'epayslip', label: 'Employee Payslip' },
     { id: 'contract', label: 'Contracts' },
