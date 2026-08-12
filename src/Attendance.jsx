@@ -525,10 +525,10 @@ export default function Attendance() {
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
-              .att-table { font-size: 10px !important; }
-              .att-table th, .att-table td { padding: 4px 6px !important; }
-              .att-table th:last-child, .att-table td:last-child { min-width: 140px !important; }
-              @page { size: landscape; margin: 12mm; }
+              .att-table { font-size: 9px !important; }
+              .att-table th, .att-table td { padding: 3px 4px !important; }
+              .att-table th:last-child, .att-table td:last-child { min-width: 100px !important; }
+              @page { size: portrait; margin: 10mm; }
             }
           `}</style>
         </>
