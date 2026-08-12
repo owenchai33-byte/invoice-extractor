@@ -86,6 +86,7 @@ export default function App() {
   }, [active]);
 
   const [toast, setToast] = useState('');
+  const [backupDue, setBackupDue] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
@@ -129,14 +130,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (checkWeeklyDownload()) {
-      const t = setTimeout(() => {
-        downloadBackup();
-        setToast('✅ Weekly backup saved to Downloads');
-        setTimeout(() => setToast(''), 4000);
-      }, 3000);
-      return () => clearTimeout(t);
-    }
+    if (checkWeeklyDownload()) setBackupDue(true);
   }, []);
 
   useEffect(() => {
@@ -457,6 +451,23 @@ export default function App() {
         background: '#171717', color: '#fff', padding: '10px 20px', borderRadius: 8,
         fontSize: 13, fontWeight: 500, zIndex: 9999, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
       }}>{toast}</div>}
+
+      {backupDue && <div style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        background: '#171717', color: '#fff', padding: '12px 20px', borderRadius: 10,
+        fontSize: 13, fontWeight: 500, zIndex: 9998, boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <span>🛡 Weekly backup ready</span>
+        <button onClick={() => { downloadBackup(); setBackupDue(false); setToast('✅ Backup downloaded'); setTimeout(() => setToast(''), 3000); }} style={{
+          background: '#fff', color: '#171717', border: 'none', borderRadius: 6,
+          padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+        }}>Download</button>
+        <button onClick={() => setBackupDue(false)} style={{
+          background: 'transparent', color: '#888', border: 'none', fontSize: 16,
+          cursor: 'pointer', padding: '0 4px', lineHeight: 1,
+        }}>✕</button>
+      </div>}
 
       {showRestore && <div style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999,
