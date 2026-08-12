@@ -26,7 +26,7 @@ SECTIONS.forEach(s => s.tabs.forEach(t => { TAB_TO_SECTION[t.id] = s.id; }));
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
 const APP_PIN = '9069';
-const PIN_TABS = new Set(['payroll', 'payslip']);
+const PIN_TABS = new Set(['payroll', 'payslip', 'epayslip']);
 
 function PinGate({ onUnlock }) {
   const [pin, setPin] = useState('');
