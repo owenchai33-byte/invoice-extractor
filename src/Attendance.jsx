@@ -659,10 +659,11 @@ export default function Attendance() {
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
-              .att-table { font-size: 9px !important; }
-              .att-table th, .att-table td { padding: 3px 4px !important; }
-              .att-table th:last-child, .att-table td:last-child { min-width: 100px !important; }
-              @page { size: portrait; margin: 10mm; }
+              .att-table { font-size: 8px !important; }
+              .att-table th, .att-table td { padding: 2px 3px !important; }
+              .att-table th:last-child, .att-table td:last-child { min-width: 80px !important; }
+              body { margin: 0 !important; padding: 8mm !important; }
+              @page { size: portrait; margin: 0; }
             }
           `}</style>
         </>
