@@ -453,6 +453,7 @@ export default function Attendance() {
                   <th style={{ ...th, color: '#dc2626' }}>Break +</th>
                   <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
                   <th style={th}>Remarks</th>
+                  <th style={{ ...th, minWidth: 120 }}>Reason / Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -479,6 +480,7 @@ export default function Attendance() {
                       <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
                       <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
                       <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200 }}>{remarkStr(d)}</td>
+                      <td style={{ ...td, minWidth: 120, borderLeft: '1px solid #e4e4e7' }}>&nbsp;</td>
                     </tr>
                   );
                 })}
@@ -525,6 +527,7 @@ export default function Attendance() {
               .att-print-only { display: block !important; }
               .att-table { font-size: 10px !important; }
               .att-table th, .att-table td { padding: 4px 6px !important; }
+              .att-table th:last-child, .att-table td:last-child { min-width: 140px !important; }
               @page { size: landscape; margin: 12mm; }
             }
           `}</style>
