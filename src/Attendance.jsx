@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import * as XLSX from 'xlsx';
@@ -324,12 +324,31 @@ function StatCard({ label, value, warn }) {
   );
 }
 
+const ATT_DATA_KEY = 'cjk_attendance_v1';
+const ATT_SEL_KEY = 'cjk_attendance_sel_v1';
+
 export default function Attendance() {
-  const [data, setData] = useState(null);
-  const [selected, setSelected] = useState(null);
+  const [data, setData] = useState(() => {
+    try { const s = localStorage.getItem(ATT_DATA_KEY); return s ? JSON.parse(s) : null; }
+    catch { return null; }
+  });
+  const [selected, setSelected] = useState(() => {
+    try { return localStorage.getItem(ATT_SEL_KEY) || null; }
+    catch { return null; }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (data) localStorage.setItem(ATT_DATA_KEY, JSON.stringify(data));
+    else localStorage.removeItem(ATT_DATA_KEY);
+  }, [data]);
+
+  useEffect(() => {
+    if (selected) localStorage.setItem(ATT_SEL_KEY, selected);
+    else localStorage.removeItem(ATT_SEL_KEY);
+  }, [selected]);
 
   const handleFile = useCallback(async (file) => {
     setLoading(true);
@@ -410,7 +429,7 @@ export default function Attendance() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => window.print()} style={btn}>🖨 Print</button>
-              <button onClick={() => { setData(null); setSelected(null); }} style={btn}>Upload New</button>
+              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(ATT_DATA_KEY); localStorage.removeItem(ATT_SEL_KEY); }} style={btn}>Upload New</button>
             </div>
           </div>
 
