@@ -35,6 +35,12 @@ const END_WD = 16 * 60 + 45;
 const END_SAT = 15 * 60 + 10;
 const BREAK_ALLOW = 45;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+function getPrintTitle(period) {
+  const [y, m] = period.from.split('-').map(Number);
+  return `CJK HQ ATTENDANCE REPORT - ${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
+}
 
 function pad(n) { return String(n).padStart(2, '0'); }
 function fmtTime(s) { return s ? `${pad(s.h)}:${pad(s.m)}` : '-'; }
@@ -486,6 +492,7 @@ export default function Attendance() {
   const [error, setError] = useState('');
   const [printAll, setPrintAll] = useState(false);
   const fileRef = useRef(null);
+  const origTitle = useRef(document.title);
 
   useEffect(() => {
     if (data) localStorage.setItem(ATT_DATA_KEY, JSON.stringify(data));
@@ -498,17 +505,22 @@ export default function Attendance() {
   }, [selected]);
 
   useEffect(() => {
-    const reset = () => setPrintAll(false);
+    const reset = () => {
+      setPrintAll(false);
+      document.title = origTitle.current;
+    };
     window.addEventListener('afterprint', reset);
     return () => window.removeEventListener('afterprint', reset);
   }, []);
 
   useEffect(() => {
-    if (printAll) {
+    if (printAll && emp) {
+      origTitle.current = document.title;
+      document.title = getPrintTitle(emp.period);
       const timer = setTimeout(() => window.print(), 150);
       return () => clearTimeout(timer);
     }
-  }, [printAll]);
+  }, [printAll, emp]);
 
   const handleFile = useCallback(async (file) => {
     setLoading(true);
@@ -590,7 +602,7 @@ export default function Attendance() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => window.print()} style={btn}>🖨 Print</button>
+              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
               <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(ATT_DATA_KEY); localStorage.removeItem(ATT_SEL_KEY); }} style={btn}>Upload New</button>
             </div>
@@ -625,7 +637,7 @@ export default function Attendance() {
                 {/* Print header */}
                 <div className="att-print-only" style={{ display: 'none' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
+                    <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                     <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Attendance Report</div>
                     <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
                       Period: {emp.period.from} to {emp.period.to}
@@ -698,7 +710,7 @@ export default function Attendance() {
                 <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
                   <div className="att-emp-content">
                     <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                       <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2 }}>Attendance Report</div>
                       <div style={{ fontSize: 9, color: '#555', marginTop: 2 }}>
                         Period: {e.period.from} to {e.period.to}
@@ -735,7 +747,7 @@ export default function Attendance() {
             {/* ─── Staff Attendance Overview (last page) ─── */}
             <div className="att-page-break">
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                 <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>Staff Attendance Overview</div>
                 <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>
                   Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to}
