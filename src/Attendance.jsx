@@ -660,7 +660,7 @@ export default function Attendance() {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
               .att-table { font-size: 8px !important; }
-              .att-table th, .att-table td { padding: 2px 3px !important; }
+              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 8px !important; }
               .att-table th:last-child, .att-table td:last-child { min-width: 80px !important; }
               body { margin: 0 !important; padding: 8mm !important; }
               @page { size: portrait; margin: 0; }
