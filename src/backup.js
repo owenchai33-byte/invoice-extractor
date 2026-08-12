@@ -1,6 +1,6 @@
 const DB_NAME = 'cjk_backup';
 const STORE = 'snapshots';
-const LAST_DL = 'cjk_backup_last_download';
+const LAST_DL = 'cjk_backup_dl_v2';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function openDB() {
@@ -61,6 +61,9 @@ export function downloadBackup() {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 2000);
+}
+
+export function markBackupDone() {
   localStorage.setItem(LAST_DL, Date.now().toString());
 }
 

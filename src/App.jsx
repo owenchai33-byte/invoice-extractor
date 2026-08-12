@@ -6,7 +6,7 @@ import Payslip from './Payslip';
 import EmployeePayslip from './EmployeePayslip';
 import MerchantReport from './MerchantReport';
 import BankRecon from './BankRecon';
-import { saveBackup, checkWeeklyDownload, downloadBackup, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
+import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 const SECTIONS = [
   { id: 'af', label: 'Account & Finance', tabs: [
@@ -131,13 +131,8 @@ export default function App() {
 
   useEffect(() => {
     if (!checkWeeklyDownload()) return;
-    const t = setTimeout(() => {
-      downloadBackup();
-      setToast('✅ Weekly backup saved to Downloads');
-      setTimeout(() => setToast(''), 4000);
-    }, 2000);
-    const fallback = setTimeout(() => setBackupDue(true), 8000);
-    return () => { clearTimeout(t); clearTimeout(fallback); };
+    downloadBackup();
+    setBackupDue(true);
   }, []);
 
   useEffect(() => {
@@ -338,7 +333,7 @@ export default function App() {
                 background: '#fff', border: '1px solid #e5e5e5', borderRadius: 8,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: 4, minWidth: 180, zIndex: 200,
               }}>
-                <button onClick={() => { downloadBackup(); setToast('✅ Backup downloaded'); setTimeout(() => setToast(''), 3000); setShowMenu(false); }} style={{
+                <button onClick={() => { downloadBackup(); markBackupDone(); setToast('✅ Backup downloaded'); setTimeout(() => setToast(''), 3000); setShowMenu(false); }} style={{
                   display: 'block', width: '100%', padding: '8px 12px', border: 'none', background: 'none',
                   textAlign: 'left', fontSize: 12, cursor: 'pointer', borderRadius: 4, color: '#171717',
                 }} onMouseEnter={e => e.target.style.background='#f5f5f5'} onMouseLeave={e => e.target.style.background='none'}>
@@ -466,11 +461,11 @@ export default function App() {
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <span>🛡 Weekly backup ready</span>
-        <button onClick={() => { downloadBackup(); setBackupDue(false); setToast('✅ Backup downloaded'); setTimeout(() => setToast(''), 3000); }} style={{
+        <button onClick={() => { downloadBackup(); markBackupDone(); setBackupDue(false); setToast('✅ Backup downloaded'); setTimeout(() => setToast(''), 3000); }} style={{
           background: '#fff', color: '#171717', border: 'none', borderRadius: 6,
           padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
         }}>Download</button>
-        <button onClick={() => setBackupDue(false)} style={{
+        <button onClick={() => { markBackupDone(); setBackupDue(false); }} style={{
           background: 'transparent', color: '#888', border: 'none', fontSize: 16,
           cursor: 'pointer', padding: '0 4px', lineHeight: 1,
         }}>✕</button>
