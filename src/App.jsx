@@ -6,6 +6,7 @@ import Payslip from './Payslip';
 import EmployeePayslip from './EmployeePayslip';
 import MerchantReport from './MerchantReport';
 import BankRecon from './BankRecon';
+import Attendance from './Attendance';
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 const SECTIONS = [
@@ -19,6 +20,7 @@ const SECTIONS = [
     { id: 'payslip', label: 'Payslip' },
     { id: 'epayslip', label: 'Employee Payslip' },
     { id: 'contract', label: 'Contracts' },
+    { id: 'attendance', label: 'Attendance' },
   ]},
 ];
 const TAB_TO_SECTION = {};
@@ -431,6 +433,7 @@ export default function App() {
         {active === 'epayslip' && (pinUnlocked ? <EmployeePayslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'merchant' && <MerchantReport />}
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
+        {active === 'attendance' && <Attendance />}
       </main>
 
       <style>{`
