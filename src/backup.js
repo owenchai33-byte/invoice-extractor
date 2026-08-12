@@ -57,8 +57,10 @@ export function downloadBackup() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 2000);
   localStorage.setItem(LAST_DL, Date.now().toString());
 }
 

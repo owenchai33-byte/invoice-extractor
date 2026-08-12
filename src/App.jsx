@@ -130,7 +130,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (checkWeeklyDownload()) setBackupDue(true);
+    if (!checkWeeklyDownload()) return;
+    const t = setTimeout(() => {
+      downloadBackup();
+      setToast('✅ Weekly backup saved to Downloads');
+      setTimeout(() => setToast(''), 4000);
+    }, 2000);
+    const fallback = setTimeout(() => setBackupDue(true), 8000);
+    return () => { clearTimeout(t); clearTimeout(fallback); };
   }, []);
 
   useEffect(() => {
