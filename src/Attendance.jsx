@@ -332,17 +332,19 @@ function processRecords({ records, from, to }) {
   return results;
 }
 
-function remarkStr(d) {
+function Remarks({ d }) {
   const parts = [];
-  if (d.type === 'off') parts.push(d.scans.length ? 'Sunday (worked)' : 'Sunday');
-  else if (d.type === 'holiday') parts.push(d.holiday + (d.scans.length ? ' (worked)' : ''));
-  else if (d.type === 'absent') parts.push('Absent');
-  else if (d.type === 'half-am') parts.push('Half day (AM)');
-  else if (d.type === 'half-pm') parts.push('Half day (PM)');
-  else if (d.type === 'incomplete') parts.push('Incomplete');
-  parts.push(...d.remarks);
-  if (d.otRef > 0) parts.push(`OT: +${d.otRef}m`);
-  return parts.join(' · ');
+  if (d.type === 'off') parts.push({ text: d.scans.length ? 'Sunday (worked)' : 'Sunday' });
+  else if (d.type === 'holiday') parts.push({ text: d.holiday + (d.scans.length ? ' (worked)' : '') });
+  else if (d.type === 'absent') parts.push({ text: 'Absent', bold: true });
+  else if (d.type === 'half-am') parts.push({ text: 'Half day (AM)', bold: true });
+  else if (d.type === 'half-pm') parts.push({ text: 'Half day (PM)', bold: true });
+  else if (d.type === 'incomplete') parts.push({ text: 'Incomplete' });
+  d.remarks.forEach(r => parts.push({ text: r }));
+  if (d.otRef > 0) parts.push({ text: `OT: +${d.otRef}m` });
+  return parts.map((p, i) => (
+    <span key={i}>{i > 0 ? ' · ' : ''}{p.bold ? <strong>{p.text}</strong> : p.text}</span>
+  ));
 }
 
 const th = {
@@ -591,7 +593,7 @@ export default function Attendance() {
                       <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
                       <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
                       <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
-                      <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200 }}>{remarkStr(d)}</td>
+                      <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200 }}><Remarks d={d} /></td>
                       <td style={{ ...td, minWidth: 120, borderLeft: '1px solid #e4e4e7' }}>&nbsp;</td>
                     </tr>
                   );
