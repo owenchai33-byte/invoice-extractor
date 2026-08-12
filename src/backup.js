@@ -85,7 +85,14 @@ export function restoreFromFile(file) {
 
 export function checkWeeklyDownload() {
   const last = parseInt(localStorage.getItem(LAST_DL) || '0', 10);
-  return Date.now() - last >= WEEK_MS;
+  if (!last) return true;
+  const now = new Date();
+  const day = now.getDay();
+  if (day === 0 || day === 6) return false;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day - 1));
+  monday.setHours(0, 0, 0, 0);
+  return new Date(last) < monday;
 }
 
 export async function checkAndRestore() {
