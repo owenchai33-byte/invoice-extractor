@@ -192,15 +192,6 @@ function processRecords({ records, from, to }) {
       if (scans.length > 1) day.clockOut = scans[scans.length - 1];
 
       const mid = scans.length > 2 ? scans.slice(1, -1) : [];
-      const brk = mid.filter(inBreakWindow);
-      if (brk.length >= 2) {
-        day.breakOut = brk[0];
-        day.breakIn = brk[brk.length - 1];
-      } else if (brk.length === 1) {
-        day.breakOut = brk[0];
-        day.remarks.push('Single break scan');
-      }
-
       const endMin = isSat ? END_SAT : END_WD;
 
       if (scans.length === 1) {
@@ -217,10 +208,22 @@ function processRecords({ records, from, to }) {
         } else {
           day.type = 'half-pm';
         }
+      } else if (scans.length === 3 || scans.length === 4) {
+        day.type = 'full';
+        const brk = mid.filter(inBreakWindow);
+        if (brk.length >= 2) {
+          day.breakOut = brk[0];
+          day.breakIn = brk[brk.length - 1];
+        } else if (brk.length === 1) {
+          day.breakOut = brk[0];
+          day.remarks.push('Single break scan');
+        } else {
+          day.remarks.push('Missing scan');
+        }
       } else {
         day.type = 'full';
-        if (scans.length === 3 && !brk.length) day.remarks.push('Missing scan');
-        if (scans.length > 4) day.remarks.push(`${scans.length} scans`);
+        const midTimes = mid.map(s => fmtTime(s)).join(', ');
+        day.remarks.push(`${scans.length} scans (${midTimes})`);
       }
 
       if (day.type === 'full') {
