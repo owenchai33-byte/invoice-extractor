@@ -170,6 +170,7 @@ function processRecords({ records, from, to }) {
         scans,
         clockIn: null, clockOut: null,
         breakOut: null, breakIn: null,
+        extras: [],
         lateIn: 0, breakExcess: 0, earlyOut: 0, otRef: 0,
         type: 'absent',
         remarks: [],
@@ -191,7 +192,6 @@ function processRecords({ records, from, to }) {
       day.clockIn = scans[0];
       if (scans.length > 1) day.clockOut = scans[scans.length - 1];
 
-      const mid = scans.length > 2 ? scans.slice(1, -1) : [];
       const endMin = isSat ? END_SAT : END_WD;
 
       if (scans.length === 1) {
@@ -209,21 +209,50 @@ function processRecords({ records, from, to }) {
           day.type = 'half-pm';
         }
       } else {
-        day.type = 'full';
-        const candidateBI = scans[scans.length - 2];
-        const biMin = toMin(candidateBI);
-        let foundBO = null;
-        for (let i = scans.length - 3; i >= 1; i--) {
-          const gap = biMin - toMin(scans[i]);
-          if (gap >= 35 && gap <= 55) { foundBO = scans[i]; break; }
+        const firstMorning = scans[0].h < 11;
+        const lastAfternoon = toMin(scans[scans.length - 1]) >= 14 * 60;
+        if (!firstMorning) day.clockIn = null;
+        if (!lastAfternoon) day.clockOut = null;
+
+        const midStart = firstMorning ? 1 : 0;
+        const midEnd = lastAfternoon ? scans.length - 1 : scans.length;
+        const middle = scans.slice(midStart, midEnd);
+
+        let foundBO = null, foundBI = null;
+        if (middle.length >= 2) {
+          const cBI = middle[middle.length - 1];
+          const biMin = toMin(cBI);
+          for (let i = middle.length - 2; i >= 0; i--) {
+            const gap = biMin - toMin(middle[i]);
+            if (gap >= 35 && gap <= 55) { foundBO = middle[i]; foundBI = cBI; break; }
+          }
         }
+
         if (foundBO) {
           day.breakOut = foundBO;
-          day.breakIn = candidateBI;
-          const extras = mid.filter(s => s !== foundBO && s !== candidateBI);
-          if (extras.length) day.remarks.push(`Extra: ${extras.map(s => fmtTime(s)).join(', ')}`);
+          day.breakIn = foundBI;
+          day.extras = middle.filter(s => s !== foundBO && s !== foundBI);
+        } else if (middle.length === 1) {
+          day.breakOut = middle[0];
+          day.remarks.push('Single break scan');
+        } else if (middle.length === 0) {
+          if (firstMorning && lastAfternoon) day.remarks.push('No break scan');
         } else {
-          day.remarks.push(`${scans.length} scans (${mid.map(s => fmtTime(s)).join(', ')})`);
+          day.extras = middle;
+          day.remarks.push('Break not detected');
+        }
+
+        if (firstMorning && lastAfternoon) {
+          day.type = 'full';
+        } else if (firstMorning) {
+          day.type = 'half-am';
+          day.remarks.push('No clock out');
+        } else if (lastAfternoon) {
+          day.type = 'half-pm';
+          day.remarks.push('No clock in');
+        } else {
+          day.type = 'incomplete';
+          day.remarks.push('No AM/PM scan');
         }
       }
 
@@ -241,6 +270,16 @@ function processRecords({ records, from, to }) {
           if (outM < endMin) day.earlyOut = endMin - outM;
           else if (outM > endMin) day.otRef = outM - endMin;
         }
+      }
+
+      if (day.type === 'half-am' || day.type === 'half-pm') {
+        let workedMin = toMin(scans[scans.length - 1]) - toMin(scans[0]);
+        if (day.breakOut && day.breakIn) {
+          workedMin -= (toMin(day.breakIn) - toMin(day.breakOut));
+        }
+        const hrs = Math.floor(workedMin / 60);
+        const mins = workedMin % 60;
+        day.remarks.push(`Worked ${hrs}h ${pad(mins)}m`);
       }
 
       days.push(day);
@@ -493,6 +532,7 @@ export default function Attendance() {
                   <th style={th}>Break Out</th>
                   <th style={th}>Break In</th>
                   <th style={th}>Out</th>
+                  <th style={th}>Extra</th>
                   <th style={{ ...th, color: '#dc2626' }}>Late In</th>
                   <th style={{ ...th, color: '#dc2626' }}>Break +</th>
                   <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
@@ -520,6 +560,9 @@ export default function Attendance() {
                       <td style={td}>{fmtTime(d.breakOut)}</td>
                       <td style={td}>{fmtTime(d.breakIn)}</td>
                       <td style={td}>{fmtTime(d.clockOut)}</td>
+                      <td style={{ ...td, fontSize: 11 }}>
+                        {d.extras?.length ? d.extras.map((s, i) => <div key={i}>{fmtTime(s)}</div>) : '-'}
+                      </td>
                       <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
                       <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
                       <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
