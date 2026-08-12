@@ -354,16 +354,91 @@ function Remarks({ d }) {
 
 const th = {
   padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600,
-  color: '#52525b', borderBottom: '2px solid #e4e4e7', whiteSpace: 'nowrap',
+  color: '#52525b', borderBottom: '2px solid #e4e4e7', borderRight: '1px solid #e5e7eb',
+  whiteSpace: 'nowrap',
 };
 const td = {
-  padding: '6px 10px', borderBottom: '1px solid #f4f4f5', whiteSpace: 'nowrap',
+  padding: '6px 10px', borderBottom: '1px solid #f4f4f5', borderRight: '1px solid #e5e7eb',
+  whiteSpace: 'nowrap',
 };
 const btn = {
   padding: '6px 14px', borderRadius: 6, border: '1px solid #d4d4d8',
   background: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
   fontFamily: 'inherit',
 };
+
+function AttTableHeader() {
+  return (
+    <thead>
+      <tr style={{ background: '#f4f4f5' }}>
+        <th style={th}>Date</th>
+        <th style={th}>Day</th>
+        <th style={th}>In</th>
+        <th style={th}>Break Out</th>
+        <th style={th}>Break In</th>
+        <th style={th}>Out</th>
+        <th style={th}>Extra</th>
+        <th style={{ ...th, color: '#dc2626' }}>Late In</th>
+        <th style={{ ...th, color: '#dc2626' }}>Break +</th>
+        <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
+        <th style={th}>Remarks</th>
+        <th style={{ ...th, minWidth: 120 }}>Reason / Notes</th>
+      </tr>
+    </thead>
+  );
+}
+
+function AttTableBody({ days }) {
+  return (
+    <tbody>
+      {days.map(d => {
+        const isOff = d.type === 'off' || d.type === 'holiday';
+        const isAbsent = d.type === 'absent';
+        const isHalf = d.type === 'half-am' || d.type === 'half-pm';
+        const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isHalf ? '#eff6ff' : '#fff';
+
+        if (isOff && !d.scans.length) {
+          const label = d.type === 'off' ? 'Sunday' : d.holiday;
+          return (
+            <tr key={d.date} style={{ background: bg }}>
+              <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
+              <td style={td}>{d.day}</td>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
+                {label}
+              </td>
+              <td style={{ ...td, minWidth: 120 }}>&nbsp;</td>
+            </tr>
+          );
+        }
+
+        const valStyle = (v) => ({
+          ...td,
+          color: v > 0 ? '#dc2626' : '#a3a3a3',
+          fontWeight: v > 0 ? 600 : 400,
+        });
+
+        return (
+          <tr key={d.date} style={{ background: bg }}>
+            <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
+            <td style={td}>{d.day}</td>
+            <td style={td}>{fmtTime(d.clockIn)}</td>
+            <td style={td}>{fmtTime(d.breakOut)}</td>
+            <td style={td}>{fmtTime(d.breakIn)}</td>
+            <td style={td}>{fmtTime(d.clockOut)}</td>
+            <td style={{ ...td, fontSize: 11 }}>
+              {d.extras?.length ? d.extras.map((s, i) => <div key={i}>{fmtTime(s)}</div>) : '-'}
+            </td>
+            <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
+            <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
+            <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
+            <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200 }}><Remarks d={d} /></td>
+            <td style={{ ...td, minWidth: 120 }}>&nbsp;</td>
+          </tr>
+        );
+      })}
+    </tbody>
+  );
+}
 
 function getPayrollOrder() {
   try {
@@ -388,9 +463,9 @@ function sortByPayroll(data) {
 
 function StatCard({ label, value, warn }) {
   return (
-    <div style={{ padding: '8px 12px', background: '#f9fafb', borderRadius: 6 }}>
-      <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: warn ? '#dc2626' : '#18181b' }}>{value}</div>
+    <div className="att-stat-card" style={{ padding: '8px 12px', background: '#f9fafb', borderRadius: 6 }}>
+      <div className="att-stat-label" style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>{label}</div>
+      <div className="att-stat-value" style={{ fontSize: 16, fontWeight: 700, color: warn ? '#dc2626' : '#18181b' }}>{value}</div>
     </div>
   );
 }
@@ -409,6 +484,7 @@ export default function Attendance() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [printAll, setPrintAll] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -420,6 +496,19 @@ export default function Attendance() {
     if (selected) localStorage.setItem(ATT_SEL_KEY, selected);
     else localStorage.removeItem(ATT_SEL_KEY);
   }, [selected]);
+
+  useEffect(() => {
+    const reset = () => setPrintAll(false);
+    window.addEventListener('afterprint', reset);
+    return () => window.removeEventListener('afterprint', reset);
+  }, []);
+
+  useEffect(() => {
+    if (printAll) {
+      const timer = setTimeout(() => window.print(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [printAll]);
 
   const handleFile = useCallback(async (file) => {
     setLoading(true);
@@ -444,11 +533,13 @@ export default function Attendance() {
     if (file) handleFile(file);
   }, [handleFile]);
 
+  const handlePrintAll = () => setPrintAll(true);
+
   const emp = data && selected ? data[selected] : null;
   const empIds = data ? sortByPayroll(data) : [];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+    <div className={`att-root${printAll ? ' att-print-all' : ''}`} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
 
       {/* ─── Upload ─── */}
       {!data && (
@@ -500,6 +591,7 @@ export default function Attendance() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => window.print()} style={btn}>🖨 Print</button>
+              <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
               <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(ATT_DATA_KEY); localStorage.removeItem(ATT_SEL_KEY); }} style={btn}>Upload New</button>
             </div>
           </div>
@@ -526,130 +618,185 @@ export default function Attendance() {
             </div>
           )}
 
-          {/* Print header */}
-          <div className="att-print-only" style={{ display: 'none' }}>
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Attendance Report</div>
-              <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                Period: {emp.period.from} to {emp.period.to}
+          {/* ═══ Single Employee View (screen + print current) ═══ */}
+          <div className="att-single-view">
+            <div className="att-emp-page">
+              <div className="att-emp-content">
+                {/* Print header */}
+                <div className="att-print-only" style={{ display: 'none' }}>
+                  <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Attendance Report</div>
+                    <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                      Period: {emp.period.from} to {emp.period.to}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, marginBottom: 12 }}>
+                    <strong>Employee:</strong> {emp.name} &emsp; <strong>Staff ID:</strong> {emp.id}
+                  </div>
+                </div>
+
+                {/* Employee info (screen) */}
+                <div className="att-no-print" style={{
+                  padding: '12px 16px', background: '#fff', border: '1px solid #e4e4e7',
+                  borderRadius: 8, marginBottom: 16, display: 'flex', gap: 24, fontSize: 13,
+                }}>
+                  <div><span style={{ color: '#71717a' }}>Employee:</span> <strong>{emp.name}</strong></div>
+                  <div><span style={{ color: '#71717a' }}>Staff ID:</span> <strong>{emp.id}</strong></div>
+                  <div><span style={{ color: '#71717a' }}>Period:</span> <strong>{emp.period.from} to {emp.period.to}</strong></div>
+                </div>
+
+                {/* Table */}
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="att-table" style={{
+                    width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
+                    border: '1px solid #e4e4e7',
+                  }}>
+                    <AttTableHeader />
+                    <AttTableBody days={emp.days} />
+                  </table>
+                </div>
+
+                {/* Summary */}
+                <div style={{
+                  marginTop: 20, padding: '16px 20px', background: '#fff',
+                  border: '1px solid #e4e4e7', borderRadius: 8,
+                }}>
+                  <div className="att-stat-title" style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
+                  <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+                    <StatCard label="Working Days" value={emp.summary.working} />
+                    <StatCard label="Present" value={emp.summary.present} />
+                    <StatCard label="Absent" value={emp.summary.absent} warn={emp.summary.absent > 0} />
+                    <StatCard label="Half Days" value={emp.summary.half} />
+                    <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
+                    <StatCard label="Total Break Excess" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
+                    <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature (print only) — Verified By first, then Staff Signature, no Date */}
+              <div className="att-print-only" style={{ display: 'none', paddingTop: 24 }}>
+                <div style={{ display: 'flex', gap: 60 }}>
+                  <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                    Verified By
+                  </div>
+                  <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                    Staff Signature
+                  </div>
+                </div>
               </div>
             </div>
-            <div style={{ fontSize: 13, marginBottom: 12 }}>
-              <strong>Employee:</strong> {emp.name} &emsp; <strong>Staff ID:</strong> {emp.id}
-            </div>
           </div>
 
-          {/* Employee info (screen) */}
-          <div className="att-no-print" style={{
-            padding: '12px 16px', background: '#fff', border: '1px solid #e4e4e7',
-            borderRadius: 8, marginBottom: 16, display: 'flex', gap: 24, fontSize: 13,
-          }}>
-            <div><span style={{ color: '#71717a' }}>Employee:</span> <strong>{emp.name}</strong></div>
-            <div><span style={{ color: '#71717a' }}>Staff ID:</span> <strong>{emp.id}</strong></div>
-            <div><span style={{ color: '#71717a' }}>Period:</span> <strong>{emp.period.from} to {emp.period.to}</strong></div>
-          </div>
+          {/* ═══ All Employees Print View (always in DOM, shown only in print-all) ═══ */}
+          <div className="att-all-view" style={{ display: 'none' }}>
+            {empIds.map((id, idx) => {
+              const e = data[id];
+              const s = e.summary;
+              return (
+                <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
+                  <div className="att-emp-content">
+                    <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
+                      <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2 }}>Attendance Report</div>
+                      <div style={{ fontSize: 9, color: '#555', marginTop: 2 }}>
+                        Period: {e.period.from} to {e.period.to}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 10, marginBottom: 6 }}>
+                      <strong>Employee:</strong> {e.name} &emsp; <strong>Staff ID:</strong> {e.id}
+                    </div>
+                    <table className="att-table" style={{
+                      width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
+                      border: '1px solid #e4e4e7',
+                    }}>
+                      <AttTableHeader />
+                      <AttTableBody days={e.days} />
+                    </table>
+                    <div style={{ marginTop: 6, padding: '3px 6px', border: '1px solid #d4d4d8', fontSize: 8, lineHeight: 1.4 }}>
+                      <strong>Summary:</strong>{' '}
+                      Working {s.working} · Present {s.present} · Absent {s.absent} · Half Days {s.half} ·
+                      Late {s.lateIn || 0}m · Break+ {s.breakExcess || 0}m · Early Out {s.earlyOut || 0}m
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 60, paddingTop: 24 }}>
+                    <div style={{ borderTop: '1px solid #000', width: 160, textAlign: 'center', paddingTop: 3, fontSize: 8 }}>
+                      Verified By
+                    </div>
+                    <div style={{ borderTop: '1px solid #000', width: 160, textAlign: 'center', paddingTop: 3, fontSize: 8 }}>
+                      Staff Signature
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
 
-          {/* ─── Table ─── */}
-          <div style={{ overflowX: 'auto' }}>
-            <table className="att-table" style={{
-              width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
-              border: '1px solid #e4e4e7',
-            }}>
-              <thead>
-                <tr style={{ background: '#f4f4f5' }}>
-                  <th style={th}>Date</th>
-                  <th style={th}>Day</th>
-                  <th style={th}>In</th>
-                  <th style={th}>Break Out</th>
-                  <th style={th}>Break In</th>
-                  <th style={th}>Out</th>
-                  <th style={th}>Extra</th>
-                  <th style={{ ...th, color: '#dc2626' }}>Late In</th>
-                  <th style={{ ...th, color: '#dc2626' }}>Break +</th>
-                  <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
-                  <th style={{ ...th, borderLeft: '1px solid #e4e4e7' }}>Remarks</th>
-                  <th style={{ ...th, minWidth: 120 }}>Reason / Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {emp.days.map(d => {
-                  const isOff = d.type === 'off' || d.type === 'holiday';
-                  const isAbsent = d.type === 'absent';
-                  const isHalf = d.type === 'half-am' || d.type === 'half-pm';
-                  const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isHalf ? '#eff6ff' : '#fff';
-
-                  if (isOff && !d.scans.length) {
-                    const label = d.type === 'off' ? 'Sunday' : d.holiday;
+            {/* ─── Staff Attendance Overview (last page) ─── */}
+            <div className="att-page-break">
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD</div>
+                <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>Staff Attendance Overview</div>
+                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>
+                  Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to}
+                </div>
+              </div>
+              <table className="att-table" style={{
+                width: '100%', borderCollapse: 'collapse', fontSize: 11, background: '#fff',
+                border: '1px solid #e4e4e7',
+              }}>
+                <thead>
+                  <tr style={{ background: '#f4f4f5' }}>
+                    <th style={th}>Employee</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Working</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Present</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Absent</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Half Days</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Late In</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Break+</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {empIds.map(id => {
+                    const e = data[id];
+                    const s = e.summary;
+                    const total = s.lateIn + s.breakExcess + s.earlyOut;
+                    const flag = total > 20;
                     return (
-                      <tr key={d.date} style={{ background: bg }}>
-                        <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
-                        <td style={td}>{d.day}</td>
-                        <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
-                          {label}
+                      <tr key={id} style={{ background: flag ? '#fef3c7' : '#fff' }}>
+                        <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
+                        <td style={{ ...td, textAlign: 'center' }}>{s.working}</td>
+                        <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
+                        <td style={{
+                          ...td, textAlign: 'center',
+                          color: s.absent > 0 ? '#dc2626' : undefined,
+                          fontWeight: s.absent > 0 ? 700 : 400,
+                        }}>{s.absent}</td>
+                        <td style={{ ...td, textAlign: 'center' }}>{s.half}</td>
+                        <td style={{ ...td, textAlign: 'center', color: s.lateIn > 0 ? '#dc2626' : '#a3a3a3' }}>
+                          {s.lateIn ? `${s.lateIn}m` : '-'}
                         </td>
-                        <td style={{ ...td, minWidth: 120, borderLeft: '1px solid #e4e4e7' }}>&nbsp;</td>
+                        <td style={{ ...td, textAlign: 'center', color: s.breakExcess > 0 ? '#dc2626' : '#a3a3a3' }}>
+                          {s.breakExcess ? `${s.breakExcess}m` : '-'}
+                        </td>
+                        <td style={{ ...td, textAlign: 'center', color: s.earlyOut > 0 ? '#dc2626' : '#a3a3a3' }}>
+                          {s.earlyOut ? `${s.earlyOut}m` : '-'}
+                        </td>
+                        <td style={{
+                          ...td, textAlign: 'center', fontWeight: 700,
+                          color: flag ? '#dc2626' : total > 0 ? '#f59e0b' : '#a3a3a3',
+                        }}>
+                          {total ? `${total}m` : '-'}
+                        </td>
                       </tr>
                     );
-                  }
-
-                  const valStyle = (v) => ({
-                    ...td,
-                    color: v > 0 ? '#dc2626' : '#a3a3a3',
-                    fontWeight: v > 0 ? 600 : 400,
-                  });
-
-                  return (
-                    <tr key={d.date} style={{ background: bg }}>
-                      <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
-                      <td style={td}>{d.day}</td>
-                      <td style={td}>{fmtTime(d.clockIn)}</td>
-                      <td style={td}>{fmtTime(d.breakOut)}</td>
-                      <td style={td}>{fmtTime(d.breakIn)}</td>
-                      <td style={td}>{fmtTime(d.clockOut)}</td>
-                      <td style={{ ...td, fontSize: 11 }}>
-                        {d.extras?.length ? d.extras.map((s, i) => <div key={i}>{fmtTime(s)}</div>) : '-'}
-                      </td>
-                      <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
-                      <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
-                      <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
-                      <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200, borderLeft: '1px solid #e4e4e7' }}><Remarks d={d} /></td>
-                      <td style={{ ...td, minWidth: 120, borderLeft: '1px solid #e4e4e7' }}>&nbsp;</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* ─── Summary ─── */}
-          <div style={{
-            marginTop: 20, padding: '16px 20px', background: '#fff',
-            border: '1px solid #e4e4e7', borderRadius: 8,
-          }}>
-            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-              <StatCard label="Working Days" value={emp.summary.working} />
-              <StatCard label="Present" value={emp.summary.present} />
-              <StatCard label="Absent" value={emp.summary.absent} warn={emp.summary.absent > 0} />
-              <StatCard label="Half Days" value={emp.summary.half} />
-              <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
-              <StatCard label="Total Break Excess" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
-              <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
-            </div>
-          </div>
-
-          {/* ─── Signature (print only) ─── */}
-          <div className="att-print-only" style={{ display: 'none', marginTop: 48 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 40 }}>
-              <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
-                Staff Signature
-              </div>
-              <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
-                Verified By
-              </div>
-              <div style={{ borderTop: '1px solid #000', width: 120, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
-                Date
+                  })}
+                </tbody>
+              </table>
+              <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
+                * Highlighted rows indicate total deductions (late in + break excess + early out) exceeding 20 minutes
               </div>
             </div>
           </div>
@@ -659,11 +806,22 @@ export default function Attendance() {
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
-              .att-table { font-size: 8px !important; }
-              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 8px !important; white-space: normal !important; }
-              .att-table th:last-child, .att-table td:last-child { min-width: 70px !important; }
-              body { margin: 0 !important; padding: 8mm !important; }
+              .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
+              .att-table { font-size: 7.5px !important; }
+              .att-table th, .att-table td { padding: 1px 2px !important; font-size: 7.5px !important; white-space: normal !important; }
+              .att-table th:last-child, .att-table td:last-child { min-width: 60px !important; }
+              body { margin: 0 !important; padding: 5mm !important; }
               @page { size: portrait; margin: 0; }
+              .att-page-break { page-break-before: always; }
+              .att-emp-page { min-height: 280mm; display: flex !important; flex-direction: column; }
+              .att-emp-content { flex: 1; }
+              .att-print-all .att-single-view { display: none !important; }
+              .att-print-all .att-all-view { display: block !important; }
+              .att-stat-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 4px !important; }
+              .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
+              .att-stat-title { font-size: 10px !important; margin-bottom: 4px !important; }
+              .att-stat-label { font-size: 7px !important; margin-bottom: 0 !important; }
+              .att-stat-value { font-size: 10px !important; }
             }
           `}</style>
         </>
