@@ -568,7 +568,7 @@ export default function Attendance() {
                   <th style={{ ...th, color: '#dc2626' }}>Late In</th>
                   <th style={{ ...th, color: '#dc2626' }}>Break +</th>
                   <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
-                  <th style={th}>Remarks</th>
+                  <th style={{ ...th, borderLeft: '1px solid #e4e4e7' }}>Remarks</th>
                   <th style={{ ...th, minWidth: 120 }}>Reason / Notes</th>
                 </tr>
               </thead>
@@ -613,7 +613,7 @@ export default function Attendance() {
                       <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
                       <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
                       <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
-                      <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200 }}><Remarks d={d} /></td>
+                      <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200, borderLeft: '1px solid #e4e4e7' }}><Remarks d={d} /></td>
                       <td style={{ ...td, minWidth: 120, borderLeft: '1px solid #e4e4e7' }}>&nbsp;</td>
                     </tr>
                   );
