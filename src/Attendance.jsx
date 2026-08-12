@@ -229,21 +229,27 @@ function processRecords({ records, from, to }) {
 
         let foundBO = null, foundBI = null;
         if (middle.length >= 2) {
-          for (let j = middle.length - 1; j >= 1 && !foundBO; j--) {
+          let bestDist = Infinity;
+          for (let j = 1; j < middle.length; j++) {
             if (!inBreakWindow(middle[j])) continue;
-            const biMin = toMin(middle[j]);
-            for (let i = j - 1; i >= 0; i--) {
+            for (let i = 0; i < j; i++) {
               if (!inBreakWindow(middle[i])) continue;
-              const gap = biMin - toMin(middle[i]);
-              if (gap >= 20 && gap <= 70) { foundBO = middle[i]; foundBI = middle[j]; break; }
+              const gap = toMin(middle[j]) - toMin(middle[i]);
+              if (gap >= 20 && gap <= 70) {
+                const dist = Math.abs(gap - BREAK_ALLOW);
+                if (dist < bestDist) { bestDist = dist; foundBO = middle[i]; foundBI = middle[j]; }
+              }
             }
           }
           if (!foundBO) {
-            for (let j = middle.length - 1; j >= 1 && !foundBO; j--) {
-              const biMin = toMin(middle[j]);
-              for (let i = j - 1; i >= 0; i--) {
-                const gap = biMin - toMin(middle[i]);
-                if (gap >= 20 && gap <= 70) { foundBO = middle[i]; foundBI = middle[j]; break; }
+            bestDist = Infinity;
+            for (let j = 1; j < middle.length; j++) {
+              for (let i = 0; i < j; i++) {
+                const gap = toMin(middle[j]) - toMin(middle[i]);
+                if (gap >= 20 && gap <= 70) {
+                  const dist = Math.abs(gap - BREAK_ALLOW);
+                  if (dist < bestDist) { bestDist = dist; foundBO = middle[i]; foundBI = middle[j]; }
+                }
               }
             }
           }
