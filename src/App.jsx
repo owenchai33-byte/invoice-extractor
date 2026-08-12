@@ -130,9 +130,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!checkWeeklyDownload()) return;
-    downloadBackup();
-    setBackupDue(true);
+    if (checkWeeklyDownload()) setBackupDue(true);
   }, []);
 
   useEffect(() => {
