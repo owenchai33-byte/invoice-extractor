@@ -585,9 +585,10 @@ export default function Attendance() {
                       <tr key={d.date} style={{ background: bg }}>
                         <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
                         <td style={td}>{d.day}</td>
-                        <td colSpan={10} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
+                        <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
                           {label}
                         </td>
+                        <td style={{ ...td, minWidth: 120, borderLeft: '1px solid #e4e4e7' }}>&nbsp;</td>
                       </tr>
                     );
                   }
