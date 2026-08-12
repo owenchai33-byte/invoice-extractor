@@ -579,15 +579,14 @@ export default function Attendance() {
                   const isHalf = d.type === 'half-am' || d.type === 'half-pm';
                   const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isHalf ? '#eff6ff' : '#fff';
 
-                  if (isOff) {
+                  if (isOff && !d.scans.length) {
                     const label = d.type === 'off' ? 'Sunday' : d.holiday;
-                    const worked = d.scans.length > 0;
                     return (
                       <tr key={d.date} style={{ background: bg }}>
                         <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
                         <td style={td}>{d.day}</td>
                         <td colSpan={10} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
-                          {label}{worked ? ` (worked: ${fmtTime(d.clockIn)}–${fmtTime(d.clockOut)})` : ''}
+                          {label}
                         </td>
                       </tr>
                     );
