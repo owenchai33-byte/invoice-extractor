@@ -222,8 +222,21 @@ function processRecords({ records, from, to }) {
         }
       } else {
         day.type = 'full';
-        const midTimes = mid.map(s => fmtTime(s)).join(', ');
-        day.remarks.push(`${scans.length} scans (${midTimes})`);
+        const candidateBI = scans[scans.length - 2];
+        const biMin = toMin(candidateBI);
+        let foundBO = null;
+        for (let i = scans.length - 3; i >= 1; i--) {
+          const gap = biMin - toMin(scans[i]);
+          if (gap >= 35 && gap <= 55) { foundBO = scans[i]; break; }
+        }
+        if (foundBO) {
+          day.breakOut = foundBO;
+          day.breakIn = candidateBI;
+          const extras = mid.filter(s => s !== foundBO && s !== candidateBI);
+          if (extras.length) day.remarks.push(`Extra: ${extras.map(s => fmtTime(s)).join(', ')}`);
+        } else {
+          day.remarks.push(`${scans.length} scans (${mid.map(s => fmtTime(s)).join(', ')})`);
+        }
       }
 
       if (day.type === 'full') {
