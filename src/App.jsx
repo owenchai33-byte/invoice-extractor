@@ -17,10 +17,10 @@ const SECTIONS = [
   ]},
   { id: 'hr', label: 'Human Resource', tabs: [
     { id: 'payroll', label: 'Payroll' },
+    { id: 'attendance', label: 'Attendance' },
     { id: 'payslip', label: 'Payslip' },
     { id: 'epayslip', label: 'Employee Payslip' },
     { id: 'contract', label: 'Contracts' },
-    { id: 'attendance', label: 'Attendance' },
   ]},
 ];
 const TAB_TO_SECTION = {};
