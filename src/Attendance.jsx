@@ -341,7 +341,6 @@ function Remarks({ d }) {
   else if (d.type === 'half-pm') parts.push({ text: 'Half day (PM)', bold: true });
   else if (d.type === 'incomplete') parts.push({ text: 'Incomplete' });
   d.remarks.forEach(r => parts.push({ text: r }));
-  if (d.otRef > 0) parts.push({ text: `OT: +${d.otRef}m` });
   return parts.map((p, i) => (
     <span key={i}>{i > 0 ? ' · ' : ''}{p.bold ? <strong>{p.text}</strong> : p.text}</span>
   ));
