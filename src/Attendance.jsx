@@ -209,8 +209,17 @@ function processRecords({ records, from, to }) {
           day.type = 'half-pm';
         }
       } else {
-        const firstMorning = scans[0].h < 11;
+        let firstMorning = scans[0].h < 11;
         const lastAfternoon = toMin(scans[scans.length - 1]) >= 14 * 60;
+
+        if (firstMorning) {
+          const wouldBeLate = toMin(scans[0]) - START_MIN;
+          const gapToSecond = toMin(scans[1]) - toMin(scans[0]);
+          if (wouldBeLate > 50 && gapToSecond >= 25 && gapToSecond <= 70) {
+            firstMorning = false;
+          }
+        }
+
         if (!firstMorning) day.clockIn = null;
         if (!lastAfternoon) day.clockOut = null;
 
