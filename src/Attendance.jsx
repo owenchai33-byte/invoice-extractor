@@ -476,7 +476,7 @@ function AttNotesBox({ days }) {
   const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', borderRight: '1px solid #e5e7eb' };
   const ntd = { padding: '4px 10px', borderBottom: '1px solid #f4f4f5', borderRight: '1px solid #e5e7eb' };
   return (
-    <div style={{ marginTop: 12, border: '1px solid #e4e4e7', borderRadius: 6, overflow: 'hidden' }}>
+    <div className="att-notes-box" style={{ marginTop: 12, border: '1px solid #e4e4e7', borderRadius: 6, overflow: 'hidden' }}>
       <div style={{ padding: '6px 10px', background: '#f4f4f5', fontWeight: 600, fontSize: 11 }}>
         Absence / Half Day Notes
       </div>
@@ -753,14 +753,14 @@ export default function Attendance() {
                     <StatCard label="Absent" value={emp.summary.absent} warn={emp.summary.absent > 0} />
                     <StatCard label="Half Days" value={emp.summary.half} />
                     <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
-                    <StatCard label="Total Break Excess" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
+                    <StatCard label="Break+" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
                     <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
                   </div>
                 </div>
               </div>
 
               {/* Signature (print only) — Verified By first, then Staff Signature, no Date */}
-              <div className="att-print-only" style={{ display: 'none', paddingTop: 24 }}>
+              <div className="att-print-only att-signature" style={{ display: 'none', paddingTop: 24 }}>
                 <div style={{ display: 'flex', gap: 60 }}>
                   <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                     Verified By
@@ -810,12 +810,12 @@ export default function Attendance() {
                         <StatCard label="Absent" value={s.absent} warn={s.absent > 0} />
                         <StatCard label="Half Days" value={s.half} />
                         <StatCard label="Total Late In" value={s.lateIn ? `${s.lateIn} min` : '0'} warn={s.lateIn > 0} />
-                        <StatCard label="Total Break Excess" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
+                        <StatCard label="Break+" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
                         <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 60, paddingTop: 24 }}>
+                  <div className="att-signature" style={{ display: 'flex', gap: 60, paddingTop: 24 }}>
                     <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                       Verified By
                     </div>
@@ -933,7 +933,12 @@ export default function Attendance() {
               .att-print-overview .att-overview-view { display: block !important; }
               .att-overview-view .att-table { table-layout: auto !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; width: auto !important; }
-              .att-summary-box { margin-top: 8px !important; padding: 8px 10px !important; }
+              .att-notes-box { margin-top: 6px !important; }
+              .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 9px !important; }
+              .att-notes-box table { font-size: 9px !important; }
+              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 9px !important; }
+              .att-signature { page-break-inside: avoid !important; padding-top: 12px !important; }
+              .att-summary-box { margin-top: 6px !important; padding: 6px 8px !important; }
               .att-stat-grid { grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
               .att-stat-title { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 3px !important; }
