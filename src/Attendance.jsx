@@ -958,13 +958,13 @@ export default function Attendance() {
                     <tr style={{ background: '#f4f4f5' }}>
                       <th style={th}>Employee</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present</th>
-                      <th style={th}>Absent</th>
-                      <th style={th}>Half Days</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Total Leave</th>
                       <th style={{ ...th, textAlign: 'center' }}>Late In</th>
                       <th style={{ ...th, textAlign: 'center' }}>Break+</th>
                       <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
                       <th style={{ ...th, textAlign: 'center' }}>Total</th>
+                      <th style={th}>Absent</th>
+                      <th style={th}>Half Days</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Total Leave</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -983,6 +983,18 @@ export default function Attendance() {
                         <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
+                          <td style={{ ...td, textAlign: 'center', color: s.lateIn ? '#dc2626' : '#a3a3a3' }}>
+                            {s.lateIn ? `${s.lateIn}m` : '-'}
+                          </td>
+                          <td style={{ ...td, textAlign: 'center', color: s.breakExcess ? '#dc2626' : '#a3a3a3' }}>
+                            {s.breakExcess ? `${s.breakExcess}m` : '-'}
+                          </td>
+                          <td style={{ ...td, textAlign: 'center', color: s.earlyOut ? '#dc2626' : '#a3a3a3' }}>
+                            {s.earlyOut ? `${s.earlyOut}m` : '-'}
+                          </td>
+                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626' }}>
+                            {`${total}m`}
+                          </td>
                           <td style={{
                             ...td,
                             color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
@@ -1002,26 +1014,12 @@ export default function Attendance() {
                               </td>
                             );
                           })()}
-                          <td style={{ ...td, textAlign: 'center', color: '#dc2626' }}>
-                            {s.lateIn ? `${s.lateIn}m` : '-'}
-                          </td>
-                          <td style={{ ...td, textAlign: 'center', color: '#dc2626' }}>
-                            {s.breakExcess ? `${s.breakExcess}m` : '-'}
-                          </td>
-                          <td style={{ ...td, textAlign: 'center', color: '#dc2626' }}>
-                            {s.earlyOut ? `${s.earlyOut}m` : '-'}
-                          </td>
-                          <td style={{
-                            ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626',
-                          }}>
-                            {`${total}m`}
-                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
+                <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
                   * Showing employees with any deductions (late in / break excess / early out)<br />
                   * Half day counts based on scan data. Verify with staff — uncheck false entries in individual reports before printing overview.
                   {lastOverviewEdit && (<><br />Last updated: {lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</>)}
@@ -1062,9 +1060,10 @@ export default function Attendance() {
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
               .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 15% !important; }
               .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 6% !important; }
-              .att-overview-view .att-table th:nth-child(3), .att-overview-view .att-table td:nth-child(3) { width: 16% !important; }
-              .att-overview-view .att-table th:nth-child(4), .att-overview-view .att-table td:nth-child(4) { width: 16% !important; }
-              .att-overview-view .att-table th:nth-child(n+5), .att-overview-view .att-table td:nth-child(n+5) { width: 7% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(n+3):nth-child(-n+6), .att-overview-view .att-table td:nth-child(n+3):nth-child(-n+6) { width: 7% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 16% !important; }
+              .att-overview-view .att-table th:nth-child(8), .att-overview-view .att-table td:nth-child(8) { width: 16% !important; }
+              .att-overview-view .att-table th:nth-child(9), .att-overview-view .att-table td:nth-child(9) { width: 7% !important; text-align: center !important; }
               .att-notes-box { margin-top: 6px !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 9px !important; }
               .att-notes-box table { font-size: 9px !important; }
