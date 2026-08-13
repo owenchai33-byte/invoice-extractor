@@ -875,9 +875,9 @@ export default function Attendance() {
               .att-print-all .att-all-view { display: block !important; }
               .att-stat-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
-              .att-stat-title { font-size: 10px !important; margin-bottom: 4px !important; }
-              .att-stat-label { font-size: 7px !important; margin-bottom: 0 !important; }
-              .att-stat-value { font-size: 10px !important; }
+              .att-stat-title { font-size: 9.5px !important; margin-bottom: 4px !important; }
+              .att-stat-label { font-size: 9.5px !important; margin-bottom: 0 !important; }
+              .att-stat-value { font-size: 9.5px !important; }
             }
           `}</style>
         </>
