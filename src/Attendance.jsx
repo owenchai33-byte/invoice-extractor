@@ -600,6 +600,7 @@ export default function Attendance() {
   const [printAll, setPrintAll] = useState(false);
   const [printOverview, setPrintOverview] = useState(false);
   const [dismissedHalfDays, setDismissedHalfDays] = useState(new Set());
+  const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
@@ -612,6 +613,7 @@ export default function Attendance() {
       if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
+    setLastOverviewEdit(new Date());
   }, []);
 
   useEffect(() => {
@@ -981,6 +983,7 @@ export default function Attendance() {
                 <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
                   * Showing employees with any deductions (late in / break excess / early out)<br />
                   * Half day counts based on scan data. Verify with staff — uncheck false entries in individual reports before printing overview.
+                  {lastOverviewEdit && (<><br />Last updated: {lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</>)}
                 </div>
               </div>
             </div>
