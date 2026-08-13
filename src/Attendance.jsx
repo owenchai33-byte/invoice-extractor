@@ -1062,11 +1062,11 @@ export default function Attendance() {
                     })}
                   </tbody>
                 </table>
-                {lastOverviewEdit && (
-                  <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
-                    Last updated: {lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
-                  </div>
-                )}
+                <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
+                  {lastOverviewEdit
+                    ? `Last updated: ${lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`
+                    : `Generated: ${generatedAt}`}
+                </div>
               </div>
             </div>
           </div>
