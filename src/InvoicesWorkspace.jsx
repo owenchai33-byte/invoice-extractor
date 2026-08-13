@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import InvoiceExtractor from './InvoiceExtractor';
 import YHSExtractor from './YHSExtractor';
 
@@ -20,7 +20,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 // id via the `batchId` prop). Switching / adding a tab never touches another
 // tab's stored data, so old tabs keep their info.
 // ---------------------------------------------------------------------------
-function BatchedSupplier({ ns, Extractor }) {
+function BatchedSupplier({ ns, Extractor, headerActionsRef }) {
   const LS_BATCHES = `${ns}_batches`;
   const LS_ACTIVE = `${ns}_active_batch`;
 
@@ -137,12 +137,15 @@ function BatchedSupplier({ ns, Extractor }) {
       </div>
 
       {/* key forces a fresh mount per batch so each loads its own saved data */}
-      <Extractor key={activeId} batchId={activeId} />
+      <Extractor key={activeId} batchId={activeId} headerActionsRef={headerActionsRef} />
     </div>
   );
 }
 
 export default function InvoicesWorkspace() {
+  const headerActionsRef = useRef(null);
+  const [, setMounted] = useState(false);
+  const headerRefCb = useCallback(el => { headerActionsRef.current = el; setMounted(true); }, []);
   const [sub, setSub] = useState(() => {
     try { return localStorage.getItem('invoices_subtab') || 'choonhua'; }
     catch { return 'choonhua'; }
@@ -161,6 +164,8 @@ export default function InvoicesWorkspace() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0 }}>PAYMENT SUMMARY</h1>
+        <div style={{ flex: 1 }} />
+        <div ref={headerRefCb} style={{ display: 'flex', gap: 8, alignItems: 'center' }} />
       </div>
       <div className="noP" style={{
         display: 'flex',
@@ -195,8 +200,8 @@ export default function InvoicesWorkspace() {
         })}
       </div>
 
-      {sub === 'choonhua' && <BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} />}
-      {sub === 'yhs' && <BatchedSupplier ns="yhs" Extractor={YHSExtractor} />}
+      {sub === 'choonhua' && <BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} headerActionsRef={headerActionsRef} />}
+      {sub === 'yhs' && <BatchedSupplier ns="yhs" Extractor={YHSExtractor} headerActionsRef={headerActionsRef} />}
     </div>
   );
 }

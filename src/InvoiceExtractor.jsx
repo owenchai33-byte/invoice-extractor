@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -920,7 +921,7 @@ function ModalInput({value, onCommit, placeholder, type='text', step, mono=false
 // MAIN COMPONENT
 // ============================================================
 
-export default function InvoiceExtractor({ batchId = 'default' }) {
+export default function InvoiceExtractor({ batchId = 'default', headerActionsRef }) {
   // Per-batch persistence: each Chrome-style tab keeps its own list alive in
   // localStorage, namespaced by batchId. (Choon Hua previously didn't persist at all.)
   const LS_INV = `choonhua_invoices__${batchId}`;
@@ -1916,14 +1917,22 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
             </div>
           </div>
 
-          {/* BUTTONS */}
-          <div className="noP" style={{display:'flex',gap:8,justifyContent:'center',marginTop:28}}>
-            <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
-            <button style={btn(1)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
-            <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
-            <button style={{...btn(0),color:'#c0392b',borderColor:'#e6bcbc'}}
-              onClick={()=>{ reset(); }}>🗑 Clear all</button>
-          </div>
+          {/* BUTTONS — portalled to header bar when available, inline fallback */}
+          {headerActionsRef?.current ? createPortal(
+            <>
+              <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add</button>
+              <button style={btn(1)} onClick={()=>window.print()}>🖨 Print</button>
+              <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
+              <button style={{...btn(0),color:'#c0392b',borderColor:'#e6bcbc'}} onClick={()=>{ reset(); }}>🗑 Clear</button>
+            </>, headerActionsRef.current
+          ) : (
+            <div className="noP" style={{display:'flex',gap:8,justifyContent:'center',marginTop:28}}>
+              <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
+              <button style={btn(1)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
+              <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
+              <button style={{...btn(0),color:'#c0392b',borderColor:'#e6bcbc'}} onClick={()=>{ reset(); }}>🗑 Clear all</button>
+            </div>
+          )}
         </>)}
 
         {/* UPLOAD */}

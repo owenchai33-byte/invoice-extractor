@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
 import {
   LOGO, CO, CJK_LETTERHEAD, fmt, normalizeDate, formatVolUnit,
@@ -315,7 +316,7 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
 // Invoices + per-batch overrides/discounts are namespaced by batch id (see below).
 const LS_RATES = 'yhs_volrates_v2';
 
-export default function YHSExtractor({ batchId = 'default' }) {
+export default function YHSExtractor({ batchId = 'default', headerActionsRef }) {
   // Per-batch persistence — each Chrome tab keeps its own invoices/overrides/discounts
   // alive under keys namespaced by batchId. Legacy single-list data (the old un-namespaced
   // keys) is migrated into the first ('default') batch so nothing is lost on upgrade.
@@ -810,13 +811,21 @@ export default function YHSExtractor({ batchId = 'default' }) {
             </tbody>
           </table>
 
-          <div className="noP" style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 28 }}>
-            <button style={btn(0)} onClick={() => setUploading(true)}>+ Add Invoice</button>
-            <button style={btn(1)} onClick={() => window.print()}>🖨 Print / Save PDF</button>
-            <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
-            <button style={{ ...btn(0), color: '#c0392b', borderColor: '#e6bcbc' }}
-              onClick={() => { reset(); }}>🗑 Clear all</button>
-          </div>
+          {headerActionsRef?.current ? createPortal(
+            <>
+              <button style={btn(0)} onClick={() => setUploading(true)}>+ Add</button>
+              <button style={btn(1)} onClick={() => window.print()}>🖨 Print</button>
+              <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
+              <button style={{ ...btn(0), color: '#c0392b', borderColor: '#e6bcbc' }} onClick={() => { reset(); }}>🗑 Clear</button>
+            </>, headerActionsRef.current
+          ) : (
+            <div className="noP" style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 28 }}>
+              <button style={btn(0)} onClick={() => setUploading(true)}>+ Add Invoice</button>
+              <button style={btn(1)} onClick={() => window.print()}>🖨 Print / Save PDF</button>
+              <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
+              <button style={{ ...btn(0), color: '#c0392b', borderColor: '#e6bcbc' }} onClick={() => { reset(); }}>🗑 Clear all</button>
+            </div>
+          )}
         </>)}
 
         {/* UPLOAD */}
