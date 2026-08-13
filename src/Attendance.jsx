@@ -431,7 +431,7 @@ function AttTableBody({ days }) {
             <td style={td}>{fmtTime(d.breakOut)}</td>
             <td style={td}>{fmtTime(d.breakIn)}</td>
             <td style={td}>{fmtTime(d.clockOut)}</td>
-            <td style={{ ...td, fontSize: 11 }}>
+            <td style={td}>
               {d.extras?.length ? d.extras.map((s, i) => <div key={i}>{fmtTime(s)}</div>) : '-'}
             </td>
             <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
