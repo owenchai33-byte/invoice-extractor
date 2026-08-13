@@ -940,8 +940,13 @@ export default function Attendance() {
               .att-print-all .att-overview-view { display: block !important; }
               .att-print-overview .att-single-view { display: none !important; }
               .att-print-overview .att-overview-view { display: block !important; }
-              .att-overview-view .att-table { table-layout: auto !important; }
-              .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; width: auto !important; }
+              .att-overview-view .att-table { table-layout: fixed !important; }
+              .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
+              .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 18% !important; }
+              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 6% !important; }
+              .att-overview-view .att-table th:nth-child(3), .att-overview-view .att-table td:nth-child(3) { width: 18% !important; }
+              .att-overview-view .att-table th:nth-child(4), .att-overview-view .att-table td:nth-child(4) { width: 18% !important; }
+              .att-overview-view .att-table th:nth-child(n+5), .att-overview-view .att-table td:nth-child(n+5) { width: 8% !important; text-align: center !important; }
               .att-notes-box { margin-top: 6px !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 9px !important; }
               .att-notes-box table { font-size: 9px !important; }
