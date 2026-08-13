@@ -446,6 +446,8 @@ function AttTableBody({ days }) {
 function AttNotesBox({ days }) {
   const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
   if (!notes.length) return null;
+  const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', borderRight: '1px solid #e5e7eb' };
+  const ntd = { padding: '4px 10px', borderBottom: '1px solid #f4f4f5', borderRight: '1px solid #e5e7eb' };
   return (
     <div style={{ marginTop: 12, border: '1px solid #e4e4e7', borderRadius: 6, overflow: 'hidden' }}>
       <div style={{ padding: '6px 10px', background: '#f4f4f5', fontWeight: 600, fontSize: 11 }}>
@@ -454,19 +456,19 @@ function AttNotesBox({ days }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
         <thead>
           <tr style={{ background: '#fafafa' }}>
-            <th style={{ padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', width: 60 }}>Date</th>
-            <th style={{ padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', width: 80 }}>Type</th>
-            <th style={{ padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7' }}>Reason</th>
+            <th style={{ ...nth, width: 60 }}>Date</th>
+            <th style={{ ...nth, width: 80 }}>Type</th>
+            <th style={{ ...nth, borderRight: 'none' }}>Reason</th>
           </tr>
         </thead>
         <tbody>
           {notes.map(d => (
             <tr key={d.date}>
-              <td style={{ padding: '4px 10px', borderBottom: '1px solid #f4f4f5', fontWeight: 500 }}>{d.dateShort}</td>
-              <td style={{ padding: '4px 10px', borderBottom: '1px solid #f4f4f5' }}>
+              <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
+              <td style={ntd}>
                 {d.type === 'absent' ? 'Absent' : d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}
               </td>
-              <td style={{ padding: '4px 10px', borderBottom: '1px solid #f4f4f5', minHeight: 20 }}>&nbsp;</td>
+              <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>&nbsp;</td>
             </tr>
           ))}
         </tbody>
@@ -861,8 +863,8 @@ export default function Attendance() {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
               .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
-              .att-table { font-size: 8.5px !important; }
-              .att-table th, .att-table td { padding: 3px 4px !important; font-size: 8.5px !important; white-space: nowrap !important; }
+              .att-table { font-size: 9.5px !important; }
+              .att-table th, .att-table td { padding: 3px 4px !important; font-size: 9.5px !important; white-space: nowrap !important; }
               .att-table th:last-child, .att-table td:last-child { white-space: normal !important; max-width: 90px !important; }
               body { margin: 0 !important; padding: 5mm !important; }
               @page { size: portrait; margin: 0; }
