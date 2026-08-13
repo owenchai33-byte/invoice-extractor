@@ -171,7 +171,7 @@ function ContractDoc({ c, outlet, onField }) {
       </div>
 
       {/* ═══════════════ PAGE 2 ═══════════════ */}
-      <div className="contract-page" style={pageStyle}>
+      <div className="contract-page contract-page-cont" style={pageStyle}>
         <p style={li}>2.2 <b>Misconduct &amp; Disciplinary Action:</b> In cases of misconduct, the Company will follow due process which may include issuing a show cause letter, conducting a domestic inquiry, and issuing warning letters before taking further disciplinary action or termination. Where applicable, the Company also reserves the right to pursue legal action.</p>
         <p style={li}>2.3 <b>Absence Without Notification:</b> Employee absent without prior notification, unless for a reasonable excuse communicated at the earliest opportunity, shall be deemed misconduct and may lead to disciplinary action, including termination, in accordance with the Company’s disciplinary procedure and applicable laws.</p>
 
@@ -215,7 +215,7 @@ function ContractDoc({ c, outlet, onField }) {
       </div>
 
       {/* ═══════════════ PAGE 3 ═══════════════ */}
-      <div className="contract-page" style={pageStyle}>
+      <div className="contract-page contract-page-cont" style={pageStyle}>
         <p style={{ ...li, textDecoration: 'underline', fontWeight: 700 }}>6.4 Maternity Leave (for Female Employees)</p>
         <p style={li}>6.4.1 <b>Entitlement:</b> 98 consecutive days of leave (including rest days and public holidays) per confinement, limited to 5 confinements.</p>
         <p style={li}>6.4.2 <b>Conditions:</b></p>
@@ -267,7 +267,7 @@ function ContractDoc({ c, outlet, onField }) {
       </div>
 
       {/* ═══════════════ PAGE 4 ═══════════════ */}
-      <div className="contract-page" style={pageStyle}>
+      <div className="contract-page contract-page-cont" style={pageStyle}>
         <div style={h}>8. General Provisions</div>
         <p style={li}>8.1 This Agreement is governed by the laws of Malaysia and shall remain in force until terminated in accordance with its terms or applicable employment laws. It applies solely to the Employee and governs the terms of employment throughout their service with the Company.</p>
         <p style={li}>8.2 In the event of any conflict with any prior offer letter or agreement, this Agreement shall prevail. Any dispute shall first be resolved through discussion, and if unresolved, may be referred to mediation or arbitration.</p>
@@ -579,6 +579,7 @@ export default function ContractGenerator() {
             page-break-before: always;
             break-before: page;
           }
+          .contract-page-cont { padding-top: 18mm !important; }
           body { background: #fff !important; }
         }
       `}</style>
