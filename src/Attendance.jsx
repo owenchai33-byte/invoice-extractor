@@ -37,9 +37,15 @@ const BREAK_ALLOW = 45;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-function getPrintTitle(period) {
+function getPrintTitle(period, name) {
   const [y, m] = period.from.split('-').map(Number);
-  return `CJK HQ ATTENDANCE REPORT - ${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
+  const tag = `${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
+  if (name) return `${name} ATTENDANCE REPORT - ${tag}`;
+  return `CJK HQ ATTENDANCE REPORT - ${tag}`;
+}
+function getOverviewTitle(period) {
+  const [y, m] = period.from.split('-').map(Number);
+  return `CJK HQ ATTENDANCE OVERVIEW - ${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -522,6 +528,7 @@ export default function Attendance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [printAll, setPrintAll] = useState(false);
+  const [printOverview, setPrintOverview] = useState(false);
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
@@ -541,6 +548,7 @@ export default function Attendance() {
   useEffect(() => {
     const reset = () => {
       setPrintAll(false);
+      setPrintOverview(false);
       document.title = origTitle.current;
     };
     window.addEventListener('afterprint', reset);
@@ -555,6 +563,15 @@ export default function Attendance() {
       return () => clearTimeout(timer);
     }
   }, [printAll, emp]);
+
+  useEffect(() => {
+    if (printOverview && emp) {
+      origTitle.current = document.title;
+      document.title = getOverviewTitle(emp.period);
+      const timer = setTimeout(() => window.print(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [printOverview, emp]);
 
   const handleFile = useCallback(async (file) => {
     setLoading(true);
@@ -582,7 +599,7 @@ export default function Attendance() {
   const handlePrintAll = () => setPrintAll(true);
 
   return (
-    <div className={`att-root${printAll ? ' att-print-all' : ''}`} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}`} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
 
       {/* ─── Upload ─── */}
       {!data && (
@@ -633,8 +650,9 @@ export default function Attendance() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period); window.print(); }} style={btn}>🖨 Print</button>
+              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
+              <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
               <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(ATT_DATA_KEY); localStorage.removeItem(ATT_SEL_KEY); }} style={btn}>Upload New</button>
             </div>
           </div>
@@ -788,71 +806,76 @@ export default function Attendance() {
               );
             })}
 
-            {/* ─── Staff Attendance Overview (last page) ─── */}
-            <div className="att-page-break">
-              <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                <div style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>Staff Attendance Overview</div>
-                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>
-                  Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to}
+          </div>
+
+          {/* ═══ Overview (standalone, shown in print-all as last page + print-overview mode) ═══ */}
+          <div className="att-overview-view" style={{ display: 'none' }}>
+            <div className="att-emp-page">
+              <div className="att-emp-content">
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Staff Attendance Overview</div>
+                  <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                    Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to}
+                  </div>
                 </div>
-              </div>
-              <table className="att-table" style={{
-                width: '100%', borderCollapse: 'collapse', fontSize: 11, background: '#fff',
-                border: '1px solid #e4e4e7',
-              }}>
-                <thead>
-                  <tr style={{ background: '#f4f4f5' }}>
-                    <th style={th}>Employee</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Working</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Present</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Absent</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Half Days</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Late In</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Break+</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {empIds.map(id => {
-                    const e = data[id];
-                    const s = e.summary;
-                    const total = s.lateIn + s.breakExcess + s.earlyOut;
-                    const flag = total > 20;
-                    return (
-                      <tr key={id} style={{ background: flag ? '#fef3c7' : '#fff' }}>
-                        <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{s.working}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
-                        <td style={{
-                          ...td, textAlign: 'center',
-                          color: s.absent > 0 ? '#dc2626' : undefined,
-                          fontWeight: s.absent > 0 ? 700 : 400,
-                        }}>{s.absent}</td>
-                        <td style={{ ...td, textAlign: 'center' }}>{s.half}</td>
-                        <td style={{ ...td, textAlign: 'center', color: s.lateIn > 0 ? '#dc2626' : '#a3a3a3' }}>
-                          {s.lateIn ? `${s.lateIn}m` : '-'}
-                        </td>
-                        <td style={{ ...td, textAlign: 'center', color: s.breakExcess > 0 ? '#dc2626' : '#a3a3a3' }}>
-                          {s.breakExcess ? `${s.breakExcess}m` : '-'}
-                        </td>
-                        <td style={{ ...td, textAlign: 'center', color: s.earlyOut > 0 ? '#dc2626' : '#a3a3a3' }}>
-                          {s.earlyOut ? `${s.earlyOut}m` : '-'}
-                        </td>
-                        <td style={{
-                          ...td, textAlign: 'center', fontWeight: 700,
-                          color: flag ? '#dc2626' : total > 0 ? '#f59e0b' : '#a3a3a3',
-                        }}>
-                          {total ? `${total}m` : '-'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
-                * Highlighted rows indicate total deductions (late in + break excess + early out) exceeding 20 minutes
+                <table className="att-table" style={{
+                  width: '100%', borderCollapse: 'collapse', fontSize: 11, background: '#fff',
+                  border: '1px solid #e4e4e7',
+                }}>
+                  <thead>
+                    <tr style={{ background: '#f4f4f5' }}>
+                      <th style={th}>Employee</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Working</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Present</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Absent</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Half Days</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Late In</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Break+</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {empIds.map(id => {
+                      const e = data[id];
+                      const s = e.summary;
+                      const total = s.lateIn + s.breakExcess + s.earlyOut;
+                      const flag = total > 20;
+                      return (
+                        <tr key={id} style={{ background: flag ? '#fef3c7' : '#fff' }}>
+                          <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
+                          <td style={{ ...td, textAlign: 'center' }}>{s.working}</td>
+                          <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
+                          <td style={{
+                            ...td, textAlign: 'center',
+                            color: s.absent > 0 ? '#dc2626' : undefined,
+                            fontWeight: s.absent > 0 ? 700 : 400,
+                          }}>{s.absent}</td>
+                          <td style={{ ...td, textAlign: 'center' }}>{s.half}</td>
+                          <td style={{ ...td, textAlign: 'center', color: s.lateIn > 0 ? '#dc2626' : '#a3a3a3' }}>
+                            {s.lateIn ? `${s.lateIn}m` : '-'}
+                          </td>
+                          <td style={{ ...td, textAlign: 'center', color: s.breakExcess > 0 ? '#dc2626' : '#a3a3a3' }}>
+                            {s.breakExcess ? `${s.breakExcess}m` : '-'}
+                          </td>
+                          <td style={{ ...td, textAlign: 'center', color: s.earlyOut > 0 ? '#dc2626' : '#a3a3a3' }}>
+                            {s.earlyOut ? `${s.earlyOut}m` : '-'}
+                          </td>
+                          <td style={{
+                            ...td, textAlign: 'center', fontWeight: 700,
+                            color: flag ? '#dc2626' : total > 0 ? '#f59e0b' : '#a3a3a3',
+                          }}>
+                            {total ? `${total}m` : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
+                  * Highlighted rows indicate total deductions (late in + break excess + early out) exceeding 20 minutes
+                </div>
               </div>
             </div>
           </div>
@@ -871,6 +894,9 @@ export default function Attendance() {
               .att-emp-content { flex: 1; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
+              .att-print-all .att-overview-view { display: block !important; }
+              .att-print-overview .att-single-view { display: none !important; }
+              .att-print-overview .att-overview-view { display: block !important; }
               .att-stat-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
               .att-stat-title { font-size: 9.5px !important; margin-bottom: 4px !important; }
