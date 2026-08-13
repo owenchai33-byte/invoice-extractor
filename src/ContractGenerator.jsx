@@ -465,12 +465,26 @@ export default function ContractGenerator() {
   const btn = { padding: '8px 14px', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: F };
 
   return (
-    <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '18px 12px 60px', fontFamily: F }}>
+    <div style={{ background: '#f3f4f6', minHeight: '100vh', paddingBottom: 60, fontFamily: F }}>
       {/* Position suggestions — the field still accepts any typed value */}
       <datalist id="cf-positions">{POSITIONS.map(p => <option key={p} value={p} />)}</datalist>
 
+      {/* Title bar (sticky, full width) */}
+      <div className="contract-noP" style={{
+        background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
+        display: 'flex', alignItems: 'center', gap: 16, height: 56,
+        position: 'sticky', top: 0, zIndex: 50,
+      }}>
+        <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Employment Contracts — {outlet}</h1>
+        <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
+        <button onClick={saveAllZip} disabled={zipping} style={{ ...btn, background: zipping ? '#9ca3af' : '#111', color: '#fff', cursor: zipping ? 'wait' : 'pointer' }} title="Build one .zip containing a separate PDF per contract — a single download">{zipping ? (zipMsg || 'Building…') : '⬇ Save all (ZIP)'}</button>
+        <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
+      </div>
+
       {/* ── Controls (screen only) ── */}
-      <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 16px' }}>
+      <div className="contract-noP" style={{ maxWidth: '210mm', margin: '0 auto 16px', padding: '18px 12px 0' }}>
 
         {/* Outlet tabs */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
@@ -482,20 +496,6 @@ export default function ContractGenerator() {
           ))}
           <div style={{ flex: 1 }} />
           <div style={{ fontSize: 12, color: '#6b7280', alignSelf: 'center' }}>{OUTLETS[outlet].workplace}</div>
-        </div>
-
-        {/* Title + actions */}
-        <div style={{
-          background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
-          display: 'flex', alignItems: 'center', gap: 16, height: 56,
-          position: 'sticky', top: 0, zIndex: 50, borderRadius: '8px 8px 0 0',
-        }}>
-          <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Employment Contracts — {outlet}</h1>
-          <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
-          <div style={{ flex: 1 }} />
-          <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
-          <button onClick={saveAllZip} disabled={zipping} style={{ ...btn, background: zipping ? '#9ca3af' : '#111', color: '#fff', cursor: zipping ? 'wait' : 'pointer' }} title="Build one .zip containing a separate PDF per contract — a single download">{zipping ? (zipMsg || 'Building…') : '⬇ Save all (ZIP)'}</button>
-          <button onClick={clearAll} style={{ ...btn, background: '#fff', color: '#c0392b', border: '1px solid #e6bcbc' }}>🗑 Clear</button>
         </div>
 
         {/* Batch upload + AI key */}
