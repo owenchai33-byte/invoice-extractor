@@ -905,6 +905,9 @@ export default function Attendance() {
                   Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
                 </div>
               </div>
+              <div className="att-no-print" style={{ marginTop: 12, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
+                Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+              </div>
             </div>
           </div>
           </div>{/* close att-layout */}
