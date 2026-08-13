@@ -570,8 +570,8 @@ function sortByPayroll(data) {
 function StatCard({ label, value, warn }) {
   return (
     <div className="att-stat-card" style={{ padding: '8px 12px', background: '#f9fafb', borderRadius: 6 }}>
-      <div className="att-stat-label" style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>{label}</div>
-      <div className="att-stat-value" style={{ fontSize: 16, fontWeight: 700, color: warn ? '#dc2626' : '#18181b' }}>{value}</div>
+      <div className="att-stat-label" style={{ fontSize: 12, color: '#71717a', marginBottom: 2 }}>{label}</div>
+      <div className="att-stat-value" style={{ fontSize: 18, fontWeight: 700, color: warn ? '#dc2626' : '#18181b' }}>{value}</div>
     </div>
   );
 }
@@ -887,7 +887,7 @@ export default function Attendance() {
                     width: 190, flexShrink: 0, padding: '14px 16px', background: '#fff',
                     border: '1px solid #e4e4e7', borderRadius: 8, position: 'sticky', top: 60,
                   }}>
-                    <div className="att-stat-title" style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
+                    <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
                     <div className="att-stat-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <StatCard label="Working Days" value={emp.summary.working} />
                       <StatCard label="Present" value={emp.summary.present} />
@@ -1062,11 +1062,11 @@ export default function Attendance() {
                     })}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
-                  * Showing employees with any deductions (late in / break excess / early out)<br />
-                  * Half day counts based on scan data. Verify with staff — uncheck false entries in individual reports before printing overview.
-                  {lastOverviewEdit && (<><br />Last updated: {lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</>)}
-                </div>
+                {lastOverviewEdit && (
+                  <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
+                    Last updated: {lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1117,9 +1117,9 @@ export default function Attendance() {
               .att-summary-box { margin-top: 6px !important; padding: 6px 8px !important; width: auto !important; position: static !important; }
               .att-stat-grid { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
-              .att-stat-title { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 3px !important; }
-              .att-stat-label { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
-              .att-stat-value { font-size: 10px !important; font-weight: 700 !important; }
+              .att-stat-title { font-size: 11px !important; font-weight: 700 !important; margin-bottom: 3px !important; }
+              .att-stat-label { font-size: 11px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
+              .att-stat-value { font-size: 11px !important; font-weight: 700 !important; }
             }
           `}</style>
         </>
