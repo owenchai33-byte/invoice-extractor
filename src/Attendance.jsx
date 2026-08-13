@@ -596,6 +596,7 @@ export default function Attendance() {
   const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
   const [suspectPH, setSuspectPH] = useState([]);
   const [generatedAt, setGeneratedAt] = useState(() => new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
+  const [empTimestamps, setEmpTimestamps] = useState({});
   const [confirmedPH, setConfirmedPH] = useState(new Set());
   const [verifiedPH, setVerifiedPH] = useState({});
   const fileRef = useRef(null);
@@ -631,6 +632,9 @@ export default function Attendance() {
       return next;
     });
     setLastOverviewEdit(new Date());
+    const empId = key.split('-')[0];
+    const ts = new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+    setEmpTimestamps(prev => ({ ...prev, [empId]: ts }));
   }, []);
 
   useEffect(() => {
@@ -708,6 +712,7 @@ export default function Attendance() {
       setDismissedHalfDays(new Set());
       setLastOverviewEdit(null);
       setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
+      setEmpTimestamps({});
       setSelected(sortByPayroll(results)[0]);
     } catch (e) {
       setError(e.message || 'Failed to parse file');
@@ -891,11 +896,10 @@ export default function Attendance() {
                     <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
                   </div>
                 </div>
+              <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
+                Generated: {empTimestamps[selected] || generatedAt}
               </div>
-
-              <div style={{ marginTop: 12, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
-                Generated: {generatedAt}
-              </div>
+              </div>{/* close att-emp-content */}
 
               {/* Signature (print only) */}
               <div className="att-print-only att-signature" style={{ display: 'none', paddingTop: 40 }}>
@@ -953,10 +957,10 @@ export default function Attendance() {
                         <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
                       </div>
                     </div>
+                  <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
+                    Generated: {empTimestamps[id] || generatedAt}
                   </div>
-                  <div style={{ marginTop: 12, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
-                    Generated: {generatedAt}
-                  </div>
+                  </div>{/* close att-emp-content */}
                   <div className="att-signature" style={{ paddingTop: 40 }}>
                     <div style={{ display: 'flex', gap: 60 }}>
                       <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
