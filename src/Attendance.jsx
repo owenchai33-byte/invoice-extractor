@@ -867,33 +867,36 @@ export default function Attendance() {
                   <div><span style={{ color: '#71717a' }}>Period:</span> <strong>{emp.period.from} to {emp.period.to}</strong></div>
                 </div>
 
-                {/* Table */}
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="att-table" style={{
-                    width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
-                    border: '1px solid #e4e4e7',
+                {/* Table + Summary side-by-side on screen */}
+                <div className="att-table-summary-row" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="att-table" style={{
+                        width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
+                        border: '1px solid #e4e4e7',
+                      }}>
+                        <AttTableHeader />
+                        <AttTableBody days={emp.days} />
+                      </table>
+                    </div>
+                    <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
+                  </div>
+
+                  {/* Summary — vertical sidebar on screen, below table in print */}
+                  <div className="att-summary-box" style={{
+                    width: 190, flexShrink: 0, padding: '14px 16px', background: '#fff',
+                    border: '1px solid #e4e4e7', borderRadius: 8, position: 'sticky', top: 60,
                   }}>
-                    <AttTableHeader />
-                    <AttTableBody days={emp.days} />
-                  </table>
-                </div>
-
-                <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
-
-                {/* Summary */}
-                <div className="att-summary-box" style={{
-                  marginTop: 20, padding: '16px 20px', background: '#fff',
-                  border: '1px solid #e4e4e7', borderRadius: 8,
-                }}>
-                  <div className="att-stat-title" style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
-                  <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-                    <StatCard label="Working Days" value={emp.summary.working} />
-                    <StatCard label="Present" value={emp.summary.present} />
-                    <StatCard label="Absent" value={emp.summary.absent} warn={emp.summary.absent > 0} />
-                    <StatCard label="Half Days" value={emp.summary.half} />
-                    <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
-                    <StatCard label="Break+" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
-                    <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
+                    <div className="att-stat-title" style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
+                    <div className="att-stat-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <StatCard label="Working Days" value={emp.summary.working} />
+                      <StatCard label="Present" value={emp.summary.present} />
+                      <StatCard label="Absent" value={emp.summary.absent} warn={emp.summary.absent > 0} />
+                      <StatCard label="Half Days" value={emp.summary.half} />
+                      <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
+                      <StatCard label="Break+" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
+                      <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
+                    </div>
                   </div>
                 </div>
               <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
@@ -1110,8 +1113,9 @@ export default function Attendance() {
               .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 9px !important; }
               .att-signature { page-break-inside: avoid !important; padding-top: 30px !important; }
               .att-signature > div { justify-content: center !important; }
-              .att-summary-box { margin-top: 6px !important; padding: 6px 8px !important; }
-              .att-stat-grid { grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
+              .att-table-summary-row { display: block !important; }
+              .att-summary-box { margin-top: 6px !important; padding: 6px 8px !important; width: auto !important; position: static !important; }
+              .att-stat-grid { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
               .att-stat-title { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 3px !important; }
               .att-stat-label { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
