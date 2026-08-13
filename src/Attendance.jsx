@@ -474,11 +474,12 @@ function AttTableBody({ days }) {
   );
 }
 
-function AttNotesBox({ days }) {
+function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
   const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
   if (!notes.length) return null;
   const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', borderRight: '1px solid #e5e7eb' };
   const ntd = { padding: '4px 10px', borderBottom: '1px solid #f4f4f5', borderRight: '1px solid #e5e7eb' };
+  const isHalf = (d) => d.type === 'half-am' || d.type === 'half-pm';
   return (
     <div className="att-notes-box" style={{ marginTop: 12, border: '1px solid #e4e4e7', borderRadius: 6, overflow: 'hidden' }}>
       <div style={{ padding: '6px 10px', background: '#f4f4f5', fontWeight: 600, fontSize: 11 }}>
@@ -493,15 +494,26 @@ function AttNotesBox({ days }) {
           </tr>
         </thead>
         <tbody>
-          {notes.map(d => (
-            <tr key={d.date}>
-              <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
-              <td style={ntd}>
-                {d.type === 'absent' ? 'Absent' : d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}
-              </td>
-              <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>&nbsp;</td>
-            </tr>
-          ))}
+          {notes.map(d => {
+            const key = `${empId}-${d.date}`;
+            const dismissed = isHalf(d) && dismissedHalfDays?.has(key);
+            return (
+              <tr key={d.date} style={dismissed ? { opacity: 0.5, textDecoration: 'line-through' } : undefined}>
+                <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
+                <td style={ntd}>
+                  {d.type === 'absent' ? 'Absent' : d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}
+                </td>
+                <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>
+                  {isHalf(d) && onToggleHalfDay ? (
+                    <label className="att-no-print" style={{ cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input type="checkbox" checked={!dismissed} onChange={() => onToggleHalfDay(key)} />
+                      {dismissed ? 'Forgot scan' : 'Confirmed'}
+                    </label>
+                  ) : ' '}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -567,11 +579,20 @@ export default function Attendance() {
   const [error, setError] = useState('');
   const [printAll, setPrintAll] = useState(false);
   const [printOverview, setPrintOverview] = useState(false);
+  const [dismissedHalfDays, setDismissedHalfDays] = useState(new Set());
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
   const emp = data && selected ? data[selected] : null;
   const empIds = data ? sortByPayroll(data) : [];
+
+  const toggleHalfDay = useCallback((key) => {
+    setDismissedHalfDays(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (data) localStorage.setItem(ATT_DATA_KEY, JSON.stringify(data));
@@ -762,7 +783,7 @@ export default function Attendance() {
                   </table>
                 </div>
 
-                <AttNotesBox days={emp.days} />
+                <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
 
                 {/* Summary */}
                 <div className="att-summary-box" style={{
@@ -822,7 +843,7 @@ export default function Attendance() {
                       <AttTableHeader />
                       <AttTableBody days={e.days} />
                     </table>
-                    <AttNotesBox days={e.days} />
+                    <AttNotesBox days={e.days} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
                     <div className="att-summary-box" style={{
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
@@ -892,7 +913,9 @@ export default function Attendance() {
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
                       const absentDates = e.days.filter(d => d.type === 'absent').map(d => d.dateShort);
-                      const halfDates = e.days.filter(d => d.type === 'half-am' || d.type === 'half-pm').map(d => d.dateShort);
+                      const confirmedHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${id}-${d.date}`));
+                      const halfCount = confirmedHalf.length;
+                      const halfDates = confirmedHalf.map(d => d.dateShort);
                       return (
                         <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
@@ -902,11 +925,11 @@ export default function Attendance() {
                             color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
                             fontWeight: s.absent > 0 ? 700 : 400,
                           }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
-                          <td style={{ ...td, color: s.half > 0 ? '#f59e0b' : '#a3a3a3' }}>
-                            {s.half > 0 ? `${s.half} (${collapseDateRanges(halfDates)})` : '-'}
+                          <td style={{ ...td, color: halfCount > 0 ? '#f59e0b' : '#a3a3a3' }}>
+                            {halfCount > 0 ? `${halfCount} (${collapseDateRanges(halfDates)})` : '-'}
                           </td>
                           {(() => {
-                            const totalLeave = s.absent + s.half * 0.5;
+                            const totalLeave = s.absent + halfCount * 0.5;
                             const whole = Math.floor(totalLeave);
                             const hasHalf = totalLeave % 1 !== 0;
                             const label = totalLeave === 0 ? '-' : whole > 0 && hasHalf ? `${whole} 1/2` : hasHalf ? '1/2' : `${whole}`;
@@ -936,7 +959,8 @@ export default function Attendance() {
                   </tbody>
                 </table>
                 <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
-                  * Showing employees with any deductions (late in / break excess / early out)
+                  * Showing employees with any deductions (late in / break excess / early out)<br />
+                  * Half day counts based on scan data. Verify with staff — uncheck false entries in individual reports before printing overview.
                 </div>
               </div>
             </div>
