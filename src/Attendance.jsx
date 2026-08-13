@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import * as XLSX from 'xlsx';
@@ -372,6 +372,7 @@ function processRecords({ records, from, to }) {
     };
   }
 
+  const suspectPH = [];
   const eids = Object.keys(results);
   if (eids.length > 1) {
     const firstDays = results[eids[0]].days;
@@ -379,20 +380,11 @@ function processRecords({ records, from, to }) {
       const d0 = firstDays[i];
       if (d0.type !== 'absent') continue;
       const allAbsent = eids.every(eid => results[eid].days[i]?.type === 'absent');
-      if (!allAbsent) continue;
-      for (const eid of eids) {
-        const day = results[eid].days[i];
-        day.type = 'holiday';
-        day.holiday = 'Public Holiday (all absent)';
-        const working = results[eid].days.filter(d => d.type !== 'off' && d.type !== 'holiday');
-        results[eid].summary.working = working.length;
-        results[eid].summary.absent = working.filter(d => d.type === 'absent').length;
-        results[eid].summary.present = working.filter(d => d.scans.length > 0).length;
-      }
+      if (allAbsent) suspectPH.push(d0.date);
     }
   }
 
-  return results;
+  return { data: results, suspectPH };
 }
 
 function Remarks({ d }) {
@@ -601,11 +593,33 @@ export default function Attendance() {
   const [printOverview, setPrintOverview] = useState(false);
   const [dismissedHalfDays, setDismissedHalfDays] = useState(new Set());
   const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
+  const [suspectPH, setSuspectPH] = useState([]);
+  const [confirmedPH, setConfirmedPH] = useState(new Set());
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
-  const emp = data && selected ? data[selected] : null;
-  const empIds = data ? sortByPayroll(data) : [];
+  const effectiveData = useMemo(() => {
+    if (!data || !confirmedPH.size) return data;
+    const out = {};
+    for (const [eid, emp] of Object.entries(data)) {
+      const days = emp.days.map(d => confirmedPH.has(d.date) ? { ...d, type: 'holiday', holiday: 'Public Holiday (confirmed)' } : d);
+      const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday');
+      out[eid] = {
+        ...emp, days,
+        summary: {
+          ...emp.summary,
+          working: working.length,
+          absent: working.filter(d => d.type === 'absent').length,
+          present: working.filter(d => d.scans.length > 0).length,
+          half: days.filter(d => d.type === 'half-am' || d.type === 'half-pm').length,
+        },
+      };
+    }
+    return out;
+  }, [data, confirmedPH]);
+
+  const emp = effectiveData && selected ? effectiveData[selected] : null;
+  const empIds = effectiveData ? sortByPayroll(effectiveData) : [];
 
   const toggleHalfDay = useCallback((key) => {
     setDismissedHalfDays(prev => {
@@ -661,8 +675,12 @@ export default function Attendance() {
       const buf = await file.arrayBuffer();
       const parsed = file.name.endsWith('.pdf') ? await parsePDF(buf) : parseExcel(buf);
       if (!parsed.records.length) throw new Error('No attendance records found in file');
-      const results = processRecords(parsed);
+      const { data: results, suspectPH: suspects } = processRecords(parsed);
       setData(results);
+      setSuspectPH(suspects);
+      setConfirmedPH(new Set());
+      setDismissedHalfDays(new Set());
+      setLastOverviewEdit(null);
       setSelected(sortByPayroll(results)[0]);
     } catch (e) {
       setError(e.message || 'Failed to parse file');
@@ -738,6 +756,29 @@ export default function Attendance() {
             </div>
           </div>
 
+          {suspectPH.filter(d => !confirmedPH.has(d)).length > 0 && (
+            <div className="att-no-print" style={{
+              padding: '10px 14px', marginBottom: 12, background: '#fef3c7', border: '1px solid #f59e0b',
+              borderRadius: 8, fontSize: 12,
+            }}>
+              <strong>Possible public holidays detected</strong> (all staff absent):
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                {suspectPH.filter(d => !confirmedPH.has(d)).map(date => {
+                  const dt = parseLocalDate(date);
+                  const label = `${dt.getDate()}/${dt.getMonth() + 1} (${DAY_NAMES[dt.getDay()]})`;
+                  return (
+                    <button key={date} onClick={() => setConfirmedPH(prev => new Set([...prev, date]))} style={{
+                      padding: '4px 10px', fontSize: 11, background: '#fff', border: '1px solid #d4d4d8',
+                      borderRadius: 4, cursor: 'pointer',
+                    }}>
+                      ✓ Confirm {label} as PH
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ═══ Layout: Sidebar + Content ═══ */}
           <div className="att-layout" style={{ display: 'flex', gap: 16 }}>
           {empIds.length > 1 && (
@@ -760,7 +801,7 @@ export default function Attendance() {
                     fontWeight: selected === id ? 600 : 400,
                   }}
                 >
-                  {data[id].name}
+                  {effectiveData[id].name}
                 </button>
               ))}
             </div>
@@ -843,7 +884,7 @@ export default function Attendance() {
           {/* ═══ All Employees Print View (always in DOM, shown only in print-all) ═══ */}
           <div className="att-all-view" style={{ display: 'none' }}>
             {empIds.map((id, idx) => {
-              const e = data[id];
+              const e = effectiveData[id];
               const s = e.summary;
               return (
                 <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
@@ -903,10 +944,10 @@ export default function Attendance() {
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                   <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
-                    {(() => { const [y, m] = data[empIds[0]].period.from.split('-').map(Number); return `STAFF ATTENDANCE OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`; })()}
+                    {(() => { const [y, m] = effectiveData[empIds[0]].period.from.split('-').map(Number); return `STAFF ATTENDANCE OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`; })()}
                   </div>
                   <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                    Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {data[empIds[0]].summary.working}
+                    Period: {effectiveData[empIds[0]].period.from} to {effectiveData[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {effectiveData[empIds[0]].summary.working}
                   </div>
                 </div>
                 <table className="att-table" style={{
@@ -928,10 +969,10 @@ export default function Attendance() {
                   </thead>
                   <tbody>
                     {empIds.filter(id => {
-                      const s = data[id].summary;
+                      const s = effectiveData[id].summary;
                       return (s.lateIn + s.breakExcess + s.earlyOut) > 0;
                     }).map(id => {
-                      const e = data[id];
+                      const e = effectiveData[id];
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
                       const absentDates = e.days.filter(d => d.type === 'absent').map(d => d.dateShort);
