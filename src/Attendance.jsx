@@ -511,13 +511,26 @@ function getPayrollOrder() {
   } catch { return []; }
 }
 
+function fuzzyMatch(attName, payrollNames) {
+  const exact = payrollNames.indexOf(attName);
+  if (exact !== -1) return exact;
+  const attWords = attName.split(/\s+/);
+  let bestIdx = -1, bestCount = 0;
+  for (let i = 0; i < payrollNames.length; i++) {
+    const pWords = payrollNames[i].split(/\s+/);
+    const count = attWords.filter(w => pWords.includes(w)).length;
+    if (count >= 2 && count > bestCount) { bestCount = count; bestIdx = i; }
+  }
+  return bestIdx;
+}
+
 function sortByPayroll(data) {
   const order = getPayrollOrder();
   return Object.keys(data).sort((a, b) => {
     const nameA = data[a].name.toUpperCase().trim();
     const nameB = data[b].name.toUpperCase().trim();
-    const idxA = order.indexOf(nameA);
-    const idxB = order.indexOf(nameB);
+    const idxA = fuzzyMatch(nameA, order);
+    const idxB = fuzzyMatch(nameB, order);
     if (idxA === -1 && idxB === -1) return parseInt(a) - parseInt(b);
     if (idxA === -1) return 1;
     if (idxB === -1) return -1;
