@@ -46,7 +46,25 @@ function getPrintTitle(period, name) {
 }
 function getOverviewTitle(period) {
   const [y, m] = period.from.split('-').map(Number);
-  return `STAFF ATT OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`;
+  return `STAFF ATTENDANCE OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`;
+}
+
+function collapseDateRanges(dates) {
+  if (!dates.length) return '-';
+  const nums = dates.map(d => { const [day, mon] = d.split('/').map(Number); return { day, mon, short: d }; });
+  nums.sort((a, b) => a.mon - b.mon || a.day - b.day);
+  const ranges = [];
+  let start = nums[0], end = nums[0];
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i].day === end.day + 1 && nums[i].mon === end.mon) {
+      end = nums[i];
+    } else {
+      ranges.push(start === end ? start.short : `${start.short}-${end.short}`);
+      start = end = nums[i];
+    }
+  }
+  ranges.push(start === end ? start.short : `${start.short}-${end.short}`);
+  return ranges.join(', ');
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -816,7 +834,7 @@ export default function Attendance() {
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                   <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
-                    {(() => { const [y, m] = data[empIds[0]].period.from.split('-').map(Number); return `STAFF ATT OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`; })()}
+                    {(() => { const [y, m] = data[empIds[0]].period.from.split('-').map(Number); return `STAFF ATTENDANCE OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`; })()}
                   </div>
                   <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
                     Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {data[empIds[0]].summary.working}
@@ -839,39 +857,40 @@ export default function Attendance() {
                     </tr>
                   </thead>
                   <tbody>
-                    {empIds.map(id => {
+                    {empIds.filter(id => {
+                      const s = data[id].summary;
+                      return (s.lateIn + s.breakExcess + s.earlyOut) > 20;
+                    }).map(id => {
                       const e = data[id];
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
-                      const flag = total > 20;
                       const absentDates = e.days.filter(d => d.type === 'absent').map(d => d.dateShort);
-                      const halfDates = e.days.filter(d => d.type === 'half-am' || d.type === 'half-pm').map(d => `${d.dateShort}${d.type === 'half-am' ? '(AM)' : '(PM)'}`);
+                      const halfDates = e.days.filter(d => d.type === 'half-am' || d.type === 'half-pm').map(d => d.dateShort);
                       return (
-                        <tr key={id} style={{ background: flag ? '#fef3c7' : '#fff' }}>
+                        <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
                           <td style={{
                             ...td,
                             color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
                             fontWeight: s.absent > 0 ? 700 : 400,
-                          }}>{absentDates.length ? absentDates.join(', ') : '-'}</td>
+                          }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
                           <td style={{ ...td, color: s.half > 0 ? '#f59e0b' : '#a3a3a3' }}>
-                            {halfDates.length ? halfDates.join(', ') : '-'}
+                            {s.half > 0 ? `${s.half} (${collapseDateRanges(halfDates)})` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.lateIn > 0 ? '#dc2626' : '#a3a3a3' }}>
+                          <td style={{ ...td, textAlign: 'center', color: '#dc2626' }}>
                             {s.lateIn ? `${s.lateIn}m` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.breakExcess > 0 ? '#dc2626' : '#a3a3a3' }}>
+                          <td style={{ ...td, textAlign: 'center', color: '#dc2626' }}>
                             {s.breakExcess ? `${s.breakExcess}m` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.earlyOut > 0 ? '#dc2626' : '#a3a3a3' }}>
+                          <td style={{ ...td, textAlign: 'center', color: '#dc2626' }}>
                             {s.earlyOut ? `${s.earlyOut}m` : '-'}
                           </td>
                           <td style={{
-                            ...td, textAlign: 'center', fontWeight: 700,
-                            color: flag ? '#dc2626' : total > 0 ? '#f59e0b' : '#a3a3a3',
+                            ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626',
                           }}>
-                            {total ? `${total}m` : '-'}
+                            {`${total}m`}
                           </td>
                         </tr>
                       );
@@ -879,7 +898,7 @@ export default function Attendance() {
                   </tbody>
                 </table>
                 <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
-                  * Highlighted rows indicate total deductions exceeding 20 minutes
+                  * Showing employees with total deductions (late in + break excess + early out) exceeding 20 minutes
                 </div>
               </div>
             </div>
