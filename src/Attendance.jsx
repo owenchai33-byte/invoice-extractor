@@ -595,6 +595,7 @@ export default function Attendance() {
   const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
   const [suspectPH, setSuspectPH] = useState([]);
   const [confirmedPH, setConfirmedPH] = useState(new Set());
+  const [verifiedPH, setVerifiedPH] = useState({});
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
@@ -602,7 +603,7 @@ export default function Attendance() {
     if (!data || !confirmedPH.size) return data;
     const out = {};
     for (const [eid, emp] of Object.entries(data)) {
-      const days = emp.days.map(d => confirmedPH.has(d.date) ? { ...d, type: 'holiday', holiday: 'Public Holiday (confirmed)' } : d);
+      const days = emp.days.map(d => confirmedPH.has(d.date) ? { ...d, type: 'holiday', holiday: verifiedPH[d.date] || 'Public Holiday (confirmed)' } : d);
       const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday');
       out[eid] = {
         ...emp, days,
@@ -616,7 +617,7 @@ export default function Attendance() {
       };
     }
     return out;
-  }, [data, confirmedPH]);
+  }, [data, confirmedPH, verifiedPH]);
 
   const emp = effectiveData && selected ? effectiveData[selected] : null;
   const empIds = effectiveData ? sortByPayroll(effectiveData) : [];
@@ -639,6 +640,29 @@ export default function Attendance() {
     if (selected) localStorage.setItem(ATT_SEL_KEY, selected);
     else localStorage.removeItem(ATT_SEL_KEY);
   }, [selected]);
+
+  useEffect(() => {
+    if (!suspectPH.length) return;
+    const year = suspectPH[0].substring(0, 4);
+    fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/MY`)
+      .then(r => r.ok ? r.json() : [])
+      .then(holidays => {
+        const matched = {};
+        const autoConfirm = new Set();
+        for (const date of suspectPH) {
+          const h = holidays.find(h => h.date === date);
+          if (h) {
+            matched[date] = h.localName || h.name;
+            autoConfirm.add(date);
+          }
+        }
+        if (autoConfirm.size) {
+          setVerifiedPH(matched);
+          setConfirmedPH(prev => new Set([...prev, ...autoConfirm]));
+        }
+      })
+      .catch(() => {});
+  }, [suspectPH]);
 
   useEffect(() => {
     const reset = () => {
@@ -876,6 +900,9 @@ export default function Attendance() {
                     Staff Signature
                   </div>
                 </div>
+                <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
+                  Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+                </div>
               </div>
             </div>
           </div>
@@ -923,12 +950,17 @@ export default function Attendance() {
                       </div>
                     </div>
                   </div>
-                  <div className="att-signature" style={{ display: 'flex', gap: 60, paddingTop: 24 }}>
-                    <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
-                      Verified By
+                  <div className="att-signature" style={{ paddingTop: 24 }}>
+                    <div style={{ display: 'flex', gap: 60 }}>
+                      <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                        Verified By
+                      </div>
+                      <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                        Staff Signature
+                      </div>
                     </div>
-                    <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
-                      Staff Signature
+                    <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
+                      Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
                     </div>
                   </div>
                 </div>
