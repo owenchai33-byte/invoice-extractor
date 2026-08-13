@@ -709,14 +709,14 @@ export default function Attendance() {
               return (
                 <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
                   <div className="att-emp-content">
-                    <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                      <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2 }}>Attendance Report</div>
-                      <div style={{ fontSize: 9, color: '#555', marginTop: 2 }}>
+                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Attendance Report</div>
+                      <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
                         Period: {e.period.from} to {e.period.to}
                       </div>
                     </div>
-                    <div style={{ fontSize: 10, marginBottom: 6 }}>
+                    <div style={{ fontSize: 13, marginBottom: 12 }}>
                       <strong>Employee:</strong> {e.name} &emsp; <strong>Staff ID:</strong> {e.id}
                     </div>
                     <table className="att-table" style={{
@@ -726,17 +726,27 @@ export default function Attendance() {
                       <AttTableHeader />
                       <AttTableBody days={e.days} />
                     </table>
-                    <div style={{ marginTop: 6, padding: '3px 6px', border: '1px solid #d4d4d8', fontSize: 8, lineHeight: 1.4 }}>
-                      <strong>Summary:</strong>{' '}
-                      Working {s.working} · Present {s.present} · Absent {s.absent} · Half Days {s.half} ·
-                      Late {s.lateIn || 0}m · Break+ {s.breakExcess || 0}m · Early Out {s.earlyOut || 0}m
+                    <div style={{
+                      marginTop: 20, padding: '16px 20px', background: '#fff',
+                      border: '1px solid #e4e4e7', borderRadius: 8,
+                    }}>
+                      <div className="att-stat-title" style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
+                      <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+                        <StatCard label="Working Days" value={s.working} />
+                        <StatCard label="Present" value={s.present} />
+                        <StatCard label="Absent" value={s.absent} warn={s.absent > 0} />
+                        <StatCard label="Half Days" value={s.half} />
+                        <StatCard label="Total Late In" value={s.lateIn ? `${s.lateIn} min` : '0'} warn={s.lateIn > 0} />
+                        <StatCard label="Total Break Excess" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
+                        <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 60, paddingTop: 24 }}>
-                    <div style={{ borderTop: '1px solid #000', width: 160, textAlign: 'center', paddingTop: 3, fontSize: 8 }}>
+                    <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                       Verified By
                     </div>
-                    <div style={{ borderTop: '1px solid #000', width: 160, textAlign: 'center', paddingTop: 3, fontSize: 8 }}>
+                    <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                       Staff Signature
                     </div>
                   </div>
