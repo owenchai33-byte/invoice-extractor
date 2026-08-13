@@ -101,6 +101,7 @@ export default function App() {
   const debounceRef = useRef(null);
 
   useEffect(() => {
+    if (sessionStorage.getItem('cjk_restore_skipped')) return;
     checkAndRestore().then(r => { if (r === 'available') setShowRestore(true); });
   }, []);
 
@@ -150,9 +151,15 @@ export default function App() {
   }, [showMenu]);
 
   const handleRestore = useCallback(async () => {
-    await restoreFromBackup();
+    const ok = await restoreFromBackup();
     setShowRestore(false);
-    window.location.reload();
+    if (ok && localStorage.getItem('cjk_payroll_staff_v3')) {
+      window.location.reload();
+    } else {
+      sessionStorage.setItem('cjk_restore_skipped', '1');
+      setToast('⚠️ Backup has no data — use Backup > Restore from File if you have a downloaded backup');
+      setTimeout(() => setToast(''), 5000);
+    }
   }, []);
 
   const handleFileRestore = useCallback(async (e) => {
@@ -497,7 +504,7 @@ export default function App() {
               padding: '8px 20px', background: '#171717', color: '#fff', border: 'none',
               borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600,
             }}>Restore Backup</button>
-            <button onClick={() => setShowRestore(false)} style={{
+            <button onClick={() => { sessionStorage.setItem('cjk_restore_skipped', '1'); setShowRestore(false); }} style={{
               padding: '8px 20px', background: '#f5f5f5', color: '#525252', border: 'none',
               borderRadius: 6, fontSize: 13, cursor: 'pointer',
             }}>Skip</button>

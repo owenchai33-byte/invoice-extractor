@@ -23,6 +23,7 @@ function snapshot() {
 
 export async function saveBackup() {
   try {
+    if (!localStorage.getItem('cjk_payroll_staff_v3')) return;
     const db = await openDB();
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put(snapshot(), 'latest');
@@ -100,5 +101,6 @@ export async function checkAndRestore() {
   if (hasData) return false;
   const backup = await loadBackup();
   if (!backup) return false;
+  if (!backup.data['cjk_payroll_staff_v3']) return false;
   return 'available';
 }
