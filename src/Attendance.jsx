@@ -620,7 +620,7 @@ export default function Attendance() {
   const handlePrintAll = () => setPrintAll(true);
 
   return (
-    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}`} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '32px 24px' }}>
 
       {/* ─── Upload ─── */}
       {!data && (
