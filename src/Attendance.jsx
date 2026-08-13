@@ -433,13 +433,13 @@ function AttTableBody({ days }) {
         const isHalf = d.type === 'half-am' || d.type === 'half-pm';
         const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isHalf ? '#eff6ff' : '#fff';
 
-        if (isOff && !d.scans.length) {
-          const label = d.type === 'off' ? 'Sunday' : d.holiday;
+        if ((isOff || isAbsent) && !d.scans.length) {
+          const label = isAbsent ? 'Absent' : d.type === 'off' ? 'Sunday' : d.holiday;
           return (
             <tr key={d.date} style={{ background: bg }}>
               <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
               <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic', borderRight: 'none' }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400, borderRight: 'none' }}>
                 {label}
               </td>
             </tr>
