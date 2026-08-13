@@ -387,8 +387,7 @@ function AttTableHeader() {
         <th style={{ ...th, color: '#dc2626' }}>Late In</th>
         <th style={{ ...th, color: '#dc2626' }}>Break +</th>
         <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
-        <th style={th}>Remarks</th>
-        <th style={{ ...th, minWidth: 120 }}>Reason / Notes</th>
+        <th style={{ ...th, borderRight: 'none' }}>Remarks</th>
       </tr>
     </thead>
   );
@@ -409,10 +408,9 @@ function AttTableBody({ days }) {
             <tr key={d.date} style={{ background: bg }}>
               <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
               <td style={td}>{d.day}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic', borderRight: 'none' }}>
                 {label}
               </td>
-              <td style={{ ...td, minWidth: 120 }}>&nbsp;</td>
             </tr>
           );
         }
@@ -437,12 +435,43 @@ function AttTableBody({ days }) {
             <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
             <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
             <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
-            <td style={{ ...td, fontSize: 11, color: '#71717a', maxWidth: 200 }}><Remarks d={d} /></td>
-            <td style={{ ...td, minWidth: 120 }}>&nbsp;</td>
+            <td style={{ ...td, color: '#71717a', borderRight: 'none' }}><Remarks d={d} /></td>
           </tr>
         );
       })}
     </tbody>
+  );
+}
+
+function AttNotesBox({ days }) {
+  const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
+  if (!notes.length) return null;
+  return (
+    <div style={{ marginTop: 12, border: '1px solid #e4e4e7', borderRadius: 6, overflow: 'hidden' }}>
+      <div style={{ padding: '6px 10px', background: '#f4f4f5', fontWeight: 600, fontSize: 11 }}>
+        Absence / Half Day Notes
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+        <thead>
+          <tr style={{ background: '#fafafa' }}>
+            <th style={{ padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', width: 60 }}>Date</th>
+            <th style={{ padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', width: 80 }}>Type</th>
+            <th style={{ padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7' }}>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {notes.map(d => (
+            <tr key={d.date}>
+              <td style={{ padding: '4px 10px', borderBottom: '1px solid #f4f4f5', fontWeight: 500 }}>{d.dateShort}</td>
+              <td style={{ padding: '4px 10px', borderBottom: '1px solid #f4f4f5' }}>
+                {d.type === 'absent' ? 'Absent' : d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}
+              </td>
+              <td style={{ padding: '4px 10px', borderBottom: '1px solid #f4f4f5', minHeight: 20 }}>&nbsp;</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -669,6 +698,8 @@ export default function Attendance() {
                   </table>
                 </div>
 
+                <AttNotesBox days={emp.days} />
+
                 {/* Summary */}
                 <div style={{
                   marginTop: 20, padding: '16px 20px', background: '#fff',
@@ -726,6 +757,7 @@ export default function Attendance() {
                       <AttTableHeader />
                       <AttTableBody days={e.days} />
                     </table>
+                    <AttNotesBox days={e.days} />
                     <div style={{
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
@@ -829,14 +861,13 @@ export default function Attendance() {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
               .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
-              .att-table { font-size: 9px !important; }
-              .att-table th, .att-table td { padding: 3px 4px !important; font-size: 9px !important; white-space: nowrap !important; }
-              .att-table th:nth-last-child(2), .att-table td:nth-last-child(2) { max-width: 100px !important; white-space: normal !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-              .att-table th:last-child, .att-table td:last-child { min-width: 40px !important; max-width: 60px !important; white-space: normal !important; }
+              .att-table { font-size: 8.5px !important; }
+              .att-table th, .att-table td { padding: 3px 4px !important; font-size: 8.5px !important; white-space: nowrap !important; }
+              .att-table th:last-child, .att-table td:last-child { white-space: normal !important; max-width: 90px !important; }
               body { margin: 0 !important; padding: 5mm !important; }
-              @page { size: landscape; margin: 0; }
+              @page { size: portrait; margin: 0; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 190mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 280mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
