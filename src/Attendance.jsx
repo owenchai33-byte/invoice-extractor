@@ -859,7 +859,7 @@ export default function Attendance() {
                   <tbody>
                     {empIds.filter(id => {
                       const s = data[id].summary;
-                      return (s.lateIn + s.breakExcess + s.earlyOut) > 20;
+                      return (s.lateIn + s.breakExcess + s.earlyOut) > 0;
                     }).map(id => {
                       const e = data[id];
                       const s = e.summary;
@@ -898,7 +898,7 @@ export default function Attendance() {
                   </tbody>
                 </table>
                 <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
-                  * Showing employees with total deductions (late in + break excess + early out) exceeding 20 minutes
+                  * Showing employees with any deductions (late in / break excess / early out)
                 </div>
               </div>
             </div>
