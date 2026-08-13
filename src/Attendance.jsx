@@ -298,6 +298,10 @@ function processRecords({ records, from, to }) {
         } else {
           day.extras = middle;
           day.remarks.push('Break not detected');
+          if (day.clockIn === null && scans.length > 0) {
+            day.clockIn = scans[0];
+            day.extras = day.extras.filter(s => s !== scans[0]);
+          }
         }
 
         if (firstMorning && lastAfternoon) {
@@ -307,7 +311,7 @@ function processRecords({ records, from, to }) {
           day.remarks.push('No clock out');
         } else if (lastAfternoon) {
           day.type = 'half-pm';
-          day.remarks.push('No clock in');
+          if (!day.clockIn) day.remarks.push('No clock in');
         } else {
           day.type = 'incomplete';
           day.remarks.push('No AM/PM scan');
