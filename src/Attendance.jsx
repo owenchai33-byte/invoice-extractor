@@ -937,7 +937,8 @@ export default function Attendance() {
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 9px !important; }
               .att-notes-box table { font-size: 9px !important; }
               .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 9px !important; }
-              .att-signature { page-break-inside: avoid !important; padding-top: 12px !important; }
+              .att-signature { page-break-inside: avoid !important; padding-top: 30px !important; }
+              .att-signature > div { justify-content: center !important; }
               .att-summary-box { margin-top: 6px !important; padding: 6px 8px !important; }
               .att-stat-grid { grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
