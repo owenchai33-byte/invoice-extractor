@@ -595,6 +595,7 @@ export default function Attendance() {
   const [dismissedHalfDays, setDismissedHalfDays] = useState(new Set());
   const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
   const [suspectPH, setSuspectPH] = useState([]);
+  const [generatedAt, setGeneratedAt] = useState(() => new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
   const [confirmedPH, setConfirmedPH] = useState(new Set());
   const [verifiedPH, setVerifiedPH] = useState({});
   const fileRef = useRef(null);
@@ -706,6 +707,7 @@ export default function Attendance() {
       setConfirmedPH(new Set());
       setDismissedHalfDays(new Set());
       setLastOverviewEdit(null);
+      setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
       setSelected(sortByPayroll(results)[0]);
     } catch (e) {
       setError(e.message || 'Failed to parse file');
@@ -891,8 +893,12 @@ export default function Attendance() {
                 </div>
               </div>
 
-              {/* Signature (print only) — Verified By first, then Staff Signature, no Date */}
-              <div className="att-print-only att-signature" style={{ display: 'none', paddingTop: 24 }}>
+              <div style={{ marginTop: 12, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
+                Generated: {generatedAt}
+              </div>
+
+              {/* Signature (print only) */}
+              <div className="att-print-only att-signature" style={{ display: 'none', paddingTop: 40 }}>
                 <div style={{ display: 'flex', gap: 60 }}>
                   <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                     Verified By
@@ -901,12 +907,6 @@ export default function Attendance() {
                     Staff Signature
                   </div>
                 </div>
-                <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
-                  Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
-                </div>
-              </div>
-              <div className="att-no-print" style={{ marginTop: 12, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
-                Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
               </div>
             </div>
           </div>
@@ -954,7 +954,10 @@ export default function Attendance() {
                       </div>
                     </div>
                   </div>
-                  <div className="att-signature" style={{ paddingTop: 24 }}>
+                  <div style={{ marginTop: 12, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
+                    Generated: {generatedAt}
+                  </div>
+                  <div className="att-signature" style={{ paddingTop: 40 }}>
                     <div style={{ display: 'flex', gap: 60 }}>
                       <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                         Verified By
@@ -962,9 +965,6 @@ export default function Attendance() {
                       <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                         Staff Signature
                       </div>
-                    </div>
-                    <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
-                      Generated: {new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
                     </div>
                   </div>
                 </div>
