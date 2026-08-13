@@ -890,7 +890,7 @@ export default function Attendance() {
               .att-table th, .att-table td { padding: 3px 4px !important; font-size: 9.5px !important; white-space: nowrap !important; }
               .att-table th:last-child, .att-table td:last-child { white-space: normal !important; max-width: 90px !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 297mm; box-sizing: border-box; padding: 5mm 3mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 297mm; box-sizing: border-box; padding: 5mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
