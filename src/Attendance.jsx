@@ -46,7 +46,8 @@ function getPrintTitle(period, name) {
 }
 function getOverviewTitle(period) {
   const [y, m] = period.from.split('-').map(Number);
-  return `STAFF ATTENDANCE OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`;
+  const tag = `${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
+  return `CJK HQ STAFF ATTENDANCE OVERVIEW - ${tag}`;
 }
 
 function collapseDateRanges(dates) {
@@ -976,7 +977,7 @@ export default function Attendance() {
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                   <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
-                    {(() => { const [y, m] = effectiveData[empIds[0]].period.from.split('-').map(Number); return `STAFF ATTENDANCE OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`; })()}
+                    {getOverviewTitle(effectiveData[empIds[0]].period)}
                   </div>
                   <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
                     Period: {effectiveData[empIds[0]].period.from} to {effectiveData[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {effectiveData[empIds[0]].summary.working}
