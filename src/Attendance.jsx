@@ -433,8 +433,8 @@ function AttTableBody({ days }) {
           const label = d.type === 'off' ? 'Sunday' : d.holiday;
           return (
             <tr key={d.date} style={{ background: bg }}>
-              <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
-              <td style={td}>{d.day}</td>
+              <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
+              <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
               <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic', borderRight: 'none' }}>
                 {label}
               </td>
@@ -450,8 +450,8 @@ function AttTableBody({ days }) {
 
         return (
           <tr key={d.date} style={{ background: bg }}>
-            <td style={{ ...td, fontWeight: 500 }}>{d.dateShort}</td>
-            <td style={td}>{d.day}</td>
+            <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
+            <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
             <td style={td}>{fmtTime(d.clockIn)}</td>
             <td style={td}>{fmtTime(d.breakOut)}</td>
             <td style={td}>{fmtTime(d.breakIn)}</td>
