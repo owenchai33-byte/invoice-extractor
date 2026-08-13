@@ -1554,7 +1554,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
         </div>
 
         {/* API KEY */}
-        {(showSettings||!apiKey)&&(
+        {showSettings&&(
           <div className="noP" style={{background:'#f8f8f8',border:'1px solid #ddd',borderRadius:6,padding:'12px 16px',margin:'14px 0'}}>
             <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>
               {AI_CFG.label} API Key {apiKey&&<span style={{color:'#080',fontWeight:400}}>✓ saved</span>}
@@ -1564,7 +1564,7 @@ export default function InvoiceExtractor({ batchId = 'default' }) {
                 placeholder={AI_CFG.placeholder} onKeyDown={e=>e.key==='Enter'&&saveKey()}
                 style={{flex:1,padding:'6px 10px',border:'1px solid #bbb',borderRadius:4,fontSize:14,fontFamily:'monospace'}}/>
               <button onClick={saveKey} style={btn(1)}>Save</button>
-              {apiKey&&<button onClick={()=>setShowSettings(false)} style={btn(0)}>Close</button>}
+              <button onClick={()=>setShowSettings(false)} style={btn(0)}>Close</button>
             </div>
             <div style={{fontSize:12,color:'#999',marginTop:5}}>
               Free at <a href={AI_CFG.consoleUrl} target="_blank" rel="noreferrer" style={{color:'#0056b3'}}>{AI_CFG.consoleName}</a>
