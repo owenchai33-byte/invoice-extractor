@@ -156,6 +156,13 @@ export default function InvoicesWorkspace() {
   return (
     <div>
       <div className="noP" style={{
+        background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
+        display: 'flex', alignItems: 'center', gap: 16, height: 56,
+        position: 'sticky', top: 0, zIndex: 50,
+      }}>
+        <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0 }}>PAYMENT SUMMARY</h1>
+      </div>
+      <div className="noP" style={{
         display: 'flex',
         gap: 4,
         justifyContent: 'center',
