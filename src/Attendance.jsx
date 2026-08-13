@@ -36,6 +36,7 @@ const END_SAT = 15 * 60 + 10;
 const BREAK_ALLOW = 45;
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const MONTH_FULL = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
 
 function getPrintTitle(period, name) {
   const [y, m] = period.from.split('-').map(Number);
@@ -45,7 +46,7 @@ function getPrintTitle(period, name) {
 }
 function getOverviewTitle(period) {
   const [y, m] = period.from.split('-').map(Number);
-  return `CJK HQ ATTENDANCE OVERVIEW - ${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
+  return `STAFF ATT OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`;
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -814,9 +815,11 @@ export default function Attendance() {
               <div className="att-emp-content">
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Staff Attendance Overview</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+                    {(() => { const [y, m] = data[empIds[0]].period.from.split('-').map(Number); return `STAFF ATT OVERVIEW - ${MONTH_FULL[m - 1]} ${y}`; })()}
+                  </div>
                   <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                    Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to}
+                    Period: {data[empIds[0]].period.from} to {data[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {data[empIds[0]].summary.working}
                   </div>
                 </div>
                 <table className="att-table" style={{
@@ -826,10 +829,9 @@ export default function Attendance() {
                   <thead>
                     <tr style={{ background: '#f4f4f5' }}>
                       <th style={th}>Employee</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Working</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Absent</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Half Days</th>
+                      <th style={th}>Absent</th>
+                      <th style={th}>Half Days</th>
                       <th style={{ ...th, textAlign: 'center' }}>Late In</th>
                       <th style={{ ...th, textAlign: 'center' }}>Break+</th>
                       <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
@@ -842,17 +844,20 @@ export default function Attendance() {
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
                       const flag = total > 20;
+                      const absentDates = e.days.filter(d => d.type === 'absent').map(d => d.dateShort);
+                      const halfDates = e.days.filter(d => d.type === 'half-am' || d.type === 'half-pm').map(d => `${d.dateShort}${d.type === 'half-am' ? '(AM)' : '(PM)'}`);
                       return (
                         <tr key={id} style={{ background: flag ? '#fef3c7' : '#fff' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
-                          <td style={{ ...td, textAlign: 'center' }}>{s.working}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
                           <td style={{
-                            ...td, textAlign: 'center',
-                            color: s.absent > 0 ? '#dc2626' : undefined,
+                            ...td,
+                            color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
                             fontWeight: s.absent > 0 ? 700 : 400,
-                          }}>{s.absent}</td>
-                          <td style={{ ...td, textAlign: 'center' }}>{s.half}</td>
+                          }}>{absentDates.length ? absentDates.join(', ') : '-'}</td>
+                          <td style={{ ...td, color: s.half > 0 ? '#f59e0b' : '#a3a3a3' }}>
+                            {halfDates.length ? halfDates.join(', ') : '-'}
+                          </td>
                           <td style={{ ...td, textAlign: 'center', color: s.lateIn > 0 ? '#dc2626' : '#a3a3a3' }}>
                             {s.lateIn ? `${s.lateIn}m` : '-'}
                           </td>
@@ -874,7 +879,7 @@ export default function Attendance() {
                   </tbody>
                 </table>
                 <div style={{ marginTop: 8, fontSize: 8, color: '#71717a', fontStyle: 'italic' }}>
-                  * Highlighted rows indicate total deductions (late in + break excess + early out) exceeding 20 minutes
+                  * Highlighted rows indicate total deductions exceeding 20 minutes
                 </div>
               </div>
             </div>
@@ -890,13 +895,14 @@ export default function Attendance() {
               .att-table th, .att-table td { padding: 3px 4px !important; font-size: 9.5px !important; white-space: nowrap !important; }
               .att-table th:last-child, .att-table td:last-child { white-space: normal !important; max-width: 90px !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 297mm; box-sizing: border-box; padding: 5mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 297mm; box-sizing: border-box; padding: 5mm 3mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
               .att-print-all .att-overview-view { display: block !important; }
               .att-print-overview .att-single-view { display: none !important; }
               .att-print-overview .att-overview-view { display: block !important; }
+              .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; }
               .att-stat-grid { grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
               .att-stat-title { font-size: 9.5px !important; margin-bottom: 4px !important; }
