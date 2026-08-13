@@ -862,12 +862,10 @@ export default function Attendance() {
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
-              .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
+              .att-root { padding: 10mm 5mm !important; max-width: none !important; margin: 0 !important; }
               .att-table { font-size: 9.5px !important; }
               .att-table th, .att-table td { padding: 3px 4px !important; font-size: 9.5px !important; white-space: nowrap !important; }
               .att-table th:last-child, .att-table td:last-child { white-space: normal !important; max-width: 90px !important; }
-              body { margin: 0 !important; padding: 0 5mm !important; }
-              @page { size: portrait; margin: 10mm 0; }
               .att-page-break { page-break-before: always; }
               .att-emp-page { min-height: 280mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
