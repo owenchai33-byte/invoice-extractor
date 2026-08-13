@@ -740,7 +740,7 @@ export default function Attendance() {
                 <AttNotesBox days={emp.days} />
 
                 {/* Summary */}
-                <div style={{
+                <div className="att-summary-box" style={{
                   marginTop: 20, padding: '16px 20px', background: '#fff',
                   border: '1px solid #e4e4e7', borderRadius: 8,
                 }}>
@@ -797,7 +797,7 @@ export default function Attendance() {
                       <AttTableBody days={e.days} />
                     </table>
                     <AttNotesBox days={e.days} />
-                    <div style={{
+                    <div className="att-summary-box" style={{
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
                     }}>
@@ -914,10 +914,10 @@ export default function Attendance() {
               .att-table th, .att-table td { padding: 2px 3px !important; font-size: 9.5px !important; white-space: nowrap !important; overflow: hidden !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 26px !important; }
               .att-table th:nth-child(2), .att-table td:nth-child(2) { width: 24px !important; }
-              .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 36px !important; text-align: center !important; }
+              .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 297mm; box-sizing: border-box; padding: 5mm 3mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 3mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-header { margin-bottom: 6px !important; }
               .att-print-header .att-h1 { font-size: 13px !important; }
@@ -931,11 +931,12 @@ export default function Attendance() {
               .att-print-overview .att-overview-view { display: block !important; }
               .att-overview-view .att-table { table-layout: auto !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; width: auto !important; }
+              .att-summary-box { margin-top: 8px !important; padding: 8px 10px !important; }
               .att-stat-grid { grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
               .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
-              .att-stat-title { font-size: 9.5px !important; margin-bottom: 4px !important; }
-              .att-stat-label { font-size: 9.5px !important; margin-bottom: 0 !important; }
-              .att-stat-value { font-size: 9.5px !important; }
+              .att-stat-title { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 3px !important; }
+              .att-stat-label { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
+              .att-stat-value { font-size: 10px !important; font-weight: 700 !important; }
             }
           `}</style>
         </>
