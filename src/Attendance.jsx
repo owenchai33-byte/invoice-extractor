@@ -725,7 +725,7 @@ export default function Attendance() {
   const handlePrintAll = () => setPrintAll(true);
 
   return (
-    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '32px 24px' }}>
+    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px' }}>
 
       {/* ─── Upload ─── */}
       {!data && (
@@ -768,7 +768,7 @@ export default function Attendance() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
           }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#18181b' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#18181b', textTransform: 'uppercase' }}>
                 Attendance Report
               </h2>
               <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>

@@ -486,7 +486,7 @@ export default function ContractGenerator() {
 
         {/* Title + actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>Employment Contracts — {outlet}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#111', textTransform: 'uppercase' }}>Employment Contracts — {outlet}</div>
           <span style={{ fontSize: 12, color: '#6b7280' }}>{contracts.length} contract{contracts.length > 1 ? 's' : ''}</span>
           <div style={{ flex: 1 }} />
           <button onClick={() => setPrintOne(true)} style={{ ...btn, background: '#fff', color: '#111', border: '1px solid #111' }} title="Print only the contract you're viewing, so you can save it as its own PDF">🖨 This batch</button>
