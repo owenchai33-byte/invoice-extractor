@@ -494,6 +494,9 @@ export default function Attendance() {
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
+  const emp = data && selected ? data[selected] : null;
+  const empIds = data ? sortByPayroll(data) : [];
+
   useEffect(() => {
     if (data) localStorage.setItem(ATT_DATA_KEY, JSON.stringify(data));
     else localStorage.removeItem(ATT_DATA_KEY);
@@ -546,9 +549,6 @@ export default function Attendance() {
   }, [handleFile]);
 
   const handlePrintAll = () => setPrintAll(true);
-
-  const emp = data && selected ? data[selected] : null;
-  const empIds = data ? sortByPayroll(data) : [];
 
   return (
     <div className={`att-root${printAll ? ' att-print-all' : ''}`} style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
