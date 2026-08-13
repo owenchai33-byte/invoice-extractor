@@ -372,6 +372,26 @@ function processRecords({ records, from, to }) {
     };
   }
 
+  const eids = Object.keys(results);
+  if (eids.length > 1) {
+    const firstDays = results[eids[0]].days;
+    for (let i = 0; i < firstDays.length; i++) {
+      const d0 = firstDays[i];
+      if (d0.type !== 'absent') continue;
+      const allAbsent = eids.every(eid => results[eid].days[i]?.type === 'absent');
+      if (!allAbsent) continue;
+      for (const eid of eids) {
+        const day = results[eid].days[i];
+        day.type = 'holiday';
+        day.holiday = 'Public Holiday (all absent)';
+        const working = results[eid].days.filter(d => d.type !== 'off' && d.type !== 'holiday');
+        results[eid].summary.working = working.length;
+        results[eid].summary.absent = working.filter(d => d.type === 'absent').length;
+        results[eid].summary.present = working.filter(d => d.scans.length > 0).length;
+      }
+    }
+  }
+
   return results;
 }
 
@@ -758,7 +778,7 @@ export default function Attendance() {
                     </div>
                   </div>
                   <div className="att-print-emp-info" style={{ fontSize: 13, marginBottom: 12 }}>
-                    <strong>Employee:</strong> {emp.name} &emsp; <strong>Staff ID:</strong> {emp.id}
+                    <strong>Employee:</strong> <span className="att-emp-name">{emp.name}</span> &emsp; <strong>Staff ID:</strong> {emp.id}
                   </div>
                 </div>
 
@@ -834,7 +854,7 @@ export default function Attendance() {
                       </div>
                     </div>
                     <div className="att-print-emp-info" style={{ fontSize: 13, marginBottom: 12 }}>
-                      <strong>Employee:</strong> {e.name} &emsp; <strong>Staff ID:</strong> {e.id}
+                      <strong>Employee:</strong> <span className="att-emp-name">{e.name}</span> &emsp; <strong>Staff ID:</strong> {e.id}
                     </div>
                     <table className="att-table" style={{
                       width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
@@ -988,6 +1008,7 @@ export default function Attendance() {
               .att-print-header .att-h2 { font-size: 11px !important; margin-top: 1px !important; }
               .att-print-header .att-h3 { font-size: 10px !important; margin-top: 1px !important; }
               .att-print-emp-info { font-size: 10px !important; margin-bottom: 4px !important; }
+              .att-emp-name { font-size: 13px !important; font-weight: 700 !important; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
               .att-print-all .att-overview-view { display: block !important; }
