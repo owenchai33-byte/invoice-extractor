@@ -344,6 +344,8 @@ function processRecords({ records, from, to }) {
         day.remarks.push(`Worked ${hrs}h ${pad(mins)}m`);
       }
 
+      if (scans.length > 4) day.remarks.push(`${scans.length} scans`);
+
       days.push(day);
     }
 
