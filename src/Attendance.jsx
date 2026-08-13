@@ -678,30 +678,36 @@ export default function Attendance() {
             </div>
           </div>
 
-          {/* Employee tabs */}
+          {/* ═══ Layout: Sidebar + Content ═══ */}
+          <div className="att-layout" style={{ display: 'flex', gap: 16 }}>
           {empIds.length > 1 && (
-            <div className="att-no-print" style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+            <div className="att-no-print att-sidebar" style={{
+              width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2,
+              maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', position: 'sticky', top: 16,
+              padding: '8px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e4e4e7',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#71717a', padding: '4px 8px', marginBottom: 4 }}>Employees</div>
               {empIds.map(id => (
                 <button
                   key={id}
                   onClick={() => setSelected(id)}
                   style={{
-                    padding: '6px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    border: selected === id ? '1.5px solid #18181b' : '1px solid #d4d4d8',
-                    background: selected === id ? '#18181b' : '#fff',
+                    padding: '6px 10px', borderRadius: 6, fontSize: 11.5, cursor: 'pointer',
+                    fontFamily: 'inherit', textAlign: 'left', width: '100%',
+                    border: selected === id ? '1.5px solid #18181b' : '1px solid transparent',
+                    background: selected === id ? '#18181b' : 'transparent',
                     color: selected === id ? '#fff' : '#18181b',
-                    fontWeight: selected === id ? 600 : 500,
+                    fontWeight: selected === id ? 600 : 400,
                   }}
                 >
-                  {data[id].name} (ID: {id})
+                  {data[id].name}
                 </button>
               ))}
             </div>
           )}
 
           {/* ═══ Single Employee View (screen + print current) ═══ */}
-          <div className="att-single-view">
+          <div className="att-single-view" style={{ flex: 1, minWidth: 0 }}>
             <div className="att-emp-page">
               <div className="att-emp-content">
                 {/* Print header */}
@@ -772,6 +778,7 @@ export default function Attendance() {
               </div>
             </div>
           </div>
+          </div>{/* close att-layout */}
 
           {/* ═══ All Employees Print View (always in DOM, shown only in print-all) ═══ */}
           <div className="att-all-view" style={{ display: 'none' }}>
@@ -912,6 +919,8 @@ export default function Attendance() {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
               .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
+              .att-layout { display: block !important; }
+              .att-sidebar { display: none !important; }
               .att-table { font-size: 9.5px !important; table-layout: fixed !important; }
               .att-table th, .att-table td { padding: 2px 3px !important; font-size: 9.5px !important; white-space: nowrap !important; overflow: hidden !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 26px !important; }
