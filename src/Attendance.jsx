@@ -46,7 +46,7 @@ function getPrintTitle(period, name) {
 }
 function getOverviewTitle(period) {
   const [y, m] = period.from.split('-').map(Number);
-  const tag = `${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
+  const tag = `${MONTH_FULL[m - 1]} ${y}`;
   return `CJK HQ STAFF ATTENDANCE OVERVIEW - ${tag}`;
 }
 
