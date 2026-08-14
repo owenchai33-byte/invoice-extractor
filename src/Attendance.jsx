@@ -562,7 +562,20 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
               const d = notes[ni];
               if (d.type === 'absent') {
                 const start = ni;
-                while (ni + 1 < notes.length && notes[ni + 1].type === 'absent') ni++;
+                while (ni + 1 < notes.length && notes[ni + 1].type === 'absent') {
+                  const curIdx = days.indexOf(notes[ni]);
+                  const nextIdx = days.indexOf(notes[ni + 1]);
+                  let consecutive = true;
+                  for (let k = curIdx + 1; k < nextIdx; k++) {
+                    const dk = days[k];
+                    if (dk.type !== 'off' && dk.type !== 'holiday' && dk.type !== 'absent') {
+                      consecutive = false;
+                      break;
+                    }
+                  }
+                  if (!consecutive) break;
+                  ni++;
+                }
                 const run = notes.slice(start, ni + 1);
                 if (run.length >= 2) {
                   rows.push(
