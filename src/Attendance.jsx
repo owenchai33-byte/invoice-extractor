@@ -1237,7 +1237,7 @@ export default function Attendance() {
               .att-overview-view { padding: 0 !important; }
               .att-overview-view .att-emp-content { flex: none !important; }
               .att-overview-view .att-table { table-layout: fixed !important; }
-              .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; padding: 1px 2px !important; line-height: 1.15 !important; }
+              .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
               .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 15% !important; }
               .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 6% !important; }
               .att-overview-view .att-table th:nth-child(n+3):nth-child(-n+6), .att-overview-view .att-table td:nth-child(n+3):nth-child(-n+6) { width: 7% !important; text-align: center !important; }
