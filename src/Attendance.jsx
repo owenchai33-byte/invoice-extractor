@@ -980,11 +980,11 @@ export default function Attendance() {
 
               {/* Signature (print only) */}
               <div className="att-print-only att-signature" style={{ display: 'none', paddingTop: 40 }}>
-                <div style={{ display: 'flex', gap: 60 }}>
-                  <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                <div style={{ display: 'flex', gap: 80 }}>
+                  <div style={{ borderTop: '1px solid #000', width: 280, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                     Verified By
                   </div>
-                  <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                  <div style={{ borderTop: '1px solid #000', width: 280, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                     Staff Signature
                   </div>
                 </div>
@@ -1037,11 +1037,11 @@ export default function Attendance() {
                   </div>
                   </div>{/* close att-emp-content */}
                   <div className="att-signature" style={{ paddingTop: 40 }}>
-                    <div style={{ display: 'flex', gap: 60 }}>
-                      <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                    <div style={{ display: 'flex', gap: 80 }}>
+                      <div style={{ borderTop: '1px solid #000', width: 280, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                         Verified By
                       </div>
-                      <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
+                      <div style={{ borderTop: '1px solid #000', width: 280, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>
                         Staff Signature
                       </div>
                     </div>
@@ -1143,10 +1143,8 @@ export default function Attendance() {
                     ? `Last updated: ${lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`
                     : `Generated: ${generatedAt}`}
                 </div>
-                <div style={{ marginTop: 40, fontSize: 11 }}>
-                  <div style={{ display: 'inline-block' }}>
-                    <div style={{ borderTop: '1px solid #333', width: 200, paddingTop: 4 }}>Verified by</div>
-                  </div>
+                <div style={{ marginTop: 40, fontSize: 11, display: 'flex', gap: 80 }}>
+                  <div style={{ borderTop: '1px solid #000', width: 280, textAlign: 'center', paddingTop: 4 }}>Verified By</div>
                 </div>
               </div>
             </div>
