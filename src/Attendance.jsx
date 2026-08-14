@@ -456,7 +456,7 @@ function groupDaysForTable(days) {
           j++;
         } else break;
       }
-      if (absentCount >= 5) {
+      if (absentCount >= 2) {
         groups.push({ type: 'merged-absent', days: days.slice(start, j), absentCount });
         i = j;
       } else {
@@ -564,7 +564,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                 const start = ni;
                 while (ni + 1 < notes.length && notes[ni + 1].type === 'absent') ni++;
                 const run = notes.slice(start, ni + 1);
-                if (run.length >= 5) {
+                if (run.length >= 2) {
                   rows.push(
                     <tr key={run[0].date}>
                       <td style={{ ...ntd, fontWeight: 500 }}>{run[0].dateShort} – {run[run.length - 1].dateShort}</td>
