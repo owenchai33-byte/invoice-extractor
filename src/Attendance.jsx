@@ -1074,7 +1074,7 @@ export default function Attendance() {
                       <th style={th}>Employee</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present (day)</th>
                       <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Late In</th>
-                      <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total Break +</th>
+                      <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Break +</th>
                       <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Early Out</th>
                       <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total</th>
                       <th style={{ ...th, borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Absent (day)</th>
