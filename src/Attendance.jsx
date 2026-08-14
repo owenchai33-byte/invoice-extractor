@@ -1272,10 +1272,14 @@ export default function Attendance() {
               .att-stat-title { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 1px !important; }
               .att-stat-label { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
               .att-stat-value { font-size: 12px !important; font-weight: 700 !important; }
-              .att-half-first .att-emp-page { min-height: auto !important; }
-              .att-half-first .att-signature { display: none !important; }
-              .att-half-second .att-emp-page { padding-top: var(--half-split, 50vh) !important; }
-              .att-half-second .att-table thead { display: none !important; }
+              .att-half-first .att-single-view .att-emp-page,
+              .att-half-first .att-all-view .att-emp-page { min-height: auto !important; }
+              .att-half-first .att-single-view .att-signature,
+              .att-half-first .att-all-view .att-signature { display: none !important; }
+              .att-half-second .att-single-view .att-emp-page,
+              .att-half-second .att-all-view .att-emp-page { padding-top: var(--half-split, 50vh) !important; }
+              .att-half-second .att-single-view .att-table thead,
+              .att-half-second .att-all-view .att-table thead { display: none !important; }
               .att-print-all.att-half-first .att-overview-view,
               .att-print-all.att-half-second .att-overview-view { display: none !important; }
               .att-summary-box { border-color: #999 !important; }
