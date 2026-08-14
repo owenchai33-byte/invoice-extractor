@@ -1182,7 +1182,7 @@ export default function Attendance() {
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
               .att-emp-page { min-height: 100vh; box-sizing: border-box; padding: 0 2mm 3mm; display: flex !important; flex-direction: column; }
-              .att-emp-content { flex: 1; display: flex !important; flex-direction: column !important; justify-content: center !important; }
+              .att-emp-content { flex: 1; }
               .att-print-header { margin-bottom: 3px !important; }
               .att-print-header .att-h1 { font-size: 12px !important; }
               .att-print-header .att-h2 { font-size: 12px !important; margin-top: 0px !important; }
