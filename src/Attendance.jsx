@@ -1073,20 +1073,20 @@ export default function Attendance() {
                     <tr style={{ background: '#f4f4f5' }}>
                       <th style={th}>Employee</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present (day)</th>
-                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #18181b' }}>Late In</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Total Break +</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
-                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #18181b' }}>Total</th>
-                      <th style={{ ...th, borderLeft: '2px solid #18181b' }}>Absent (day)</th>
-                      <th style={th}>Half Days (day)</th>
-                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #18181b' }}>Total Leave (day)</th>
+                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Late In</th>
+                      <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total Break +</th>
+                      <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Early Out</th>
+                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total</th>
+                      <th style={{ ...th, borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Absent (day)</th>
+                      <th style={{ ...th, borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Half Days (day)</th>
+                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total Leave (day)</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {empIds.filter(id => {
-                      const s = effectiveData[id].summary;
-                      return (s.lateIn + s.breakExcess + s.earlyOut) > 0;
-                    }).map(id => {
+                    {(() => {
+                      const gb = '2px solid #b0b0b0';
+                      const filtered = empIds.filter(id => { const s = effectiveData[id].summary; return (s.lateIn + s.breakExcess + s.earlyOut) > 0; });
+                      return filtered.map((id, idx) => {
                       const e = effectiveData[id];
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
@@ -1094,29 +1094,31 @@ export default function Attendance() {
                       const confirmedHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${id}-${d.date}`));
                       const halfCount = confirmedHalf.length;
                       const halfDates = confirmedHalf.map(d => d.dateShort);
+                      const isLast = idx === filtered.length - 1;
+                      const bb = isLast ? gb : undefined;
                       return (
                         <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
-                          <td style={{ ...td, textAlign: 'center', color: s.lateIn ? '#dc2626' : '#a3a3a3', borderLeft: '2px solid #18181b' }}>
+                          <td style={{ ...td, textAlign: 'center', color: s.lateIn ? '#dc2626' : '#a3a3a3', borderLeft: gb, borderBottom: bb }}>
                             {s.lateIn ? `${s.lateIn}m` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.breakExcess ? '#dc2626' : '#a3a3a3' }}>
+                          <td style={{ ...td, textAlign: 'center', color: s.breakExcess ? '#dc2626' : '#a3a3a3', borderBottom: bb }}>
                             {s.breakExcess ? `${s.breakExcess}m` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.earlyOut ? '#dc2626' : '#a3a3a3' }}>
+                          <td style={{ ...td, textAlign: 'center', color: s.earlyOut ? '#dc2626' : '#a3a3a3', borderBottom: bb }}>
                             {s.earlyOut ? `${s.earlyOut}m` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626', borderRight: '2px solid #18181b' }}>
+                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626', borderRight: gb, borderBottom: bb }}>
                             {`${total}m`}
                           </td>
                           <td style={{
                             ...td,
                             color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
                             fontWeight: s.absent > 0 ? 700 : 400,
-                            borderLeft: '2px solid #18181b',
+                            borderLeft: gb, borderBottom: bb,
                           }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
-                          <td style={{ ...td, color: halfCount > 0 ? '#f59e0b' : '#a3a3a3' }}>
+                          <td style={{ ...td, color: halfCount > 0 ? '#f59e0b' : '#a3a3a3', borderBottom: bb }}>
                             {halfCount > 0 ? `${halfCount} (${collapseDateRanges(halfDates)})` : '-'}
                           </td>
                           {(() => {
@@ -1125,14 +1127,15 @@ export default function Attendance() {
                             const hasHalf = totalLeave % 1 !== 0;
                             const label = totalLeave === 0 ? '-' : whole > 0 && hasHalf ? `${whole} 1/2` : hasHalf ? '1/2' : `${whole}`;
                             return (
-                              <td style={{ ...td, textAlign: 'center', fontWeight: totalLeave > 0 ? 700 : 400, color: totalLeave > 0 ? '#dc2626' : '#a3a3a3', borderRight: '2px solid #18181b' }}>
+                              <td style={{ ...td, textAlign: 'center', fontWeight: totalLeave > 0 ? 700 : 400, color: totalLeave > 0 ? '#dc2626' : '#a3a3a3', borderRight: gb, borderBottom: bb }}>
                                 {label}
                               </td>
                             );
                           })()}
                         </tr>
                       );
-                    })}
+                    });
+                    })()}
                   </tbody>
                 </table>
                 <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
