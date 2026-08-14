@@ -1179,7 +1179,7 @@ export default function Attendance() {
               .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 100vh; box-sizing: border-box; padding: 0 2mm 8mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 100vh; box-sizing: border-box; padding: 0 2mm 3mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; display: flex !important; flex-direction: column !important; justify-content: center !important; }
               .att-print-header { margin-bottom: 3px !important; }
               .att-print-header .att-h1 { font-size: 12px !important; }
@@ -1192,7 +1192,7 @@ export default function Attendance() {
               .att-print-all .att-overview-view { display: block !important; }
               .att-print-overview .att-single-view { display: none !important; }
               .att-print-overview .att-overview-view { display: block !important; }
-              .att-overview-view { padding: 0 2mm 8mm !important; }
+              .att-overview-view { padding: 0 2mm 3mm !important; }
               .att-overview-view .att-table { table-layout: fixed !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
               .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 15% !important; }
