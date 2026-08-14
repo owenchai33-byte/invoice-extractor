@@ -747,6 +747,21 @@ export default function Attendance() {
   const viewDays = emp ? getHalfDays(emp.days, printHalf) : [];
   const viewPeriod = emp ? getHalfPeriod(emp.period, printHalf) : null;
 
+  const halfSplitVh = useMemo(() => {
+    if (!effectiveData || !empIds.length) return 50;
+    let maxRows = 0;
+    for (const id of empIds) {
+      const firstDays = getHalfDays(effectiveData[id].days, 'first');
+      const groups = groupDaysForTable(firstDays);
+      if (groups.length > maxRows) maxRows = groups.length;
+    }
+    const headerPx = 70;
+    const rowPx = 18;
+    const totalPx = headerPx + (maxRows + 1) * rowPx;
+    const pagePx = 970;
+    return Math.ceil((totalPx / pagePx) * 100) + 2;
+  }, [effectiveData, empIds]);
+
   const toggleHalfDay = useCallback((key) => {
     setDismissedHalfDays(prev => {
       const next = new Set(prev);
@@ -852,7 +867,7 @@ export default function Attendance() {
   const handlePrintAll = () => setPrintAll(true);
 
   return (
-    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}${printHalf === 'first' ? ' att-half-first' : ''}${printHalf === 'second' ? ' att-half-second' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px' }}>
+    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}${printHalf === 'first' ? ' att-half-first' : ''}${printHalf === 'second' ? ' att-half-second' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px', '--half-split': `${halfSplitVh}vh` }}>
 
       {/* ─── Upload ─── */}
       {!data && (
@@ -1259,9 +1274,12 @@ export default function Attendance() {
               .att-stat-value { font-size: 12px !important; font-weight: 700 !important; }
               .att-half-first .att-emp-page { min-height: auto !important; }
               .att-half-first .att-signature { display: none !important; }
-              .att-half-second .att-emp-page { padding-top: 50vh !important; }
+              .att-half-second .att-emp-page { padding-top: var(--half-split, 50vh) !important; }
+              .att-half-second .att-table thead { display: none !important; }
               .att-print-all.att-half-first .att-overview-view,
               .att-print-all.att-half-second .att-overview-view { display: none !important; }
+              .att-summary-box { border-color: #999 !important; }
+              .att-table { border-color: #999 !important; }
             }
           `}</style>
         </>
