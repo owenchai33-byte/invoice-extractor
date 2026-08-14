@@ -1157,6 +1157,7 @@ export default function Attendance() {
               .att-sidebar { display: none !important; }
               .att-table { font-size: 11.5px !important; table-layout: fixed !important; }
               .att-table th, .att-table td { padding: 2px 3px !important; font-size: 11.5px !important; white-space: nowrap !important; overflow: hidden !important; }
+              .att-table th { white-space: normal !important; overflow: visible !important; line-height: 1.1 !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 30px !important; }
               .att-table th:nth-child(2), .att-table td:nth-child(2) { width: 26px !important; }
               .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
