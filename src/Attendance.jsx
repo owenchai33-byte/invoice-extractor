@@ -1095,7 +1095,7 @@ export default function Attendance() {
                       const halfCount = confirmedHalf.length;
                       const halfDates = confirmedHalf.map(d => d.dateShort);
                       const isLast = idx === filtered.length - 1;
-                      const bb = isLast ? gb : undefined;
+                      const bb = isLast ? gb : td.borderBottom;
                       return (
                         <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
