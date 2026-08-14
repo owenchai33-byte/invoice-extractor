@@ -38,16 +38,46 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const MONTH_FULL = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
 
-function getPrintTitle(period, name) {
+function getPrintTitle(period, name, half) {
   const [y, m] = period.from.split('-').map(Number);
   const tag = `${MONTH_NAMES[m - 1]}'${String(y).slice(-2)}`;
-  if (name) return `${name} ATTENDANCE REPORT - ${tag}`;
-  return `CJK HQ ATTENDANCE REPORT - ${tag}`;
+  const suffix = half === 'first' ? ' (1-15)' : half === 'second' ? ' (16+)' : '';
+  if (name) return `${name} ATTENDANCE REPORT - ${tag}${suffix}`;
+  return `CJK HQ ATTENDANCE REPORT - ${tag}${suffix}`;
 }
 function getOverviewTitle(period) {
   const [y, m] = period.from.split('-').map(Number);
   const tag = `${MONTH_FULL[m - 1]} ${y}`;
   return `STAFF ATTENDANCE OVERVIEW ${tag}`;
+}
+
+function getHalfDays(days, half) {
+  if (!half) return days;
+  return days.filter(d => {
+    const day = parseInt(d.date.split('-')[2]);
+    return half === 'first' ? day <= 15 : day >= 16;
+  });
+}
+
+function calcHalfSummary(days) {
+  const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday');
+  return {
+    working: working.length,
+    present: working.filter(d => d.scans.length > 0).length,
+    absent: working.filter(d => d.type === 'absent').length,
+    half: days.filter(d => d.type === 'half-am' || d.type === 'half-pm').length,
+    lateIn: days.reduce((s, d) => s + d.lateIn, 0),
+    breakExcess: days.reduce((s, d) => s + d.breakExcess, 0),
+    earlyOut: days.reduce((s, d) => s + d.earlyOut, 0),
+  };
+}
+
+function getHalfPeriod(period, half) {
+  if (!half) return period;
+  const [y, m] = period.from.split('-').map(Number);
+  const mm = String(m).padStart(2, '0');
+  if (half === 'first') return { from: period.from, to: `${y}-${mm}-15` };
+  return { from: `${y}-${mm}-16`, to: period.to };
 }
 
 function collapseDateRanges(dates) {
@@ -681,6 +711,7 @@ export default function Attendance() {
   const [error, setError] = useState('');
   const [printAll, setPrintAll] = useState(false);
   const [printOverview, setPrintOverview] = useState(false);
+  const [printHalf, setPrintHalf] = useState(null);
   const [dismissedHalfDays, setDismissedHalfDays] = useState(new Set());
   const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
   const [suspectPH, setSuspectPH] = useState([]);
@@ -713,6 +744,9 @@ export default function Attendance() {
 
   const emp = effectiveData && selected ? effectiveData[selected] : null;
   const empIds = effectiveData ? sortByPayroll(effectiveData) : [];
+  const viewDays = emp ? getHalfDays(emp.days, printHalf) : [];
+  const viewSummary = emp ? (printHalf ? calcHalfSummary(viewDays) : emp.summary) : null;
+  const viewPeriod = emp ? getHalfPeriod(emp.period, printHalf) : null;
 
   const toggleHalfDay = useCallback((key) => {
     setDismissedHalfDays(prev => {
@@ -772,11 +806,11 @@ export default function Attendance() {
   useEffect(() => {
     if (printAll && emp) {
       origTitle.current = document.title;
-      document.title = getPrintTitle(emp.period);
+      document.title = getPrintTitle(emp.period, null, printHalf);
       const timer = setTimeout(() => window.print(), 150);
       return () => clearTimeout(timer);
     }
-  }, [printAll, emp]);
+  }, [printAll, emp, printHalf]);
 
   useEffect(() => {
     if (printOverview && emp) {
@@ -819,7 +853,7 @@ export default function Attendance() {
   const handlePrintAll = () => setPrintAll(true);
 
   return (
-    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px' }}>
+    <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}${printHalf === 'first' ? ' att-half-first' : ''}${printHalf === 'second' ? ' att-half-second' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px' }}>
 
       {/* ─── Upload ─── */}
       {!data && (
@@ -866,11 +900,16 @@ export default function Attendance() {
                 Attendance Report
               </h2>
               <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>
-                {emp.period.from} to {emp.period.to}
+                {viewPeriod.from} to {viewPeriod.to}{printHalf ? ` (${printHalf === 'first' ? '1st' : '2nd'} half)` : ''}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name); window.print(); }} style={btn}>🖨 Print</button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select value={printHalf || ''} onChange={e => setPrintHalf(e.target.value || null)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d4d4d8', fontSize: 13, background: '#fff' }}>
+                <option value="">Full Month</option>
+                <option value="first">1st Half (1-15)</option>
+                <option value="second">2nd Half (16+)</option>
+              </select>
+              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
               <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
               <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(ATT_DATA_KEY); localStorage.removeItem(ATT_SEL_KEY); }} style={btn}>Upload New</button>
@@ -936,10 +975,10 @@ export default function Attendance() {
                 <div className="att-print-only" style={{ display: 'none' }}>
                   <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                     <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                    <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(emp.period.from.split('-')[1]) - 1]} {emp.period.from.split('-')[0]}</div>
+                    <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(emp.period.from.split('-')[1]) - 1]} {emp.period.from.split('-')[0]}{printHalf ? ` (${printHalf === 'first' ? '1ST' : '2ND'} HALF)` : ''}</div>
                     <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {emp.name}</div>
                     <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
-                      Staff ID: {emp.id} &nbsp;|&nbsp; Period: {emp.period.from} to {emp.period.to}
+                      Staff ID: {emp.id} &nbsp;|&nbsp; Period: {viewPeriod.from} to {viewPeriod.to}
                     </div>
                   </div>
                 </div>
@@ -951,7 +990,7 @@ export default function Attendance() {
                 }}>
                   <div><span style={{ color: '#71717a' }}>Employee:</span> <strong>{emp.name}</strong></div>
                   <div><span style={{ color: '#71717a' }}>Staff ID:</span> <strong>{emp.id}</strong></div>
-                  <div><span style={{ color: '#71717a' }}>Period:</span> <strong>{emp.period.from} to {emp.period.to}</strong></div>
+                  <div><span style={{ color: '#71717a' }}>Period:</span> <strong>{viewPeriod.from} to {viewPeriod.to}</strong></div>
                 </div>
 
                 {/* Table + Summary side-by-side on screen */}
@@ -963,10 +1002,10 @@ export default function Attendance() {
                         border: '1px solid #e4e4e7',
                       }}>
                         <AttTableHeader />
-                        <AttTableBody days={emp.days} />
+                        <AttTableBody days={viewDays} />
                       </table>
                     </div>
-                    <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
+                    <AttNotesBox days={viewDays} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
                   </div>
 
                   {/* Summary — vertical sidebar on screen, below table in print */}
@@ -976,13 +1015,13 @@ export default function Attendance() {
                   }}>
                     <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
                     <div className="att-stat-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <StatCard label="Working Days" value={`${emp.summary.working} days`} />
-                      <StatCard label="Present" value={`${emp.summary.present} days`} />
-                      <StatCard label="Absent" value={`${emp.summary.absent} days`} warn={emp.summary.absent > 0} />
-                      <StatCard label="Half Days" value={`${emp.summary.half} days`} />
-                      <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
-                      <StatCard label="Total Break +" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
-                      <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
+                      <StatCard label="Working Days" value={`${viewSummary.working} days`} />
+                      <StatCard label="Present" value={`${viewSummary.present} days`} />
+                      <StatCard label="Absent" value={`${viewSummary.absent} days`} warn={viewSummary.absent > 0} />
+                      <StatCard label="Half Days" value={`${viewSummary.half} days`} />
+                      <StatCard label="Total Late In" value={viewSummary.lateIn ? `${viewSummary.lateIn} min` : '0'} warn={viewSummary.lateIn > 0} />
+                      <StatCard label="Total Break +" value={viewSummary.breakExcess ? `${viewSummary.breakExcess} min` : '0'} warn={viewSummary.breakExcess > 0} />
+                      <StatCard label="Total Early Out" value={viewSummary.earlyOut ? `${viewSummary.earlyOut} min` : '0'} warn={viewSummary.earlyOut > 0} />
                     </div>
                   </div>
                 </div>
@@ -1010,16 +1049,18 @@ export default function Attendance() {
           <div className="att-all-view" style={{ display: 'none' }}>
             {empIds.map((id, idx) => {
               const e = effectiveData[id];
-              const s = e.summary;
+              const eDays = getHalfDays(e.days, printHalf);
+              const eSum = printHalf ? calcHalfSummary(eDays) : e.summary;
+              const ePeriod = getHalfPeriod(e.period, printHalf);
               return (
                 <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
                   <div className="att-emp-content">
                     <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                       <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                      <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(e.period.from.split('-')[1]) - 1]} {e.period.from.split('-')[0]}</div>
+                      <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(e.period.from.split('-')[1]) - 1]} {e.period.from.split('-')[0]}{printHalf ? ` (${printHalf === 'first' ? '1ST' : '2ND'} HALF)` : ''}</div>
                       <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {e.name}</div>
                       <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
-                        Staff ID: {e.id} &nbsp;|&nbsp; Period: {e.period.from} to {e.period.to}
+                        Staff ID: {e.id} &nbsp;|&nbsp; Period: {ePeriod.from} to {ePeriod.to}
                       </div>
                     </div>
                     <table className="att-table" style={{
@@ -1027,22 +1068,22 @@ export default function Attendance() {
                       border: '1px solid #e4e4e7',
                     }}>
                       <AttTableHeader />
-                      <AttTableBody days={e.days} />
+                      <AttTableBody days={eDays} />
                     </table>
-                    <AttNotesBox days={e.days} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
+                    <AttNotesBox days={eDays} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
                     <div className="att-summary-box" style={{
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
                     }}>
                       <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
                       <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-                        <StatCard label="Working Days" value={`${s.working} days`} />
-                        <StatCard label="Present" value={`${s.present} days`} />
-                        <StatCard label="Absent" value={`${s.absent} days`} warn={s.absent > 0} />
-                        <StatCard label="Half Days" value={`${s.half} days`} />
-                        <StatCard label="Total Late In" value={s.lateIn ? `${s.lateIn} min` : '0'} warn={s.lateIn > 0} />
-                        <StatCard label="Total Break +" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
-                        <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
+                        <StatCard label="Working Days" value={`${eSum.working} days`} />
+                        <StatCard label="Present" value={`${eSum.present} days`} />
+                        <StatCard label="Absent" value={`${eSum.absent} days`} warn={eSum.absent > 0} />
+                        <StatCard label="Half Days" value={`${eSum.half} days`} />
+                        <StatCard label="Total Late In" value={eSum.lateIn ? `${eSum.lateIn} min` : '0'} warn={eSum.lateIn > 0} />
+                        <StatCard label="Total Break +" value={eSum.breakExcess ? `${eSum.breakExcess} min` : '0'} warn={eSum.breakExcess > 0} />
+                        <StatCard label="Total Early Out" value={eSum.earlyOut ? `${eSum.earlyOut} min` : '0'} warn={eSum.earlyOut > 0} />
                       </div>
                     </div>
                   <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
@@ -1216,6 +1257,11 @@ export default function Attendance() {
               .att-stat-title { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 1px !important; }
               .att-stat-label { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
               .att-stat-value { font-size: 12px !important; font-weight: 700 !important; }
+              .att-half-first .att-emp-page { min-height: auto !important; }
+              .att-half-first .att-signature { display: none !important; }
+              .att-half-second .att-emp-page { padding-top: 50vh !important; }
+              .att-print-all.att-half-first .att-overview-view,
+              .att-print-all.att-half-second .att-overview-view { display: none !important; }
             }
           `}</style>
         </>
