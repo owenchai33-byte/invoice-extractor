@@ -1156,8 +1156,10 @@ export default function Attendance() {
                     ? `Last updated: ${lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`
                     : `Generated: ${generatedAt}`}
                 </div>
-                <div style={{ marginTop: 48, fontSize: 11, display: 'flex', gap: 60 }}>
-                  <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4 }}>Verified By</div>
+              </div>
+              <div className="att-signature" style={{ paddingTop: 48 }}>
+                <div style={{ display: 'flex', gap: 60 }}>
+                  <div style={{ borderTop: '1px solid #000', width: 200, textAlign: 'center', paddingTop: 4, fontSize: 11 }}>Verified By</div>
                 </div>
               </div>
             </div>
