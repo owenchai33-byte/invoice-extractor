@@ -404,11 +404,11 @@ function Remarks({ d }) {
 
 const th = {
   padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600,
-  color: '#52525b', borderBottom: '2px solid #e4e4e7', borderRight: '1px solid #e5e7eb',
+  color: '#52525b', borderBottom: '2px solid #c8c8cc', borderRight: '1px solid #c8c8cc',
   whiteSpace: 'nowrap',
 };
 const td = {
-  padding: '6px 10px', borderBottom: '1px solid #f4f4f5', borderRight: '1px solid #e5e7eb',
+  padding: '6px 10px', borderBottom: '1px solid #c8c8cc', borderRight: '1px solid #c8c8cc',
   whiteSpace: 'nowrap',
 };
 const btn = {
@@ -538,11 +538,11 @@ function AttTableBody({ days }) {
 function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
   const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
   if (!notes.length) return null;
-  const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #e4e4e7', borderRight: '1px solid #e5e7eb' };
-  const ntd = { padding: '4px 10px', borderBottom: '1px solid #f4f4f5', borderRight: '1px solid #e5e7eb' };
+  const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #c8c8cc', borderRight: '1px solid #c8c8cc' };
+  const ntd = { padding: '4px 10px', borderBottom: '1px solid #c8c8cc', borderRight: '1px solid #c8c8cc' };
   const isHalf = (d) => d.type === 'half-am' || d.type === 'half-pm';
   return (
-    <div className="att-notes-box" style={{ marginTop: 12, border: '1px solid #e4e4e7', borderRadius: 6, overflow: 'hidden' }}>
+    <div className="att-notes-box" style={{ marginTop: 12, border: '1px solid #c8c8cc', borderRadius: 6, overflow: 'hidden' }}>
       <div style={{ padding: '6px 10px', background: '#f4f4f5', fontWeight: 600, fontSize: 11 }}>
         Absence / Half Day Notes
       </div>
@@ -1067,7 +1067,7 @@ export default function Attendance() {
                 </div>
                 <table className="att-table" style={{
                   width: '100%', borderCollapse: 'collapse', fontSize: 11, background: '#fff',
-                  border: '1px solid #e4e4e7',
+                  border: '1px solid #c8c8cc',
                 }}>
                   <thead>
                     <tr style={{ background: '#f4f4f5' }}>
