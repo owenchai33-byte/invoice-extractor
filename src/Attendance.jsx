@@ -1166,7 +1166,7 @@ export default function Attendance() {
               .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 2mm 0; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 2mm 8mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-header { margin-bottom: 3px !important; }
               .att-print-header .att-h1 { font-size: 12px !important; }
@@ -1191,7 +1191,7 @@ export default function Attendance() {
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; }
               .att-notes-box table { font-size: 10.5px !important; }
               .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; }
-              .att-signature { page-break-inside: avoid !important; padding-top: 24px !important; }
+              .att-signature { page-break-inside: avoid !important; padding-top: 0 !important; margin-top: auto !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
               .att-summary-box { margin-top: 4px !important; padding: 4px 6px !important; width: auto !important; position: static !important; }
