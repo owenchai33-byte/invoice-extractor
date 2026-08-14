@@ -924,7 +924,7 @@ export default function Attendance() {
                   <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                     <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                     <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(emp.period.from.split('-')[1]) - 1]} {emp.period.from.split('-')[0]}</div>
-                    <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>{emp.name}</div>
+                    <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {emp.name}</div>
                     <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
                       Staff ID: {emp.id} &nbsp;|&nbsp; Period: {emp.period.from} to {emp.period.to}
                     </div>
@@ -1004,7 +1004,7 @@ export default function Attendance() {
                     <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                       <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                       <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(e.period.from.split('-')[1]) - 1]} {e.period.from.split('-')[0]}</div>
-                      <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>{e.name}</div>
+                      <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {e.name}</div>
                       <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
                         Staff ID: {e.id} &nbsp;|&nbsp; Period: {e.period.from} to {e.period.to}
                       </div>
