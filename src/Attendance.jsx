@@ -1179,6 +1179,7 @@ export default function Attendance() {
               .att-print-all .att-overview-view { display: block !important; }
               .att-print-overview .att-single-view { display: none !important; }
               .att-print-overview .att-overview-view { display: block !important; }
+              .att-overview-view { padding: 3mm 2mm 8mm !important; }
               .att-overview-view .att-table { table-layout: fixed !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
               .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 15% !important; }
