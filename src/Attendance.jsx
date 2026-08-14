@@ -970,17 +970,17 @@ export default function Attendance() {
           <div className="att-single-view" style={{ flex: 1, minWidth: 0 }}>
             <div className="att-emp-page">
               <div className="att-emp-content">
-                {/* Print header */}
-                <div className="att-print-only" style={{ display: 'none' }}>
+                {/* Print header — hidden for 2nd half (already on paper from 1st half) */}
+                {printHalf !== 'second' && <div className="att-print-only" style={{ display: 'none' }}>
                   <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                     <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                    <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(emp.period.from.split('-')[1]) - 1]} {emp.period.from.split('-')[0]}{printHalf ? ` (${printHalf === 'first' ? '1ST' : '2ND'} HALF)` : ''}</div>
+                    <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(emp.period.from.split('-')[1]) - 1]} {emp.period.from.split('-')[0]}</div>
                     <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {emp.name}</div>
                     <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
-                      Staff ID: {emp.id} &nbsp;|&nbsp; Period: {viewPeriod.from} to {viewPeriod.to}
+                      Staff ID: {emp.id} &nbsp;|&nbsp; Period: {emp.period.from} to {emp.period.to}
                     </div>
                   </div>
-                </div>
+                </div>}
 
                 {/* Employee info (screen) */}
                 <div className="att-no-print" style={{
@@ -1024,9 +1024,9 @@ export default function Attendance() {
                     </div>
                   </div>}
                 </div>
-              <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
+              {printHalf !== 'first' && <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
                 Generated: {empTimestamps[selected] || generatedAt}
-              </div>
+              </div>}
               </div>{/* close att-emp-content */}
 
               {/* Signature (print only) */}
@@ -1054,14 +1054,14 @@ export default function Attendance() {
               return (
                 <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
                   <div className="att-emp-content">
-                    <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
+                    {printHalf !== 'second' && <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                       <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                      <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(e.period.from.split('-')[1]) - 1]} {e.period.from.split('-')[0]}{printHalf ? ` (${printHalf === 'first' ? '1ST' : '2ND'} HALF)` : ''}</div>
+                      <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(e.period.from.split('-')[1]) - 1]} {e.period.from.split('-')[0]}</div>
                       <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {e.name}</div>
                       <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
-                        Staff ID: {e.id} &nbsp;|&nbsp; Period: {ePeriod.from} to {ePeriod.to}
+                        Staff ID: {e.id} &nbsp;|&nbsp; Period: {e.period.from} to {e.period.to}
                       </div>
-                    </div>
+                    </div>}
                     <table className="att-table" style={{
                       width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
                       border: '1px solid #e4e4e7',
@@ -1085,9 +1085,9 @@ export default function Attendance() {
                         <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
                       </div>
                     </div>}
-                  <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
+                  {printHalf !== 'first' && <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
                     Generated: {empTimestamps[id] || generatedAt}
-                  </div>
+                  </div>}
                   </div>{/* close att-emp-content */}
                   <div className="att-signature" style={{ paddingTop: 48 }}>
                     <div style={{ display: 'flex', gap: 60 }}>
