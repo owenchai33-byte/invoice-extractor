@@ -618,7 +618,7 @@ function sortByPayroll(data) {
 function StatCard({ label, value, warn }) {
   return (
     <div className="att-stat-card" style={{ padding: '8px 12px', background: '#f9fafb', borderRadius: 6 }}>
-      <div className="att-stat-label" style={{ fontSize: 12, color: '#71717a', marginBottom: 2 }}>{label}</div>
+      <div className="att-stat-label" style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>{label}</div>
       <div className="att-stat-value" style={{ fontSize: 18, fontWeight: 700, color: warn ? '#dc2626' : '#18181b' }}>{value}</div>
     </div>
   );
@@ -935,12 +935,12 @@ export default function Attendance() {
                   }}>
                     <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
                     <div className="att-stat-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <StatCard label="Working Days" value={emp.summary.working} />
-                      <StatCard label="Present" value={emp.summary.present} />
-                      <StatCard label="Absent" value={emp.summary.absent} warn={emp.summary.absent > 0} />
-                      <StatCard label="Half Days" value={emp.summary.half} />
+                      <StatCard label="Working Days" value={`${emp.summary.working} days`} />
+                      <StatCard label="Present" value={`${emp.summary.present} days`} />
+                      <StatCard label="Absent" value={`${emp.summary.absent} days`} warn={emp.summary.absent > 0} />
+                      <StatCard label="Half Days" value={`${emp.summary.half} days`} />
                       <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
-                      <StatCard label="Break+" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
+                      <StatCard label="Total Break +" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
                       <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
                     </div>
                   </div>
@@ -993,14 +993,14 @@ export default function Attendance() {
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
                     }}>
-                      <div className="att-stat-title" style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
+                      <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
                       <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-                        <StatCard label="Working Days" value={s.working} />
-                        <StatCard label="Present" value={s.present} />
-                        <StatCard label="Absent" value={s.absent} warn={s.absent > 0} />
-                        <StatCard label="Half Days" value={s.half} />
+                        <StatCard label="Working Days" value={`${s.working} days`} />
+                        <StatCard label="Present" value={`${s.present} days`} />
+                        <StatCard label="Absent" value={`${s.absent} days`} warn={s.absent > 0} />
+                        <StatCard label="Half Days" value={`${s.half} days`} />
                         <StatCard label="Total Late In" value={s.lateIn ? `${s.lateIn} min` : '0'} warn={s.lateIn > 0} />
-                        <StatCard label="Break+" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
+                        <StatCard label="Total Break +" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
                         <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
                       </div>
                     </div>
