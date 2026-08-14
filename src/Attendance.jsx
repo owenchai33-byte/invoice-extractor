@@ -1143,6 +1143,11 @@ export default function Attendance() {
                     ? `Last updated: ${lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`
                     : `Generated: ${generatedAt}`}
                 </div>
+                <div style={{ marginTop: 40, fontSize: 11 }}>
+                  <div style={{ display: 'inline-block' }}>
+                    <div style={{ borderTop: '1px solid #333', width: 200, paddingTop: 4 }}>Verified by</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
