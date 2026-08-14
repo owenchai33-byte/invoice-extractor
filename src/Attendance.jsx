@@ -1141,10 +1141,7 @@ export default function Attendance() {
                     <tr style={{ background: '#f4f4f5' }}>
                       <th style={th}>Employee</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present (day)</th>
-                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Late In</th>
-                      <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Break +</th>
-                      <th style={{ ...th, textAlign: 'center', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Early Out</th>
-                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total</th>
+                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0', borderRight: '2px solid #b0b0b0' }}>Total Penalty</th>
                       <th style={{ ...th, borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Absent (day)</th>
                       <th style={{ ...th, borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Half Days (day)</th>
                       <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total Leave (day)</th>
@@ -1168,16 +1165,7 @@ export default function Attendance() {
                         <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
-                          <td style={{ ...td, textAlign: 'center', color: s.lateIn ? '#dc2626' : '#a3a3a3', borderLeft: gb, borderBottom: bb }}>
-                            {s.lateIn ? `${s.lateIn}m` : '-'}
-                          </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.breakExcess ? '#dc2626' : '#a3a3a3', borderBottom: bb }}>
-                            {s.breakExcess ? `${s.breakExcess}m` : '-'}
-                          </td>
-                          <td style={{ ...td, textAlign: 'center', color: s.earlyOut ? '#dc2626' : '#a3a3a3', borderBottom: bb }}>
-                            {s.earlyOut ? `${s.earlyOut}m` : '-'}
-                          </td>
-                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626', borderRight: gb, borderBottom: bb }}>
+                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626', borderLeft: gb, borderRight: gb, borderBottom: bb }}>
                             {`${total}m`}
                           </td>
                           <td style={{
@@ -1253,12 +1241,12 @@ export default function Attendance() {
               .att-overview-view .att-emp-content { flex: none !important; }
               .att-overview-view .att-table { table-layout: fixed !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
-              .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 15% !important; }
-              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 6% !important; }
-              .att-overview-view .att-table th:nth-child(n+3):nth-child(-n+6), .att-overview-view .att-table td:nth-child(n+3):nth-child(-n+6) { width: 7% !important; text-align: center !important; }
-              .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 16% !important; }
-              .att-overview-view .att-table th:nth-child(8), .att-overview-view .att-table td:nth-child(8) { width: 16% !important; }
-              .att-overview-view .att-table th:nth-child(9), .att-overview-view .att-table td:nth-child(9) { width: 7% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 22% !important; }
+              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 8% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(3), .att-overview-view .att-table td:nth-child(3) { width: 8% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(4), .att-overview-view .att-table td:nth-child(4) { width: 24% !important; }
+              .att-overview-view .att-table th:nth-child(5), .att-overview-view .att-table td:nth-child(5) { width: 24% !important; }
+              .att-overview-view .att-table th:nth-child(6), .att-overview-view .att-table td:nth-child(6) { width: 8% !important; text-align: center !important; }
               .att-notes-box { margin-top: 4px !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; }
               .att-notes-box table { font-size: 10.5px !important; }
