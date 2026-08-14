@@ -745,7 +745,6 @@ export default function Attendance() {
   const emp = effectiveData && selected ? effectiveData[selected] : null;
   const empIds = effectiveData ? sortByPayroll(effectiveData) : [];
   const viewDays = emp ? getHalfDays(emp.days, printHalf) : [];
-  const viewSummary = emp ? (printHalf ? calcHalfSummary(viewDays) : emp.summary) : null;
   const viewPeriod = emp ? getHalfPeriod(emp.period, printHalf) : null;
 
   const toggleHalfDay = useCallback((key) => {
@@ -1005,25 +1004,25 @@ export default function Attendance() {
                         <AttTableBody days={viewDays} />
                       </table>
                     </div>
-                    <AttNotesBox days={viewDays} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
+                    {printHalf !== 'first' && <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />}
                   </div>
 
                   {/* Summary — vertical sidebar on screen, below table in print */}
-                  <div className="att-summary-box" style={{
+                  {printHalf !== 'first' && <div className="att-summary-box" style={{
                     width: 190, flexShrink: 0, padding: '14px 16px', background: '#fff',
                     border: '1px solid #e4e4e7', borderRadius: 8, position: 'sticky', top: 60,
                   }}>
                     <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
                     <div className="att-stat-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <StatCard label="Working Days" value={`${viewSummary.working} days`} />
-                      <StatCard label="Present" value={`${viewSummary.present} days`} />
-                      <StatCard label="Absent" value={`${viewSummary.absent} days`} warn={viewSummary.absent > 0} />
-                      <StatCard label="Half Days" value={`${viewSummary.half} days`} />
-                      <StatCard label="Total Late In" value={viewSummary.lateIn ? `${viewSummary.lateIn} min` : '0'} warn={viewSummary.lateIn > 0} />
-                      <StatCard label="Total Break +" value={viewSummary.breakExcess ? `${viewSummary.breakExcess} min` : '0'} warn={viewSummary.breakExcess > 0} />
-                      <StatCard label="Total Early Out" value={viewSummary.earlyOut ? `${viewSummary.earlyOut} min` : '0'} warn={viewSummary.earlyOut > 0} />
+                      <StatCard label="Working Days" value={`${emp.summary.working} days`} />
+                      <StatCard label="Present" value={`${emp.summary.present} days`} />
+                      <StatCard label="Absent" value={`${emp.summary.absent} days`} warn={emp.summary.absent > 0} />
+                      <StatCard label="Half Days" value={`${emp.summary.half} days`} />
+                      <StatCard label="Total Late In" value={emp.summary.lateIn ? `${emp.summary.lateIn} min` : '0'} warn={emp.summary.lateIn > 0} />
+                      <StatCard label="Total Break +" value={emp.summary.breakExcess ? `${emp.summary.breakExcess} min` : '0'} warn={emp.summary.breakExcess > 0} />
+                      <StatCard label="Total Early Out" value={emp.summary.earlyOut ? `${emp.summary.earlyOut} min` : '0'} warn={emp.summary.earlyOut > 0} />
                     </div>
-                  </div>
+                  </div>}
                 </div>
               <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 10, color: '#a3a3a3', fontStyle: 'italic' }}>
                 Generated: {empTimestamps[selected] || generatedAt}
@@ -1049,8 +1048,8 @@ export default function Attendance() {
           <div className="att-all-view" style={{ display: 'none' }}>
             {empIds.map((id, idx) => {
               const e = effectiveData[id];
+              const s = e.summary;
               const eDays = getHalfDays(e.days, printHalf);
-              const eSum = printHalf ? calcHalfSummary(eDays) : e.summary;
               const ePeriod = getHalfPeriod(e.period, printHalf);
               return (
                 <div key={id} className={`att-emp-page${idx > 0 ? ' att-page-break' : ''}`}>
@@ -1070,22 +1069,22 @@ export default function Attendance() {
                       <AttTableHeader />
                       <AttTableBody days={eDays} />
                     </table>
-                    <AttNotesBox days={eDays} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />
-                    <div className="att-summary-box" style={{
+                    {printHalf !== 'first' && <AttNotesBox days={e.days} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />}
+                    {printHalf !== 'first' && <div className="att-summary-box" style={{
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
                     }}>
                       <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
                       <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-                        <StatCard label="Working Days" value={`${eSum.working} days`} />
-                        <StatCard label="Present" value={`${eSum.present} days`} />
-                        <StatCard label="Absent" value={`${eSum.absent} days`} warn={eSum.absent > 0} />
-                        <StatCard label="Half Days" value={`${eSum.half} days`} />
-                        <StatCard label="Total Late In" value={eSum.lateIn ? `${eSum.lateIn} min` : '0'} warn={eSum.lateIn > 0} />
-                        <StatCard label="Total Break +" value={eSum.breakExcess ? `${eSum.breakExcess} min` : '0'} warn={eSum.breakExcess > 0} />
-                        <StatCard label="Total Early Out" value={eSum.earlyOut ? `${eSum.earlyOut} min` : '0'} warn={eSum.earlyOut > 0} />
+                        <StatCard label="Working Days" value={`${s.working} days`} />
+                        <StatCard label="Present" value={`${s.present} days`} />
+                        <StatCard label="Absent" value={`${s.absent} days`} warn={s.absent > 0} />
+                        <StatCard label="Half Days" value={`${s.half} days`} />
+                        <StatCard label="Total Late In" value={s.lateIn ? `${s.lateIn} min` : '0'} warn={s.lateIn > 0} />
+                        <StatCard label="Total Break +" value={s.breakExcess ? `${s.breakExcess} min` : '0'} warn={s.breakExcess > 0} />
+                        <StatCard label="Total Early Out" value={s.earlyOut ? `${s.earlyOut} min` : '0'} warn={s.earlyOut > 0} />
                       </div>
-                    </div>
+                    </div>}
                   <div className="att-report-timestamp" style={{ marginTop: 10, fontSize: 8, color: '#a3a3a3', fontStyle: 'italic' }}>
                     Generated: {empTimestamps[id] || generatedAt}
                   </div>
