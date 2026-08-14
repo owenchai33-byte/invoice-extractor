@@ -437,10 +437,58 @@ function AttTableHeader() {
   );
 }
 
+function groupDaysForTable(days) {
+  const groups = [];
+  let i = 0;
+  while (i < days.length) {
+    const d = days[i];
+    const isAbsentNoScan = d.type === 'absent' && !d.scans.length;
+    if (isAbsentNoScan) {
+      const start = i;
+      let absentCount = 1;
+      let j = i + 1;
+      while (j < days.length) {
+        const dj = days[j];
+        const off = dj.type === 'off' || dj.type === 'holiday';
+        const absentJ = dj.type === 'absent' && !dj.scans.length;
+        if (off || absentJ) {
+          if (absentJ) absentCount++;
+          j++;
+        } else break;
+      }
+      if (absentCount >= 5) {
+        groups.push({ type: 'merged-absent', days: days.slice(start, j), absentCount });
+        i = j;
+      } else {
+        groups.push({ type: 'single', day: d });
+        i++;
+      }
+    } else {
+      groups.push({ type: 'single', day: d });
+      i++;
+    }
+  }
+  return groups;
+}
+
 function AttTableBody({ days }) {
+  const groups = groupDaysForTable(days);
   return (
     <tbody>
-      {days.map(d => {
+      {groups.map(g => {
+        if (g.type === 'merged-absent') {
+          const first = g.days[0], last = g.days[g.days.length - 1];
+          return (
+            <tr key={first.date} style={{ background: '#fef3c7' }}>
+              <td style={{ ...td, fontWeight: 700 }}>{first.dateShort}</td>
+              <td style={{ ...td, fontWeight: 700 }}>{last.dateShort}</td>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#b45309', fontStyle: 'italic', fontWeight: 700, borderRight: 'none' }}>
+                Absent ({g.absentCount} days) — No attendance recorded
+              </td>
+            </tr>
+          );
+        }
+        const d = g.day;
         const isOff = d.type === 'off' || d.type === 'holiday';
         const isAbsent = d.type === 'absent';
         const isHalf = d.type === 'half-am' || d.type === 'half-pm';
