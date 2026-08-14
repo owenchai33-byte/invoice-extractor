@@ -1056,12 +1056,12 @@ export default function Attendance() {
           <div className="att-overview-view" style={{ display: 'none' }}>
             <div className="att-emp-page">
               <div className="att-emp-content">
-                <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>
+                <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
+                  <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
                     {getOverviewTitle(effectiveData[empIds[0]].period)}
                   </div>
-                  <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+                  <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
                     Period: {effectiveData[empIds[0]].period.from} to {effectiveData[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {effectiveData[empIds[0]].summary.working}
                   </div>
                 </div>
