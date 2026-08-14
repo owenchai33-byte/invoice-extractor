@@ -896,12 +896,10 @@ export default function Attendance() {
                   <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                     <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                     <div className="att-h2" style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Attendance Report</div>
-                    <div className="att-h3" style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                      Period: {emp.period.from} to {emp.period.to}
+                    <div className="att-emp-name" style={{ fontSize: 14, fontWeight: 700, marginTop: 6 }}>{emp.name}</div>
+                    <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                      Staff ID: {emp.id} &nbsp;|&nbsp; Period: {emp.period.from} to {emp.period.to}
                     </div>
-                  </div>
-                  <div className="att-print-emp-info" style={{ fontSize: 13, marginBottom: 12 }}>
-                    <strong>Employee:</strong> <span className="att-emp-name">{emp.name}</span> &emsp; <strong>Staff ID:</strong> {emp.id}
                   </div>
                 </div>
 
@@ -978,12 +976,10 @@ export default function Attendance() {
                     <div className="att-print-header" style={{ textAlign: 'center', marginBottom: 16 }}>
                       <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                       <div className="att-h2" style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>Attendance Report</div>
-                      <div className="att-h3" style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-                        Period: {e.period.from} to {e.period.to}
+                      <div className="att-emp-name" style={{ fontSize: 14, fontWeight: 700, marginTop: 6 }}>{e.name}</div>
+                      <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                        Staff ID: {e.id} &nbsp;|&nbsp; Period: {e.period.from} to {e.period.to}
                       </div>
-                    </div>
-                    <div className="att-print-emp-info" style={{ fontSize: 13, marginBottom: 12 }}>
-                      <strong>Employee:</strong> <span className="att-emp-name">{e.name}</span> &emsp; <strong>Staff ID:</strong> {e.id}
                     </div>
                     <table className="att-table" style={{
                       width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
@@ -1140,7 +1136,7 @@ export default function Attendance() {
               .att-print-header .att-h1 { font-size: 13px !important; }
               .att-print-header .att-h2 { font-size: 11px !important; margin-top: 1px !important; }
               .att-print-header .att-h3 { font-size: 10px !important; margin-top: 1px !important; }
-              .att-print-emp-info { font-size: 10px !important; margin-bottom: 4px !important; }
+              .att-print-emp-info { display: none !important; }
               .att-emp-name { font-size: 13px !important; font-weight: 700 !important; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
