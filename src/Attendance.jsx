@@ -1236,9 +1236,7 @@ export default function Attendance() {
               .att-print-overview .att-single-view { display: none !important; }
               .att-print-overview .att-overview-view { display: block !important; }
               .att-overview-view { padding: 0 2mm 3mm !important; }
-              .att-overview-view .att-emp-page { min-height: auto !important; }
               .att-overview-view .att-emp-content { flex: none !important; }
-              .att-overview-view .att-signature { margin-top: 16px !important; }
               .att-overview-view .att-table { table-layout: fixed !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
               .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 15% !important; }
