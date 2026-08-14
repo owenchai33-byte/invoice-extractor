@@ -1044,14 +1044,14 @@ export default function Attendance() {
                   <thead>
                     <tr style={{ background: '#f4f4f5' }}>
                       <th style={th}>Employee</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Present</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Late In</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Break+</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Present (day)</th>
+                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #18181b' }}>Late In</th>
+                      <th style={{ ...th, textAlign: 'center' }}>Total Break +</th>
                       <th style={{ ...th, textAlign: 'center' }}>Early Out</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Total</th>
-                      <th style={th}>Absent</th>
-                      <th style={th}>Half Days</th>
-                      <th style={{ ...th, textAlign: 'center' }}>Total Leave</th>
+                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #18181b' }}>Total</th>
+                      <th style={{ ...th, borderLeft: '2px solid #18181b' }}>Absent (day)</th>
+                      <th style={th}>Half Days (day)</th>
+                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #18181b' }}>Total Leave (day)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1070,7 +1070,7 @@ export default function Attendance() {
                         <tr key={id} style={{ background: '#fef3c7' }}>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
-                          <td style={{ ...td, textAlign: 'center', color: s.lateIn ? '#dc2626' : '#a3a3a3' }}>
+                          <td style={{ ...td, textAlign: 'center', color: s.lateIn ? '#dc2626' : '#a3a3a3', borderLeft: '2px solid #18181b' }}>
                             {s.lateIn ? `${s.lateIn}m` : '-'}
                           </td>
                           <td style={{ ...td, textAlign: 'center', color: s.breakExcess ? '#dc2626' : '#a3a3a3' }}>
@@ -1079,13 +1079,14 @@ export default function Attendance() {
                           <td style={{ ...td, textAlign: 'center', color: s.earlyOut ? '#dc2626' : '#a3a3a3' }}>
                             {s.earlyOut ? `${s.earlyOut}m` : '-'}
                           </td>
-                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626' }}>
+                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626', borderRight: '2px solid #18181b' }}>
                             {`${total}m`}
                           </td>
                           <td style={{
                             ...td,
                             color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
                             fontWeight: s.absent > 0 ? 700 : 400,
+                            borderLeft: '2px solid #18181b',
                           }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
                           <td style={{ ...td, color: halfCount > 0 ? '#f59e0b' : '#a3a3a3' }}>
                             {halfCount > 0 ? `${halfCount} (${collapseDateRanges(halfDates)})` : '-'}
@@ -1096,7 +1097,7 @@ export default function Attendance() {
                             const hasHalf = totalLeave % 1 !== 0;
                             const label = totalLeave === 0 ? '-' : whole > 0 && hasHalf ? `${whole} 1/2` : hasHalf ? '1/2' : `${whole}`;
                             return (
-                              <td style={{ ...td, textAlign: 'center', fontWeight: totalLeave > 0 ? 700 : 400, color: totalLeave > 0 ? '#dc2626' : '#a3a3a3' }}>
+                              <td style={{ ...td, textAlign: 'center', fontWeight: totalLeave > 0 ? 700 : 400, color: totalLeave > 0 ? '#dc2626' : '#a3a3a3', borderRight: '2px solid #18181b' }}>
                                 {label}
                               </td>
                             );
@@ -1123,21 +1124,21 @@ export default function Attendance() {
               .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
               .att-layout { display: block !important; }
               .att-sidebar { display: none !important; }
-              .att-table { font-size: 9.5px !important; table-layout: fixed !important; }
-              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 9.5px !important; white-space: nowrap !important; overflow: hidden !important; }
+              .att-table { font-size: 10.5px !important; table-layout: fixed !important; }
+              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 10.5px !important; white-space: nowrap !important; overflow: hidden !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 26px !important; }
               .att-table th:nth-child(2), .att-table td:nth-child(2) { width: 24px !important; }
               .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 3mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 2mm; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-header { margin-bottom: 6px !important; }
-              .att-print-header .att-h1 { font-size: 13px !important; }
-              .att-print-header .att-h2 { font-size: 11px !important; margin-top: 1px !important; }
-              .att-print-header .att-h3 { font-size: 10px !important; margin-top: 1px !important; }
+              .att-print-header .att-h1 { font-size: 14px !important; }
+              .att-print-header .att-h2 { font-size: 12px !important; margin-top: 1px !important; }
+              .att-print-header .att-h3 { font-size: 11px !important; margin-top: 1px !important; }
               .att-print-emp-info { display: none !important; }
-              .att-emp-name { font-size: 13px !important; font-weight: 700 !important; }
+              .att-emp-name { font-size: 14px !important; font-weight: 700 !important; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
               .att-print-all .att-overview-view { display: block !important; }
