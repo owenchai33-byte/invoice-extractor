@@ -47,7 +47,7 @@ function getPrintTitle(period, name) {
 function getOverviewTitle(period) {
   const [y, m] = period.from.split('-').map(Number);
   const tag = `${MONTH_FULL[m - 1]} ${y}`;
-  return `CJK HQ STAFF ATTENDANCE OVERVIEW ${tag}`;
+  return `STAFF ATTENDANCE OVERVIEW ${tag}`;
 }
 
 function collapseDateRanges(dates) {
@@ -1118,7 +1118,7 @@ export default function Attendance() {
                             fontWeight: s.absent > 0 ? 700 : 400,
                             borderLeft: gb, borderBottom: bb,
                           }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
-                          <td style={{ ...td, color: halfCount > 0 ? '#f59e0b' : '#a3a3a3', borderBottom: bb }}>
+                          <td style={{ ...td, color: halfCount > 0 ? '#dc2626' : '#a3a3a3', borderBottom: bb }}>
                             {halfCount > 0 ? `${halfCount} (${collapseDateRanges(halfDates)})` : '-'}
                           </td>
                           {(() => {
