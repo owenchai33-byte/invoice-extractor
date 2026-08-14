@@ -1187,19 +1187,19 @@ export default function Attendance() {
               .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 16% !important; }
               .att-overview-view .att-table th:nth-child(8), .att-overview-view .att-table td:nth-child(8) { width: 16% !important; }
               .att-overview-view .att-table th:nth-child(9), .att-overview-view .att-table td:nth-child(9) { width: 7% !important; text-align: center !important; }
-              .att-notes-box { margin-top: 6px !important; }
-              .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 9px !important; }
-              .att-notes-box table { font-size: 9px !important; }
-              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 9px !important; }
-              .att-signature { page-break-inside: avoid !important; padding-top: 20px !important; }
+              .att-notes-box { margin-top: 4px !important; }
+              .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; }
+              .att-notes-box table { font-size: 10.5px !important; }
+              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; }
+              .att-signature { page-break-inside: avoid !important; padding-top: 24px !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
               .att-summary-box { margin-top: 4px !important; padding: 4px 6px !important; width: auto !important; position: static !important; }
               .att-stat-grid { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 2px !important; }
               .att-stat-card { padding: 2px 4px !important; border-radius: 3px !important; }
-              .att-stat-title { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 2px !important; }
-              .att-stat-label { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
-              .att-stat-value { font-size: 10px !important; font-weight: 700 !important; }
+              .att-stat-title { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 1px !important; }
+              .att-stat-label { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
+              .att-stat-value { font-size: 12px !important; font-weight: 700 !important; }
             }
           `}</style>
         </>
