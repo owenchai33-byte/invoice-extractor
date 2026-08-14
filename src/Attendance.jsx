@@ -1168,12 +1168,12 @@ export default function Attendance() {
               .att-page-break { page-break-before: always; }
               .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 2mm 0; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
-              .att-print-header { margin-bottom: 6px !important; }
-              .att-print-header .att-h1 { font-size: 14px !important; }
-              .att-print-header .att-h2 { font-size: 14px !important; margin-top: 1px !important; }
-              .att-print-header .att-h3 { font-size: 11px !important; margin-top: 1px !important; }
+              .att-print-header { margin-bottom: 3px !important; }
+              .att-print-header .att-h1 { font-size: 12px !important; }
+              .att-print-header .att-h2 { font-size: 12px !important; margin-top: 0px !important; }
+              .att-print-header .att-h3 { font-size: 10px !important; margin-top: 0px !important; }
               .att-print-emp-info { display: none !important; }
-              .att-emp-name { font-size: 14px !important; font-weight: 700 !important; }
+              .att-emp-name { font-size: 12px !important; font-weight: 700 !important; margin-top: 2px !important; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
               .att-print-all .att-overview-view { display: block !important; }
