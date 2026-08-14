@@ -434,11 +434,11 @@ function Remarks({ d }) {
 
 const th = {
   padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600,
-  color: '#52525b', borderBottom: '2px solid #999', borderRight: '1px solid #999',
+  color: '#52525b', borderBottom: '2px solid #666', borderRight: '1px solid #666',
   whiteSpace: 'nowrap',
 };
 const td = {
-  padding: '6px 10px', borderBottom: '1px solid #999', borderRight: '1px solid #999',
+  padding: '6px 10px', borderBottom: '1px solid #666', borderRight: '1px solid #666',
   whiteSpace: 'nowrap',
 };
 const btn = {
@@ -568,11 +568,11 @@ function AttTableBody({ days }) {
 function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
   const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
   if (!notes.length) return null;
-  const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #999', borderRight: '1px solid #999' };
-  const ntd = { padding: '4px 10px', borderBottom: '1px solid #999', borderRight: '1px solid #999' };
+  const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
+  const ntd = { padding: '4px 10px', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
   const isHalf = (d) => d.type === 'half-am' || d.type === 'half-pm';
   return (
-    <div className="att-notes-box" style={{ marginTop: 12, border: '1px solid #999', borderRadius: 6, overflow: 'hidden' }}>
+    <div className="att-notes-box" style={{ marginTop: 12, border: '1px solid #666', borderRadius: 6, overflow: 'hidden' }}>
       <div style={{ padding: '6px 10px', background: '#f4f4f5', fontWeight: 600, fontSize: 11 }}>
         Absence / Half Day Notes
       </div>
@@ -991,7 +991,7 @@ export default function Attendance() {
                     <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                     <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(emp.period.from.split('-')[1]) - 1]} {emp.period.from.split('-')[0]}</div>
                     <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {emp.name}</div>
-                    <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                    <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2, fontWeight: 700 }}>
                       Staff ID: {emp.id} &nbsp;|&nbsp; Period: {emp.period.from} to {emp.period.to}
                     </div>
                   </div>
@@ -1073,7 +1073,7 @@ export default function Attendance() {
                       <div className="att-h1" style={{ fontSize: 16, fontWeight: 700 }}>CHAI JEE KIONG TRADING SDN BHD (HQ)</div>
                       <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>ATTENDANCE REPORT {MONTH_FULL[parseInt(e.period.from.split('-')[1]) - 1]} {e.period.from.split('-')[0]}</div>
                       <div className="att-emp-name" style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Employee: {e.name}</div>
-                      <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                      <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2, fontWeight: 700 }}>
                         Staff ID: {e.id} &nbsp;|&nbsp; Period: {e.period.from} to {e.period.to}
                       </div>
                     </div>}
@@ -1129,27 +1129,27 @@ export default function Attendance() {
                   <div className="att-h2" style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
                     {getOverviewTitle(effectiveData[empIds[0]].period)}
                   </div>
-                  <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                  <div className="att-h3" style={{ fontSize: 11, color: '#555', marginTop: 2, fontWeight: 700 }}>
                     Period: {effectiveData[empIds[0]].period.from} to {effectiveData[empIds[0]].period.to} &nbsp;|&nbsp; Working Days: {effectiveData[empIds[0]].summary.working}
                   </div>
                 </div>
                 <table className="att-table" style={{
                   width: '100%', borderCollapse: 'collapse', fontSize: 11, background: '#fff',
-                  border: '1px solid #999',
+                  border: '1px solid #666',
                 }}>
                   <thead>
                     <tr style={{ background: '#f4f4f5' }}>
                       <th style={th}>Employee</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present (day)</th>
-                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0', borderRight: '2px solid #b0b0b0' }}>Total Penalty</th>
-                      <th style={{ ...th, borderLeft: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Absent (day)</th>
-                      <th style={{ ...th, borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Half Days (day)</th>
-                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #b0b0b0', borderTop: '2px solid #b0b0b0', borderBottom: '2px solid #b0b0b0' }}>Total Leave (day)</th>
+                      <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #666', borderTop: '2px solid #666', borderBottom: '2px solid #666', borderRight: '2px solid #666' }}>Total Penalty</th>
+                      <th style={{ ...th, borderLeft: '2px solid #666', borderTop: '2px solid #666', borderBottom: '2px solid #666' }}>Absent (day)</th>
+                      <th style={{ ...th, borderTop: '2px solid #666', borderBottom: '2px solid #666' }}>Half Days (day)</th>
+                      <th style={{ ...th, textAlign: 'center', borderRight: '2px solid #666', borderTop: '2px solid #666', borderBottom: '2px solid #666' }}>Total Leave (day)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(() => {
-                      const gb = '2px solid #b0b0b0';
+                      const gb = '2px solid #666';
                       const filtered = empIds.filter(id => { const s = effectiveData[id].summary; return (s.lateIn + s.breakExcess + s.earlyOut) > 0; });
                       return filtered.map((id, idx) => {
                       const e = effectiveData[id];
@@ -1270,8 +1270,8 @@ export default function Attendance() {
               .att-half-second .att-all-view .att-table thead { display: none !important; }
               .att-print-all.att-half-first .att-overview-view,
               .att-print-all.att-half-second .att-overview-view { display: none !important; }
-              .att-summary-box { border-color: #999 !important; }
-              .att-table { border-color: #999 !important; }
+              .att-summary-box { border-color: #666 !important; }
+              .att-table { border-color: #666 !important; }
             }
           `}</style>
         </>
