@@ -1166,7 +1166,7 @@ export default function Attendance() {
               .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
-              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 2mm; display: flex !important; flex-direction: column; }
+              .att-emp-page { min-height: 260mm; box-sizing: border-box; padding: 5mm 2mm 0; display: flex !important; flex-direction: column; }
               .att-emp-content { flex: 1; }
               .att-print-header { margin-bottom: 6px !important; }
               .att-print-header .att-h1 { font-size: 14px !important; }
@@ -1191,15 +1191,15 @@ export default function Attendance() {
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 9px !important; }
               .att-notes-box table { font-size: 9px !important; }
               .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 9px !important; }
-              .att-signature { page-break-inside: avoid !important; padding-top: 30px !important; }
+              .att-signature { page-break-inside: avoid !important; padding-top: 20px !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
-              .att-summary-box { margin-top: 6px !important; padding: 6px 8px !important; width: auto !important; position: static !important; }
-              .att-stat-grid { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 4px !important; }
-              .att-stat-card { padding: 3px 6px !important; border-radius: 3px !important; }
-              .att-stat-title { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 3px !important; }
-              .att-stat-label { font-size: 12px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
-              .att-stat-value { font-size: 12px !important; font-weight: 700 !important; }
+              .att-summary-box { margin-top: 4px !important; padding: 4px 6px !important; width: auto !important; position: static !important; }
+              .att-stat-grid { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 2px !important; }
+              .att-stat-card { padding: 2px 4px !important; border-radius: 3px !important; }
+              .att-stat-title { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 2px !important; }
+              .att-stat-label { font-size: 10px !important; font-weight: 700 !important; margin-bottom: 0 !important; }
+              .att-stat-value { font-size: 10px !important; font-weight: 700 !important; }
             }
           `}</style>
         </>
