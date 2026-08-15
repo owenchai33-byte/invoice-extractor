@@ -129,18 +129,9 @@ export default function WeeklyPayment() {
     updateData({ rows: newRows });
   }, [rows, updateData]);
 
-  const addRow = useCallback(() => {
-    updateData({ rows: [...rows, { supplier: '', bank: '', amount: '', paymentFor: '', remark: '' }] });
-  }, [rows, updateData]);
-
   const removeRow = useCallback((idx) => {
     updateData({ rows: rows.filter((_, i) => i !== idx) });
   }, [rows, updateData]);
-
-  const selectSupplier = useCallback((idx, name) => {
-    const bank = BANK_MAP[name] || '';
-    updateRow(idx, { supplier: name, bank });
-  }, [updateRow]);
 
   const total = rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
 
@@ -172,20 +163,35 @@ export default function WeeklyPayment() {
             Week ending:
             <input type="date" value={weekDate} onChange={e => { setWeekDate(e.target.value); const next = { ...allData, _currentWeek: e.target.value }; save(next); }} className="wp-date-input" />
           </label>
-          <button className="wp-btn wp-btn-add" onClick={addRow}>+ Add Row</button>
           <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
           <button className="wp-btn" onClick={() => window.print()}>Print</button>
         </div>
       </div>
 
       <div className="wp-layout no-print">
-        <div className="wp-main">
-          <div className="wp-print-header">
-            <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD." className="wp-letterhead" />
-            <div className="wp-print-title">Weekly Payment Summary</div>
-            <div className="wp-print-week">(Week Ending {weekLabel})</div>
+        <div className="wp-sidebar">
+          <div className="wp-sidebar-title">CLICK TO ADD</div>
+          <div className="wp-sidebar-list">
+            {SUPPLIERS.map(s => {
+              const used = rows.some(r => r.supplier === s.name);
+              return (
+                <button
+                  key={s.name}
+                  className={'wp-sidebar-item' + (used ? ' wp-sidebar-used' : '')}
+                  onClick={() => {
+                    const bank = BANK_MAP[s.name] || '';
+                    updateData({ rows: [...rows, { supplier: s.name, bank, amount: '', paymentFor: '', remark: '' }] });
+                  }}
+                >
+                  {s.name}
+                  {used && <span className="wp-sidebar-tick"> ✓</span>}
+                </button>
+              );
+            })}
           </div>
+        </div>
 
+        <div className="wp-main">
           <table className="wp-tbl">
             <thead>
               <tr>
@@ -195,24 +201,14 @@ export default function WeeklyPayment() {
                 <th className="wp-th-amt">AMOUNT</th>
                 <th className="wp-th-pf">PAYMENT FOR</th>
                 <th className="wp-th-rmk">REMARK</th>
-                <th className="wp-th-del no-print"></th>
+                <th className="wp-th-del"></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i}>
                   <td className="wp-no">{i + 1}</td>
-                  <td className="wp-sup-cell">
-                    <select
-                      className="wp-select no-print"
-                      value={r.supplier}
-                      onChange={e => selectSupplier(i, e.target.value)}
-                    >
-                      <option value="">— Select supplier —</option>
-                      {SUPPLIERS.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
-                    </select>
-                    <span className="wp-sup-print">{r.supplier}</span>
-                  </td>
+                  <td className="wp-sup-name">{r.supplier || '-'}</td>
                   <td className="wp-bank">{r.bank || '-'}</td>
                   <td className="wp-amt">
                     <EditableCell
@@ -222,7 +218,6 @@ export default function WeeklyPayment() {
                       placeholder="0.00"
                       align="right"
                     />
-                    <span className="wp-amt-print">{r.amount ? nf(r.amount) : '-'}</span>
                   </td>
                   <td>
                     <EditableCell
@@ -230,7 +225,6 @@ export default function WeeklyPayment() {
                       onChange={v => updateRow(i, { paymentFor: v })}
                       placeholder="e.g. 8/2026"
                     />
-                    <span className="wp-pf-print">{r.paymentFor || ''}</span>
                   </td>
                   <td>
                     <EditableCell
@@ -238,15 +232,14 @@ export default function WeeklyPayment() {
                       onChange={v => updateRow(i, { remark: v })}
                       placeholder=""
                     />
-                    <span className="wp-rmk-print">{r.remark || ''}</span>
                   </td>
-                  <td className="wp-del-cell no-print">
+                  <td className="wp-del-cell">
                     <button className="wp-del" onClick={() => removeRow(i)} title="Remove row">✕</button>
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan="7" className="wp-empty">No entries yet — click "+ Add Row" to start</td></tr>
+                <tr><td colSpan="7" className="wp-empty">Click a supplier on the left to add a row</td></tr>
               )}
             </tbody>
             <tfoot>
@@ -257,7 +250,7 @@ export default function WeeklyPayment() {
                 <td className="wp-total-val">RM {nf(total)}</td>
                 <td></td>
                 <td></td>
-                <td className="no-print"></td>
+                <td></td>
               </tr>
             </tfoot>
           </table>
@@ -265,19 +258,16 @@ export default function WeeklyPayment() {
           <div className="wp-footer">
             <div className="wp-epay">
               <span className="wp-epay-star">*</span>
-              <span className="wp-epay-label no-print">EPAY BALANCE: RM</span>
-              <span className="wp-epay-label-print">EPAY BALANCE: RM</span>
+              <span className="wp-epay-label">EPAY BALANCE: RM</span>
               <input
-                className="wp-epay-input no-print"
+                className="wp-epay-input"
                 type="number"
                 value={data.epayBalance}
                 onChange={e => updateData({ epayBalance: e.target.value })}
                 placeholder="0.00"
               />
-              <span className="wp-epay-val-print">{data.epayBalance ? nf(data.epayBalance) : ''}</span>
-              {data.epayDate && <span className="wp-epay-date-print">({data.epayDate})</span>}
               <input
-                className="wp-epay-date no-print"
+                className="wp-epay-date"
                 type="text"
                 value={data.epayDate || ''}
                 onChange={e => updateData({ epayDate: e.target.value })}
@@ -288,26 +278,16 @@ export default function WeeklyPayment() {
               <div>
                 <span className="wp-prepared-label">Prepared by </span>
                 <input
-                  className="wp-prepared-input no-print"
+                  className="wp-prepared-input"
                   type="text"
                   value={data.preparedBy || 'Sabrina'}
                   onChange={e => updateData({ preparedBy: e.target.value })}
                 />
-                <span className="wp-prepared-print">{data.preparedBy || 'Sabrina'}</span>
               </div>
               <div className="wp-prepared-date-row">
                 <span className="wp-prepared-date-val">{formatDate(new Date())}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="wp-sidebar">
-          <div className="wp-sidebar-title">Suppliers</div>
-          <div className="wp-sidebar-list">
-            {SUPPLIERS.map(s => (
-              <div key={s.name} className="wp-sidebar-item">{s.name}</div>
-            ))}
           </div>
         </div>
       </div>
@@ -400,11 +380,13 @@ const CSS = `
 
 .wp-layout{display:flex;gap:16px;max-width:1400px;margin:0 auto;padding:28px 24px 100px;align-items:flex-start}
 .wp-main{flex:1;min-width:0}
-.wp-sidebar{width:200px;flex-shrink:0;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;background:#f9fafb;border:1px solid #e4e4e7;border-radius:8px;padding:8px 0}
+.wp-sidebar{width:210px;flex-shrink:0;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;background:#f9fafb;border:1px solid #e4e4e7;border-radius:8px;padding:8px 0}
 .wp-sidebar-title{font-size:11px;font-weight:700;color:#71717a;padding:4px 12px 6px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e4e4e7}
-.wp-sidebar-list{padding:4px 0}
-.wp-sidebar-item{font-size:11px;padding:3px 12px;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wp-sidebar-item:hover{background:#f0f0f0}
+.wp-sidebar-list{padding:4px 0;display:flex;flex-direction:column;gap:2px}
+.wp-sidebar-item{font-size:11px;padding:5px 10px;margin:0 6px;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #e4e4e7;border-radius:6px;background:#fff;cursor:pointer;text-align:left;font-family:inherit;width:calc(100% - 12px)}
+.wp-sidebar-item:hover{background:#eff6ff;border-color:#93c5fd}
+.wp-sidebar-used{background:#f0fdf4;border-color:#86efac;color:#166534}
+.wp-sidebar-tick{color:#16a34a;font-weight:700}
 .wp-print-body{display:none}
 
 .wp-ref-bar{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid #e4e4e7;padding:8px 24px;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
@@ -430,16 +412,12 @@ const CSS = `
 .wp-no{text-align:center;color:#71717a;font-weight:600;font-size:12px}
 .wp-bank{font-size:12px;color:#18181b;font-variant-numeric:tabular-nums;font-weight:500}
 
-.wp-select{width:100%;border:1px solid #d4d4d8;border-radius:5px;padding:5px 6px;font-size:12px;font-family:inherit;background:#fff;color:#18181b;cursor:pointer}
-.wp-select:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
-.wp-sup-print{display:none}
+.wp-sup-name{font-size:12px;color:#18181b;font-weight:500}
 
 .wp-input{width:100%;border:1px solid #e4e4e7;border-radius:4px;padding:5px 6px;font-size:12px;font-family:inherit;color:#18181b;background:#fff}
 .wp-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
 .wp-input::-webkit-inner-spin-button,.wp-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .wp-input{-moz-appearance:textfield}
-.wp-amt-print,.wp-pf-print,.wp-rmk-print{display:none}
-
 .wp-del-cell{text-align:center}
 .wp-del{background:none;border:none;color:#d4d4d8;font-size:14px;cursor:pointer;padding:4px;border-radius:4px;line-height:1}
 .wp-del:hover{color:#dc2626;background:#fef2f2}
@@ -454,20 +432,16 @@ const CSS = `
 .wp-epay{display:flex;align-items:center;gap:4px;font-size:12px;color:#52525b}
 .wp-epay-star{font-weight:700;color:#18181b}
 .wp-epay-label{font-weight:600}
-.wp-epay-label-print{display:none;font-weight:600}
 .wp-epay-input{width:100px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;text-align:right;font-family:inherit}
 .wp-epay-input::-webkit-inner-spin-button,.wp-epay-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .wp-epay-input{-moz-appearance:textfield}
 .wp-epay-date{width:130px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:11px;font-family:inherit;margin-left:4px}
-.wp-epay-val-print{display:none}
-.wp-epay-date-print{display:none}
 .wp-epay-fv{font-weight:600}
 .wp-epay-fd{margin-left:4px;font-size:11px;color:#555}
 
 .wp-prepared{font-size:12px;color:#52525b;text-align:right}
 .wp-prepared-label{font-weight:500}
 .wp-prepared-input{width:90px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit}
-.wp-prepared-print{display:none}
 .wp-prepared-fv{font-weight:600}
 .wp-prepared-date-row{margin-top:2px}
 .wp-prepared-date-val{font-size:12px;color:#52525b}
