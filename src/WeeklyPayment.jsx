@@ -309,19 +309,26 @@ export default function WeeklyPayment() {
         </div>
 
         <div className="wp-sidebar">
-          <div className="wp-reminder">
-            <div className="wp-reminder-title">Payment Schedule Reference</div>
-            {REMINDERS.map(r => (
-              <div key={r.period} className="wp-reminder-group">
-                <div className="wp-reminder-period">{r.period}</div>
-                <div className="wp-reminder-list">
-                  {r.suppliers.map(s => (
-                    <span key={s} className="wp-reminder-chip">{s}</span>
-                  ))}
-                </div>
-              </div>
+          <div className="wp-sidebar-title">Suppliers</div>
+          <div className="wp-sidebar-list">
+            {SUPPLIERS.map(s => (
+              <div key={s.name} className="wp-sidebar-item">{s.name}</div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ─── Bottom Reference Bar ─── */}
+      <div className="wp-ref-bar no-print">
+        <div className="wp-ref-inner">
+          {REMINDERS.map(r => (
+            <div key={r.period} className="wp-ref-group">
+              <span className="wp-ref-period">{r.period}</span>
+              {r.suppliers.map(s => (
+                <span key={s} className="wp-ref-chip">{s}</span>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -396,10 +403,20 @@ const CSS = `
 .wp-date-label{font-size:12px;font-weight:600;color:#52525b;display:flex;align-items:center;gap:6px}
 .wp-date-input{border:1px solid #d4d4d8;border-radius:6px;padding:5px 8px;font-size:13px;font-family:inherit;color:#18181b}
 
-.wp-layout{display:flex;gap:20px;max-width:1300px;margin:0 auto;padding:28px 24px 80px;align-items:flex-start}
+.wp-layout{display:flex;gap:16px;max-width:1400px;margin:0 auto;padding:28px 24px 100px;align-items:flex-start}
 .wp-main{flex:1;min-width:0}
-.wp-sidebar{width:220px;flex-shrink:0;position:sticky;top:72px}
+.wp-sidebar{width:200px;flex-shrink:0;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;background:#f9fafb;border:1px solid #e4e4e7;border-radius:8px;padding:8px 0}
+.wp-sidebar-title{font-size:11px;font-weight:700;color:#71717a;padding:4px 12px 6px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e4e4e7}
+.wp-sidebar-list{padding:4px 0}
+.wp-sidebar-item{font-size:11px;padding:3px 12px;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wp-sidebar-item:hover{background:#f0f0f0}
 .wp-print-body{display:none}
+
+.wp-ref-bar{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid #e4e4e7;padding:8px 24px;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.wp-ref-inner{display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap}
+.wp-ref-group{display:flex;align-items:center;gap:4px}
+.wp-ref-period{font-size:10px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.04em;margin-right:2px}
+.wp-ref-chip{font-size:10px;padding:1px 6px;background:#eff6ff;color:#1e40af;border-radius:3px;font-weight:500}
 
 .wp-print-header{display:none}
 .wp-letterhead{width:100%;max-width:580px;display:block;margin:0 auto 12px}
@@ -461,13 +478,6 @@ const CSS = `
 .wp-prepared-date{border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit}
 .wp-prepared-date-print{display:none;font-size:12px;color:#333;margin-top:2px}
 
-.wp-reminder{padding:16px;background:#f4f4f5;border-radius:10px}
-.wp-reminder-title{font-size:13px;font-weight:700;color:#18181b;margin-bottom:12px;letter-spacing:.02em}
-.wp-reminder-group{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e4e4e7;margin-bottom:8px}
-.wp-reminder-group:last-child{margin-bottom:0}
-.wp-reminder-period{font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.wp-reminder-list{display:flex;flex-wrap:wrap;gap:4px}
-.wp-reminder-chip{font-size:11px;padding:2px 8px;background:#eff6ff;color:#1e40af;border-radius:4px;font-weight:500}
 
 .wp-amt-val{font-variant-numeric:tabular-nums;font-weight:600}
 
