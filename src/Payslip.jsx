@@ -172,12 +172,12 @@ export default function Payslip() {
   const syncAttendance = () => {
     try {
       const attRaw = localStorage.getItem(ATT_DATA_KEY);
-      if (!attRaw) return;
+      if (!attRaw) { alert('No attendance data found. Upload attendance Excel in the Attendance tab first.'); return; }
       const attData = JSON.parse(attRaw);
       const attPeriod = Object.values(attData)[0]?.period;
-      if (!attPeriod) return;
+      if (!attPeriod) { alert('Attendance data has no period info.'); return; }
       const [ay, am] = attPeriod.from.split('-').map(Number);
-      if (ay !== yr || am !== mo + 1) return;
+      if (ay !== yr || am !== mo + 1) { alert(`Attendance data is for ${am}/${ay}, but payslip is ${mo + 1}/${yr}. Switch to the matching month.`); return; }
 
       const nameMap = {};
       for (const [, emp] of Object.entries(attData)) {
@@ -185,9 +185,11 @@ export default function Payslip() {
       }
 
       const next = { ...monthAdj };
+      let matched = 0;
       for (const s of staff) {
         const att = nameMap[s.name.trim().toUpperCase()];
         if (!att) continue;
+        matched++;
         const working = att.summary.working || 26;
         const dailyRate = s.salary / working;
         const absentDays = att.summary.absent + att.summary.half * 0.5;
@@ -195,7 +197,8 @@ export default function Payslip() {
         next[s.id] = { ...(next[s.id] || {}), absence: amount };
       }
       setAdj(prev => ({ ...prev, [mk]: next }));
-    } catch {}
+      alert(`Synced! ${matched} employees matched.`);
+    } catch { alert('Error reading attendance data.'); }
   };
 
   const clearAttendance = () => {
@@ -203,18 +206,6 @@ export default function Payslip() {
     for (const id of Object.keys(next)) next[id] = { ...next[id], absence: 0 };
     setAdj(prev => ({ ...prev, [mk]: next }));
   };
-
-  const hasAtt = (() => {
-    try {
-      const raw = localStorage.getItem(ATT_DATA_KEY);
-      if (!raw) return false;
-      const d = JSON.parse(raw);
-      const p = Object.values(d)[0]?.period;
-      if (!p) return false;
-      const [ay, am] = p.from.split('-').map(Number);
-      return ay === yr && am === mo + 1;
-    } catch { return false; }
-  })();
 
   const hasSynced = Object.values(monthAdj).some(v => v.absence > 0);
 
@@ -265,7 +256,7 @@ export default function Payslip() {
         </div>
         <div className="ps-acts">
           <span style={{fontSize:12,color:'#a1a1aa'}}>🔒 View only</span>
-          {hasAtt && !hasSynced && <button className="ps-btn ps-btn-sync" onClick={syncAttendance}>Sync Attendance</button>}
+          <button className="ps-btn ps-btn-sync" onClick={syncAttendance}>Sync Attendance</button>
           {hasSynced && <button className="ps-btn ps-btn-o" onClick={clearAttendance}>Clear Absence</button>}
           <div className="ps-batch-wrap" ref={batchRef}>
             <button className="ps-btn ps-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>
