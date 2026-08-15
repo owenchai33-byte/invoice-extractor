@@ -329,14 +329,14 @@ const CSS = `
 .foc-sec-title{font-size:14px;font-weight:700;color:#18181b;margin-bottom:8px;letter-spacing:.02em}
 
 .foc-tbl{width:100%;border-collapse:collapse;font-size:13px}
-.foc-tbl th{text-align:left;padding:8px 10px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#71717a;border-bottom:2px solid #e4e4e7;background:#fafafa}
-.foc-tbl td{padding:6px 10px;border-bottom:1px solid #f4f4f5}
+.foc-tbl th{text-align:left;padding:8px 10px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#71717a;border-bottom:2px solid #666;background:#fafafa}
+.foc-tbl td{padding:6px 10px;border-bottom:1px solid #999}
 .foc-num{text-align:right;font-variant-numeric:tabular-nums}
 .foc-th-cat{width:40%}
 .foc-th-rate{width:18%;text-align:right}
 .foc-th-qty{width:20%;text-align:right}
 .foc-th-amt{width:22%;text-align:right}
-.foc-sub td{font-weight:700;border-top:2px solid #e4e4e7;border-bottom:none;padding-top:8px}
+.foc-sub td{font-weight:700;border-top:2px solid #666;border-bottom:none;padding-top:8px}
 .foc-in{width:64px;text-align:right;border:1px solid #d4d4d8;border-radius:4px;padding:3px 6px;font-size:13px;font-family:inherit}
 .foc-in::-webkit-inner-spin-button,.foc-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .foc-in{-moz-appearance:textfield}
@@ -347,7 +347,7 @@ const CSS = `
 .foc-arrow{display:inline-block;width:16px;font-size:10px;color:#a1a1aa}
 .foc-detail{display:none}
 .foc-detail.foc-detail-open{display:table-row}
-.foc-detail td{padding:2px 10px 2px 26px;border-bottom:1px solid #f9f9f9;font-size:11px;color:#71717a}
+.foc-detail td{padding:2px 10px 2px 26px;border-bottom:1px solid #ccc;font-size:11px;color:#71717a}
 .foc-detail-desc{font-style:italic}
 .foc-detail-qty{font-variant-numeric:tabular-nums}
 
@@ -358,7 +358,7 @@ const CSS = `
 .foc-res-tbl{width:100%;border-collapse:collapse}
 .foc-res-lb{padding:6px 0;font-size:13px;color:#52525b}
 .foc-res-val{padding:6px 0;text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-.foc-res-total td{font-size:18px;font-weight:800;color:#18181b;padding-top:10px;border-top:2px solid #e4e4e7}
+.foc-res-total td{font-size:18px;font-weight:800;color:#18181b;padding-top:10px;border-top:2px solid #666}
 .foc-res-sm{font-size:11px!important;color:#a1a1aa!important;font-weight:400!important}
 .foc-note{margin-top:12px;font-size:11px;color:#a1a1aa;text-align:center}
 
@@ -379,8 +379,11 @@ const CSS = `
   .foc-tbl{font-size:11px}
   .foc-tbl th{padding:5px 8px}
   .foc-tbl td{padding:4px 8px}
+  .foc-tbl th{border-bottom:2px solid #333!important}
+  .foc-tbl td{border-bottom:1px solid #666!important}
+  .foc-sub td{border-top:2px solid #333!important}
   .foc-detail{display:table-row!important}
-  .foc-detail td{padding:2px 8px 2px 20px;font-size:10px;color:#555}
+  .foc-detail td{padding:2px 8px 2px 20px;font-size:10px;color:#555;border-bottom:1px solid #999!important}
   .foc-sec-title{font-size:12px;margin-bottom:6px}
   .foc-tables{gap:18px}
   .foc-result{border-width:1px;padding:14px 18px;margin-top:18px}
