@@ -227,9 +227,11 @@ export default function BeverageFOC() {
                   const items = detail[r.key] || [];
                   const hasItems = items.length > 0;
                   const isOpen = expanded[r.key];
+                  const pdfSum = items.reduce((s, it) => s + it.qty, 0);
+                  const verified = hasItems && pdfSum === r.qty;
                   return (<>
                     <tr key={r.key} className={hasItems ? 'foc-expandable' : ''} onClick={() => hasItems && setExpanded(e => ({ ...e, [r.key]: !e[r.key] }))}>
-                      <td>{hasItems && <span className="foc-arrow no-print">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
+                      <td>{hasItems && <span className="foc-arrow no-print">{isOpen ? '▾' : '▸'}</span>}{r.label}{verified && <span className="foc-tick"> ✓</span>}</td>
                       <td className="foc-num">{nf(r.rate)}</td>
                       <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => { e.stopPropagation(); setQty(r.key, e.target.value); }} onClick={e => e.stopPropagation()} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
                       <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
@@ -259,9 +261,11 @@ export default function BeverageFOC() {
                   const items = detail[r.key] || [];
                   const hasItems = items.length > 0;
                   const isOpen = expanded[r.key];
+                  const pdfSum = items.reduce((s, it) => s + it.qty, 0);
+                  const verified = hasItems && pdfSum === r.qty;
                   return (<>
                     <tr key={r.key} className={hasItems ? 'foc-expandable' : ''} onClick={() => hasItems && setExpanded(e => ({ ...e, [r.key]: !e[r.key] }))}>
-                      <td>{hasItems && <span className="foc-arrow no-print">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
+                      <td>{hasItems && <span className="foc-arrow no-print">{isOpen ? '▾' : '▸'}</span>}{r.label}{verified && <span className="foc-tick"> ✓</span>}</td>
                       <td className="foc-num">{nf(r.rate)}</td>
                       <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => { e.stopPropagation(); setQty(r.key, e.target.value); }} onClick={e => e.stopPropagation()} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
                       <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
@@ -365,6 +369,7 @@ const CSS = `
 .foc-in{-moz-appearance:textfield}
 .foc-pr{display:none}
 
+.foc-tick{color:#059669;font-weight:700;font-size:12px}
 .foc-expandable{cursor:pointer}
 .foc-expandable:hover{background:#f9fafb}
 .foc-arrow{display:inline-block;width:16px;font-size:10px;color:#a1a1aa}
