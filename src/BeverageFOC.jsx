@@ -1,4 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const LS_KEY = 'cjk_bev_foc';
 const FOC_PRICE = 35.30;
@@ -29,6 +33,63 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
 const nf = v => Number(v).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+function classifyItem(desc, uom) {
+  const d = desc.toLowerCase();
+  const u = uom.toLowerCase();
+  if (/sun\s*valley/i.test(d)) return 'sunvalley';
+  if (/borneo|ice\s*mountain/i.test(d)) return 'borneo';
+  if (/100\s*plus/i.test(d) && /325/i.test(d)) return '100p_can';
+  if (/100\s*plus/i.test(d) && /500/i.test(d)) return '100p_500';
+  if (/100\s*plus/i.test(d) && /1\.5|1\.75/i.test(d)) return '100p_15l';
+  if (/season/i.test(d) && /300/i.test(d)) return 'seasons_24s';
+  if (/season/i.test(d) && (/250/i.test(d) || /\b1l\b|\(\s*1l\s*\)|\s1l\)/i.test(d))) return 'seasons_250';
+  if (!/season/i.test(d) && !/100\s*plus/i.test(d) && /f.?n/i.test(d) && /1\.5/i.test(d)) return 'fn_15l';
+  if (!/season/i.test(d) && !/100\s*plus/i.test(d) && /f.?n/i.test(d) && /325/i.test(d)) return 'fn_can12';
+  if (/\(1kg\)|1kg/i.test(d)) return 'dairy_1kg';
+  if (/2\.5kg/i.test(d)) return 'dairy_25kg';
+  if (/48/.test(u)) return 'dairy_48';
+  return 'dairy_24';
+}
+
+async function extractLines(buf) {
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const allLines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(i => i.str.trim()).map(i => ({
+      str: i.str.trim(), x: Math.round(i.transform[4]), y: Math.round(i.transform[5]),
+    }));
+    items.sort((a, b) => b.y - a.y || a.x - b.x);
+    let cur = items.length ? [items[0]] : [];
+    for (let i = 1; i < items.length; i++) {
+      if (Math.abs(items[i].y - cur[0].y) < 4) { cur.push(items[i]); }
+      else { cur.sort((a, b) => a.x - b.x); allLines.push(cur.map(c => c.str).join(' ')); cur = [items[i]]; }
+    }
+    if (cur.length) { cur.sort((a, b) => a.x - b.x); allLines.push(cur.map(c => c.str).join(' ')); }
+  }
+  return allLines;
+}
+
+function parseSummary(lines) {
+  let inSummary = false;
+  const results = {};
+  for (const line of lines) {
+    if (/final\s*summary/i.test(line)) { inSummary = true; continue; }
+    if (!inSummary) continue;
+    if (/^\s*total\s+[\d,]/i.test(line) || /end\s*of\s*report/i.test(line)) break;
+    if (/item\s*code/i.test(line) && /uom/i.test(line)) continue;
+    const m = line.match(/^(\d{7,})\s+(.+?)\s+(Ctn\d+)\s+(\d[\d,]*)\s+([\d,.]+)$/i);
+    if (!m) continue;
+    const desc = m[2].trim();
+    const uom = m[3];
+    const qty = parseInt(m[4].replace(/,/g, ''), 10);
+    const cat = classifyItem(desc, uom);
+    results[cat] = (results[cat] || 0) + qty;
+  }
+  return results;
+}
+
 export default function BeverageFOC() {
   const now = new Date();
   const prevMo = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
@@ -36,6 +97,9 @@ export default function BeverageFOC() {
   const [mo, setMo] = useState(prevMo);
   const [yr, setYr] = useState(prevYr);
   const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`;
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState('');
 
   const [allData, setAllData] = useState(() => load(LS_KEY, {}));
   const qty = allData[mk] || {};
@@ -44,10 +108,39 @@ export default function BeverageFOC() {
     setAllData(next);
     try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
   };
+  const bulkSet = (map) => {
+    const merged = { ...qty };
+    for (const [k, v] of Object.entries(map)) merged[k] = String(v);
+    const next = { ...allData, [mk]: merged };
+    setAllData(next);
+    try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
+  };
 
   const changeMonth = d => {
     if (d < 0) { if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); }
     else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); }
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploading(true);
+    setUploadMsg('');
+    try {
+      const buf = await file.arrayBuffer();
+      const lines = await extractLines(buf);
+      const results = parseSummary(lines);
+      const cats = Object.keys(results);
+      if (!cats.length) { setUploadMsg('Could not find "Final Summary By Items" in this PDF.'); return; }
+      bulkSet(results);
+      setUploadMsg(`Filled ${cats.length} categories from PDF.`);
+    } catch (err) {
+      setUploadMsg('Failed to read PDF: ' + (err.message || err));
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadMsg(''), 5000);
+    }
   };
 
   const calc = useMemo(() => {
@@ -92,10 +185,16 @@ export default function BeverageFOC() {
           <button className="foc-mbtn" onClick={() => changeMonth(1)}>&#9654;</button>
         </div>
         <div className="foc-acts">
+          <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleUpload} />
+          <button className="foc-btn foc-btn-upload" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            {uploading ? 'Reading...' : 'Upload PDF'}
+          </button>
           <button className="foc-btn foc-btn-o" onClick={clearMonth}>Clear</button>
           <button className="foc-btn" onClick={() => window.print()}>Print</button>
         </div>
       </div>
+
+      {uploadMsg && <div className="foc-toast">{uploadMsg}</div>}
 
       <div className="foc-body">
         <div className="foc-print-header">
@@ -182,11 +281,15 @@ const CSS = `
 .foc-btn:hover{background:#000}
 .foc-btn-o{background:#fff;color:#18181b}
 .foc-btn-o:hover{background:#f4f4f5}
+.foc-btn-upload{background:#059669;border-color:#059669}
+.foc-btn-upload:hover{background:#047857}
+.foc-btn-upload:disabled{opacity:.6;cursor:wait}
+
+.foc-toast{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:#18181b;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
 .foc-body{max-width:720px;margin:0 auto;padding:28px 24px 80px}
 .foc-print-header{display:none}
 .foc-tables{display:flex;flex-direction:column;gap:28px}
-.foc-section{}
 .foc-sec-title{font-size:14px;font-weight:700;color:#18181b;margin-bottom:8px;letter-spacing:.02em}
 
 .foc-tbl{width:100%;border-collapse:collapse;font-size:13px}
