@@ -296,13 +296,7 @@ export default function WeeklyPayment() {
                 <span className="wp-prepared-print">{data.preparedBy || 'Sabrina'}</span>
               </div>
               <div className="wp-prepared-date-row">
-                <input
-                  className="wp-prepared-date no-print"
-                  type="date"
-                  value={data.preparedDate || ''}
-                  onChange={e => updateData({ preparedDate: e.target.value })}
-                />
-                <span className="wp-prepared-date-print">{data.preparedDate ? formatDate(new Date(data.preparedDate + 'T00:00:00')) : ''}</span>
+                <span className="wp-prepared-date-val">{formatDate(new Date())}</span>
               </div>
             </div>
           </div>
@@ -382,7 +376,7 @@ export default function WeeklyPayment() {
           </div>
           <div className="wp-prepared">
             <div><span className="wp-prepared-label">Prepared by </span><span className="wp-prepared-fv">{data.preparedBy || 'Sabrina'}</span></div>
-            <div className="wp-prepared-date-print">{data.preparedDate ? formatDate(new Date(data.preparedDate + 'T00:00:00')) : ''}</div>
+            <div className="wp-prepared-date-val">{formatDate(new Date())}</div>
           </div>
         </div>
       </div>
@@ -476,8 +470,7 @@ const CSS = `
 .wp-prepared-print{display:none}
 .wp-prepared-fv{font-weight:600}
 .wp-prepared-date-row{margin-top:2px}
-.wp-prepared-date{border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit}
-.wp-prepared-date-print{display:none;font-size:12px;color:#333;margin-top:2px}
+.wp-prepared-date-val{font-size:12px;color:#52525b}
 
 
 .wp-amt-val{font-variant-numeric:tabular-nums;font-weight:600}
@@ -497,7 +490,6 @@ const CSS = `
   .wp-total-row td{border-top:2px solid #333!important}
   .wp-total-val{font-size:14px}
   .wp-footer{margin-top:12px}
-  .wp-prepared-date-print{display:block!important}
   @page{size:A4 portrait;margin:15mm}
 }
 `;
