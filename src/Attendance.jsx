@@ -695,16 +695,50 @@ function StatCard({ label, value, warn }) {
   );
 }
 
-const ATT_DATA_KEY = 'cjk_attendance_v1';
-const ATT_SEL_KEY = 'cjk_attendance_sel_v1';
+const ATT_DATA_PREFIX = 'cjk_attendance_';
+const ATT_SEL_PREFIX = 'cjk_att_sel_';
+const ATT_OLD_KEY = 'cjk_attendance_v1';
+const ATT_OLD_SEL = 'cjk_attendance_sel_v1';
+
+function attKey(yr, mo) { return `${ATT_DATA_PREFIX}${yr}-${pad(mo + 1)}`; }
+function attSelKey(yr, mo) { return `${ATT_SEL_PREFIX}${yr}-${pad(mo + 1)}`; }
+
+function migrateOldAttendance() {
+  try {
+    const old = localStorage.getItem(ATT_OLD_KEY);
+    if (!old) return;
+    const parsed = JSON.parse(old);
+    const firstEmp = Object.values(parsed)[0];
+    if (!firstEmp?.period?.from) return;
+    const [y, m] = firstEmp.period.from.split('-').map(Number);
+    const newKey = `${ATT_DATA_PREFIX}${y}-${pad(m)}`;
+    if (!localStorage.getItem(newKey)) {
+      localStorage.setItem(newKey, old);
+    }
+    const oldSel = localStorage.getItem(ATT_OLD_SEL);
+    if (oldSel) {
+      const selKey = `${ATT_SEL_PREFIX}${y}-${pad(m)}`;
+      if (!localStorage.getItem(selKey)) localStorage.setItem(selKey, oldSel);
+    }
+    localStorage.removeItem(ATT_OLD_KEY);
+    localStorage.removeItem(ATT_OLD_SEL);
+  } catch {}
+}
 
 export default function Attendance() {
+  useState(() => migrateOldAttendance());
+  const now = new Date();
+  const [mo, setMo] = useState(now.getMonth());
+  const [yr, setYr] = useState(now.getFullYear());
+  const dataKey = attKey(yr, mo);
+  const selKey = attSelKey(yr, mo);
+
   const [data, setData] = useState(() => {
-    try { const s = localStorage.getItem(ATT_DATA_KEY); return s ? JSON.parse(s) : null; }
+    try { const s = localStorage.getItem(dataKey); return s ? JSON.parse(s) : null; }
     catch { return null; }
   });
   const [selected, setSelected] = useState(() => {
-    try { return localStorage.getItem(ATT_SEL_KEY) || null; }
+    try { return localStorage.getItem(selKey) || null; }
     catch { return null; }
   });
   const [loading, setLoading] = useState(false);
@@ -775,14 +809,43 @@ export default function Attendance() {
   }, []);
 
   useEffect(() => {
-    if (data) localStorage.setItem(ATT_DATA_KEY, JSON.stringify(data));
-    else localStorage.removeItem(ATT_DATA_KEY);
-  }, [data]);
+    if (data) localStorage.setItem(dataKey, JSON.stringify(data));
+    else localStorage.removeItem(dataKey);
+  }, [data, dataKey]);
 
   useEffect(() => {
-    if (selected) localStorage.setItem(ATT_SEL_KEY, selected);
-    else localStorage.removeItem(ATT_SEL_KEY);
-  }, [selected]);
+    if (selected) localStorage.setItem(selKey, selected);
+    else localStorage.removeItem(selKey);
+  }, [selected, selKey]);
+
+  const changeMonth = useCallback((dir) => {
+    if (dir < 0) {
+      if (mo === 0) { setMo(11); setYr(y => y - 1); }
+      else setMo(m => m - 1);
+    } else {
+      if (mo === 11) { setMo(0); setYr(y => y + 1); }
+      else setMo(m => m + 1);
+    }
+  }, [mo]);
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem(dataKey);
+      setData(s ? JSON.parse(s) : null);
+    } catch { setData(null); }
+    try {
+      setSelected(localStorage.getItem(selKey) || null);
+    } catch { setSelected(null); }
+    setDismissedHalfDays(new Set());
+    setConfirmedPH(new Set());
+    setVerifiedPH({});
+    setSuspectPH([]);
+    setLastOverviewEdit(null);
+    setEmpTimestamps({});
+    setPrintAll(false);
+    setPrintOverview(false);
+    setPrintHalf(null);
+  }, [dataKey, selKey]);
 
   useEffect(() => {
     if (!suspectPH.length) return;
@@ -843,6 +906,19 @@ export default function Attendance() {
       const parsed = file.name.endsWith('.pdf') ? await parsePDF(buf) : parseExcel(buf);
       if (!parsed.records.length) throw new Error('No attendance records found in file');
       const { data: results, suspectPH: suspects } = processRecords(parsed);
+      const firstEmp = Object.values(results)[0];
+      if (firstEmp?.period?.from) {
+        const [fy, fm] = firstEmp.period.from.split('-').map(Number);
+        if (fy !== yr || fm - 1 !== mo) {
+          setYr(fy);
+          setMo(fm - 1);
+          const fk = attKey(fy, fm - 1);
+          localStorage.setItem(fk, JSON.stringify(results));
+          const fsk = attSelKey(fy, fm - 1);
+          const firstSel = sortByPayroll(results)[0];
+          if (firstSel) localStorage.setItem(fsk, firstSel);
+        }
+      }
       setData(results);
       setSuspectPH(suspects);
       setConfirmedPH(new Set());
@@ -868,6 +944,21 @@ export default function Attendance() {
 
   return (
     <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}${printHalf === 'first' ? ' att-half-first' : ''}${printHalf === 'second' ? ' att-half-second' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px', '--half-split': `${halfSplitVh}vh` }}>
+
+      {/* ─── Month Navigation ─── */}
+      <div className="att-no-print" style={{
+        display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16,
+        padding: '10px 16px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: 8,
+      }}>
+        <button onClick={() => changeMonth(-1)} style={{ ...btn, padding: '4px 10px', fontSize: 14 }}>◀</button>
+        <div style={{ fontSize: 14, fontWeight: 700, minWidth: 140, textAlign: 'center', color: '#18181b' }}>
+          {MONTH_FULL[mo]} {yr}
+        </div>
+        <button onClick={() => changeMonth(1)} style={{ ...btn, padding: '4px 10px', fontSize: 14 }}>▶</button>
+        <div style={{ marginLeft: 'auto', fontSize: 12, color: '#71717a' }}>
+          {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
+        </div>
+      </div>
 
       {/* ─── Upload ─── */}
       {!data && (
@@ -926,7 +1017,7 @@ export default function Attendance() {
               <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
               <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
-              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(ATT_DATA_KEY); localStorage.removeItem(ATT_SEL_KEY); }} style={btn}>Upload New</button>
+              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={btn}>Upload New</button>
             </div>
           </div>
 
