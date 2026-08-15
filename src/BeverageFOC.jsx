@@ -296,6 +296,29 @@ export default function BeverageFOC() {
           <div className="foc-note">1 FOC carton = 100 Plus Original 325ml × 24 @ RM{nf(FOC_PRICE)}</div>
         </div>
 
+        {(() => {
+          const allItems = [];
+          const catLabels = Object.fromEntries([...BEVERAGES, ...DAIRIES].map(c => [c.key, c.label]));
+          for (const [cat, items] of Object.entries(detail)) {
+            for (const it of items) allItems.push({ ...it, cat, catLabel: catLabels[cat] || cat });
+          }
+          if (!allItems.length) return null;
+          return (
+            <div className="foc-log">
+              <div className="foc-log-title">PDF Import — Full Item Mapping</div>
+              <table className="foc-log-tbl">
+                <thead><tr><th>#</th><th>Product</th><th>UOM</th><th className="foc-num">Qty</th><th>→ Category</th></tr></thead>
+                <tbody>
+                  {allItems.map((it, i) => (
+                    <tr key={i}><td>{i + 1}</td><td>{it.desc}</td><td>{it.uom}</td><td className="foc-num">{it.qty}</td><td className="foc-log-cat">{it.catLabel}</td></tr>
+                  ))}
+                  <tr className="foc-sub"><td></td><td>Total</td><td></td><td className="foc-num">{allItems.reduce((s, it) => s + it.qty, 0)}</td><td></td></tr>
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+
         <div className="foc-ref no-print">
           <div className="foc-ref-title">Rebate Reference</div>
           <div className="foc-ref-note">Supplier: Signature Selection Sdn Bhd &nbsp;|&nbsp; Valid: 01/11/2025 – 28/04/2026</div>
@@ -362,6 +385,14 @@ const CSS = `
 .foc-res-sm{font-size:11px!important;color:#a1a1aa!important;font-weight:400!important}
 .foc-note{margin-top:12px;font-size:11px;color:#a1a1aa;text-align:center}
 
+.foc-log{margin-top:28px}
+.foc-log-title{font-size:13px;font-weight:700;color:#18181b;margin-bottom:8px}
+.foc-log-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.foc-log-tbl th{text-align:left;padding:6px 8px;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#71717a;border-bottom:2px solid #666;background:#fafafa}
+.foc-log-tbl td{padding:4px 8px;border-bottom:1px solid #e4e4e7}
+.foc-log-tbl th:first-child,.foc-log-tbl td:first-child{width:30px;text-align:center;color:#a1a1aa}
+.foc-log-cat{font-weight:600;color:#059669;font-size:11px}
+
 .foc-ref{margin-top:20px;padding:12px 16px;background:#f4f4f5;border-radius:8px}
 .foc-ref-title{font-size:12px;font-weight:700;color:#52525b;margin-bottom:2px}
 .foc-ref-note{font-size:11px;color:#a1a1aa}
@@ -390,6 +421,11 @@ const CSS = `
   .foc-res-total td{font-size:15px;padding-top:8px}
   .foc-res-lb,.foc-res-val{padding:3px 0;font-size:11px}
   .foc-note{margin-top:8px;font-size:9px}
+  .foc-log{margin-top:14px;page-break-before:always}
+  .foc-log-title{font-size:11px;margin-bottom:4px}
+  .foc-log-tbl{font-size:9px}
+  .foc-log-tbl th{padding:3px 6px;border-bottom:2px solid #333!important}
+  .foc-log-tbl td{padding:2px 6px;border-bottom:1px solid #666!important}
   @page{size:A4 portrait;margin:15mm}
 }
 `;
