@@ -406,7 +406,7 @@ const CSS = `
   .no-print{display:none!important}
   .foc-root{background:#fff}
   .foc-bar{display:none}
-  .foc-body{max-width:none;padding:0}
+  .foc-body{max-width:none;padding:0 4px 0 0}
   .foc-print-header{display:block;text-align:center;margin-bottom:20px}
   .foc-print-title{font-size:16px;font-weight:700}
   .foc-print-period{font-size:13px;color:#444}
@@ -422,7 +422,7 @@ const CSS = `
   .foc-detail td{padding:2px 8px 2px 20px;font-size:10px;color:#555;border-bottom:1px solid #999!important}
   .foc-sec-title{font-size:12px;margin-bottom:6px}
   .foc-tables{gap:18px}
-  .foc-result{border-width:1px;padding:14px 18px;margin-top:18px}
+  .foc-result{border:2px solid #000!important;border-radius:0;padding:14px 18px;margin-top:18px;margin-right:4px}
   .foc-res-total td{font-size:15px;padding-top:8px}
   .foc-res-lb,.foc-res-val{padding:3px 0;font-size:11px}
   .foc-note{margin-top:8px;font-size:9px}
