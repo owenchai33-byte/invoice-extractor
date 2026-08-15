@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_H, SAMPLE_STAFF, fmt } from './Payroll';
 const LS_EP_TS = 'cjk_ep_updated';
+const ATT_DATA_KEY = 'cjk_attendance_v1';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -146,6 +147,24 @@ export default function EmployeePayslip() {
   const getOth = sid => oth[othK(sid)] || '';
   const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} _touchTs(); };
   const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
+  const syncAttendance = () => {
+    let raw; try { raw = JSON.parse(localStorage.getItem(ATT_DATA_KEY)); } catch {}
+    if (!raw || !Object.keys(raw).length) { alert('No attendance data found. Upload attendance in the Attendance tab first.'); return; }
+    const attMonth = Object.values(raw)[0]?.period?.from?.slice(0, 7);
+    if (attMonth !== viewMK) { alert(`Attendance data is for ${attMonth || '?'}, but payslip is showing ${viewMK}. Switch to the matching month.`); return; }
+    let matched = 0;
+    for (const r of rows) {
+      const rName = (r.name || '').trim().toLowerCase();
+      const attEmp = Object.values(raw).find(e => (e.name || '').trim().toLowerCase() === rName);
+      if (attEmp) {
+        const days = (attEmp.summary?.absent || 0) + (attEmp.summary?.half || 0) * 0.5;
+        setAbsV(r.id, days > 0 ? String(days) : '');
+        matched++;
+      }
+    }
+    if (matched === 0) alert('No matching employees found between attendance and payslip.');
+    else alert(`Synced absence for ${matched} employee${matched > 1 ? 's' : ''}.`);
+  };
   const canShowStart = (r) => r.status === 'probationary' && r.addedMonth === viewMK;
 
   const hiddenData = useMemo(() => load(LS_H, {}), []);
@@ -221,6 +240,7 @@ export default function EmployeePayslip() {
         <div className="ep-acts">
           <button className={"ep-btn "+(locked?"ep-btn-o":"")} onClick={locked?tryUnlock:()=>setLocked(true)} style={{fontSize:12}}>{locked?(isMonthLocked?'🔒 Month Locked':'🔒 Locked'):'🔓 Editing'}</button>
           <span className="ep-count">{screenPages.length ? `Page ${curPage + 1} / ${screenPages.length}` : '0'}</span>
+          <button className="ep-btn ep-btn-sync" onClick={syncAttendance}>Sync Attendance</button>
           <button className="ep-btn ep-btn-o" onClick={() => setPrintMode('current')}>Print current</button>
           <button className="ep-btn" onClick={() => setPrintMode('all')}>Print all</button>
         </div>
@@ -285,6 +305,8 @@ const CSS = `
 .ep-btn:hover{background:#000}
 .ep-btn-o{background:#fff;color:#18181b}
 .ep-btn-o:hover{background:#f4f4f5}
+.ep-btn-sync{background:#059669;border-color:#059669;color:#fff}
+.ep-btn-sync:hover{background:#047857}
 
 .ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 72px 120px}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
