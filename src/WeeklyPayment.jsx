@@ -335,6 +335,7 @@ export default function WeeklyPayment() {
       {/* Print-only version (no sidebar layout) */}
       <div className="wp-print-body">
         <div className="wp-print-header">
+          <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD." className="wp-letterhead" />
           <div className="wp-print-title">Weekly Payment Summary</div>
           <div className="wp-print-week">(Week Ending {weekLabel})</div>
         </div>
