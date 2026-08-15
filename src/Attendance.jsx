@@ -945,16 +945,23 @@ export default function Attendance() {
   return (
     <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}${printHalf === 'first' ? ' att-half-first' : ''}${printHalf === 'second' ? ' att-half-second' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px', '--half-split': `${halfSplitVh}vh` }}>
 
-      {/* ─── Month Navigation ─── */}
+      {/* ─── Header Bar ─── */}
       <div className="att-no-print" style={{
-        display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16,
-        padding: '10px 16px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: 8,
+        background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
+        display: 'flex', alignItems: 'center', gap: 16, height: 56,
+        marginBottom: 16, borderRadius: 0,
+        marginLeft: -24, marginRight: -24, marginTop: -16,
       }}>
-        <button onClick={() => changeMonth(-1)} style={{ ...btn, padding: '4px 10px', fontSize: 14 }}>◀</button>
-        <div style={{ fontSize: 14, fontWeight: 700, minWidth: 140, textAlign: 'center', color: '#18181b' }}>
-          {MONTH_FULL[mo]} {yr}
+        <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, color: '#18181b', whiteSpace: 'nowrap' }}>
+          ATTENDANCE REPORT
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => changeMonth(-1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9664;</button>
+          <div style={{ fontSize: 13, fontWeight: 600, minWidth: 120, textAlign: 'center', color: '#18181b' }}>
+            {MONTH_FULL[mo]} {yr}
+          </div>
+          <button onClick={() => changeMonth(1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9654;</button>
         </div>
-        <button onClick={() => changeMonth(1)} style={{ ...btn, padding: '4px 10px', fontSize: 14 }}>▶</button>
         <div style={{ marginLeft: 'auto', fontSize: 12, color: '#71717a' }}>
           {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
         </div>
