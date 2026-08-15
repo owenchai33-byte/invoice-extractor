@@ -177,125 +177,127 @@ export default function WeeklyPayment() {
         </div>
       </div>
 
-      <div className="wp-body">
-        <div className="wp-print-header">
-          <div className="wp-print-title">Weekly Payment Summary</div>
-          <div className="wp-print-week">(Week Ending {weekLabel})</div>
-        </div>
+      <div className="wp-layout no-print">
+        <div className="wp-main">
+          <div className="wp-print-header">
+            <div className="wp-print-title">Weekly Payment Summary</div>
+            <div className="wp-print-week">(Week Ending {weekLabel})</div>
+          </div>
 
-        <table className="wp-tbl">
-          <thead>
-            <tr>
-              <th className="wp-th-no">NO.</th>
-              <th className="wp-th-sup">SUPPLIER</th>
-              <th className="wp-th-bank">BANK ACCOUNT</th>
-              <th className="wp-th-amt">AMOUNT</th>
-              <th className="wp-th-pf">PAYMENT FOR</th>
-              <th className="wp-th-rmk">REMARK</th>
-              <th className="wp-th-del no-print"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td className="wp-no">{i + 1}</td>
-                <td className="wp-sup-cell">
-                  <select
-                    className="wp-select no-print"
-                    value={r.supplier}
-                    onChange={e => selectSupplier(i, e.target.value)}
-                  >
-                    <option value="">— Select supplier —</option>
-                    {SUPPLIERS.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
-                  </select>
-                  <span className="wp-sup-print">{r.supplier}</span>
-                </td>
-                <td className="wp-bank">{r.bank || '-'}</td>
-                <td className="wp-amt">
-                  <EditableCell
-                    value={r.amount}
-                    onChange={v => updateRow(i, { amount: v })}
-                    type="number"
-                    placeholder="0.00"
-                    align="right"
-                  />
-                  <span className="wp-amt-print">{r.amount ? nf(r.amount) : '-'}</span>
-                </td>
-                <td>
-                  <EditableCell
-                    value={r.paymentFor}
-                    onChange={v => updateRow(i, { paymentFor: v })}
-                    placeholder="e.g. 8/2026"
-                  />
-                  <span className="wp-pf-print">{r.paymentFor || ''}</span>
-                </td>
-                <td>
-                  <EditableCell
-                    value={r.remark}
-                    onChange={v => updateRow(i, { remark: v })}
-                    placeholder=""
-                  />
-                  <span className="wp-rmk-print">{r.remark || ''}</span>
-                </td>
-                <td className="wp-del-cell no-print">
-                  <button className="wp-del" onClick={() => removeRow(i)} title="Remove row">✕</button>
-                </td>
+          <table className="wp-tbl">
+            <thead>
+              <tr>
+                <th className="wp-th-no">NO.</th>
+                <th className="wp-th-sup">SUPPLIER</th>
+                <th className="wp-th-bank">BANK ACCOUNT</th>
+                <th className="wp-th-amt">AMOUNT</th>
+                <th className="wp-th-pf">PAYMENT FOR</th>
+                <th className="wp-th-rmk">REMARK</th>
+                <th className="wp-th-del no-print"></th>
               </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr><td colSpan="7" className="wp-empty">No entries yet — click "+ Add Row" to start</td></tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr className="wp-total-row">
-              <td></td>
-              <td className="wp-total-label">TOTAL AMOUNT PAYABLE =</td>
-              <td></td>
-              <td className="wp-total-val">RM {nf(total)}</td>
-              <td></td>
-              <td></td>
-              <td className="no-print"></td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td className="wp-no">{i + 1}</td>
+                  <td className="wp-sup-cell">
+                    <select
+                      className="wp-select no-print"
+                      value={r.supplier}
+                      onChange={e => selectSupplier(i, e.target.value)}
+                    >
+                      <option value="">— Select supplier —</option>
+                      {SUPPLIERS.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                    </select>
+                    <span className="wp-sup-print">{r.supplier}</span>
+                  </td>
+                  <td className="wp-bank">{r.bank || '-'}</td>
+                  <td className="wp-amt">
+                    <EditableCell
+                      value={r.amount}
+                      onChange={v => updateRow(i, { amount: v })}
+                      type="number"
+                      placeholder="0.00"
+                      align="right"
+                    />
+                    <span className="wp-amt-print">{r.amount ? nf(r.amount) : '-'}</span>
+                  </td>
+                  <td>
+                    <EditableCell
+                      value={r.paymentFor}
+                      onChange={v => updateRow(i, { paymentFor: v })}
+                      placeholder="e.g. 8/2026"
+                    />
+                    <span className="wp-pf-print">{r.paymentFor || ''}</span>
+                  </td>
+                  <td>
+                    <EditableCell
+                      value={r.remark}
+                      onChange={v => updateRow(i, { remark: v })}
+                      placeholder=""
+                    />
+                    <span className="wp-rmk-print">{r.remark || ''}</span>
+                  </td>
+                  <td className="wp-del-cell no-print">
+                    <button className="wp-del" onClick={() => removeRow(i)} title="Remove row">✕</button>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan="7" className="wp-empty">No entries yet — click "+ Add Row" to start</td></tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="wp-total-row">
+                <td></td>
+                <td className="wp-total-label">TOTAL AMOUNT PAYABLE =</td>
+                <td></td>
+                <td className="wp-total-val">RM {nf(total)}</td>
+                <td></td>
+                <td></td>
+                <td className="no-print"></td>
+              </tr>
+            </tfoot>
+          </table>
 
-        <div className="wp-footer">
-          <div className="wp-epay">
-            <span className="wp-epay-star">*</span>
-            <span className="wp-epay-label no-print">EPAY BALANCE: RM</span>
-            <span className="wp-epay-label-print">EPAY BALANCE: RM</span>
-            <input
-              className="wp-epay-input no-print"
-              type="number"
-              value={data.epayBalance}
-              onChange={e => updateData({ epayBalance: e.target.value })}
-              placeholder="0.00"
-            />
-            <span className="wp-epay-val-print">{data.epayBalance ? nf(data.epayBalance) : ''}</span>
-            {data.epayDate && <span className="wp-epay-date-print">({data.epayDate})</span>}
-            <input
-              className="wp-epay-date no-print"
-              type="text"
-              value={data.epayDate || ''}
-              onChange={e => updateData({ epayDate: e.target.value })}
-              placeholder="date/time"
-            />
-          </div>
-          <div className="wp-prepared">
-            <span className="wp-prepared-label">Prepared by </span>
-            <input
-              className="wp-prepared-input no-print"
-              type="text"
-              value={data.preparedBy || 'Sabrina'}
-              onChange={e => updateData({ preparedBy: e.target.value })}
-            />
-            <span className="wp-prepared-print">{data.preparedBy || 'Sabrina'}</span>
+          <div className="wp-footer">
+            <div className="wp-epay">
+              <span className="wp-epay-star">*</span>
+              <span className="wp-epay-label no-print">EPAY BALANCE: RM</span>
+              <span className="wp-epay-label-print">EPAY BALANCE: RM</span>
+              <input
+                className="wp-epay-input no-print"
+                type="number"
+                value={data.epayBalance}
+                onChange={e => updateData({ epayBalance: e.target.value })}
+                placeholder="0.00"
+              />
+              <span className="wp-epay-val-print">{data.epayBalance ? nf(data.epayBalance) : ''}</span>
+              {data.epayDate && <span className="wp-epay-date-print">({data.epayDate})</span>}
+              <input
+                className="wp-epay-date no-print"
+                type="text"
+                value={data.epayDate || ''}
+                onChange={e => updateData({ epayDate: e.target.value })}
+                placeholder="date/time"
+              />
+            </div>
+            <div className="wp-prepared">
+              <span className="wp-prepared-label">Prepared by </span>
+              <input
+                className="wp-prepared-input no-print"
+                type="text"
+                value={data.preparedBy || 'Sabrina'}
+                onChange={e => updateData({ preparedBy: e.target.value })}
+              />
+              <span className="wp-prepared-print">{data.preparedBy || 'Sabrina'}</span>
+            </div>
           </div>
         </div>
 
-        <div className="wp-reminder no-print">
-          <div className="wp-reminder-title">Payment Schedule Reference</div>
-          <div className="wp-reminder-grid">
+        <div className="wp-sidebar">
+          <div className="wp-reminder">
+            <div className="wp-reminder-title">Payment Schedule Reference</div>
             {REMINDERS.map(r => (
               <div key={r.period} className="wp-reminder-group">
                 <div className="wp-reminder-period">{r.period}</div>
@@ -306,6 +308,60 @@ export default function WeeklyPayment() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Print-only version (no sidebar layout) */}
+      <div className="wp-print-body">
+        <div className="wp-print-header">
+          <div className="wp-print-title">Weekly Payment Summary</div>
+          <div className="wp-print-week">(Week Ending {weekLabel})</div>
+        </div>
+        <table className="wp-tbl">
+          <thead>
+            <tr>
+              <th className="wp-th-no">NO.</th>
+              <th className="wp-th-sup">SUPPLIER</th>
+              <th className="wp-th-bank">BANK ACCOUNT</th>
+              <th className="wp-th-amt">AMOUNT</th>
+              <th className="wp-th-pf">PAYMENT FOR</th>
+              <th className="wp-th-rmk">REMARK</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td className="wp-no">{i + 1}</td>
+                <td className="wp-sup-cell"><span>{r.supplier}</span></td>
+                <td className="wp-bank">{r.bank || '-'}</td>
+                <td className="wp-amt"><span className="wp-amt-val">{r.amount ? nf(r.amount) : '-'}</span></td>
+                <td>{r.paymentFor || ''}</td>
+                <td>{r.remark || ''}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="wp-total-row">
+              <td></td>
+              <td className="wp-total-label">TOTAL AMOUNT PAYABLE =</td>
+              <td></td>
+              <td className="wp-total-val">RM {nf(total)}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+        <div className="wp-footer">
+          <div className="wp-epay">
+            <span className="wp-epay-star">*</span>
+            <span>EPAY BALANCE: RM</span>
+            <span className="wp-epay-fv">{data.epayBalance ? nf(data.epayBalance) : ''}</span>
+            {data.epayDate && <span className="wp-epay-fd">({data.epayDate})</span>}
+          </div>
+          <div className="wp-prepared">
+            <span className="wp-prepared-label">Prepared by </span>
+            <span className="wp-prepared-fv">{data.preparedBy || 'Sabrina'}</span>
           </div>
         </div>
       </div>
@@ -327,7 +383,11 @@ const CSS = `
 .wp-date-label{font-size:12px;font-weight:600;color:#52525b;display:flex;align-items:center;gap:6px}
 .wp-date-input{border:1px solid #d4d4d8;border-radius:6px;padding:5px 8px;font-size:13px;font-family:inherit;color:#18181b}
 
-.wp-body{max-width:900px;margin:0 auto;padding:28px 24px 80px}
+.wp-layout{display:flex;gap:20px;max-width:1300px;margin:0 auto;padding:28px 24px 80px;align-items:flex-start}
+.wp-main{flex:1;min-width:0}
+.wp-sidebar{width:220px;flex-shrink:0;position:sticky;top:72px}
+.wp-print-body{display:none}
+
 .wp-print-header{display:none}
 
 .wp-tbl{width:100%;border-collapse:collapse;font-size:13px}
@@ -375,46 +435,39 @@ const CSS = `
 .wp-epay-date{width:130px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:11px;font-family:inherit;margin-left:4px}
 .wp-epay-val-print{display:none}
 .wp-epay-date-print{display:none}
+.wp-epay-fv{font-weight:600}
+.wp-epay-fd{margin-left:4px;font-size:11px;color:#555}
 
 .wp-prepared{font-size:12px;color:#52525b;display:flex;align-items:center;gap:4px}
 .wp-prepared-label{font-weight:500}
 .wp-prepared-input{width:90px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit}
 .wp-prepared-print{display:none}
+.wp-prepared-fv{font-weight:600}
 
-.wp-reminder{margin-top:32px;padding:16px 20px;background:#f4f4f5;border-radius:10px}
+.wp-reminder{padding:16px;background:#f4f4f5;border-radius:10px}
 .wp-reminder-title{font-size:13px;font-weight:700;color:#18181b;margin-bottom:12px;letter-spacing:.02em}
-.wp-reminder-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.wp-reminder-group{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e4e4e7}
+.wp-reminder-group{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e4e4e7;margin-bottom:8px}
+.wp-reminder-group:last-child{margin-bottom:0}
 .wp-reminder-period{font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .wp-reminder-list{display:flex;flex-wrap:wrap;gap:4px}
 .wp-reminder-chip{font-size:11px;padding:2px 8px;background:#eff6ff;color:#1e40af;border-radius:4px;font-weight:500}
+
+.wp-amt-val{font-variant-numeric:tabular-nums;font-weight:600}
 
 @media print{
   .no-print{display:none!important}
   .wp-root{background:#fff}
   .wp-bar{display:none}
-  .wp-body{max-width:none;padding:0}
-  .wp-print-header{display:block;text-align:center;margin-bottom:20px}
+  .wp-layout{display:none!important}
+  .wp-print-body{display:block!important;padding:0}
+  .wp-print-header{display:block!important;text-align:center;margin-bottom:20px}
   .wp-print-title{font-size:16px;font-weight:700;color:#000}
   .wp-print-week{font-size:13px;color:#333;margin-top:2px}
   .wp-tbl{font-size:12px}
   .wp-tbl thead th{padding:8px 10px;border-bottom:2px solid #333!important;background:#fff}
   .wp-tbl tbody td{padding:6px 10px;border-bottom:1px solid #666!important}
-  .wp-select{display:none!important}
-  .wp-sup-print{display:inline!important;font-size:12px;font-weight:500}
-  .wp-input{display:none!important}
-  .wp-amt-print,.wp-pf-print,.wp-rmk-print{display:inline!important;font-size:12px}
-  .wp-amt-print{font-variant-numeric:tabular-nums;font-weight:600}
   .wp-total-row td{border-top:2px solid #333!important}
   .wp-total-val{font-size:14px}
-  .wp-epay-label{display:none!important}
-  .wp-epay-label-print{display:inline!important}
-  .wp-epay-input{display:none!important}
-  .wp-epay-date{display:none!important}
-  .wp-epay-val-print{display:inline!important;font-weight:600}
-  .wp-epay-date-print{display:inline!important;margin-left:4px;font-size:11px;color:#555}
-  .wp-prepared-input{display:none!important}
-  .wp-prepared-print{display:inline!important;font-weight:600}
   .wp-footer{margin-top:12px}
   @page{size:A4 portrait;margin:15mm}
 }
