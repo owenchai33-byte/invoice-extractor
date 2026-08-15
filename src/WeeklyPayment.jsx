@@ -111,7 +111,7 @@ export default function WeeklyPayment() {
     return saved || dateToInput(friday);
   });
   const wk = weekDate;
-  const data = allData[wk] || { rows: [], epayBalance: '', epayDate: '', preparedBy: 'Sabrina' };
+  const data = allData[wk] || { rows: [], epayBalance: '', epayDate: '', preparedBy: 'Sabrina', preparedDate: '' };
   const rows = data.rows || [];
 
   const save = useCallback((newData) => {
@@ -285,14 +285,25 @@ export default function WeeklyPayment() {
               />
             </div>
             <div className="wp-prepared">
-              <span className="wp-prepared-label">Prepared by </span>
-              <input
-                className="wp-prepared-input no-print"
-                type="text"
-                value={data.preparedBy || 'Sabrina'}
-                onChange={e => updateData({ preparedBy: e.target.value })}
-              />
-              <span className="wp-prepared-print">{data.preparedBy || 'Sabrina'}</span>
+              <div>
+                <span className="wp-prepared-label">Prepared by </span>
+                <input
+                  className="wp-prepared-input no-print"
+                  type="text"
+                  value={data.preparedBy || 'Sabrina'}
+                  onChange={e => updateData({ preparedBy: e.target.value })}
+                />
+                <span className="wp-prepared-print">{data.preparedBy || 'Sabrina'}</span>
+              </div>
+              <div className="wp-prepared-date-row">
+                <input
+                  className="wp-prepared-date no-print"
+                  type="date"
+                  value={data.preparedDate || ''}
+                  onChange={e => updateData({ preparedDate: e.target.value })}
+                />
+                <span className="wp-prepared-date-print">{data.preparedDate ? formatDate(new Date(data.preparedDate + 'T00:00:00')) : ''}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -362,8 +373,8 @@ export default function WeeklyPayment() {
             {data.epayDate && <span className="wp-epay-fd">({data.epayDate})</span>}
           </div>
           <div className="wp-prepared">
-            <span className="wp-prepared-label">Prepared by </span>
-            <span className="wp-prepared-fv">{data.preparedBy || 'Sabrina'}</span>
+            <div><span className="wp-prepared-label">Prepared by </span><span className="wp-prepared-fv">{data.preparedBy || 'Sabrina'}</span></div>
+            <div className="wp-prepared-date-print">{data.preparedDate ? formatDate(new Date(data.preparedDate + 'T00:00:00')) : ''}</div>
           </div>
         </div>
       </div>
@@ -441,11 +452,14 @@ const CSS = `
 .wp-epay-fv{font-weight:600}
 .wp-epay-fd{margin-left:4px;font-size:11px;color:#555}
 
-.wp-prepared{font-size:12px;color:#52525b;display:flex;align-items:center;gap:4px}
+.wp-prepared{font-size:12px;color:#52525b;text-align:right}
 .wp-prepared-label{font-weight:500}
 .wp-prepared-input{width:90px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit}
 .wp-prepared-print{display:none}
 .wp-prepared-fv{font-weight:600}
+.wp-prepared-date-row{margin-top:2px}
+.wp-prepared-date{border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;font-family:inherit}
+.wp-prepared-date-print{display:none;font-size:12px;color:#333;margin-top:2px}
 
 .wp-reminder{padding:16px;background:#f4f4f5;border-radius:10px}
 .wp-reminder-title{font-size:13px;font-weight:700;color:#18181b;margin-bottom:12px;letter-spacing:.02em}
@@ -472,6 +486,7 @@ const CSS = `
   .wp-total-row td{border-top:2px solid #333!important}
   .wp-total-val{font-size:14px}
   .wp-footer{margin-top:12px}
+  .wp-prepared-date-print{display:block!important}
   @page{size:A4 portrait;margin:15mm}
 }
 `;
