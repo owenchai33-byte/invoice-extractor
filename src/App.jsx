@@ -7,6 +7,7 @@ import EmployeePayslip from './EmployeePayslip';
 import MerchantReport from './MerchantReport';
 import BankRecon from './BankRecon';
 import Attendance from './Attendance';
+import BeverageFOC from './BeverageFOC';
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 const SECTIONS = [
@@ -14,6 +15,7 @@ const SECTIONS = [
     { id: 'invoice', label: 'Payment Summary' },
     { id: 'merchant', label: 'POS Merchant Report' },
     { id: 'bankrecon', label: 'Bank Recon' },
+    { id: 'bevfoc', label: 'Beverage FOC' },
   ]},
   { id: 'hr', label: 'Human Resource', tabs: [
     { id: 'attendance', label: 'Attendance' },
@@ -441,6 +443,7 @@ export default function App() {
         {active === 'merchant' && <MerchantReport />}
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
         <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
+        {active === 'bevfoc' && <BeverageFOC />}
       </main>
 
       <style>{`
