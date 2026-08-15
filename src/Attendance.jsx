@@ -1163,18 +1163,18 @@ export default function Attendance() {
                       const bb = isLast ? gb : td.borderBottom;
                       return (
                         <tr key={id} style={{ background: '#fef3c7' }}>
-                          <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
+                          <td style={{ ...td, fontWeight: 500 }}>{idx + 1}. {e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
-                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#dc2626', borderLeft: gb, borderRight: gb, borderBottom: bb }}>
+                          <td style={{ ...td, textAlign: 'center', fontWeight: 700, borderLeft: gb, borderRight: gb, borderBottom: bb }}>
                             {`${total}m`}
                           </td>
                           <td style={{
                             ...td,
-                            color: s.absent > 0 ? '#dc2626' : '#a3a3a3',
                             fontWeight: s.absent > 0 ? 700 : 400,
+                            color: s.absent > 0 ? '#18181b' : '#a3a3a3',
                             borderLeft: gb, borderBottom: bb,
                           }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
-                          <td style={{ ...td, color: halfCount > 0 ? '#dc2626' : '#a3a3a3', borderBottom: bb }}>
+                          <td style={{ ...td, color: halfCount > 0 ? '#18181b' : '#a3a3a3', borderBottom: bb }}>
                             {halfCount > 0 ? `${halfCount} (${collapseDateRanges(halfDates)})` : '-'}
                           </td>
                           {(() => {
@@ -1183,7 +1183,7 @@ export default function Attendance() {
                             const hasHalf = totalLeave % 1 !== 0;
                             const label = totalLeave === 0 ? '-' : whole > 0 && hasHalf ? `${whole} 1/2` : hasHalf ? '1/2' : `${whole}`;
                             return (
-                              <td style={{ ...td, textAlign: 'center', fontWeight: totalLeave > 0 ? 700 : 400, color: totalLeave > 0 ? '#dc2626' : '#a3a3a3', borderRight: gb, borderBottom: bb }}>
+                              <td style={{ ...td, textAlign: 'center', fontWeight: totalLeave > 0 ? 700 : 400, color: totalLeave > 0 ? '#18181b' : '#a3a3a3', borderRight: gb, borderBottom: bb }}>
                                 {label}
                               </td>
                             );
