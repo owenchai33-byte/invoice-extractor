@@ -224,18 +224,18 @@ export default function BeverageFOC() {
               </thead>
               <tbody>
                 {calc.bevRows.map(r => {
-                  const items = detail[r.key];
-                  const hasItems = items && items.length > 0;
+                  const items = detail[r.key] || [];
+                  const hasItems = items.length > 0;
                   const isOpen = expanded[r.key];
                   return (<>
                     <tr key={r.key} className={hasItems ? 'foc-expandable' : ''} onClick={() => hasItems && setExpanded(e => ({ ...e, [r.key]: !e[r.key] }))}>
-                      <td>{hasItems && <span className="foc-arrow">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
+                      <td>{hasItems && <span className="foc-arrow no-print">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
                       <td className="foc-num">{nf(r.rate)}</td>
                       <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => { e.stopPropagation(); setQty(r.key, e.target.value); }} onClick={e => e.stopPropagation()} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
                       <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
                     </tr>
-                    {isOpen && items.map((it, i) => (
-                      <tr key={r.key + '-' + i} className="foc-detail">
+                    {items.map((it, i) => (
+                      <tr key={r.key + '-' + i} className={'foc-detail' + (isOpen ? ' foc-detail-open' : '')}>
                         <td colSpan="2" className="foc-detail-desc">{it.desc} ({it.uom})</td>
                         <td className="foc-num foc-detail-qty">{it.qty}</td>
                         <td></td>
@@ -256,18 +256,18 @@ export default function BeverageFOC() {
               </thead>
               <tbody>
                 {calc.dairyRows.map(r => {
-                  const items = detail[r.key];
-                  const hasItems = items && items.length > 0;
+                  const items = detail[r.key] || [];
+                  const hasItems = items.length > 0;
                   const isOpen = expanded[r.key];
                   return (<>
                     <tr key={r.key} className={hasItems ? 'foc-expandable' : ''} onClick={() => hasItems && setExpanded(e => ({ ...e, [r.key]: !e[r.key] }))}>
-                      <td>{hasItems && <span className="foc-arrow">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
+                      <td>{hasItems && <span className="foc-arrow no-print">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
                       <td className="foc-num">{nf(r.rate)}</td>
                       <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => { e.stopPropagation(); setQty(r.key, e.target.value); }} onClick={e => e.stopPropagation()} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
                       <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
                     </tr>
-                    {isOpen && items.map((it, i) => (
-                      <tr key={r.key + '-' + i} className="foc-detail">
+                    {items.map((it, i) => (
+                      <tr key={r.key + '-' + i} className={'foc-detail' + (isOpen ? ' foc-detail-open' : '')}>
                         <td colSpan="2" className="foc-detail-desc">{it.desc} ({it.uom})</td>
                         <td className="foc-num foc-detail-qty">{it.qty}</td>
                         <td></td>
@@ -345,7 +345,9 @@ const CSS = `
 .foc-expandable{cursor:pointer}
 .foc-expandable:hover{background:#f9fafb}
 .foc-arrow{display:inline-block;width:16px;font-size:10px;color:#a1a1aa}
-.foc-detail td{padding:3px 10px 3px 26px;border-bottom:1px solid #f9f9f9;font-size:11px;color:#71717a}
+.foc-detail{display:none}
+.foc-detail.foc-detail-open{display:table-row}
+.foc-detail td{padding:2px 10px 2px 26px;border-bottom:1px solid #f9f9f9;font-size:11px;color:#71717a}
 .foc-detail-desc{font-style:italic}
 .foc-detail-qty{font-variant-numeric:tabular-nums}
 
@@ -374,8 +376,18 @@ const CSS = `
   .foc-print-period{font-size:13px;color:#444}
   .foc-print-co{font-size:11px;color:#888;margin-top:2px}
   .foc-pr{display:inline!important}
-  .foc-tbl{font-size:11px}
-  .foc-result{border-width:1px}
-  @page{size:A4 portrait;margin:15mm}
+  .foc-tbl{font-size:9px}
+  .foc-tbl th{padding:3px 6px}
+  .foc-tbl td{padding:2px 6px}
+  .foc-detail{display:table-row!important}
+  .foc-detail td{padding:1px 6px 1px 16px;font-size:8px;color:#555}
+  .foc-sub td{padding-top:4px}
+  .foc-sec-title{font-size:11px;margin-bottom:4px}
+  .foc-tables{gap:12px}
+  .foc-result{border-width:1px;padding:10px 14px;margin-top:14px}
+  .foc-res-total td{font-size:13px;padding-top:6px}
+  .foc-res-lb,.foc-res-val{padding:2px 0;font-size:10px}
+  .foc-note{margin-top:6px;font-size:9px}
+  @page{size:A4 portrait;margin:12mm}
 }
 `;
