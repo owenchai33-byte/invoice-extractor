@@ -172,8 +172,9 @@ export default function BeverageFOC() {
     const grandTotal = bevTotal + dairyTotal;
     const focCtns = Math.floor(grandTotal / FOC_PRICE);
     const remainder = grandTotal - focCtns * FOC_PRICE;
-    const totalFoc = focCtns + (bonus ? DAIRY_BONUS_CTNS : 0);
-    return { bevRows, dairyRows, bevTotal, dairyTotal, dairyCtns, bonus, grandTotal, focCtns, remainder, totalFoc };
+    const supplierFoc = remainder > 0 ? focCtns + 1 : focCtns;
+    const totalFoc = supplierFoc + (bonus ? DAIRY_BONUS_CTNS : 0);
+    return { bevRows, dairyRows, bevTotal, dairyTotal, dairyCtns, bonus, grandTotal, focCtns, supplierFoc, remainder, totalFoc };
   }, [qty]);
 
   useEffect(() => { document.title = `BEVERAGE FOC - ${MONTHS[mo].slice(0,3).toUpperCase()}'${String(yr).slice(-2)}`; }, [mo, yr]);
@@ -291,10 +292,10 @@ export default function BeverageFOC() {
           <table className="foc-res-tbl">
             <tbody>
               <tr><td className="foc-res-lb">Total Rebate</td><td className="foc-res-val">RM {nf(calc.grandTotal)}</td></tr>
-              <tr><td className="foc-res-lb">FOC (rebate)</td><td className="foc-res-val">{calc.focCtns} cartons</td></tr>
-              {calc.bonus && <tr><td className="foc-res-lb">FOC (dairy bonus)</td><td className="foc-res-val">{DAIRY_BONUS_CTNS} cartons</td></tr>}
+              <tr><td className="foc-res-lb">FOC (exact)</td><td className="foc-res-val">{calc.focCtns} cartons{calc.remainder > 0 ? ` + RM ${nf(calc.remainder)} remainder` : ''}</td></tr>
+              {calc.remainder > 0 && <tr><td className="foc-res-lb">Supplier rounds up</td><td className="foc-res-val">{calc.supplierFoc} cartons</td></tr>}
+              {calc.bonus && <tr><td className="foc-res-lb">Dairy bonus (+{DAIRY_BONUS_THRESHOLD} ctns)</td><td className="foc-res-val">{DAIRY_BONUS_CTNS} cartons</td></tr>}
               <tr className="foc-res-total"><td className="foc-res-lb">TOTAL FOC</td><td className="foc-res-val">{calc.totalFoc} cartons of 100 Plus 325ml</td></tr>
-              {calc.remainder > 0 && <tr><td className="foc-res-lb foc-res-sm">Remainder</td><td className="foc-res-val foc-res-sm">RM {nf(calc.remainder)}</td></tr>}
             </tbody>
           </table>
           <div className="foc-note">1 FOC carton = 100 Plus Original 325ml × 24 @ RM{nf(FOC_PRICE)}</div>
