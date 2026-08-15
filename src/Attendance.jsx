@@ -1139,6 +1139,7 @@ export default function Attendance() {
                 }}>
                   <thead>
                     <tr style={{ background: '#f4f4f5' }}>
+                      <th style={{ ...th, textAlign: 'center', width: 30 }}>#</th>
                       <th style={th}>Employee</th>
                       <th style={{ ...th, textAlign: 'center' }}>Present (day)</th>
                       <th style={{ ...th, textAlign: 'center', borderLeft: '2px solid #666', borderTop: '2px solid #666', borderBottom: '2px solid #666', borderRight: '2px solid #666' }}>Total Penalty</th>
@@ -1163,7 +1164,8 @@ export default function Attendance() {
                       const bb = isLast ? gb : td.borderBottom;
                       return (
                         <tr key={id} style={{ background: '#fef3c7' }}>
-                          <td style={{ ...td, fontWeight: 500 }}>{idx + 1}. {e.name}</td>
+                          <td style={{ ...td, textAlign: 'center' }}>{idx + 1}</td>
+                          <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
                           <td style={{ ...td, textAlign: 'center', fontWeight: 700, borderLeft: gb, borderRight: gb, borderBottom: bb }}>
                             {`${total}m`}
@@ -1241,12 +1243,13 @@ export default function Attendance() {
               .att-overview-view .att-emp-content { flex: none !important; }
               .att-overview-view .att-table { table-layout: fixed !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
-              .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 22% !important; }
-              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 8% !important; text-align: center !important; }
-              .att-overview-view .att-table th:nth-child(3), .att-overview-view .att-table td:nth-child(3) { width: 8% !important; text-align: center !important; }
-              .att-overview-view .att-table th:nth-child(4), .att-overview-view .att-table td:nth-child(4) { width: 24% !important; }
+              .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 4% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 20% !important; }
+              .att-overview-view .att-table th:nth-child(3), .att-overview-view .att-table td:nth-child(3) { width: 7% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(4), .att-overview-view .att-table td:nth-child(4) { width: 7% !important; text-align: center !important; }
               .att-overview-view .att-table th:nth-child(5), .att-overview-view .att-table td:nth-child(5) { width: 24% !important; }
-              .att-overview-view .att-table th:nth-child(6), .att-overview-view .att-table td:nth-child(6) { width: 8% !important; text-align: center !important; }
+              .att-overview-view .att-table th:nth-child(6), .att-overview-view .att-table td:nth-child(6) { width: 24% !important; }
+              .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 7% !important; text-align: center !important; }
               .att-notes-box { margin-top: 4px !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; }
               .att-notes-box table { font-size: 10.5px !important; }
