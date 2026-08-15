@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import cjkLetterhead from './cjk_letterhead.png';
 
 const LS_KEY = 'cjk_weekly_payment';
 
@@ -180,6 +181,7 @@ export default function WeeklyPayment() {
       <div className="wp-layout no-print">
         <div className="wp-main">
           <div className="wp-print-header">
+            <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD." className="wp-letterhead" />
             <div className="wp-print-title">Weekly Payment Summary</div>
             <div className="wp-print-week">(Week Ending {weekLabel})</div>
           </div>
@@ -389,6 +391,7 @@ const CSS = `
 .wp-print-body{display:none}
 
 .wp-print-header{display:none}
+.wp-letterhead{width:100%;max-width:580px;display:block;margin:0 auto 12px}
 
 .wp-tbl{width:100%;border-collapse:collapse;font-size:13px}
 .wp-tbl thead th{text-align:left;padding:10px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#52525b;border-bottom:2px solid #666;background:#fafafa}
