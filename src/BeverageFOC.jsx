@@ -5,6 +5,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const LS_KEY = 'cjk_bev_foc';
+const LS_DETAIL_KEY = 'cjk_bev_foc_detail';
 const FOC_PRICE = 35.30;
 
 const BEVERAGES = [
@@ -73,7 +74,8 @@ async function extractLines(buf) {
 
 function parseSummary(lines) {
   let inSummary = false;
-  const results = {};
+  const totals = {};
+  const details = {};
   for (const line of lines) {
     if (/final\s*summary/i.test(line)) { inSummary = true; continue; }
     if (!inSummary) continue;
@@ -85,9 +87,11 @@ function parseSummary(lines) {
     const uom = m[3];
     const qty = parseInt(m[4].replace(/,/g, ''), 10);
     const cat = classifyItem(desc, uom);
-    results[cat] = (results[cat] || 0) + qty;
+    totals[cat] = (totals[cat] || 0) + qty;
+    if (!details[cat]) details[cat] = [];
+    details[cat].push({ desc, uom, qty });
   }
-  return results;
+  return { totals, details };
 }
 
 export default function BeverageFOC() {
@@ -100,6 +104,9 @@ export default function BeverageFOC() {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
+  const [allDetail, setAllDetail] = useState(() => load(LS_DETAIL_KEY, {}));
+  const detail = allDetail[mk] || {};
+  const [expanded, setExpanded] = useState({});
 
   const [allData, setAllData] = useState(() => load(LS_KEY, {}));
   const qty = allData[mk] || {};
@@ -130,10 +137,13 @@ export default function BeverageFOC() {
     try {
       const buf = await file.arrayBuffer();
       const lines = await extractLines(buf);
-      const results = parseSummary(lines);
-      const cats = Object.keys(results);
+      const { totals, details: det } = parseSummary(lines);
+      const cats = Object.keys(totals);
       if (!cats.length) { setUploadMsg('Could not find "Final Summary By Items" in this PDF.'); return; }
-      bulkSet(results);
+      bulkSet(totals);
+      const nextDetail = { ...allDetail, [mk]: det };
+      setAllDetail(nextDetail);
+      try { localStorage.setItem(LS_DETAIL_KEY, JSON.stringify(nextDetail)); } catch {}
       setUploadMsg(`Filled ${cats.length} categories from PDF.`);
     } catch (err) {
       setUploadMsg('Failed to read PDF: ' + (err.message || err));
@@ -172,6 +182,8 @@ export default function BeverageFOC() {
     if (!confirm(`Clear all quantities for ${MONTHS[mo]} ${yr}?`)) return;
     const next = { ...allData }; delete next[mk]; setAllData(next);
     try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
+    const nextD = { ...allDetail }; delete nextD[mk]; setAllDetail(nextD);
+    try { localStorage.setItem(LS_DETAIL_KEY, JSON.stringify(nextD)); } catch {}
   };
 
   return (
@@ -211,14 +223,26 @@ export default function BeverageFOC() {
                 <tr><th className="foc-th-cat">Category</th><th className="foc-th-rate">Rate (RM/ctn)</th><th className="foc-th-qty">Qty (ctns)</th><th className="foc-th-amt">Rebate (RM)</th></tr>
               </thead>
               <tbody>
-                {calc.bevRows.map(r => (
-                  <tr key={r.key}>
-                    <td>{r.label}</td>
-                    <td className="foc-num">{nf(r.rate)}</td>
-                    <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => setQty(r.key, e.target.value)} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
-                    <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
-                  </tr>
-                ))}
+                {calc.bevRows.map(r => {
+                  const items = detail[r.key];
+                  const hasItems = items && items.length > 0;
+                  const isOpen = expanded[r.key];
+                  return (<>
+                    <tr key={r.key} className={hasItems ? 'foc-expandable' : ''} onClick={() => hasItems && setExpanded(e => ({ ...e, [r.key]: !e[r.key] }))}>
+                      <td>{hasItems && <span className="foc-arrow">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
+                      <td className="foc-num">{nf(r.rate)}</td>
+                      <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => { e.stopPropagation(); setQty(r.key, e.target.value); }} onClick={e => e.stopPropagation()} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
+                      <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
+                    </tr>
+                    {isOpen && items.map((it, i) => (
+                      <tr key={r.key + '-' + i} className="foc-detail">
+                        <td colSpan="2" className="foc-detail-desc">{it.desc} ({it.uom})</td>
+                        <td className="foc-num foc-detail-qty">{it.qty}</td>
+                        <td></td>
+                      </tr>
+                    ))}
+                  </>);
+                })}
                 <tr className="foc-sub"><td>Subtotal</td><td></td><td></td><td className="foc-num">{nf(calc.bevTotal)}</td></tr>
               </tbody>
             </table>
@@ -231,14 +255,26 @@ export default function BeverageFOC() {
                 <tr><th className="foc-th-cat">Category</th><th className="foc-th-rate">Rate (RM/ctn)</th><th className="foc-th-qty">Qty (ctns)</th><th className="foc-th-amt">Rebate (RM)</th></tr>
               </thead>
               <tbody>
-                {calc.dairyRows.map(r => (
-                  <tr key={r.key}>
-                    <td>{r.label}</td>
-                    <td className="foc-num">{nf(r.rate)}</td>
-                    <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => setQty(r.key, e.target.value)} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
-                    <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
-                  </tr>
-                ))}
+                {calc.dairyRows.map(r => {
+                  const items = detail[r.key];
+                  const hasItems = items && items.length > 0;
+                  const isOpen = expanded[r.key];
+                  return (<>
+                    <tr key={r.key} className={hasItems ? 'foc-expandable' : ''} onClick={() => hasItems && setExpanded(e => ({ ...e, [r.key]: !e[r.key] }))}>
+                      <td>{hasItems && <span className="foc-arrow">{isOpen ? '▾' : '▸'}</span>}{r.label}</td>
+                      <td className="foc-num">{nf(r.rate)}</td>
+                      <td className="foc-num"><input type="number" min="0" className="foc-in no-print" value={qty[r.key] || ''} onChange={e => { e.stopPropagation(); setQty(r.key, e.target.value); }} onClick={e => e.stopPropagation()} placeholder="-" /><span className="foc-pr">{r.qty || '-'}</span></td>
+                      <td className="foc-num">{r.rebate > 0 ? nf(r.rebate) : '-'}</td>
+                    </tr>
+                    {isOpen && items.map((it, i) => (
+                      <tr key={r.key + '-' + i} className="foc-detail">
+                        <td colSpan="2" className="foc-detail-desc">{it.desc} ({it.uom})</td>
+                        <td className="foc-num foc-detail-qty">{it.qty}</td>
+                        <td></td>
+                      </tr>
+                    ))}
+                  </>);
+                })}
                 <tr className="foc-sub"><td>Subtotal ({Math.round(calc.dairyCtns)} ctns)</td><td></td><td></td><td className="foc-num">{nf(calc.dairyTotal)}</td></tr>
               </tbody>
             </table>
@@ -305,6 +341,13 @@ const CSS = `
 .foc-in::-webkit-inner-spin-button,.foc-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .foc-in{-moz-appearance:textfield}
 .foc-pr{display:none}
+
+.foc-expandable{cursor:pointer}
+.foc-expandable:hover{background:#f9fafb}
+.foc-arrow{display:inline-block;width:16px;font-size:10px;color:#a1a1aa}
+.foc-detail td{padding:3px 10px 3px 26px;border-bottom:1px solid #f9f9f9;font-size:11px;color:#71717a}
+.foc-detail-desc{font-style:italic}
+.foc-detail-qty{font-variant-numeric:tabular-nums}
 
 .foc-bonus{margin-top:8px;padding:8px 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:12px;font-weight:600;color:#059669}
 .foc-bonus-info{margin-top:6px;font-size:11px;color:#a1a1aa}
