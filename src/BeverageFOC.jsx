@@ -376,18 +376,17 @@ const CSS = `
   .foc-print-period{font-size:13px;color:#444}
   .foc-print-co{font-size:11px;color:#888;margin-top:2px}
   .foc-pr{display:inline!important}
-  .foc-tbl{font-size:9px}
-  .foc-tbl th{padding:3px 6px}
-  .foc-tbl td{padding:2px 6px}
+  .foc-tbl{font-size:11px}
+  .foc-tbl th{padding:5px 8px}
+  .foc-tbl td{padding:4px 8px}
   .foc-detail{display:table-row!important}
-  .foc-detail td{padding:1px 6px 1px 16px;font-size:8px;color:#555}
-  .foc-sub td{padding-top:4px}
-  .foc-sec-title{font-size:11px;margin-bottom:4px}
-  .foc-tables{gap:12px}
-  .foc-result{border-width:1px;padding:10px 14px;margin-top:14px}
-  .foc-res-total td{font-size:13px;padding-top:6px}
-  .foc-res-lb,.foc-res-val{padding:2px 0;font-size:10px}
-  .foc-note{margin-top:6px;font-size:9px}
-  @page{size:A4 portrait;margin:12mm}
+  .foc-detail td{padding:2px 8px 2px 20px;font-size:10px;color:#555}
+  .foc-sec-title{font-size:12px;margin-bottom:6px}
+  .foc-tables{gap:18px}
+  .foc-result{border-width:1px;padding:14px 18px;margin-top:18px}
+  .foc-res-total td{font-size:15px;padding-top:8px}
+  .foc-res-lb,.foc-res-val{padding:3px 0;font-size:11px}
+  .foc-note{margin-top:8px;font-size:9px}
+  @page{size:A4 portrait;margin:15mm}
 }
 `;
