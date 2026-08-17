@@ -17,11 +17,11 @@ import { resolve } from 'path';
  */
 
 const PROTECTED_FORMATS = {
-  'src/Payslip.jsx':          '7c322b3bc1dc5d65',
+  'src/Payslip.jsx':          '0f9c05fe75bd9939',
   'src/Payroll.jsx':          'bff3ac0384a8d1a8',
   'src/WeeklyPayment.jsx':    'b65872da0e3b254d',
   'src/BeverageFOC.jsx':      '27319168abc50c81',
-  'src/EmployeePayslip.jsx':  '69611ccef7e06931',
+  'src/EmployeePayslip.jsx':  '2ef2ae401c1e466a',
   'src/MerchantReport.jsx':   '162fa68fe0a043b4',
   'src/BankRecon.jsx':        '3d90d83a9b95eeb7',
 };

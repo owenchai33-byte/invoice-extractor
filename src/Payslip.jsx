@@ -281,8 +281,8 @@ const CSS = `
 .ps-empty{background:#fff;border:1px dashed #d4d4d8;border-radius:12px;padding:48px 24px;text-align:center;color:#71717a}
 .ps-empty h2{margin:0 0 8px;font-size:16px;color:#18181b}
 
-.ps-layout{display:flex;min-height:calc(100vh - 56px)}
-.ps-stage{flex:1;display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 16px}
+.ps-layout{display:flex;height:calc(100vh - 148px)}
+.ps-stage{flex:1;display:flex;align-items:flex-start;justify-content:center;gap:20px;padding:20px 16px;overflow:hidden}
 .ps-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
