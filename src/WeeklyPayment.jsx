@@ -212,8 +212,8 @@ export default function WeeklyPayment() {
       <style>{CSS}</style>
       <div className="wp-bar no-print">
         <div className="wp-acts">
-          <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
           <button className="wp-btn" onClick={() => window.print()}>Print</button>
+          <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
         </div>
       </div>
 

@@ -199,8 +199,8 @@ export default function BeverageFOC() {
         </div>
         <div className="foc-acts">
           <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleUpload} />
-          <button className="foc-btn foc-btn-o" onClick={clearMonth}>Clear</button>
           <button className="foc-btn" onClick={() => window.print()}>Print</button>
+          <button className="foc-btn foc-btn-o" onClick={clearMonth}>Clear</button>
           <button className="foc-btn foc-btn-upload" onClick={() => fileRef.current?.click()} disabled={uploading}>
             {uploading ? 'Reading...' : 'Upload PDF'}
           </button>
