@@ -177,7 +177,6 @@ export default function BeverageFOC() {
     return { bevRows, dairyRows, bevTotal, dairyTotal, dairyCtns, bonus, grandTotal, focCtns, supplierFoc, remainder, totalFoc };
   }, [qty]);
 
-  useEffect(() => { document.title = `BEVERAGE FOC - ${MONTHS[mo].slice(0,3).toUpperCase()}'${String(yr).slice(-2)}`; }, [mo, yr]);
 
   const clearMonth = () => {
     if (!confirm(`Clear all quantities for ${MONTHS[mo]} ${yr}?`)) return;

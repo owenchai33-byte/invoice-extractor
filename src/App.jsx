@@ -171,8 +171,7 @@ export default function App() {
   useEffect(() => {
     setPinUnlocked(false);
     try { localStorage.setItem('sabrina_active', active); } catch {}
-    if (active === 'invoice') document.title = 'CJK Payment Summary';
-    else if (active === 'contract') document.title = 'CJK Contracts';
+    document.title = 'Sabrina OS';
   }, [active]);
 
   useEffect(() => {

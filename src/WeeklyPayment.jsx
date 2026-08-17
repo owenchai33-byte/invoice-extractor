@@ -197,7 +197,6 @@ export default function WeeklyPayment() {
 
   const handleDragEnd = () => { setDragFrom(null); setDragOver(null); };
 
-  useEffect(() => { document.title = 'Weekly Payment Summary'; }, []);
 
   const clearWeek = () => {
     const label = activeWeek === 1 ? weekLabel : weekLabel2;

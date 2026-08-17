@@ -151,8 +151,6 @@ export default function InvoicesWorkspace() {
   });
   useEffect(() => {
     try { localStorage.setItem('invoices_subtab', sub); } catch {}
-    const names = { weekly: 'CJK Weekly Payment', choonhua: 'CJK Choon Hua Payment Summary', yhs: 'CJK Yeo Hiap Seng Payment Summary' };
-    document.title = names[sub] || 'CJK Payment Summary';
   }, [sub]);
 
   return (
