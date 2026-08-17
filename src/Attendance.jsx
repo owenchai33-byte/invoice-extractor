@@ -1011,7 +1011,7 @@ export default function Attendance() {
             </div>
             <div>
               <div style={{ fontWeight: 600, color: '#1e40af' }}>Public Holidays</div>
-              <div>Sarawak 2026 holidays hardcoded</div>
+              <div>Sarawak PH list (updated yearly)</div>
               <div>Work on PH flagged</div>
               <div>All staff absent on non-holiday weekday → "Subject to Review"</div>
             </div>
