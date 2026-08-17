@@ -371,7 +371,7 @@ export default function WeeklyPayment() {
 }
 
 const CSS = `
-.wp-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+.wp-root{background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 .wp-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:48px}
 .wp-acts{margin-left:auto;display:flex;align-items:center;gap:10px}
 .wp-btn{border:1px solid #18181b;background:#18181b;color:#fff;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
@@ -457,8 +457,8 @@ const CSS = `
 .wp-amt-val{font-variant-numeric:tabular-nums;font-weight:600}
 
 @media print{
-  .no-print{display:none!important}
-  .wp-root{background:#fff}
+  .no-print,.noP{display:none!important}
+  .wp-root{background:#fff;min-height:0!important}
   .wp-bar{display:none}
   .wp-layout{display:none!important}
   .wp-print-body{display:block!important;padding:0}
