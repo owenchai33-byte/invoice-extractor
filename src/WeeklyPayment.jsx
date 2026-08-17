@@ -159,6 +159,44 @@ export default function WeeklyPayment() {
   const activeWk = activeWeek === 1 ? weekDate : weekDate2;
   const activeData = activeWeek === 1 ? data1 : data2;
 
+  const [dragFrom, setDragFrom] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
+
+  const handleDragStart = (weekNum, idx) => setDragFrom({ week: weekNum, idx });
+
+  const handleDragOver = (e, weekNum, idx) => {
+    e.preventDefault();
+    setDragOver({ week: weekNum, idx });
+  };
+
+  const handleDrop = (weekNum, idx) => {
+    if (!dragFrom) return;
+    const srcWk = dragFrom.week === 1 ? weekDate : weekDate2;
+    const dstWk = weekNum === 1 ? weekDate : weekDate2;
+    const srcData = dragFrom.week === 1 ? data1 : data2;
+    const dstData = weekNum === 1 ? data1 : data2;
+    const srcRows = [...(dragFrom.week === 1 ? rows1 : rows2)];
+    const dstRows = dragFrom.week === weekNum ? srcRows : [...(weekNum === 1 ? rows1 : rows2)];
+    const [item] = srcRows.splice(dragFrom.idx, 1);
+
+    if (dragFrom.week === weekNum) {
+      srcRows.splice(idx, 0, item);
+      updateWeekData(srcWk, srcData, { rows: srcRows });
+    } else {
+      dstRows.splice(idx, 0, item);
+      const next = { ...allData,
+        [srcWk]: { ...srcData, rows: srcRows },
+        [dstWk]: { ...dstData, rows: dstRows },
+        _currentWeek: weekDate, _currentWeek2: weekDate2,
+      };
+      save(next);
+    }
+    setDragFrom(null);
+    setDragOver(null);
+  };
+
+  const handleDragEnd = () => { setDragFrom(null); setDragOver(null); };
+
   useEffect(() => { document.title = 'Weekly Payment Summary'; }, []);
 
   const clearWeek = () => {
@@ -223,8 +261,8 @@ export default function WeeklyPayment() {
             </thead>
             <tbody>
               {rows1.map((r, i) => (
-                <tr key={i}>
-                  <td className="wp-no">{i + 1}</td>
+                <tr key={i} draggable onDragStart={() => handleDragStart(1, i)} onDragOver={e => handleDragOver(e, 1, i)} onDrop={() => handleDrop(1, i)} onDragEnd={handleDragEnd} className={dragOver && dragOver.week === 1 && dragOver.idx === i ? 'wp-drag-over' : ''}>
+                  <td className="wp-no wp-grip" style={{ cursor: 'grab' }}>⠿</td>
                   <td className="wp-sup-name">{r.supplier || '-'}</td>
                   <td className="wp-bank">{r.bank || '-'}</td>
                   <td className="wp-amt">
@@ -235,7 +273,7 @@ export default function WeeklyPayment() {
                   <td className="wp-del-cell"><button className="wp-del" onClick={() => removeRow1(i)} title="Remove row">✕</button></td>
                 </tr>
               ))}
-              {rows1.length === 0 && <tr><td colSpan="7" className="wp-empty">Click a supplier on the left to add</td></tr>}
+              {rows1.length === 0 && <tr onDragOver={e => { e.preventDefault(); setDragOver({ week: 1, idx: 0 }); }} onDrop={() => handleDrop(1, 0)}><td colSpan="7" className="wp-empty">Click a supplier on the left to add</td></tr>}
             </tbody>
             <tfoot>
               <tr className="wp-total-row">
@@ -282,8 +320,8 @@ export default function WeeklyPayment() {
                 </thead>
                 <tbody>
                   {rows2.map((r, i) => (
-                    <tr key={i}>
-                      <td className="wp-no">{i + 1}</td>
+                    <tr key={i} draggable onDragStart={() => handleDragStart(2, i)} onDragOver={e => handleDragOver(e, 2, i)} onDrop={() => handleDrop(2, i)} onDragEnd={handleDragEnd} className={dragOver && dragOver.week === 2 && dragOver.idx === i ? 'wp-drag-over' : ''}>
+                      <td className="wp-no wp-grip" style={{ cursor: 'grab' }}>⠿</td>
                       <td className="wp-sup-name">{r.supplier || '-'}</td>
                       <td className="wp-bank">{r.bank || '-'}</td>
                       <td className="wp-amt">
@@ -294,7 +332,7 @@ export default function WeeklyPayment() {
                       <td className="wp-del-cell"><button className="wp-del" onClick={() => removeRow2(i)} title="Remove row">✕</button></td>
                     </tr>
                   ))}
-                  {rows2.length === 0 && <tr><td colSpan="7" className="wp-empty">Click a supplier on the left to add</td></tr>}
+                  {rows2.length === 0 && <tr onDragOver={e => { e.preventDefault(); setDragOver({ week: 2, idx: 0 }); }} onDrop={() => handleDrop(2, 0)}><td colSpan="7" className="wp-empty">Click a supplier on the left to add</td></tr>}
                 </tbody>
                 <tfoot>
                   <tr className="wp-total-row">
@@ -491,6 +529,12 @@ const CSS = `
 
 
 .wp-amt-val{font-variant-numeric:tabular-nums;font-weight:600}
+
+.wp-tbl tbody tr[draggable]{cursor:grab}
+.wp-tbl tbody tr[draggable]:active{cursor:grabbing}
+.wp-drag-over{background:#dbeafe!important}
+.wp-drag-over td{border-bottom:2px solid #2563eb!important}
+.wp-grip{color:#a1a1aa;font-size:10px;letter-spacing:-1px;user-select:none}
 
 @media print{
   .no-print,.noP{display:none!important}
