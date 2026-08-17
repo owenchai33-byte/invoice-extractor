@@ -6,9 +6,6 @@ const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov',
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
 const numFmt = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr}`; };
-const LS_ABS = 'cjk_payslip_adj';
-const ATT_DATA_KEY = 'cjk_attendance_v1';
-
 const fitCls = (txt, base) => {
   const len = (txt || '').length;
   if (len > 40) return base + ' si-xs';
@@ -17,7 +14,7 @@ const fitCls = (txt, base) => {
 };
 
 // ─── One payslip (matches Sabrina's Excel layout exactly) ───
-function Slip({ r, mo, yr, absence, others }) {
+function Slip({ r, mo, yr }) {
   const earn = [['BASIC SALARY', r.salary], ['INCENTIVE', r.incentive]];
   if (r.bonus > 0) earn.push([(r.bonusLabel || 'BONUS'), r.bonus]);
   const earnTotal = r.salary + (r.incentive || 0) + (r.bonus || 0);
@@ -74,22 +71,6 @@ function Slip({ r, mo, yr, absence, others }) {
       <div className="slip-net">
         <span className="sn-lb">NET PAY</span>
         <span className="sn-val">{numFmt(r.netPay)}</span>
-      </div>
-
-      <div className="slip-adj">
-        <div className="slip-adj-row">
-          <span className="sa-lb">ABSENCE</span>
-          <span className="sa-val">{numFmt(absence || 0)}</span>
-        </div>
-        <div className="slip-adj-row">
-          <span className="sa-lb">OTHERS</span>
-          <span className="sa-val">{numFmt(others || 0)}</span>
-        </div>
-      </div>
-
-      <div className="slip-net slip-final">
-        <span className="sn-lb">NET PAY</span>
-        <span className="sn-val">{numFmt(Math.round((r.netPay - (absence || 0) - (others || 0)) * 100) / 100)}</span>
       </div>
 
       <div className="slip-sig">
@@ -163,52 +144,6 @@ export default function Payslip() {
     }
   }, [printOnly]);
 
-  const [adj, setAdj] = useState(() => load(LS_ABS, {}));
-  useEffect(() => { try { localStorage.setItem(LS_ABS, JSON.stringify(adj)); } catch {} }, [adj]);
-  const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`;
-  const monthAdj = adj[mk] || {};
-  const getAdj = (id) => monthAdj[id] || { absence: 0, others: 0 };
-
-  const syncAttendance = () => {
-    try {
-      const attRaw = localStorage.getItem(ATT_DATA_KEY);
-      if (!attRaw) { alert('No attendance data found. Upload attendance Excel in the Attendance tab first.'); return; }
-      const attData = JSON.parse(attRaw);
-      const attPeriod = Object.values(attData)[0]?.period;
-      if (!attPeriod) { alert('Attendance data has no period info.'); return; }
-      const [ay, am] = attPeriod.from.split('-').map(Number);
-      if (ay !== yr || am !== mo + 1) { alert(`Attendance data is for ${am}/${ay}, but payslip is ${mo + 1}/${yr}. Switch to the matching month.`); return; }
-
-      const nameMap = {};
-      for (const [, emp] of Object.entries(attData)) {
-        nameMap[emp.name.trim().toUpperCase()] = emp;
-      }
-
-      const next = { ...monthAdj };
-      let matched = 0;
-      for (const s of staff) {
-        const att = nameMap[s.name.trim().toUpperCase()];
-        if (!att) continue;
-        matched++;
-        const working = att.summary.working || 26;
-        const dailyRate = s.salary / working;
-        const absentDays = att.summary.absent + att.summary.half * 0.5;
-        const amount = Math.round(dailyRate * absentDays * 100) / 100;
-        next[s.id] = { ...(next[s.id] || {}), absence: amount };
-      }
-      setAdj(prev => ({ ...prev, [mk]: next }));
-      alert(`Synced! ${matched} employees matched.`);
-    } catch { alert('Error reading attendance data.'); }
-  };
-
-  const clearAttendance = () => {
-    const next = { ...monthAdj };
-    for (const id of Object.keys(next)) next[id] = { ...next[id], absence: 0 };
-    setAdj(prev => ({ ...prev, [mk]: next }));
-  };
-
-  const hasSynced = Object.values(monthAdj).some(v => v.absence > 0);
-
   const [batchOpen, setBatchOpen] = useState(false);
   const [batchStaff, setBatchStaff] = useState('');
   const [batchFromMo, setBatchFromMo] = useState(0);
@@ -256,8 +191,6 @@ export default function Payslip() {
         </div>
         <div className="ps-acts">
           <span style={{fontSize:12,color:'#a1a1aa'}}>🔒 View only</span>
-          <button className="ps-btn ps-btn-sync" onClick={syncAttendance}>Sync Attendance</button>
-          {hasSynced && <button className="ps-btn ps-btn-o" onClick={clearAttendance}>Clear Absence</button>}
           <div className="ps-batch-wrap" ref={batchRef}>
             <button className="ps-btn ps-btn-o" onClick={() => setBatchOpen(o => !o)}>Batch Print</button>
             {batchOpen && (
@@ -283,8 +216,8 @@ export default function Payslip() {
           <div className="ps-stage no-print">
             <button className="ps-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ps-pagewrap">
-              <Slip r={pairs[cur][0]} mo={mo} yr={yr} absence={getAdj(pairs[cur][0].id).absence} others={getAdj(pairs[cur][0].id).others} />
-              {pairs[cur][1] && <Slip r={pairs[cur][1]} mo={mo} yr={yr} absence={getAdj(pairs[cur][1].id).absence} others={getAdj(pairs[cur][1].id).others} />}
+              <Slip r={pairs[cur][0]} mo={mo} yr={yr} />
+              {pairs[cur][1] && <Slip r={pairs[cur][1]} mo={mo} yr={yr} />}
             </div>
             <button className="ps-arrow" disabled={cur >= pairs.length - 1} onClick={() => go(1)}>&#9654;</button>
           </div>
@@ -304,16 +237,16 @@ export default function Payslip() {
           <div className="ps-print">
             {printOnly === 'batch' ? batchPairs.map((pair, pi) => (
               <div className="ps-page" key={pi}>
-                {pair.map((s, j) => s ? <Slip key={s.r.id + '-' + s.mo + '-' + s.yr} r={s.r} mo={s.mo} yr={s.yr} absence={getAdj(s.r.id).absence} others={getAdj(s.r.id).others} /> : <div key={j} className="slip slip-blank" />)}
+                {pair.map((s, j) => s ? <Slip key={s.r.id + '-' + s.mo + '-' + s.yr} r={s.r} mo={s.mo} yr={s.yr} /> : <div key={j} className="slip slip-blank" />)}
               </div>
             )) : printOnly !== null ? (
               <div className="ps-page">
-                <Slip r={rows[printOnly]} mo={mo} yr={yr} absence={getAdj(rows[printOnly].id).absence} others={getAdj(rows[printOnly].id).others} />
+                <Slip r={rows[printOnly]} mo={mo} yr={yr} />
                 <div className="slip slip-blank" />
               </div>
             ) : pairs.map((pair, pi) => (
               <div className="ps-page" key={pi}>
-                {pair.map((r, j) => r ? <Slip key={r.id} r={r} mo={mo} yr={yr} absence={getAdj(r.id).absence} others={getAdj(r.id).others} /> : <div key={j} className="slip slip-blank" />)}
+                {pair.map((r, j) => r ? <Slip key={r.id} r={r} mo={mo} yr={yr} /> : <div key={j} className="slip slip-blank" />)}
               </div>
             ))}
           </div>
@@ -383,8 +316,8 @@ const CSS = `
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:1em}
-.slip-box th{border-top:1px solid #000;border-bottom:1px solid #000;border-left:1px solid #888;border-right:1px solid #888;padding:.2em .5em;text-align:center;font-weight:700}
-.slip-box td{border-left:1px solid #888;border-right:1px solid #888;padding:.2em .5em}
+.slip-box th{border-top:1px solid #000;border-bottom:1px solid #000;border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em;text-align:center;font-weight:700}
+.slip-box td{border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em}
 .slip-box .hl{width:20%}
 .slip-box .ha{width:30%}
 .slip-box .cl{text-align:left}
@@ -401,21 +334,8 @@ const CSS = `
 .sn-lb{width:20%;flex-shrink:0}
 .sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
-/* ABSENCE / OTHERS rows */
-.slip-adj{margin-top:.3em;font-size:1em}
-.slip-adj-row{display:flex;align-items:center;margin-bottom:.1em}
-.sa-lb{width:20%;flex-shrink:0;font-weight:700}
-.sa-val{width:30%;text-align:right;padding:.2em .5em;font-variant-numeric:tabular-nums;border:1px solid #888;box-sizing:border-box;min-height:1.6em}
-
-/* Final NET PAY */
-.slip-final{margin-top:.3em}
-
-/* Sync button */
-.ps-btn-sync{background:#059669!important;color:#fff!important;border-color:#059669!important}
-.ps-btn-sync:hover{background:#047857!important}
-
 /* Signature block — label centered above line, signing space between */
-.slip-sig{display:flex;justify-content:space-between;margin-top:2em;font-size:1em}
+.slip-sig{display:flex;justify-content:space-between;margin-top:3.5em;font-size:1em}
 .sig-col{width:28%;display:flex;flex-direction:column;align-items:center}
 .sig-label{margin-bottom:4.5em}
 .sig-line{width:100%;border-bottom:1px solid #000;margin-bottom:.3em}
