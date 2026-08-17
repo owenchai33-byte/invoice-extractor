@@ -174,15 +174,6 @@ export default function WeeklyPayment() {
       <style>{CSS}</style>
       <div className="wp-bar no-print">
         <div className="wp-acts">
-          <label className="wp-date-label">
-            Week ending:
-            <input type="date" value={weekDate} onChange={e => { setWeekDate(e.target.value); save({ ...allData, _currentWeek: e.target.value }); }} className="wp-date-input" />
-          </label>
-          <label className="wp-date-label">
-            2nd week:
-            <input type="date" value={weekDate2} onChange={e => { setWeekDate2(e.target.value); save({ ...allData, _currentWeek2: e.target.value }); }} className="wp-date-input" />
-            {weekDate2 && <button className="wp-date-clear" onClick={() => { setWeekDate2(''); save({ ...allData, _currentWeek2: '' }); }} title="Remove 2nd week">✕</button>}
-          </label>
           <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
           <button className="wp-btn" onClick={() => window.print()}>Print</button>
         </div>
@@ -216,7 +207,7 @@ export default function WeeklyPayment() {
 
         <div className="wp-main">
           <div className="wp-week-label" onClick={() => setActiveWeek(1)} style={{ cursor: 'pointer', background: activeWeek === 1 ? '#eff6ff' : '#f9fafb', border: activeWeek === 1 ? '1px solid #93c5fd' : '1px solid #e4e4e7', borderRadius: 6, padding: '6px 12px', marginBottom: 8, fontWeight: 700, fontSize: 13, color: activeWeek === 1 ? '#1e40af' : '#71717a' }}>
-            WEEK 1 — ending {weekLabel}
+            WEEK 1 — ending <input type="date" value={weekDate} onChange={e => { setWeekDate(e.target.value); save({ ...allData, _currentWeek: e.target.value }); }} className="wp-date-input" style={{ fontSize: 12, padding: '2px 6px' }} onClick={e => e.stopPropagation()} />
           </div>
           <table className="wp-tbl">
             <thead>
@@ -254,10 +245,28 @@ export default function WeeklyPayment() {
             </tfoot>
           </table>
 
+          {!weekDate2 && (
+            <button
+              onClick={() => {
+                const parts = weekDate.split('-').map(Number);
+                const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                d.setDate(d.getDate() + 7);
+                const next = dateToInput(d);
+                setWeekDate2(next);
+                setActiveWeek(2);
+                save({ ...allData, _currentWeek2: next });
+              }}
+              style={{ marginTop: 20, padding: '10px 20px', border: '2px dashed #d4d4d8', borderRadius: 8, background: '#fafafa', color: '#71717a', fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'center' }}
+            >
+              + Add Week 2
+            </button>
+          )}
+
           {weekDate2 && (
             <>
-              <div className="wp-week-label" onClick={() => setActiveWeek(2)} style={{ cursor: 'pointer', background: activeWeek === 2 ? '#eff6ff' : '#f9fafb', border: activeWeek === 2 ? '1px solid #93c5fd' : '1px solid #e4e4e7', borderRadius: 6, padding: '6px 12px', marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 13, color: activeWeek === 2 ? '#1e40af' : '#71717a' }}>
-                WEEK 2 — ending {weekLabel2}
+              <div className="wp-week-label" onClick={() => setActiveWeek(2)} style={{ cursor: 'pointer', background: activeWeek === 2 ? '#eff6ff' : '#f9fafb', border: activeWeek === 2 ? '1px solid #93c5fd' : '1px solid #e4e4e7', borderRadius: 6, padding: '6px 12px', marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 13, color: activeWeek === 2 ? '#1e40af' : '#71717a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>WEEK 2 — ending <input type="date" value={weekDate2} onChange={e => { setWeekDate2(e.target.value); save({ ...allData, _currentWeek2: e.target.value }); }} className="wp-date-input" style={{ fontSize: 12, padding: '2px 6px' }} onClick={e => e.stopPropagation()} /></span>
+                <button onClick={e => { e.stopPropagation(); setWeekDate2(''); setActiveWeek(1); save({ ...allData, _currentWeek2: '' }); }} style={{ border: 'none', background: 'none', color: '#a1a1aa', cursor: 'pointer', fontSize: 14, padding: '0 4px' }} title="Remove Week 2">✕</button>
               </div>
               <table className="wp-tbl">
                 <thead>
