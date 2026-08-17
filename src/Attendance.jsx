@@ -1296,8 +1296,7 @@ export default function Attendance() {
                   <tbody>
                     {(() => {
                       const gb = '2px solid #666';
-                      const filtered = empIds.filter(id => { const s = effectiveData[id].summary; return (s.lateIn + s.breakExcess + s.earlyOut) > 0; });
-                      return filtered.map((id, idx) => {
+                      return empIds.map((id, idx) => {
                       const e = effectiveData[id];
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
@@ -1305,10 +1304,11 @@ export default function Attendance() {
                       const confirmedHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${id}-${d.date}`));
                       const halfCount = confirmedHalf.length;
                       const halfDates = confirmedHalf.map(d => d.dateShort);
-                      const isLast = idx === filtered.length - 1;
+                      const hasPenalty = total > 0 || s.absent > 0 || halfCount > 0;
+                      const isLast = idx === empIds.length - 1;
                       const bb = isLast ? gb : td.borderBottom;
                       return (
-                        <tr key={id} style={{ background: '#fef3c7' }}>
+                        <tr key={id} style={{ background: hasPenalty ? '#fef3c7' : '#fff' }}>
                           <td style={{ ...td, textAlign: 'center' }}>{idx + 1}</td>
                           <td style={{ ...td, fontWeight: 500 }}>{e.name}</td>
                           <td style={{ ...td, textAlign: 'center' }}>{s.present}</td>
