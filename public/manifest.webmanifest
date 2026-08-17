@@ -1,0 +1,14 @@
+{
+  "name": "Sabrina OS",
+  "short_name": "Sabrina OS",
+  "description": "CJK operations — payroll, invoices, payslips, contracts",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#fafaf9",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.svg", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
