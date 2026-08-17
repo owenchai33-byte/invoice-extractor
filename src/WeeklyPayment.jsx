@@ -110,6 +110,7 @@ export default function WeeklyPayment() {
     const saved = allData._currentWeek;
     return saved || dateToInput(friday);
   });
+  const [weekDate2, setWeekDate2] = useState(() => allData._currentWeek2 || '');
   const wk = weekDate;
   const data = allData[wk] || { rows: [], epayBalance: '', epayDate: '', preparedBy: 'Sabrina', preparedDate: '' };
   const rows = data.rows || [];
@@ -135,12 +136,13 @@ export default function WeeklyPayment() {
 
   const total = rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
 
-  const weekLabel = (() => {
-    const parts = weekDate.split('-');
-    if (parts.length !== 3) return weekDate;
-    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    return formatDate(d);
-  })();
+  const toLabel = (ds) => {
+    const parts = ds.split('-');
+    if (parts.length !== 3) return ds;
+    return formatDate(new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
+  };
+  const weekLabel = toLabel(weekDate);
+  const weekLabel2 = weekDate2 ? toLabel(weekDate2) : '';
 
   useEffect(() => {
     document.title = `Weekly Payment Summary`;
@@ -160,7 +162,12 @@ export default function WeeklyPayment() {
         <div className="wp-acts">
           <label className="wp-date-label">
             Week ending:
-            <input type="date" value={weekDate} onChange={e => { setWeekDate(e.target.value); const next = { ...allData, _currentWeek: e.target.value }; save(next); }} className="wp-date-input" />
+            <input type="date" value={weekDate} onChange={e => { setWeekDate(e.target.value); save({ ...allData, _currentWeek: e.target.value }); }} className="wp-date-input" />
+          </label>
+          <label className="wp-date-label">
+            2nd week:
+            <input type="date" value={weekDate2} onChange={e => { setWeekDate2(e.target.value); save({ ...allData, _currentWeek2: e.target.value }); }} className="wp-date-input" />
+            {weekDate2 && <button className="wp-date-clear" onClick={() => { setWeekDate2(''); save({ ...allData, _currentWeek2: '' }); }} title="Remove 2nd week">✕</button>}
           </label>
           <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
           <button className="wp-btn" onClick={() => window.print()}>Print</button>
@@ -262,16 +269,16 @@ export default function WeeklyPayment() {
                 className="wp-epay-input"
                 type="number"
                 value={data.epayBalance}
-                onChange={e => updateData({ epayBalance: e.target.value })}
+                onChange={e => {
+                  const patch = { epayBalance: e.target.value };
+                  if (e.target.value && !data.epayDate) {
+                    patch.epayDate = new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                  }
+                  updateData(patch);
+                }}
                 placeholder="0.00"
               />
-              <input
-                className="wp-epay-date"
-                type="text"
-                value={data.epayDate || ''}
-                onChange={e => updateData({ epayDate: e.target.value })}
-                placeholder="date/time"
-              />
+              {data.epayDate && <span className="wp-epay-ts">{data.epayDate}</span>}
             </div>
             <div className="wp-prepared">
               <div>
@@ -310,7 +317,7 @@ export default function WeeklyPayment() {
         <div className="wp-print-header">
           <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD." className="wp-letterhead" />
           <div className="wp-print-title">Weekly Payment Summary</div>
-          <div className="wp-print-week">(Week Ending {weekLabel})</div>
+          <div className="wp-print-week">{weekLabel2 ? `(Week Ending ${weekLabel} & ${weekLabel2})` : `(Week Ending ${weekLabel})`}</div>
         </div>
         <table className="wp-tbl">
           <thead>
@@ -375,6 +382,8 @@ const CSS = `
 .wp-btn-add:hover{background:#1d4ed8}
 .wp-date-label{font-size:12px;font-weight:600;color:#52525b;display:flex;align-items:center;gap:6px}
 .wp-date-input{border:1px solid #d4d4d8;border-radius:6px;padding:5px 8px;font-size:13px;font-family:inherit;color:#18181b}
+.wp-date-clear{border:none;background:none;color:#a1a1aa;cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+.wp-date-clear:hover{color:#dc2626}
 
 .wp-layout{display:flex;gap:16px;max-width:1400px;margin:0 auto;padding:28px 24px 100px;align-items:flex-start}
 .wp-main{flex:1;min-width:0}
@@ -398,8 +407,8 @@ const CSS = `
 
 .wp-tbl{width:100%;border-collapse:collapse;font-size:13px}
 .wp-tbl thead th{text-align:left;padding:10px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#52525b;border-bottom:2px solid #666;background:#fafafa}
-.wp-th-no{width:40px;text-align:center}
-.wp-th-sup{width:28%}
+.wp-th-no{width:28px;text-align:center}
+.wp-th-sup{white-space:nowrap}
 .wp-th-bank{width:22%}
 .wp-th-amt{width:14%;text-align:right}
 .wp-th-pf{width:12%}
@@ -410,7 +419,7 @@ const CSS = `
 .wp-no{text-align:center;color:#71717a;font-weight:600;font-size:12px}
 .wp-bank{font-size:12px;color:#18181b;font-variant-numeric:tabular-nums;font-weight:500}
 
-.wp-sup-name{font-size:12px;color:#18181b;font-weight:500}
+.wp-sup-name{font-size:12px;color:#18181b;font-weight:500;white-space:nowrap}
 
 .wp-input{width:100%;border:1px solid #e4e4e7;border-radius:4px;padding:5px 6px;font-size:12px;font-family:inherit;color:#18181b;background:#fff}
 .wp-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
@@ -433,7 +442,7 @@ const CSS = `
 .wp-epay-input{width:100px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:12px;text-align:right;font-family:inherit}
 .wp-epay-input::-webkit-inner-spin-button,.wp-epay-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .wp-epay-input{-moz-appearance:textfield}
-.wp-epay-date{width:130px;border:1px solid #d4d4d8;border-radius:4px;padding:4px 6px;font-size:11px;font-family:inherit;margin-left:4px}
+.wp-epay-ts{font-size:11px;color:#71717a;margin-left:6px}
 .wp-epay-fv{font-weight:600}
 .wp-epay-fd{margin-left:4px;font-size:11px;color:#555}
 
@@ -462,6 +471,6 @@ const CSS = `
   .wp-total-row td{border-top:2px solid #333!important}
   .wp-total-val{font-size:14px}
   .wp-footer{margin-top:12px}
-  @page{size:A4 portrait;margin:15mm}
+  @page{size:A4 portrait;margin:10mm 8mm}
 }
 `;
