@@ -21,6 +21,22 @@ const AUDREY_MESSAGES = [];
 const LS_MSG = 'cjk_msg_responses';
 const loadMsg = () => { try { return JSON.parse(localStorage.getItem(LS_MSG)) || {}; } catch { return {}; } };
 
+// Responsive: true on phone-sized screens. Screen-only — never affects print/PDF output.
+function useIsMobile(breakpoint = 768) {
+  const [mobile, setMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= breakpoint
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const onChange = e => setMobile(e.matches);
+    setMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [breakpoint]);
+  return mobile;
+}
+
 function MessageCenter({ messages, onClose }) {
   const [responses, setResponses] = useState(() => loadMsg());
   const ref = useRef(null);
@@ -144,6 +160,7 @@ function PinGate({ onUnlock }) {
 }
 
 export default function App() {
+  const isMobile = useIsMobile();
   const [active, setActive] = useState(() => {
     try { const v = localStorage.getItem('sabrina_active'); return (v === 'choonhua' || v === 'yhs') ? 'invoice' : (v || 'invoice'); }
     catch { return 'invoice'; }
@@ -320,11 +337,12 @@ export default function App() {
         <div style={{
           maxWidth: 1480,
           margin: '0 auto',
-          padding: '0 24px',
+          padding: isMobile ? '0 12px' : '0 24px',
           display: 'flex',
           alignItems: 'center',
           height: 52,
-          gap: 24,
+          gap: isMobile ? 12 : 24,
+          overflowX: isMobile ? 'auto' : 'visible',
         }}>
           {/* Logo / brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -486,11 +504,13 @@ export default function App() {
             <div style={{
               maxWidth: 1480,
               margin: '0 auto',
-              padding: '0 24px',
+              padding: isMobile ? '0 8px' : '0 24px',
               display: 'flex',
               gap: 2,
               height: 40,
               alignItems: 'center',
+              overflowX: isMobile ? 'auto' : 'visible',
+              WebkitOverflowScrolling: 'touch',
             }}>
               {sec.tabs.map(t => {
                 const isActive = active === t.id;
@@ -509,6 +529,8 @@ export default function App() {
                       fontFamily: 'inherit',
                       color: isActive ? '#0a0a0a' : '#737373',
                       cursor: 'pointer',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
                       transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                     onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#0a0a0a'; }}
@@ -563,6 +585,23 @@ export default function App() {
         ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
         /* Refined text selection */
         ::selection { background: rgba(10,10,10,0.12); color: #0a0a0a; }
+
+        /* ── Mobile (screen only — never affects @media print / PDF output) ── */
+        @media (max-width: 768px) {
+          html, body { overflow-x: hidden; }
+          .app-shell main { max-width: 100vw; }
+          /* Wide desktop tables scroll inside their own box instead of
+             stretching the whole page sideways. */
+          .app-shell main table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+          }
+          /* Let workspaces that pinned a big min-width relax to the screen. */
+          .app-shell main > div { max-width: 100%; }
+        }
       `}</style>
 
       {toast && <div style={{

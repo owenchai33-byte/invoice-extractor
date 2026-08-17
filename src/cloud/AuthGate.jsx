@@ -39,12 +39,12 @@ export default function AuthGate({ onAuthed }) {
 }
 
 const S = {
-  wrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafaf9', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif' },
-  card: { width: 320, background: '#fff', border: '1px solid #e4e4e7', borderRadius: 14, padding: 28, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,.08)' },
+  wrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafaf9', padding: 16, boxSizing: 'border-box', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif' },
+  card: { width: '100%', maxWidth: 320, boxSizing: 'border-box', background: '#fff', border: '1px solid #e4e4e7', borderRadius: 14, padding: 28, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,.08)' },
   brand: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 16 },
-  logo: { width: 24, height: 24, borderRadius: 7, background: 'linear-gradient(135deg,#18181b,#3f3f46)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 },
+  logo: { width: 24, height: 24, borderRadius: 7, background: 'linear-gradient(135deg,#18181b,#3f3f46)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 },
   sub: { fontSize: 13, color: '#71717a', marginBottom: 4 },
-  inp: { border: '1px solid #d4d4d8', borderRadius: 8, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' },
+  inp: { border: '1px solid #d4d4d8', borderRadius: 8, padding: '10px 12px', fontSize: 16, fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' },
   err: { fontSize: 12.5, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 10px' },
   btn: { border: 'none', background: '#18181b', color: '#fff', borderRadius: 9, padding: '11px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 4 },
 };
