@@ -400,7 +400,7 @@ export default function WeeklyPayment() {
         <div className="wp-print-header">
           <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD." className="wp-letterhead" />
           <div className="wp-print-title">Weekly Payment Summary</div>
-          <div className="wp-print-week">(Week Ending {weekLabel})</div>
+          <div className="wp-print-week">Week Ending {weekLabel}</div>
         </div>
         <table className="wp-tbl">
           <thead><tr><th className="wp-th-no">NO.</th><th className="wp-th-sup">SUPPLIER</th><th className="wp-th-bank">BANK ACCOUNT</th><th className="wp-th-amt">AMOUNT</th><th className="wp-th-pf">PAYMENT FOR</th><th className="wp-th-rmk">REMARK</th></tr></thead>
@@ -414,7 +414,7 @@ export default function WeeklyPayment() {
 
         {weekDate2 && rows2.length > 0 && (
           <>
-            <div style={{ marginTop: 24, fontWeight: 700, fontSize: 14, textAlign: 'center', color: '#000' }}>(Week Ending {weekLabel2})</div>
+            <div style={{ marginTop: 24, fontWeight: 700, fontSize: 14, textAlign: 'center', color: '#000' }}>Week Ending {weekLabel2}</div>
             <table className="wp-tbl" style={{ marginTop: 8 }}>
               <thead><tr><th className="wp-th-no">NO.</th><th className="wp-th-sup">SUPPLIER</th><th className="wp-th-bank">BANK ACCOUNT</th><th className="wp-th-amt">AMOUNT</th><th className="wp-th-pf">PAYMENT FOR</th><th className="wp-th-rmk">REMARK</th></tr></thead>
               <tbody>
@@ -544,7 +544,7 @@ const CSS = `
   .wp-print-body{display:block!important;padding:0}
   .wp-print-header{display:block!important;text-align:center;margin-bottom:20px}
   .wp-print-title{font-size:16px;font-weight:700;color:#000}
-  .wp-print-week{font-size:13px;color:#333;margin-top:2px}
+  .wp-print-week{font-size:14px;font-weight:700;color:#000;margin-top:2px}
   .wp-tbl{font-size:12px}
   .wp-tbl thead th{padding:8px 10px;border-bottom:2px solid #333!important;background:#fff}
   .wp-tbl tbody td{padding:6px 10px;border-bottom:1px solid #666!important}
