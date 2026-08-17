@@ -218,7 +218,7 @@ export default function EmployeePayslip() {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   });
-  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [curPage]);
+  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest' }); }, [curPage]);
 
   const atMin = mo === 6 && yr === 2026;
   const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
@@ -250,7 +250,8 @@ export default function EmployeePayslip() {
         <div style={{maxWidth:1100,margin:'0 auto',padding:24}}><div style={{background:'#fff',border:'1px dashed #d4d4d8',borderRadius:12,padding:'48px 24px',textAlign:'center',color:'#71717a'}}><h2 style={{margin:'0 0 8px',fontSize:16,color:'#18181b'}}>No staff found</h2><p>Add staff in the Payroll tab first.</p></div></div>
       ) : (
         <>
-          <div className="ep-stage no-print">
+          <div className="ep-layout no-print">
+          <div className="ep-stage">
             <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
               {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} othVal={getOth(it.r.id)} onOthChange={v => setOthV(it.r.id, v)} locked={locked} showStart={canShowStart(it.r)} /></div>)}
@@ -258,7 +259,7 @@ export default function EmployeePayslip() {
             <button className="ep-arrow" disabled={curPage >= maxPage} onClick={() => go(1)}>&#9654;</button>
           </div>
 
-          <div className="ep-strip no-print" ref={stripRef}>
+          <div className="ep-sidebar" ref={stripRef}>
             {rows.map((r, i) => (
               <button key={r.id} className={"thumb" + (staffPage[r.id] === curPage ? " on" : "")} onClick={() => setIdx(staffPage[r.id])} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
@@ -266,6 +267,7 @@ export default function EmployeePayslip() {
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
               </button>
             ))}
+          </div>
           </div>
 
           <div className="ep-print">
@@ -308,10 +310,11 @@ const CSS = `
 .ep-btn-sync{background:#059669;border-color:#059669;color:#fff}
 .ep-btn-sync:hover{background:#047857}
 
-.ep-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 72px 120px}
+.ep-layout{display:flex;min-height:calc(100vh - 56px)}
+.ep-stage{flex:1;display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 72px}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .ep-stage>.ep-arrow:first-child{left:12px}
-.ep-stage>.ep-arrow:last-child{right:12px}
+.ep-stage>.ep-arrow:last-child{right:170px}
 .ep-arrow:hover:not(:disabled){background:#f4f4f5}
 .ep-arrow:disabled{opacity:.35;cursor:default}
 
@@ -322,8 +325,8 @@ const CSS = `
 .ep-sel-wrap{cursor:pointer;border-radius:6px;border:2px solid transparent;transition:border-color .15s}
 .ep-sel-wrap.ep-selected{border-color:#2563eb}
 
-.ep-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
-.thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
+.ep-sidebar{width:150px;flex-shrink:0;overflow-y:auto;padding:8px;background:#fff;border-left:1px solid #e4e4e7;display:flex;flex-direction:column;gap:6px}
+.thumb{display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
 .thumb:hover{background:#f4f4f5}
 .thumb.on{border-color:#18181b;background:#f4f4f5;box-shadow:0 0 0 1px #18181b inset}
 .thumb-n{font-size:10px;color:#a1a1aa;font-weight:700}

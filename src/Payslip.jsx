@@ -130,7 +130,7 @@ export default function Payslip() {
     return () => window.removeEventListener('keydown', h);
   });
   // Keep the active thumbnail in view
-  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [cur]);
+  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest' }); }, [cur]);
 
   const atMin = mo === 6 && yr === 2026;
   const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
@@ -212,8 +212,8 @@ export default function Payslip() {
         <div className="ps-body"><div className="ps-empty"><h2>No staff found</h2><p>Add staff in the Payroll tab first, then their payslips will show here.</p></div></div>
       ) : (
         <>
-          {/* Two-payslip page viewer (matches print layout) */}
-          <div className="ps-stage no-print">
+          <div className="ps-layout no-print">
+          <div className="ps-stage">
             <button className="ps-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ps-pagewrap">
               <Slip r={pairs[cur][0]} mo={mo} yr={yr} />
@@ -222,8 +222,7 @@ export default function Payslip() {
             <button className="ps-arrow" disabled={cur >= pairs.length - 1} onClick={() => go(1)}>&#9654;</button>
           </div>
 
-          {/* Bottom preview strip */}
-          <div className="ps-strip no-print" ref={stripRef}>
+          <div className="ps-sidebar" ref={stripRef}>
             {rows.map((r, i) => (
               <button key={r.id} className={"thumb" + (i === sel ? " on" : Math.floor(i / 2) === cur ? " cur" : "")} onClick={() => { setSel(i); setIdx(Math.floor(i / 2)); }} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
@@ -231,6 +230,7 @@ export default function Payslip() {
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
               </button>
             ))}
+          </div>
           </div>
 
           {/* Hidden until print: all payslips, 2 per A4 */}
@@ -281,16 +281,17 @@ const CSS = `
 .ps-empty{background:#fff;border:1px dashed #d4d4d8;border-radius:12px;padding:48px 24px;text-align:center;color:#71717a}
 .ps-empty h2{margin:0 0 8px;font-size:16px;color:#18181b}
 
-.ps-stage{display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 16px 120px}
+.ps-layout{display:flex;min-height:calc(100vh - 56px)}
+.ps-stage{flex:1;display:flex;align-items:center;justify-content:center;gap:20px;padding:28px 16px}
 .ps-arrow{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ps-arrow:hover:not(:disabled){background:#f4f4f5}
 .ps-arrow:disabled{opacity:.35;cursor:default}
 .ps-pagewrap{display:flex;gap:1.5em;padding:0;align-items:stretch}
 .ps-pagewrap .slip{width:19cm;height:13.35cm;padding:1.5em;box-shadow:0 2px 16px rgba(0,0,0,.12);border-radius:4px;font-size:13px}
 
-/* Bottom preview strip */
-.ps-strip{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;overflow-x:auto;padding:10px 14px;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
-.thumb{flex:none;width:120px;display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
+/* Right sidebar staff list */
+.ps-sidebar{width:150px;flex-shrink:0;overflow-y:auto;padding:8px;background:#fff;border-left:1px solid #e4e4e7;display:flex;flex-direction:column;gap:6px}
+.thumb{display:flex;flex-direction:column;gap:2px;text-align:left;padding:7px 10px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;cursor:pointer}
 .thumb:hover{background:#f4f4f5}
 .thumb.on{border-color:#18181b;background:#f4f4f5;box-shadow:0 0 0 1px #18181b inset}
 .thumb.cur{background:#f4f4f5}
