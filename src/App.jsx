@@ -10,6 +10,86 @@ import Attendance from './Attendance';
 import BeverageFOC from './BeverageFOC';
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
+/*
+ * ─── Audrey's Message Center ───
+ * Format change requests go here. Sabrina approves/rejects in the app.
+ * Add messages with status:'pending'. After Sabrina responds in the app,
+ * update to 'approved'/'rejected' on next deploy.
+ */
+const AUDREY_MESSAGES = [];
+
+const LS_MSG = 'cjk_msg_responses';
+const loadMsg = () => { try { return JSON.parse(localStorage.getItem(LS_MSG)) || {}; } catch { return {}; } };
+
+function MessageCenter({ messages, onClose }) {
+  const [responses, setResponses] = useState(() => loadMsg());
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [onClose]);
+
+  const respond = (id, action) => {
+    const next = { ...responses, [id]: { action, date: new Date().toISOString() } };
+    setResponses(next);
+    try { localStorage.setItem(LS_MSG, JSON.stringify(next)); } catch {}
+  };
+
+  return (
+    <div ref={ref} style={{
+      position: 'absolute', top: '100%', right: 0, marginTop: 6,
+      background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.15)', width: 340, maxHeight: 420,
+      overflow: 'auto', zIndex: 200,
+    }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#18181b' }}>Messages from Audrey</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 16, color: '#a1a1aa', cursor: 'pointer', padding: 0, lineHeight: 1 }}>✕</button>
+      </div>
+      {messages.length === 0 ? (
+        <div style={{ padding: '24px 16px', textAlign: 'center', color: '#a1a1aa', fontSize: 12 }}>
+          No messages yet. When Audrey needs to change any format, a request will appear here for your approval.
+        </div>
+      ) : (
+        messages.map(m => {
+          const r = responses[m.id];
+          return (
+            <div key={m.id} style={{ padding: '12px 16px', borderBottom: '1px solid #f5f5f5' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 10, color: '#a1a1aa', fontWeight: 600 }}>{m.date}</span>
+                <span style={{ fontSize: 10, color: m.type === 'format-change' ? '#dc2626' : '#71717a', fontWeight: 600, textTransform: 'uppercase' }}>{m.type === 'format-change' ? 'Format Change' : 'Request'}</span>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#18181b', marginBottom: 4 }}>{m.subject}</div>
+              <div style={{ fontSize: 12, color: '#52525b', lineHeight: 1.5, marginBottom: 8 }}>{m.description}</div>
+              {r ? (
+                <div style={{
+                  fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 4, display: 'inline-block',
+                  background: r.action === 'approve' ? '#dcfce7' : '#fef2f2',
+                  color: r.action === 'approve' ? '#166534' : '#991b1b',
+                }}>
+                  {r.action === 'approve' ? '✅ Approved' : '❌ Rejected'} — {new Date(r.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => respond(m.id, 'approve')} style={{
+                    padding: '6px 16px', fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
+                    background: '#18181b', color: '#fff', border: 'none',
+                  }}>✅ Approve</button>
+                  <button onClick={() => respond(m.id, 'reject')} style={{
+                    padding: '6px 16px', fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
+                    background: '#fff', color: '#dc2626', border: '1px solid #fecaca',
+                  }}>❌ Reject</button>
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 const SECTIONS = [
   { id: 'af', label: 'Account & Finance', tabs: [
     { id: 'invoice', label: 'Payment Summary' },
@@ -93,10 +173,14 @@ export default function App() {
   const [backupDue, setBackupDue] = useState(false);
   const [showRestore, setShowRestore] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showMsg, setShowMsg] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const fileRef = useRef(null);
   const menuRef = useRef(null);
+  const msgRef = useRef(null);
+  const msgResponses = loadMsg();
+  const pendingMsgCount = AUDREY_MESSAGES.filter(m => !msgResponses[m.id]).length;
   const undoStack = useRef([]);
   const redoStack = useRef([]);
   const skipUndo = useRef(false);
@@ -336,6 +420,21 @@ export default function App() {
                 boxShadow: '0 0 0 3px rgba(34,197,94,0.15)',
               }} />
               <span style={{ fontWeight: 500 }}>Online</span>
+            </div>
+            <div style={{ position: 'relative' }} ref={msgRef}>
+              <button onClick={() => { setShowMsg(!showMsg); setShowMenu(false); }} style={{
+                background: 'none', border: '1px solid #e5e5e5', borderRadius: 4, padding: '2px 8px',
+                fontSize: 11, color: '#737373', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                position: 'relative',
+              }} title="Messages from Audrey">
+                <span style={{ fontSize: 13 }}>💬</span> Messages
+                {pendingMsgCount > 0 && <span style={{
+                  position: 'absolute', top: -5, right: -5, background: '#dc2626', color: '#fff',
+                  fontSize: 9, fontWeight: 700, borderRadius: '50%', width: 16, height: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{pendingMsgCount}</span>}
+              </button>
+              {showMsg && <MessageCenter messages={AUDREY_MESSAGES} onClose={() => setShowMsg(false)} />}
             </div>
             <div style={{ position: 'relative' }} ref={menuRef}>
               <button onClick={() => setShowMenu(!showMenu)} style={{
