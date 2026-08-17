@@ -159,44 +159,36 @@ export default function InvoicesWorkspace() {
     <div>
       <div className="noP" style={{
         background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
-        display: 'flex', alignItems: 'center', gap: 16, height: 56,
+        display: 'flex', alignItems: 'center', height: 56,
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0 }}>PAYMENT SUMMARY</h1>
-        <div style={{ flex: 1 }} />
+        <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, whiteSpace: 'nowrap' }}>PAYMENT SUMMARY</h1>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 4 }}>
+          {SUB_TABS.map(t => {
+            const active = sub === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setSub(t.id)}
+                style={{
+                  background: active ? '#111' : 'transparent',
+                  color: active ? '#fff' : '#666',
+                  border: active ? 'none' : '1px solid #d4d4d8',
+                  padding: '6px 18px',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  transition: 'all 150ms',
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
         <div ref={headerRefCb} style={{ display: 'flex', gap: 8, alignItems: 'center' }} />
-      </div>
-      <div className="noP" style={{
-        display: 'flex',
-        gap: 4,
-        justifyContent: 'center',
-        padding: '12px 0 4px',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-      }}>
-        {SUB_TABS.map(t => {
-          const active = sub === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setSub(t.id)}
-              style={{
-                position: 'relative',
-                background: active ? '#111' : 'transparent',
-                color: active ? '#fff' : '#666',
-                border: active ? 'none' : '1px solid #d4d4d8',
-                padding: '6px 18px',
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'all 150ms',
-              }}
-            >
-              {t.label}
-            </button>
-          );
-        })}
       </div>
 
       {sub === 'weekly' && <WeeklyPayment />}
