@@ -377,6 +377,7 @@ function processRecords({ records, from, to }) {
         const hrs = Math.floor(workedMin / 60);
         const mins = workedMin % 60;
         day.remarks.push(`Worked ${hrs}h ${pad(mins)}m`);
+        day.remarks.push('Subject to review (possible missed scan)');
       }
 
       if (scans.length > 4) day.remarks.push(`${scans.length} scans`);
@@ -753,6 +754,7 @@ export default function Attendance() {
   const [empTimestamps, setEmpTimestamps] = useState({});
   const [confirmedPH, setConfirmedPH] = useState(new Set());
   const [verifiedPH, setVerifiedPH] = useState({});
+  const [showRules, setShowRules] = useState(false);
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
@@ -962,10 +964,66 @@ export default function Attendance() {
           </div>
           <button onClick={() => changeMonth(1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9654;</button>
         </div>
-        <div style={{ marginLeft: 'auto', fontSize: 12, color: '#71717a' }}>
-          {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => setShowRules(v => !v)} style={{ border: '1px solid #e4e4e7', background: showRules ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2563eb' }}>
+            {showRules ? '▾ Rules' : '▸ Rules'}
+          </button>
+          <span style={{ fontSize: 12, color: '#71717a' }}>
+            {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
+          </span>
         </div>
       </div>
+
+      {showRules && (
+        <div className="att-no-print" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '16px 20px', marginBottom: 16, fontSize: 12, color: '#334155', lineHeight: 1.7 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#0f172a' }}>ATTENDANCE RULES</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>Working Hours</div>
+              <div>Weekday: 8:00 AM – 4:45 PM</div>
+              <div>Saturday: 8:00 AM – 3:10 PM</div>
+              <div>Sunday: Off day</div>
+              <div>Break allowance: 45 min</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>4 Scans (Normal)</div>
+              <div>In → Break Out → Break In → Out</div>
+              <div>Tracks: late-in, break excess, early-out, OT</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>3 Scans</div>
+              <div>Detects which scan is missing (break or clock out)</div>
+              <div>Morning + afternoon present → full day</div>
+              <div>Otherwise → half day</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>2 Scans</div>
+              <div>Morning + afternoon → full day (no break recorded)</div>
+              <div>Otherwise → half day AM or PM</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>1 Scan</div>
+              <div>Marked as incomplete</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>5+ Scans</div>
+              <div>First = in, last = out, middle scans searched for best break pair (20–70 min gap, closest to 45 min)</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>Public Holidays</div>
+              <div>Sarawak 2026 holidays hardcoded</div>
+              <div>Work on PH flagged</div>
+              <div>All staff absent on non-holiday weekday → "Subject to Review"</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, color: '#1e40af' }}>Half Days</div>
+              <div>Subject to review — staff may have missed a scan</div>
+              <div>Verify after printing (twice a month: 1–15, 16+)</div>
+              <div>Overview updated after manual review</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Upload ─── */}
       {!data && (
