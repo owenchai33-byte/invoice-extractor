@@ -157,7 +157,6 @@ export default function WeeklyPayment() {
     <div className="wp-root">
       <style>{CSS}</style>
       <div className="wp-bar no-print">
-        <h1>WEEKLY PAYMENT SUMMARY</h1>
         <div className="wp-acts">
           <label className="wp-date-label">
             Week ending:
@@ -366,8 +365,7 @@ export default function WeeklyPayment() {
 
 const CSS = `
 .wp-root{background:#fafafa;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
-.wp-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
-.wp-bar h1{font-size:15px;font-weight:800;letter-spacing:.04em;margin:0;color:#18181b;white-space:nowrap}
+.wp-bar{background:#fff;border-bottom:1px solid #e4e4e7;padding:0 24px;display:flex;align-items:center;gap:16px;height:48px}
 .wp-acts{margin-left:auto;display:flex;align-items:center;gap:10px}
 .wp-btn{border:1px solid #18181b;background:#18181b;color:#fff;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
 .wp-btn:hover{background:#000}

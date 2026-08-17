@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import InvoiceExtractor from './InvoiceExtractor';
 import YHSExtractor from './YHSExtractor';
+import WeeklyPayment from './WeeklyPayment';
 
-// Sub-tab wrapper for the Invoices / Payment Summary area. Each supplier that
-// needs its own extraction + subsidy model gets a tab here. Choon Hua is the
-// original cascading-carton model; YHS is the flat 2%/transport/ML-bonus model.
 const SUB_TABS = [
+  { id: 'weekly', label: 'Weekly' },
   { id: 'choonhua', label: 'Choon Hua' },
-  { id: 'yhs', label: 'YHS' },
+  { id: 'yhs', label: 'Yeo Hiap Seng' },
 ];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -147,12 +146,12 @@ export default function InvoicesWorkspace() {
   const [, setMounted] = useState(false);
   const headerRefCb = useCallback(el => { headerActionsRef.current = el; setMounted(true); }, []);
   const [sub, setSub] = useState(() => {
-    try { return localStorage.getItem('invoices_subtab') || 'choonhua'; }
-    catch { return 'choonhua'; }
+    try { return localStorage.getItem('invoices_subtab') || 'weekly'; }
+    catch { return 'weekly'; }
   });
   useEffect(() => {
     try { localStorage.setItem('invoices_subtab', sub); } catch {}
-    const names = { choonhua: 'CJK Choon Hua Payment Summary', yhs: 'CJK YHS Payment Summary' };
+    const names = { weekly: 'CJK Weekly Payment', choonhua: 'CJK Choon Hua Payment Summary', yhs: 'CJK Yeo Hiap Seng Payment Summary' };
     document.title = names[sub] || 'CJK Payment Summary';
   }, [sub]);
 
@@ -200,6 +199,7 @@ export default function InvoicesWorkspace() {
         })}
       </div>
 
+      {sub === 'weekly' && <WeeklyPayment />}
       {sub === 'choonhua' && <BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} headerActionsRef={headerActionsRef} />}
       {sub === 'yhs' && <BatchedSupplier ns="yhs" Extractor={YHSExtractor} headerActionsRef={headerActionsRef} />}
     </div>
