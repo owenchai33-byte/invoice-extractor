@@ -163,7 +163,7 @@ export default function InvoicesWorkspace() {
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, whiteSpace: 'nowrap' }}>PAYMENT SUMMARY</h1>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 4 }}>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4 }}>
           {SUB_TABS.map(t => {
             const active = sub === t.id;
             return (
@@ -188,7 +188,7 @@ export default function InvoicesWorkspace() {
             );
           })}
         </div>
-        <div ref={headerRefCb} style={{ display: 'flex', gap: 8, alignItems: 'center' }} />
+        <div ref={headerRefCb} style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }} />
       </div>
 
       {sub === 'weekly' && <WeeklyPayment />}
