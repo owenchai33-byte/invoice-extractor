@@ -810,25 +810,33 @@ export default function Attendance() {
     setEmpTimestamps(prev => ({ ...prev, [empId]: ts }));
   }, []);
 
-  useEffect(() => {
-    if (data) localStorage.setItem(dataKey, JSON.stringify(data));
-    else localStorage.removeItem(dataKey);
-  }, [data, dataKey]);
+  const dataKeyRef = useRef(dataKey);
+  const selKeyRef = useRef(selKey);
+  dataKeyRef.current = dataKey;
+  selKeyRef.current = selKey;
 
   useEffect(() => {
-    if (selected) localStorage.setItem(selKey, selected);
-    else localStorage.removeItem(selKey);
-  }, [selected, selKey]);
+    if (data) localStorage.setItem(dataKeyRef.current, JSON.stringify(data));
+    else localStorage.removeItem(dataKeyRef.current);
+  }, [data]);
+
+  useEffect(() => {
+    if (selected) localStorage.setItem(selKeyRef.current, selected);
+    else localStorage.removeItem(selKeyRef.current);
+  }, [selected]);
+
+  const attMin = mo === 7 && yr === 2026;
 
   const changeMonth = useCallback((dir) => {
     if (dir < 0) {
+      if (mo === 7 && yr === 2026) return;
       if (mo === 0) { setMo(11); setYr(y => y - 1); }
       else setMo(m => m - 1);
     } else {
       if (mo === 11) { setMo(0); setYr(y => y + 1); }
       else setMo(m => m + 1);
     }
-  }, [mo]);
+  }, [mo, yr]);
 
   useEffect(() => {
     try {
@@ -962,7 +970,7 @@ export default function Attendance() {
         </button>
         <div style={{ width: 1, height: 24, background: '#e4e4e7' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => changeMonth(-1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9664;</button>
+          <button disabled={attMin} onClick={() => changeMonth(-1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: attMin ? 'default' : 'pointer', color: '#52525b', fontSize: 11, opacity: attMin ? 0.4 : 1 }}>&#9664;</button>
           <div style={{ fontSize: 13, fontWeight: 600, minWidth: 120, textAlign: 'center', color: '#18181b' }}>
             {MONTH_FULL[mo]} {yr}
           </div>
