@@ -950,13 +950,17 @@ export default function Attendance() {
       {/* ─── Header Bar ─── */}
       <div className="att-no-print" style={{
         background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
-        display: 'flex', alignItems: 'center', gap: 16, height: 56,
+        display: 'flex', alignItems: 'center', gap: 12, height: 56,
         marginBottom: 16, borderRadius: 0,
-        marginLeft: -24, marginRight: -24, marginTop: -16,
+        marginLeft: -24, marginRight: -24, marginTop: -16, flexWrap: 'nowrap',
       }}>
         <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, color: '#18181b', whiteSpace: 'nowrap' }}>
           ATTENDANCE REPORT
         </h1>
+        <button onClick={() => setShowRules(v => !v)} style={{ border: '1px solid #e4e4e7', background: showRules ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
+          {showRules ? '▾ Rules' : '▸ Rules'}
+        </button>
+        <div style={{ width: 1, height: 24, background: '#e4e4e7' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={() => changeMonth(-1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9664;</button>
           <div style={{ fontSize: 13, fontWeight: 600, minWidth: 120, textAlign: 'center', color: '#18181b' }}>
@@ -964,14 +968,25 @@ export default function Attendance() {
           </div>
           <button onClick={() => changeMonth(1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9654;</button>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => setShowRules(v => !v)} style={{ border: '1px solid #e4e4e7', background: showRules ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2563eb' }}>
-            {showRules ? '▾ Rules' : '▸ Rules'}
-          </button>
-          <span style={{ fontSize: 12, color: '#71717a' }}>
-            {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
-          </span>
-        </div>
+        {emp && (
+          <>
+            <div style={{ width: 1, height: 24, background: '#e4e4e7' }} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select value={printHalf || ''} onChange={e => setPrintHalf(e.target.value || null)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #d4d4d8', fontSize: 12, background: '#fff' }}>
+                <option value="">Full Month</option>
+                <option value="first">1st Half (1-15)</option>
+                <option value="second">2nd Half (16+)</option>
+              </select>
+              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
+              <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
+              <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
+              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={btn}>Upload New</button>
+            </div>
+          </>
+        )}
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#71717a', whiteSpace: 'nowrap' }}>
+          {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
+        </span>
       </div>
 
       {showRules && (
@@ -1061,31 +1076,6 @@ export default function Attendance() {
       {/* ─── Results ─── */}
       {emp && (
         <>
-          {/* Screen header */}
-          <div className="att-no-print" style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
-          }}>
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#18181b', textTransform: 'uppercase' }}>
-                Attendance Report
-              </h2>
-              <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>
-                {viewPeriod.from} to {viewPeriod.to}{printHalf ? ` (${printHalf === 'first' ? '1st' : '2nd'} half)` : ''}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <select value={printHalf || ''} onChange={e => setPrintHalf(e.target.value || null)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d4d4d8', fontSize: 13, background: '#fff' }}>
-                <option value="">Full Month</option>
-                <option value="first">1st Half (1-15)</option>
-                <option value="second">2nd Half (16+)</option>
-              </select>
-              <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
-              <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
-              <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
-              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={btn}>Upload New</button>
-            </div>
-          </div>
-
           {suspectPH.filter(d => !confirmedPH.has(d)).length > 0 && (
             <div className="att-no-print" style={{
               padding: '10px 14px', marginBottom: 12, background: '#fef3c7', border: '1px solid #f59e0b',
