@@ -106,35 +106,46 @@ function EditableCell({ value, onChange, type, placeholder, style, align }) {
 export default function WeeklyPayment() {
   const [allData, setAllData] = useState(load);
   const friday = getNextFriday();
-  const [weekDate, setWeekDate] = useState(() => {
-    const saved = allData._currentWeek;
-    return saved || dateToInput(friday);
-  });
+  const [weekDate, setWeekDate] = useState(() => allData._currentWeek || dateToInput(friday));
   const [weekDate2, setWeekDate2] = useState(() => allData._currentWeek2 || '');
-  const wk = weekDate;
-  const data = allData[wk] || { rows: [], epayBalance: '', epayDate: '', preparedBy: 'Sabrina', preparedDate: '' };
-  const rows = data.rows || [];
+  const [activeWeek, setActiveWeek] = useState(1);
 
   const save = useCallback((newData) => {
     setAllData(newData);
     try { localStorage.setItem(LS_KEY, JSON.stringify(newData)); } catch {}
   }, []);
 
-  const updateData = useCallback((patch) => {
-    const next = { ...allData, [wk]: { ...data, ...patch }, _currentWeek: wk };
-    save(next);
-  }, [allData, wk, data, save]);
+  const getWeekData = (wk) => allData[wk] || { rows: [], epayBalance: '', epayDate: '', preparedBy: 'Sabrina' };
+  const data1 = getWeekData(weekDate);
+  const data2 = weekDate2 ? getWeekData(weekDate2) : null;
+  const rows1 = data1.rows || [];
+  const rows2 = data2 ? (data2.rows || []) : [];
+  const total1 = rows1.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const total2 = rows2.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
 
-  const updateRow = useCallback((idx, patch) => {
-    const newRows = rows.map((r, i) => i === idx ? { ...r, ...patch } : r);
-    updateData({ rows: newRows });
-  }, [rows, updateData]);
+  const updateWeekData = useCallback((wk, weekData, patch) => {
+    save({ ...allData, [wk]: { ...weekData, ...patch }, _currentWeek: weekDate, _currentWeek2: weekDate2 });
+  }, [allData, weekDate, weekDate2, save]);
 
-  const removeRow = useCallback((idx) => {
-    updateData({ rows: rows.filter((_, i) => i !== idx) });
-  }, [rows, updateData]);
+  const updateRow1 = useCallback((idx, patch) => {
+    const newRows = rows1.map((r, i) => i === idx ? { ...r, ...patch } : r);
+    updateWeekData(weekDate, data1, { rows: newRows });
+  }, [rows1, weekDate, data1, updateWeekData]);
 
-  const total = rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const updateRow2 = useCallback((idx, patch) => {
+    if (!weekDate2) return;
+    const newRows = rows2.map((r, i) => i === idx ? { ...r, ...patch } : r);
+    updateWeekData(weekDate2, data2, { rows: newRows });
+  }, [rows2, weekDate2, data2, updateWeekData]);
+
+  const removeRow1 = useCallback((idx) => {
+    updateWeekData(weekDate, data1, { rows: rows1.filter((_, i) => i !== idx) });
+  }, [rows1, weekDate, data1, updateWeekData]);
+
+  const removeRow2 = useCallback((idx) => {
+    if (!weekDate2) return;
+    updateWeekData(weekDate2, data2, { rows: rows2.filter((_, i) => i !== idx) });
+  }, [rows2, weekDate2, data2, updateWeekData]);
 
   const toLabel = (ds) => {
     const parts = ds.split('-');
@@ -144,14 +155,17 @@ export default function WeeklyPayment() {
   const weekLabel = toLabel(weekDate);
   const weekLabel2 = weekDate2 ? toLabel(weekDate2) : '';
 
-  useEffect(() => {
-    document.title = `Weekly Payment Summary`;
-  }, []);
+  const activeRows = activeWeek === 1 ? rows1 : rows2;
+  const activeWk = activeWeek === 1 ? weekDate : weekDate2;
+  const activeData = activeWeek === 1 ? data1 : data2;
+
+  useEffect(() => { document.title = 'Weekly Payment Summary'; }, []);
 
   const clearWeek = () => {
-    if (!confirm(`Clear all entries for week ending ${weekLabel}?`)) return;
+    const label = activeWeek === 1 ? weekLabel : weekLabel2;
+    if (!confirm(`Clear all entries for week ending ${label}?`)) return;
     const next = { ...allData };
-    delete next[wk];
+    delete next[activeWk];
     save(next);
   };
 
@@ -176,17 +190,20 @@ export default function WeeklyPayment() {
 
       <div className="wp-layout no-print">
         <div className="wp-sidebar">
-          <div className="wp-sidebar-title">CLICK TO ADD</div>
+          <div className="wp-sidebar-title">ADD TO {activeWeek === 1 ? 'WEEK 1' : 'WEEK 2'}</div>
           <div className="wp-sidebar-list">
             {SUPPLIERS.map(s => {
-              const used = rows.some(r => r.supplier === s.name);
+              const used = activeRows.some(r => r.supplier === s.name);
               return (
                 <button
                   key={s.name}
                   className={'wp-sidebar-item' + (used ? ' wp-sidebar-used' : '')}
                   onClick={() => {
+                    if (!activeWk) return;
                     const bank = BANK_MAP[s.name] || '';
-                    updateData({ rows: [...rows, { supplier: s.name, bank, amount: '', paymentFor: '', remark: '' }] });
+                    const wd = activeWeek === 1 ? data1 : data2;
+                    const rs = activeWeek === 1 ? rows1 : rows2;
+                    updateWeekData(activeWk, wd, { rows: [...rs, { supplier: s.name, bank, amount: '', paymentFor: '', remark: '' }] });
                   }}
                 >
                   {s.name}
@@ -198,6 +215,9 @@ export default function WeeklyPayment() {
         </div>
 
         <div className="wp-main">
+          <div className="wp-week-label" onClick={() => setActiveWeek(1)} style={{ cursor: 'pointer', background: activeWeek === 1 ? '#eff6ff' : '#f9fafb', border: activeWeek === 1 ? '1px solid #93c5fd' : '1px solid #e4e4e7', borderRadius: 6, padding: '6px 12px', marginBottom: 8, fontWeight: 700, fontSize: 13, color: activeWeek === 1 ? '#1e40af' : '#71717a' }}>
+            WEEK 1 — ending {weekLabel}
+          </div>
           <table className="wp-tbl">
             <thead>
               <tr>
@@ -211,55 +231,71 @@ export default function WeeklyPayment() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {rows1.map((r, i) => (
                 <tr key={i}>
                   <td className="wp-no">{i + 1}</td>
                   <td className="wp-sup-name">{r.supplier || '-'}</td>
                   <td className="wp-bank">{r.bank || '-'}</td>
                   <td className="wp-amt">
-                    <EditableCell
-                      value={r.amount}
-                      onChange={v => updateRow(i, { amount: v })}
-                      type="number"
-                      placeholder="0.00"
-                      align="right"
-                    />
+                    <EditableCell value={r.amount} onChange={v => updateRow1(i, { amount: v })} type="number" placeholder="0.00" align="right" />
                   </td>
-                  <td>
-                    <EditableCell
-                      value={r.paymentFor}
-                      onChange={v => updateRow(i, { paymentFor: v })}
-                      placeholder="e.g. 8/2026"
-                    />
-                  </td>
-                  <td>
-                    <EditableCell
-                      value={r.remark}
-                      onChange={v => updateRow(i, { remark: v })}
-                      placeholder=""
-                    />
-                  </td>
-                  <td className="wp-del-cell">
-                    <button className="wp-del" onClick={() => removeRow(i)} title="Remove row">✕</button>
-                  </td>
+                  <td><EditableCell value={r.paymentFor} onChange={v => updateRow1(i, { paymentFor: v })} placeholder="e.g. 8/2026" /></td>
+                  <td><EditableCell value={r.remark} onChange={v => updateRow1(i, { remark: v })} placeholder="" /></td>
+                  <td className="wp-del-cell"><button className="wp-del" onClick={() => removeRow1(i)} title="Remove row">✕</button></td>
                 </tr>
               ))}
-              {rows.length === 0 && (
-                <tr><td colSpan="7" className="wp-empty">Click a supplier on the left to add a row</td></tr>
-              )}
+              {rows1.length === 0 && <tr><td colSpan="7" className="wp-empty">Click a supplier on the left to add</td></tr>}
             </tbody>
             <tfoot>
               <tr className="wp-total-row">
-                <td></td>
-                <td className="wp-total-label">TOTAL AMOUNT PAYABLE =</td>
-                <td></td>
-                <td className="wp-total-val">RM {nf(total)}</td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td></td><td className="wp-total-label">TOTAL =</td><td></td>
+                <td className="wp-total-val">RM {nf(total1)}</td><td></td><td></td><td></td>
               </tr>
             </tfoot>
           </table>
+
+          {weekDate2 && (
+            <>
+              <div className="wp-week-label" onClick={() => setActiveWeek(2)} style={{ cursor: 'pointer', background: activeWeek === 2 ? '#eff6ff' : '#f9fafb', border: activeWeek === 2 ? '1px solid #93c5fd' : '1px solid #e4e4e7', borderRadius: 6, padding: '6px 12px', marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 13, color: activeWeek === 2 ? '#1e40af' : '#71717a' }}>
+                WEEK 2 — ending {weekLabel2}
+              </div>
+              <table className="wp-tbl">
+                <thead>
+                  <tr>
+                    <th className="wp-th-no">NO.</th>
+                    <th className="wp-th-sup">SUPPLIER</th>
+                    <th className="wp-th-bank">BANK ACCOUNT</th>
+                    <th className="wp-th-amt">AMOUNT</th>
+                    <th className="wp-th-pf">PAYMENT FOR</th>
+                    <th className="wp-th-rmk">REMARK</th>
+                    <th className="wp-th-del"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows2.map((r, i) => (
+                    <tr key={i}>
+                      <td className="wp-no">{i + 1}</td>
+                      <td className="wp-sup-name">{r.supplier || '-'}</td>
+                      <td className="wp-bank">{r.bank || '-'}</td>
+                      <td className="wp-amt">
+                        <EditableCell value={r.amount} onChange={v => updateRow2(i, { amount: v })} type="number" placeholder="0.00" align="right" />
+                      </td>
+                      <td><EditableCell value={r.paymentFor} onChange={v => updateRow2(i, { paymentFor: v })} placeholder="e.g. 8/2026" /></td>
+                      <td><EditableCell value={r.remark} onChange={v => updateRow2(i, { remark: v })} placeholder="" /></td>
+                      <td className="wp-del-cell"><button className="wp-del" onClick={() => removeRow2(i)} title="Remove row">✕</button></td>
+                    </tr>
+                  ))}
+                  {rows2.length === 0 && <tr><td colSpan="7" className="wp-empty">Click a supplier on the left to add</td></tr>}
+                </tbody>
+                <tfoot>
+                  <tr className="wp-total-row">
+                    <td></td><td className="wp-total-label">TOTAL =</td><td></td>
+                    <td className="wp-total-val">RM {nf(total2)}</td><td></td><td></td><td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </>
+          )}
 
           <div className="wp-footer">
             <div className="wp-epay">
@@ -268,17 +304,17 @@ export default function WeeklyPayment() {
               <input
                 className="wp-epay-input"
                 type="number"
-                value={data.epayBalance}
+                value={data1.epayBalance}
                 onChange={e => {
                   const patch = { epayBalance: e.target.value };
-                  if (e.target.value && !data.epayDate) {
+                  if (e.target.value && !data1.epayDate) {
                     patch.epayDate = new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
                   }
-                  updateData(patch);
+                  updateWeekData(weekDate, data1, patch);
                 }}
                 placeholder="0.00"
               />
-              {data.epayDate && <span className="wp-epay-ts">{data.epayDate}</span>}
+              {data1.epayDate && <span className="wp-epay-ts">{data1.epayDate}</span>}
             </div>
             <div className="wp-prepared">
               <div>
@@ -286,8 +322,8 @@ export default function WeeklyPayment() {
                 <input
                   className="wp-prepared-input"
                   type="text"
-                  value={data.preparedBy || 'Sabrina'}
-                  onChange={e => updateData({ preparedBy: e.target.value })}
+                  value={data1.preparedBy || 'Sabrina'}
+                  onChange={e => updateWeekData(weekDate, data1, { preparedBy: e.target.value })}
                 />
               </div>
               <div className="wp-prepared-date-row">
@@ -317,51 +353,42 @@ export default function WeeklyPayment() {
         <div className="wp-print-header">
           <img src={cjkLetterhead} alt="CHAI JEE KIONG TRADING SDN. BHD." className="wp-letterhead" />
           <div className="wp-print-title">Weekly Payment Summary</div>
-          <div className="wp-print-week">{weekLabel2 ? `(Week Ending ${weekLabel} & ${weekLabel2})` : `(Week Ending ${weekLabel})`}</div>
+          <div className="wp-print-week">(Week Ending {weekLabel})</div>
         </div>
         <table className="wp-tbl">
-          <thead>
-            <tr>
-              <th className="wp-th-no">NO.</th>
-              <th className="wp-th-sup">SUPPLIER</th>
-              <th className="wp-th-bank">BANK ACCOUNT</th>
-              <th className="wp-th-amt">AMOUNT</th>
-              <th className="wp-th-pf">PAYMENT FOR</th>
-              <th className="wp-th-rmk">REMARK</th>
-            </tr>
-          </thead>
+          <thead><tr><th className="wp-th-no">NO.</th><th className="wp-th-sup">SUPPLIER</th><th className="wp-th-bank">BANK ACCOUNT</th><th className="wp-th-amt">AMOUNT</th><th className="wp-th-pf">PAYMENT FOR</th><th className="wp-th-rmk">REMARK</th></tr></thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td className="wp-no">{i + 1}</td>
-                <td className="wp-sup-cell"><span>{r.supplier}</span></td>
-                <td className="wp-bank">{r.bank || '-'}</td>
-                <td className="wp-amt"><span className="wp-amt-val">{r.amount ? nf(r.amount) : '-'}</span></td>
-                <td>{r.paymentFor || ''}</td>
-                <td>{r.remark || ''}</td>
-              </tr>
+            {rows1.map((r, i) => (
+              <tr key={i}><td className="wp-no">{i + 1}</td><td className="wp-sup-cell"><span>{r.supplier}</span></td><td className="wp-bank">{r.bank || '-'}</td><td className="wp-amt"><span className="wp-amt-val">{r.amount ? nf(r.amount) : '-'}</span></td><td>{r.paymentFor || ''}</td><td>{r.remark || ''}</td></tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr className="wp-total-row">
-              <td></td>
-              <td className="wp-total-label">TOTAL AMOUNT PAYABLE =</td>
-              <td></td>
-              <td className="wp-total-val">RM {nf(total)}</td>
-              <td></td>
-              <td></td>
-            </tr>
-          </tfoot>
+          <tfoot><tr className="wp-total-row"><td></td><td className="wp-total-label">TOTAL =</td><td></td><td className="wp-total-val">RM {nf(total1)}</td><td></td><td></td></tr></tfoot>
         </table>
+
+        {weekDate2 && rows2.length > 0 && (
+          <>
+            <div style={{ marginTop: 24, fontWeight: 700, fontSize: 14, textAlign: 'center', color: '#000' }}>(Week Ending {weekLabel2})</div>
+            <table className="wp-tbl" style={{ marginTop: 8 }}>
+              <thead><tr><th className="wp-th-no">NO.</th><th className="wp-th-sup">SUPPLIER</th><th className="wp-th-bank">BANK ACCOUNT</th><th className="wp-th-amt">AMOUNT</th><th className="wp-th-pf">PAYMENT FOR</th><th className="wp-th-rmk">REMARK</th></tr></thead>
+              <tbody>
+                {rows2.map((r, i) => (
+                  <tr key={i}><td className="wp-no">{i + 1}</td><td className="wp-sup-cell"><span>{r.supplier}</span></td><td className="wp-bank">{r.bank || '-'}</td><td className="wp-amt"><span className="wp-amt-val">{r.amount ? nf(r.amount) : '-'}</span></td><td>{r.paymentFor || ''}</td><td>{r.remark || ''}</td></tr>
+                ))}
+              </tbody>
+              <tfoot><tr className="wp-total-row"><td></td><td className="wp-total-label">TOTAL =</td><td></td><td className="wp-total-val">RM {nf(total2)}</td><td></td><td></td></tr></tfoot>
+            </table>
+          </>
+        )}
+
         <div className="wp-footer">
           <div className="wp-epay">
             <span className="wp-epay-star">*</span>
             <span>EPAY BALANCE: RM</span>
-            <span className="wp-epay-fv">{data.epayBalance ? nf(data.epayBalance) : ''}</span>
-            {data.epayDate && <span className="wp-epay-fd">({data.epayDate})</span>}
+            <span className="wp-epay-fv">{data1.epayBalance ? nf(data1.epayBalance) : ''}</span>
+            {data1.epayDate && <span className="wp-epay-fd">({data1.epayDate})</span>}
           </div>
           <div className="wp-prepared">
-            <div><span className="wp-prepared-label">Prepared by </span><span className="wp-prepared-fv">{data.preparedBy || 'Sabrina'}</span></div>
+            <div><span className="wp-prepared-label">Prepared by </span><span className="wp-prepared-fv">{data1.preparedBy || 'Sabrina'}</span></div>
             <div className="wp-prepared-date-val">{formatDate(new Date())}</div>
           </div>
         </div>
