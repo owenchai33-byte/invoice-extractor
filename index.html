@@ -2,15 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Lock the viewport: no pinch/double-tap zoom, cover the notch -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <!-- Installable: opens fullscreen with no browser bars when added to home screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Sabrina OS"/>
+  <meta name="theme-color" content="#fafaf9"/>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png"/>
   <link rel="apple-touch-icon" href="/favicon.png"/>
   <title>Invoice Extractor — CJK</title>
-  <style>body{margin:0;padding:0}</style>
+  <style>
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { margin: 0; padding: 0; }
+    /* Native-app feel: no text selection, no long-press menu, no grey tap flash,
+       no rubber-band overscroll, no double-tap zoom. */
+    html, body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+    /* …but form fields must stay editable and selectable. */
+    input, textarea, select, [contenteditable="true"], [contenteditable=""] {
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+    /* opt-in escape hatch if any value ever needs to be selectable/copyable */
+    .selectable, .selectable * {
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
+  <script>
+    // Modern iOS Safari ignores user-scalable=no, so kill pinch-zoom directly.
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
+      document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+    });
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
