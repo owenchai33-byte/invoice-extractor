@@ -157,13 +157,13 @@ export default function InvoicesWorkspace() {
 
   return (
     <div>
-      <div className="noP" style={{
+      <div className="noP pmt-hdr" style={{
         background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
         display: 'flex', alignItems: 'center', height: 56,
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, whiteSpace: 'nowrap' }}>PAYMENT SUMMARY</h1>
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4 }}>
+        <div className="pmt-tabs" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4 }}>
           {SUB_TABS.map(t => {
             const active = sub === t.id;
             return (

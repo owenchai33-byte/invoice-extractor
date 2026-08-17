@@ -601,6 +601,18 @@ export default function App() {
           }
           /* Let workspaces that pinned a big min-width relax to the screen. */
           .app-shell main > div { max-width: 100%; }
+
+          /* Payment Summary header: keep the centered sub-tabs from landing on
+             top of the title on a phone — drop them onto their own row. */
+          .pmt-hdr { height: auto !important; flex-wrap: wrap; row-gap: 8px; padding: 8px 12px !important; }
+          .pmt-tabs { position: static !important; transform: none !important; left: auto !important;
+                      width: 100%; order: 3; overflow-x: auto; justify-content: flex-start !important; }
+
+          /* Weekly Payment: stack the supplier list above the sheet instead of
+             side-by-side, so the table isn't crushed into half the screen. */
+          .wp-layout { flex-direction: column; padding: 16px 12px 100px; }
+          .wp-sidebar { width: 100%; position: static; max-height: 240px; }
+          .wp-main { width: 100%; }
         }
       `}</style>
 
