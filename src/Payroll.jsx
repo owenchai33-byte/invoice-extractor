@@ -474,6 +474,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .notes{background:#fffbeb!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:5px 10px}
   .notes p{font-size:6.5pt}
   .notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
+  .t.nj{table-layout:auto!important}
+  .t.nj col{width:auto!important}
   @page{size:A4 landscape;margin:0}
 }
 .po{display:none}
@@ -572,7 +574,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const[pan,setPan]=useState(false),[eid,setEid]=useState(null);
   const[dragId,setDragId]=useState(null);
   const[dragOverId,setDragOverId]=useState(null);
-  const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});
+  const[fm,setFm]=useState({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});
   const[ptf,setPtf]=useState(false),[ptfm,setPtfm]=useState({name:'',ic:'',wagePerDay:0});
   const[eidPT,setEidPT]=useState(null);  // tracks which part-time staff is being edited
   const[sel,setSel]=useState(null);      // formula-bar: currently clicked cell {who,label,formula,value}
@@ -626,6 +628,9 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const showForMonth=useCallback(id=>{setHidden(h=>{const list=(h[mk]||[]).filter(x=>x!==id);return{...h,[mk]:list};});},[mk]);
   const visibleStaff=useMemo(()=>staff.filter(s=>!isHidden(s.id)),[staff,isHidden]);
   const hiddenStaff=useMemo(()=>staff.filter(s=>isHidden(s.id)),[staff,isHidden]);
+  const hasNewJoiners=useMemo(()=>visibleStaff.some(s=>s.addedMonth===mk),[visibleStaff,mk]);
+  const updateJoinDate=useCallback((sid,date)=>setStaff(p=>p.map(s=>s.id===sid?{...s,joinDate:date}:s)),[]);
+  const fmtJoinDate=d=>{if(!d)return'';const p=d.split('-');if(p.length!==3)return d;return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-MY',{day:'numeric',month:'short'});};
   // Per-month editable remarks (defined here because they key off `mk`).
   const remarks=remAll[mk]||[''];
   const setRemark=(i,v)=>setRemAll(p=>{const c=[...(p[mk]||[''])];c[i]=v;return{...p,[mk]:c};});
@@ -649,8 +654,8 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     hiddenStaff.forEach(s=>n.push(`INACTIVE STAFF: ${s.name}`));
     return n;
   },[bS,cS,hiddenStaff]);
-  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase(),addedMonth:`${yr}-${String(mo+1).padStart(2,'0')}`}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});setEid(null);};
-  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});};
+  const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase(),addedMonth:`${yr}-${String(mo+1).padStart(2,'0')}`}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});setEid(null);};
+  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});};
   const delS=id=>{hideForMonth(id);};
   // Inline update of staff salary from the payroll table
   const updateSalary=(sid,v)=>{setStaff(p=>p.map(s=>s.id===sid?{...s,salary:parseFloat(v)||0}:s));};
@@ -676,7 +681,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       return arr;
     });
   };
-  const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0,bankAcc:s.bankAcc||''});};
+  const edS=s=>{setEid(s.id);setFm({name:s.name,ic:s.ic,position:s.position,salary:s.salary,method:s.method,status:s.status,defIncentive:s.defIncentive||0,defBonus:s.defBonus||0,defAdvance:s.defAdvance||0,bankAcc:s.bankAcc||'',joinDate:s.joinDate||''});};
   const addPT=()=>{setPt(p=>[...p,{id:'p'+Date.now(),...ptfm,name:(ptfm.name||'').toUpperCase(),status:'part-time'}]);setPtfm({name:'',ic:'',wagePerDay:0});setPtf(false);setEidPT(null);};
   const delPT=id=>{setPt(p=>p.filter(s=>s.id!==id));};
 
@@ -826,6 +831,12 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       <td className={r.addedMonth===_tsKey()?'hl-new':undefined} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
       <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
       <td style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.').replace(/OPERATIONS/gi,'OPS.')}</span></td>
+      {hasNewJoiners&&<td style={{textAlign:'center',fontSize:10,color:'#71717a'}}>
+        {r.addedMonth===mk ? (<>
+          <input type="date" value={r.joinDate||''} onChange={e=>updateJoinDate(r.id,e.target.value)} className="i" style={{width:100,textAlign:'center',fontSize:10}} onClick={e=>e.stopPropagation()}/>
+          <span className="pv">{fmtJoinDate(r.joinDate)}</span>
+        </>) : ''}
+      </td>}
       <td className={"r"+hl(4)} style={{color:'#000'}} onClick={()=>applySel(ri,4)}><EditableCell value={r.salary} onCommit={v=>{_recordEdit(r.name,'salary',r.salary,v);updateSalary(r.id,v);}} width={60} dec/><span className="pv">{fmt(r.salary)}</span></td>
       <td className={"r"+hl(5)} style={{color:'#000'}} onClick={()=>applySel(ri,5)}><EditableCell value={r.incentive} onCommit={v=>{_recordEdit(r.name,'incentive',r.incentive,v);sM(r.id,'incentive',v);}} dec/><span className="pv">{pfmt(r.incentive)}</span></td>
       {sb&&<td className={"r"+hl(6)} style={{color:'#000'}} onClick={()=>applySel(ri,6)}><EditableCell value={r.bonus} onCommit={v=>{_recordEdit(r.name,'bonus',r.bonus,v);sM(r.id,'bonus',v);}}/><span className="pv">{pfmt(r.bonus)}</span></td>}
@@ -852,7 +863,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
     return(
     <tr className={c}>
-      <td colSpan={4} style={{fontWeight:700,textAlign:'right'}}>{l}</td>
+      <td colSpan={hasNewJoiners?5:4} style={{fontWeight:700,textAlign:'right'}}>{l}</td>
       {cell(4)}{cell(5)}{sb&&cell(6)}
       {cell(7)}{cell(8)}{cell(9)}
       {cell(10)}{cell(11)}{cell(12)}
@@ -966,12 +977,13 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
             </div>
           </div>
           <div className="tw" ref={twRef} onScroll={onTwScroll}>
-            <table className={sb?"t ft":"t ft nb"}>
+            <table className={(sb?"t ft":"t ft nb")+(hasNewJoiners?" nj":"")}>
               <colgroup>
                 <col style={{width:'2.5%'}}/>
-                <col style={{width:'18%'}}/>
+                <col style={{width:hasNewJoiners?'16%':'18%'}}/>
                 <col style={{width:'7%'}}/>
-                <col style={{width:'10%'}}/>
+                <col style={{width:hasNewJoiners?'9%':'10%'}}/>
+                {hasNewJoiners&&<col style={{width:'5.5%'}}/>}
                 <col style={{width:'5%'}}/>
                 <col style={{width:'4.5%'}}/>
                 {sb&&<col style={{width:'4.5%'}}/>}
@@ -989,13 +1001,14 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
               </colgroup>
               <thead>
                 <tr>
-                  <th colSpan={4}></th>
+                  <th colSpan={hasNewJoiners?5:4}></th>
                   <th colSpan={sb?3:2} className="eh" style={{textAlign:'center'}}>EARNINGS (+)</th>
                   <th colSpan={9} className="dh" style={{textAlign:'center'}}>DEDUCTIONS (-)</th>
                   <th colSpan={2} className="nh" style={{textAlign:'center'}}>NET PAY</th>
                 </tr>
                 <tr>
                   <th className="r">#</th><th className="l">Name</th><th className="l">IC No</th><th className="l">Position</th>
+                  {hasNewJoiners&&<th className="l" style={{fontSize:8}}>Join Date</th>}
                   <th className="r eh">Salary</th><th className="r eh">Incentive</th>{sb&&<th className="r eh">{bl}</th>}
                   <th className="r dh">EPF(M)</th><th className="r dh">EPF(P)</th><th className="r dh">Jumlah EPF</th>
                   <th className="r dh">SOCSO(M)</th><th className="r dh">SOCSO(P)</th><th className="r dh">Jumlah SOCSO</th>
@@ -1005,12 +1018,12 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
                 </tr>
               </thead>
               <tbody>
-                <tr className="gh"><td colSpan={sb?18:17}>Bank Transfer</td></tr>
+                <tr className="gh"><td colSpan={(sb?18:17)+(hasNewJoiners?1:0)}>Bank Transfer</td></tr>
                 {bS.map((r,i)=><Row key={r.id} r={r} isBank last={i===bS.length-1}/>)}
                 <TR l="BANK STAFF TOTAL PAYOUT:" t={bT} c="tr"/>
-                <tr className="gh"><td colSpan={sb?18:17}>Cash</td></tr>
+                <tr className="gh"><td colSpan={(sb?18:17)+(hasNewJoiners?1:0)}>Cash</td></tr>
                 {pc.map((r,i)=><Row key={r.id} r={r} last={pb.length===0&&i===pc.length-1}/>)}
-                {pb.length>0&&<><tr className="ph"><td colSpan={sb?18:17}>PROBATIONARY STAFF</td></tr>{pb.map((r,i)=><Row key={r.id} r={r} last={i===pb.length-1}/>)}</>}
+                {pb.length>0&&<><tr className="ph"><td colSpan={(sb?18:17)+(hasNewJoiners?1:0)}>PROBATIONARY STAFF</td></tr>{pb.map((r,i)=><Row key={r.id} r={r} last={i===pb.length-1}/>)}</>}
                 <TR l="CASH STAFF TOTAL PAYOUT:" t={cT} c="tr"/>
                 <TR l="GRAND TOTAL:" t={gT} c="gr"/>
               </tbody>
@@ -1063,6 +1076,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
                 <div className="ff"><label className="fl">Position</label><input className="fi" style={{textTransform:'uppercase'}} value={fm.position} onChange={e=>setFm(f=>({...f,position:e.target.value}))} onBlur={()=>setFm(f=>({...f,position:(f.position||'').toUpperCase()}))} placeholder="JOB TITLE"/></div>
                 <div><label className="fl">Payment</label><select className="fs" value={fm.method} onChange={e=>setFm(f=>({...f,method:e.target.value}))}><option value="bank">Bank Transfer</option><option value="cash">Cash</option></select></div>
                 <div><label className="fl">Bank Acc No.</label><input className="fi" value={fm.bankAcc||''} onChange={e=>setFm(f=>({...f,bankAcc:e.target.value}))} placeholder="e.g. PBB 1234567890"/></div>
+                <div><label className="fl">Join Date</label><input className="fi" type="date" value={fm.joinDate||''} onChange={e=>setFm(f=>({...f,joinDate:e.target.value}))}/></div>
                 <div><label className="fl" style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}><input type="checkbox" checked={fm.status==='probationary'} onChange={e=>setFm(f=>({...f,status:e.target.checked?'probationary':'permanent'}))}/> Probationary</label></div>
                 <div className="ff" style={{borderTop:'1px solid #e4e4e7',paddingTop:12,marginTop:4}}>
                   <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.05em',color:'#a1a1aa',marginBottom:8}}>Default Monthly Values</div>
@@ -1075,7 +1089,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
               {fm.ic&&getAgeFromIC(fm.ic,new Date())!==null&&<div style={{fontSize:12,color:getAgeFromIC(fm.ic,new Date())<18?'#dc2626':'#71717a',marginBottom:12}}>Age: {getAgeFromIC(fm.ic,new Date())} {getAgeFromIC(fm.ic,new Date())<18&&'— EIS exempt (under 18)'}</div>}
               <div style={{display:'flex',gap:8}}>
                 <button className="b bd" onClick={eid?updS:addS}>{eid?'Update':'Add Staff'}</button>
-                {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:''});}}>Cancel</button>}
+                {eid&&<button className="b bo" onClick={()=>{setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});}}>Cancel</button>}
               </div>
             </div>
             <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({visibleStaff.length})</div>
