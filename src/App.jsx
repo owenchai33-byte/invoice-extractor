@@ -613,6 +613,24 @@ export default function App() {
           .wp-layout { flex-direction: column; padding: 16px 12px 100px; }
           .wp-sidebar { width: 100%; position: static; max-height: 240px; }
           .wp-main { width: 100%; }
+
+          /* Attendance: stack the employee list above the detail, and stack the
+             detail/summary row so nothing runs off the right edge. */
+          .att-layout { flex-direction: column !important; gap: 12px !important; }
+          .att-sidebar { width: 100% !important; max-height: 210px; }
+          .att-table-summary-row { flex-direction: column !important; gap: 12px !important; }
+
+          /* Payslip / Employee Payslip: sheet on top, staff picker becomes a
+             scrollable strip beneath; let the A4 sheet scroll instead of clip. */
+          .ps-layout, .ep-layout { flex-direction: column !important; height: auto !important; }
+          .ps-sidebar, .ep-sidebar { width: 100% !important; box-sizing: border-box !important;
+                      border-left: none !important; border-top: 1px solid #e4e4e7 !important;
+                      max-height: 40vh !important; }
+          .ep-stage, .ps-stage { padding: 12px 8px !important; overflow: auto !important; }
+
+          /* Bank Recon / Merchant Report: trim the wide desktop side padding. */
+          .br-body, .mr-body { padding-left: 12px !important; padding-right: 12px !important; }
+          .br-summary { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
         }
       `}</style>
 
