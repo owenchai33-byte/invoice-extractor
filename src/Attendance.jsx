@@ -976,9 +976,9 @@ export default function Attendance() {
                 <option value="first">1st Half (1-15)</option>
                 <option value="second">2nd Half (16+)</option>
               </select>
+              <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
               <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
-              <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
               <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={{ ...btn, background: '#059669', color: '#fff', border: '1px solid #059669' }}>Upload New</button>
             </>
           )}
