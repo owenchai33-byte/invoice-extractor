@@ -426,8 +426,8 @@ const CSS = `
 .br-summary-left{flex:1}
 .br-summary-title{font-size:13px;font-weight:700;color:#166534;margin:0 0 8px}
 .br-summary-info{font-size:12px;color:#15803d;margin:0 0 4px}
-.br-upload-new{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #d4d4d8;background:#fff;color:#18181b}
-.br-upload-new:hover{background:#f4f4f5}
+.br-upload-new{padding:8px 14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #059669;background:#059669;color:#fff}
+.br-upload-new:hover{background:#047857}
 .br-tabs{display:flex;gap:0;border-bottom:2px solid #e4e4e7;margin-bottom:16px}
 .br-tab{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:#71717a;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
 .br-tab:hover{color:#18181b;background:#f4f4f5}

@@ -1922,15 +1922,13 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
             <>
               <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add</button>
               <button style={btn(1)} onClick={()=>window.print()}>🖨 Print</button>
-              <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
-              <button style={{...btn(0),color:'#c0392b',borderColor:'#e6bcbc'}} onClick={()=>{ reset(); }}>🗑 Clear</button>
+              <button style={{...btn(0),background:'#059669',color:'#fff',border:'1px solid #059669'}} onClick={()=>{ reset(); }}>Upload New</button>
             </>, headerActionsRef.current
           ) : (
             <div className="noP" style={{display:'flex',gap:8,justifyContent:'center',marginTop:28}}>
               <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
               <button style={btn(1)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
-              <button style={btn(0)} onClick={downloadExcel}>↓ Excel</button>
-              <button style={{...btn(0),color:'#c0392b',borderColor:'#e6bcbc'}} onClick={()=>{ reset(); }}>🗑 Clear all</button>
+              <button style={{...btn(0),background:'#059669',color:'#fff',border:'1px solid #059669'}} onClick={()=>{ reset(); }}>Upload New</button>
             </div>
           )}
         </>)}

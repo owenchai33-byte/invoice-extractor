@@ -443,8 +443,8 @@ const td = {
   whiteSpace: 'nowrap',
 };
 const btn = {
-  padding: '6px 14px', borderRadius: 6, border: '1px solid #d4d4d8',
-  background: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+  padding: '8px 14px', borderRadius: 7, border: '1px solid #d4d4d8',
+  background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
   fontFamily: 'inherit',
 };
 
@@ -968,11 +968,10 @@ export default function Attendance() {
           </div>
           <button onClick={() => changeMonth(1)} style={{ border: '1px solid #e4e4e7', background: '#fff', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#52525b', fontSize: 11 }}>&#9654;</button>
         </div>
-        {emp && (
-          <>
-            <div style={{ width: 1, height: 24, background: '#e4e4e7' }} />
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <select value={printHalf || ''} onChange={e => setPrintHalf(e.target.value || null)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #d4d4d8', fontSize: 12, background: '#fff' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {emp && (
+            <>
+              <select value={printHalf || ''} onChange={e => setPrintHalf(e.target.value || null)} style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #d4d4d8', fontSize: 13, background: '#fff' }}>
                 <option value="">Full Month</option>
                 <option value="first">1st Half (1-15)</option>
                 <option value="second">2nd Half (16+)</option>
@@ -980,13 +979,13 @@ export default function Attendance() {
               <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
               <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
-              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={btn}>Upload New</button>
-            </div>
-          </>
-        )}
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#71717a', whiteSpace: 'nowrap' }}>
-          {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
-        </span>
+              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={{ ...btn, background: '#059669', color: '#fff', border: '1px solid #059669' }}>Upload New</button>
+            </>
+          )}
+          <span style={{ fontSize: 12, color: '#71717a', whiteSpace: 'nowrap' }}>
+            {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
+          </span>
+        </div>
       </div>
 
       {showRules && (
