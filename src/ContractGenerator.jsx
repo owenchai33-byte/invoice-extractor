@@ -556,6 +556,7 @@ export default function ContractGenerator() {
       </div>
 
       <style>{`
+        .cfield::-webkit-calendar-picker-indicator { display: none !important; }
         @media print {
           .contract-noP { display: none !important; }
           .contract-block { display: block !important; }   /* print every contract by default */
