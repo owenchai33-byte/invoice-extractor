@@ -819,7 +819,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
         transition:'opacity 100ms',
       }}
     >
-      <td className="r drag-handle" style={{color:'#a1a1aa',cursor:'grab',userSelect:'none',touchAction:'none'}}
+      <td className={"r drag-handle"+hl(0)} style={{color:'#a1a1aa',cursor:'grab',userSelect:'none',touchAction:'none'}}
         onPointerDown={e=>startDrag(r.id,e)}
         title="Drag to reorder"
       >
@@ -828,9 +828,9 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           {n}
         </span>
       </td>
-      <td className={r.addedMonth===_tsKey()?'hl-new':undefined} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
-      <td style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
-      <td style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.').replace(/OPERATIONS/gi,'OPS.')}</span></td>
+      <td className={(r.addedMonth===_tsKey()?'hl-new':'')+hl(1)} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
+      <td className={hl(2).trim()||undefined} style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
+      <td className={hl(3).trim()||undefined} style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.').replace(/OPERATIONS/gi,'OPS.')}</span></td>
       {hasNewJoiners&&<td style={{textAlign:'center',fontSize:10,color:'#71717a'}}>
         {r.addedMonth===mk ? (<>
           <input type="date" value={r.joinDate||''} onChange={e=>updateJoinDate(r.id,e.target.value)} className="i" style={{width:100,textAlign:'center',fontSize:10}} onClick={e=>e.stopPropagation()}/>
