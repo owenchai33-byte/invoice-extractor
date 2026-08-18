@@ -66,9 +66,9 @@ export default function StatutorySummary() {
     XLSX.writeFile(wb, `Statutory Summary - ${MONTHS[mo]} ${yr}.xlsx`);
   }, [rows, totals, mo, yr]);
 
-  const th = { padding: '8px 10px', fontSize: 12, fontWeight: 700, textAlign: 'center', borderBottom: '2px solid #e4e4e7', whiteSpace: 'nowrap', color: '#18181b' };
-  const td = { padding: '7px 10px', fontSize: 12, textAlign: 'right', borderBottom: '1px solid #f4f4f5', color: '#18181b', fontFamily: 'monospace' };
-  const tdName = { ...td, textAlign: 'left', fontFamily: 'inherit', fontWeight: 500 };
+  const th = { padding: '8px 10px', fontSize: 13, fontWeight: 700, textAlign: 'center', borderBottom: '2px solid #e4e4e7', whiteSpace: 'nowrap', color: '#18181b' };
+  const td = { padding: '8px 12px', fontSize: 14, textAlign: 'right', borderBottom: '1px solid #f4f4f5', color: '#18181b', fontFamily: 'monospace' };
+  const tdName = { ...td, textAlign: 'left', fontFamily: 'inherit', fontWeight: 500, fontSize: 13 };
   const btn = { padding: '6px 14px', borderRadius: 7, border: '1px solid #e4e4e7', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 };
 
   return (
@@ -136,13 +136,13 @@ export default function StatutorySummary() {
                 <td style={{ ...tdName, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>TOTAL</td>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }}>{fmt(totals.epfM)}</td>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>{fmt(totals.epfP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#2563eb', fontSize: 13 }}>{fmt(Math.round((totals.epfM + totals.epfP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#2563eb', fontSize: 15 }}>{fmt(Math.round((totals.epfM + totals.epfP) * 100) / 100)}</td>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }}>{fmt(totals.socsoM)}</td>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>{fmt(totals.socsoP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#16a34a', fontSize: 13 }}>{fmt(Math.round((totals.socsoM + totals.socsoP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#16a34a', fontSize: 15 }}>{fmt(Math.round((totals.socsoM + totals.socsoP) * 100) / 100)}</td>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }}>{fmt(totals.eisM)}</td>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>{fmt(totals.eisP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#ca8a04', fontSize: 13 }}>{fmt(Math.round((totals.eisM + totals.eisP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#ca8a04', fontSize: 15 }}>{fmt(Math.round((totals.eisM + totals.eisP) * 100) / 100)}</td>
               </tr>
             </tfoot>
           </table>
