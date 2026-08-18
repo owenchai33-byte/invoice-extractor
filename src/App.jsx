@@ -169,6 +169,7 @@ export default function App() {
   });
   const [time, setTime] = useState(() => new Date());
   const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [statMounted, setStatMounted] = useState(false);
 
   useEffect(() => {
     setPinUnlocked(false);
@@ -566,8 +567,8 @@ export default function App() {
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
         <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
         {active === 'bevfoc' && <BeverageFOC />}
-        {active === 'statutory' && !pinUnlocked && <PinGate onUnlock={() => setPinUnlocked(true)} />}
-        {pinUnlocked && <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>}
+        {active === 'statutory' && !pinUnlocked && <PinGate onUnlock={() => { setPinUnlocked(true); setStatMounted(true); }} />}
+        {statMounted && <div style={{display: active === 'statutory' && pinUnlocked ? 'block' : 'none'}}><StatutorySummary /></div>}
       </main>
 
       <style>{`
