@@ -97,8 +97,8 @@ function CField({ value, onChange, placeholder, bold, center, min = 8, list }) {
         fontWeight: bold ? 700 : 'inherit',
         textAlign: center ? 'center' : 'left',
         color: '#111',
-        padding: '0 3px',
-        margin: '0 1px',
+        padding: '0 1px 0 3px',
+        margin: '0 0 0 1px',
         outline: 'none',
         borderRadius: 2,
         fieldSizing: 'content',   // input hugs its text exactly (no trailing slack before the next word)
