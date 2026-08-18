@@ -12,14 +12,10 @@ function loadJ(k, f) { try { return JSON.parse(localStorage.getItem(k)) || f; } 
 function pad(n) { return String(n).padStart(2, '0'); }
 function normIC(ic) { return (ic || '').replace(/[\s\-]/g, ''); }
 function fmtN(n) { return n == null ? '—' : Number(n).toFixed(2); }
-
-function parseFormMonth(s) {
-  const m = /(\d{1,2})\s*[\/\-]\s*(\d{4})/.exec(s || '');
-  return m ? { mo: parseInt(m[1]), yr: parseInt(m[2]) } : null;
-}
 function monthsMatch(a, b) {
-  const pa = parseFormMonth(a), pb = parseFormMonth(b);
-  return pa && pb && pa.mo === pb.mo && pa.yr === pb.yr;
+  const pa = /(\d{1,2})\s*[\/\-]\s*(\d{4})/.exec(a || '');
+  const pb = /(\d{1,2})\s*[\/\-]\s*(\d{4})/.exec(b || '');
+  return pa && pb && parseInt(pa[1]) === parseInt(pb[1]) && parseInt(pa[2]) === parseInt(pb[2]);
 }
 
 const BORANG_PROMPT = `Extract data from these scanned Malaysian statutory contribution forms. The PDF contains up to 3 forms separated by blank pages.
@@ -68,7 +64,7 @@ async function pdfToDataUrls(file) {
 }
 
 function buildRecon(payrollRows, extracted, mo, yr) {
-  const result = { monthAlerts: [], epf: null, socso: null, eis: null };
+  const result = { monthAlerts: [], byIC: new Map(), extra: [] };
   const forms = extracted?.forms || [];
   const payMonth = mo + 1;
   const epfExpMo = payMonth + 1 > 12 ? 1 : payMonth + 1;
@@ -104,53 +100,38 @@ function buildRecon(payrollRows, extracted, mo, yr) {
   if (eisForm && !monthsMatch(eisForm.month, prkExp))
     result.monthAlerts.push({ form: 'EIS', expected: prkExp, actual: eisForm.month || '?' });
 
-  const payByIC = new Map();
-  payrollRows.forEach(r => payByIC.set(normIC(r.ic), r));
+  const payICs = new Set(payrollRows.map(r => normIC(r.ic)));
 
   if (epfForm) {
-    const staff = [];
-    const fmByIC = new Map();
-    (epfForm.staff || []).forEach(s => fmByIC.set(normIC(s.ic), s));
-    for (const [ic, pr] of payByIC) {
-      const fm = fmByIC.get(ic);
-      if (fm) {
-        const mOk = Math.abs(pr.epfM - (fm.majikan || 0)) < 0.02;
-        const pOk = Math.abs(pr.epfP - (fm.pekerja || 0)) < 0.02;
-        staff.push({ ic, name: pr.name, payM: pr.epfM, payP: pr.epfP, formM: fm.majikan, formP: fm.pekerja, status: mOk && pOk ? 'match' : 'mismatch' });
-        fmByIC.delete(ic);
-      } else {
-        staff.push({ ic, name: pr.name, payM: pr.epfM, payP: pr.epfP, formM: null, formP: null, status: 'missing' });
-      }
-    }
-    for (const [ic, fm] of fmByIC) {
-      staff.push({ ic, name: fm.name, payM: null, payP: null, formM: fm.majikan, formP: fm.pekerja, status: 'extra' });
-    }
-    result.epf = { staff };
+    (epfForm.staff || []).forEach(s => {
+      const ic = normIC(s.ic);
+      const e = result.byIC.get(ic) || {};
+      e.epfM = s.majikan; e.epfP = s.pekerja;
+      result.byIC.set(ic, e);
+      if (!payICs.has(ic)) result.extra.push({ ic, name: s.name, source: 'EPF' });
+    });
+  }
+  if (socsoForm) {
+    (socsoForm.staff || []).forEach(s => {
+      const ic = normIC(s.ic);
+      const e = result.byIC.get(ic) || {};
+      e.socso = s.caruman;
+      result.byIC.set(ic, e);
+      if (!payICs.has(ic) && !result.extra.find(x => x.ic === ic))
+        result.extra.push({ ic, name: s.name, source: 'SOCSO' });
+    });
+  }
+  if (eisForm) {
+    (eisForm.staff || []).forEach(s => {
+      const ic = normIC(s.ic);
+      const e = result.byIC.get(ic) || {};
+      e.eis = s.caruman;
+      result.byIC.set(ic, e);
+      if (!payICs.has(ic) && !result.extra.find(x => x.ic === ic))
+        result.extra.push({ ic, name: s.name, source: 'EIS' });
+    });
   }
 
-  const buildPrkRecon = (form, getExpected) => {
-    if (!form) return null;
-    const staff = [];
-    const fmByIC = new Map();
-    (form.staff || []).forEach(s => fmByIC.set(normIC(s.ic), s));
-    for (const [ic, pr] of payByIC) {
-      const fm = fmByIC.get(ic);
-      const exp = Math.round(getExpected(pr) * 100) / 100;
-      if (fm) {
-        staff.push({ ic, name: pr.name, payAmt: exp, formAmt: fm.caruman, status: Math.abs(exp - (fm.caruman || 0)) < 0.02 ? 'match' : 'mismatch' });
-        fmByIC.delete(ic);
-      } else {
-        staff.push({ ic, name: pr.name, payAmt: exp, formAmt: null, status: 'missing' });
-      }
-    }
-    for (const [ic, fm] of fmByIC) {
-      staff.push({ ic, name: fm.name, payAmt: null, formAmt: fm.caruman, status: 'extra' });
-    }
-    return { staff };
-  };
-
-  result.socso = buildPrkRecon(socsoForm, r => r.socsoM + r.socsoP);
-  result.eis = buildPrkRecon(eisForm, r => r.eisE * 2);
   return result;
 }
 
@@ -160,6 +141,7 @@ export default function StatutorySummary() {
   const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_stat_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
   useEffect(() => { try { localStorage.setItem('cjk_stat_mo', mo); localStorage.setItem('cjk_stat_yr', yr); } catch {} }, [mo, yr]);
   const [sel, setSel] = useState(null);
+  const [showMech, setShowMech] = useState(false);
   const atMin = mo === 6 && yr === 2026;
   const mk = `${yr}-${pad(mo + 1)}`;
   const ref = new Date(yr, mo, 15);
@@ -217,7 +199,7 @@ export default function StatutorySummary() {
     XLSX.writeFile(wb, `Statutory Summary - ${MONTHS[mo]} ${yr}.xlsx`);
   }, [rows, totals, mo, yr]);
 
-  // Reconciliation state
+  // Reconciliation
   const [rState, setRState] = useState('idle');
   const [rResults, setRResults] = useState(null);
   const [rError, setRError] = useState('');
@@ -232,7 +214,7 @@ export default function StatutorySummary() {
       const apiKey = localStorage.getItem(AI_CFG.storageKey);
       if (!apiKey) throw new Error('API key not set. Go to Invoices tab → ⚙ to configure your ' + AI_CFG.label + ' key.');
       const dataUrls = await pdfToDataUrls(file);
-      if (dataUrls.length === 0) throw new Error('PDF appears to be blank — no pages with content found.');
+      if (dataUrls.length === 0) throw new Error('PDF appears blank — no pages with content.');
       let result, attempts = 0;
       while (true) {
         try {
@@ -244,8 +226,7 @@ export default function StatutorySummary() {
         }
       }
       const extracted = parseAIJson(result.text);
-      const recon = buildRecon(rows, extracted, mo, yr);
-      setRResults(recon);
+      setRResults(buildRecon(rows, extracted, mo, yr));
       setRState('done');
     } catch (e) {
       setRError(e.message || 'Processing failed');
@@ -255,89 +236,41 @@ export default function StatutorySummary() {
 
   const clearRecon = useCallback(() => { setRState('idle'); setRResults(null); setRError(''); if (fileRef.current) fileRef.current.value = ''; }, []);
 
+  const reconStats = useMemo(() => {
+    if (!rResults) return null;
+    let matched = 0, mismatch = 0, missing = 0;
+    rows.forEach(r => {
+      const fm = rResults.byIC.get(normIC(r.ic));
+      if (!fm) { missing++; return; }
+      const ok = (fm.epfM == null || Math.abs(r.epfM - fm.epfM) < 0.02)
+        && (fm.epfP == null || Math.abs(r.epfP - fm.epfP) < 0.02)
+        && (fm.socso == null || Math.abs((r.socsoM + r.socsoP) - fm.socso) < 0.02)
+        && (fm.eis == null || Math.abs((r.eisE * 2) - fm.eis) < 0.02);
+      if (ok) matched++; else mismatch++;
+    });
+    return { matched, mismatch, missing, total: rows.length };
+  }, [rows, rResults]);
+
   const HL = '#dbeafe';
-  const isHL = (r, c) => sel && (sel.row === r || sel.col === c);
-  const cellBg = (r, c, base) => sel?.row === r && sel?.col === c ? '#93c5fd' : isHL(r, c) ? HL : base;
+  const getCellBg = (ri, ci, base, formSt) => {
+    if (sel?.row === ri && sel?.col === ci) return '#93c5fd';
+    if (sel && (sel.row === ri || sel.col === ci)) return HL;
+    if (formSt === 'match') return '#dcfce7';
+    if (formSt === 'mismatch') return '#fee2e2';
+    return base;
+  };
 
   const th = { padding: '8px 12px', fontSize: 13, fontWeight: 700, textAlign: 'center', borderBottom: '2px solid #e4e4e7', whiteSpace: 'nowrap', color: '#18181b' };
   const td = { padding: '8px 12px', fontSize: 14, textAlign: 'right', borderBottom: '1px solid #f4f4f5', color: '#18181b', fontFamily: 'monospace', cursor: 'pointer' };
   const tdName = { ...td, textAlign: 'left', fontFamily: 'inherit', fontWeight: 500, fontSize: 13 };
   const btn = { padding: '6px 14px', borderRadius: 7, border: '1px solid #e4e4e7', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 };
 
-  const statusColor = { match: '#16a34a', mismatch: '#dc2626', missing: '#d97706', extra: '#7c3aed' };
-  const statusLabel = { match: '✓', mismatch: '✗', missing: 'Not in form', extra: 'Extra' };
-  const statusBg = { match: '#fff', mismatch: '#fef2f2', missing: '#fffbeb', extra: '#faf5ff' };
-  const rtd = { padding: '6px 10px', fontSize: 13, borderBottom: '1px solid #f4f4f5', fontFamily: 'monospace', textAlign: 'right' };
-  const rtdName = { ...rtd, textAlign: 'left', fontFamily: 'inherit', fontWeight: 500 };
-
-  const reconStats = (staffList) => {
-    if (!staffList) return null;
-    const m = staffList.filter(s => s.status === 'match').length;
-    const mm = staffList.filter(s => s.status === 'mismatch').length;
-    const mi = staffList.filter(s => s.status === 'missing').length;
-    const ex = staffList.filter(s => s.status === 'extra').length;
-    return { m, mm, mi, ex, total: staffList.length };
-  };
-
-  const renderReconSection = (title, color, data, isEpf) => {
-    if (!data) return <div style={{ fontSize: 13, color: '#a1a1aa', marginBottom: 16 }}>{title}: No form detected</div>;
-    const stats = reconStats(data.staff);
-    const allMatch = stats.mm === 0 && stats.mi === 0 && stats.ex === 0;
-    return (
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#18181b' }}>{title}</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: allMatch ? '#16a34a' : '#dc2626', background: allMatch ? '#f0fdf4' : '#fef2f2', padding: '2px 10px', borderRadius: 99 }}>
-            {stats.m}/{stats.m + stats.mm} matched{stats.mi > 0 && `, ${stats.mi} missing`}{stats.ex > 0 && `, ${stats.ex} extra`}
-          </div>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: '#fafafa' }}>
-                <th style={{ ...rtd, fontWeight: 700, textAlign: 'center', width: 36, fontFamily: 'inherit' }}>#</th>
-                <th style={{ ...rtdName, fontWeight: 700, minWidth: 140 }}>Name</th>
-                <th style={{ ...rtd, fontWeight: 700, textAlign: 'left', minWidth: 100, fontFamily: 'inherit' }}>IC</th>
-                {isEpf ? (<>
-                  <th style={{ ...rtd, fontWeight: 700, background: '#f0f9ff' }}>Pay M</th>
-                  <th style={{ ...rtd, fontWeight: 700, background: '#f0f9ff' }}>Form M</th>
-                  <th style={{ ...rtd, fontWeight: 700, background: '#fefce8' }}>Pay P</th>
-                  <th style={{ ...rtd, fontWeight: 700, background: '#fefce8' }}>Form P</th>
-                </>) : (<>
-                  <th style={{ ...rtd, fontWeight: 700, background: '#f0f9ff' }}>Payroll</th>
-                  <th style={{ ...rtd, fontWeight: 700, background: '#f0f9ff' }}>Form</th>
-                </>)}
-                <th style={{ ...rtd, fontWeight: 700, textAlign: 'center', width: 80, fontFamily: 'inherit' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.staff.map((s, i) => (
-                <tr key={s.ic + i} style={{ background: statusBg[s.status] }}>
-                  <td style={{ ...rtd, textAlign: 'center', fontFamily: 'inherit', color: '#71717a' }}>{i + 1}</td>
-                  <td style={rtdName}>{s.name}</td>
-                  <td style={{ ...rtd, textAlign: 'left', fontFamily: 'inherit', fontSize: 11, color: '#52525b' }}>{s.ic}</td>
-                  {isEpf ? (<>
-                    <td style={rtd}>{fmtN(s.payM)}</td>
-                    <td style={{ ...rtd, color: s.status === 'mismatch' && s.formM != null && Math.abs((s.payM || 0) - s.formM) >= 0.02 ? '#dc2626' : undefined, fontWeight: s.status === 'mismatch' && s.formM != null && Math.abs((s.payM || 0) - s.formM) >= 0.02 ? 700 : undefined }}>{fmtN(s.formM)}</td>
-                    <td style={rtd}>{fmtN(s.payP)}</td>
-                    <td style={{ ...rtd, color: s.status === 'mismatch' && s.formP != null && Math.abs((s.payP || 0) - s.formP) >= 0.02 ? '#dc2626' : undefined, fontWeight: s.status === 'mismatch' && s.formP != null && Math.abs((s.payP || 0) - s.formP) >= 0.02 ? 700 : undefined }}>{fmtN(s.formP)}</td>
-                  </>) : (<>
-                    <td style={rtd}>{fmtN(s.payAmt)}</td>
-                    <td style={{ ...rtd, color: s.status === 'mismatch' ? '#dc2626' : undefined, fontWeight: s.status === 'mismatch' ? 700 : undefined }}>{fmtN(s.formAmt)}</td>
-                  </>)}
-                  <td style={{ ...rtd, textAlign: 'center', fontFamily: 'inherit', color: statusColor[s.status], fontWeight: 700 }}>{statusLabel[s.status]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div style={{ padding: '20px 24px', fontFamily: `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif` }}>
-      <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+      <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        <button onClick={() => setShowMech(v => !v)} style={{ border: '1px solid #e4e4e7', background: showMech ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
+          {showMech ? '▾ Mechanism' : '▸ Mechanism'}
+        </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button disabled={atMin} onClick={() => changeMonth(-1)} style={{ ...btn, width: 28, height: 28, padding: 0, opacity: atMin ? 0.4 : 1, cursor: atMin ? 'default' : 'pointer' }}>&#9664;</button>
           <div style={{ fontSize: 14, fontWeight: 700, minWidth: 140, textAlign: 'center', color: '#18181b' }}>
@@ -345,14 +278,54 @@ export default function StatutorySummary() {
           </div>
           <button onClick={() => changeMonth(1)} style={{ ...btn, width: 28, height: 28, padding: 0 }}>&#9654;</button>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {rState === 'done' && reconStats && (
+            <span style={{ padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+              background: reconStats.mismatch === 0 && reconStats.missing === 0 ? '#f0fdf4' : '#fef2f2',
+              color: reconStats.mismatch === 0 && reconStats.missing === 0 ? '#16a34a' : '#dc2626' }}>
+              {reconStats.mismatch === 0 && reconStats.missing === 0
+                ? `✓ ${reconStats.matched}/${reconStats.total} matched`
+                : `${reconStats.matched}/${reconStats.total} matched · ${reconStats.mismatch} mismatch${reconStats.mismatch !== 1 ? 'es' : ''}`}
+            </span>
+          )}
+          {rState === 'idle' && rows.length > 0 && (
+            <label style={{ ...btn, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) processBorang(f); }} />
+              📄 Upload Borang
+            </label>
+          )}
+          {rState === 'processing' && <span style={{ ...btn, opacity: 0.5, cursor: 'wait' }}>Scanning...</span>}
+          {rState === 'done' && <button onClick={clearRecon} style={btn}>Scan Another</button>}
+          {rState === 'error' && <button onClick={clearRecon} style={{ ...btn, color: '#dc2626' }}>✗ Retry</button>}
           <button onClick={exportXls} style={{ ...btn, background: '#111', color: '#fff' }}>⬇ Export Excel</button>
         </div>
       </div>
 
+      {showMech && (
+        <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '14px 18px', marginBottom: 14, fontSize: 12, lineHeight: 1.7, color: '#1e3a5f' }}>
+          <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>Month Detection Mechanism</div>
+          <div>• <b>EPF Borang A</b>: "Bulan Caruman" = payroll month + 1 (e.g. July wages → Caruman <b>{pad(mo + 2 > 12 ? 1 : mo + 2)}/{mo + 2 > 12 ? yr + 1 : yr}</b>)</div>
+          <div>• <b>SOCSO Borang 8A</b>: "Caruman Gaji Bulan" = payroll month (July wages → <b>{pad(mo + 1)}/{yr}</b>)</div>
+          <div>• <b>EIS Borang 8A</b>: same as SOCSO — actual payroll month</div>
+          <div style={{ marginTop: 4, color: '#64748b' }}>SOCSO vs EIS auto-detected by comparing amounts against payroll.</div>
+        </div>
+      )}
+
+      {rState === 'error' && rError && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 16px', marginBottom: 12, fontSize: 12, color: '#991b1b' }}>{rError}</div>
+      )}
+
+      {rResults?.monthAlerts?.length > 0 && rResults.monthAlerts.map((a, i) => (
+        <div key={i} style={{ background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 8, padding: '10px 16px', marginBottom: 10, fontSize: 13, fontWeight: 600, color: '#92400e' }}>
+          ⚠ {a.form} month mismatch — expected <b>{a.expected}</b> for {MONTHS[mo]} payroll, form shows <b>{a.actual}</b>
+        </div>
+      ))}
+
+      {rState === 'processing' && <FlappyLoader label="Reading Borang forms..." />}
+
       {rows.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#a1a1aa', padding: 60, fontSize: 14 }}>No payroll data for this month</div>
-      ) : (
+      ) : rState !== 'processing' && (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
             <thead>
@@ -381,19 +354,40 @@ export default function StatutorySummary() {
               {rows.map((r, i) => {
                 const base = i % 2 ? '#fafafa' : '#fff';
                 const click = (c) => () => setSel(prev => prev?.row === i && prev?.col === c ? null : { row: i, col: c });
+                const fm = rResults?.byIC?.get(normIC(r.ic));
+                const chk = (pay, form) => form != null ? (Math.abs(pay - form) < 0.02 ? 'match' : 'mismatch') : null;
+                const eMst = chk(r.epfM, fm?.epfM);
+                const ePst = chk(r.epfP, fm?.epfP);
+                const sSt = chk(r.socsoM + r.socsoP, fm?.socso);
+                const eSt = chk(r.eisE * 2, fm?.eis);
+
                 return (
                   <tr key={r.id}>
-                    <td onClick={click(0)} style={{ ...td, textAlign: 'center', fontFamily: 'inherit', color: '#71717a', background: cellBg(i, 0, base) }}>{i + 1}</td>
-                    <td onClick={click(1)} style={{ ...tdName, background: cellBg(i, 1, base) }}>{r.name}</td>
-                    <td onClick={click(2)} style={{ ...td, background: cellBg(i, 2, base) }}>{fmt(r.epfM)}</td>
-                    <td onClick={click(3)} style={{ ...td, fontWeight: 700, background: cellBg(i, 3, base) }}>{fmt(r.epfP)}</td>
-                    <td onClick={click(4)} style={{ ...td, color: '#2563eb', background: cellBg(i, 4, base) }}>{fmt(r.epfM + r.epfP)}</td>
-                    <td onClick={click(5)} style={{ ...td, background: cellBg(i, 5, base) }}>{fmt(r.socsoM)}</td>
-                    <td onClick={click(6)} style={{ ...td, fontWeight: 700, background: cellBg(i, 6, base) }}>{fmt(r.socsoP)}</td>
-                    <td onClick={click(7)} style={{ ...td, color: '#16a34a', background: cellBg(i, 7, base) }}>{fmt(r.socsoM + r.socsoP)}</td>
-                    <td onClick={click(8)} style={{ ...td, background: cellBg(i, 8, base) }}>{fmt(r.eisE)}</td>
-                    <td onClick={click(9)} style={{ ...td, fontWeight: 700, background: cellBg(i, 9, base) }}>{fmt(r.eisE)}</td>
-                    <td onClick={click(10)} style={{ ...td, color: '#ca8a04', background: cellBg(i, 10, base) }}>{fmt(r.eisE * 2)}</td>
+                    <td onClick={click(0)} style={{ ...td, textAlign: 'center', fontFamily: 'inherit', color: '#71717a', background: getCellBg(i, 0, base, null) }}>{i + 1}</td>
+                    <td onClick={click(1)} style={{ ...tdName, background: getCellBg(i, 1, base, fm ? (eMst !== 'mismatch' && ePst !== 'mismatch' && sSt !== 'mismatch' && eSt !== 'mismatch' ? 'match' : 'mismatch') : null) }}>{r.name}</td>
+                    <td onClick={click(2)} style={{ ...td, background: getCellBg(i, 2, base, eMst) }}>
+                      {fmt(r.epfM)}
+                      {eMst === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.epfM)}</div>}
+                    </td>
+                    <td onClick={click(3)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 3, base, ePst) }}>
+                      {fmt(r.epfP)}
+                      {ePst === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.epfP)}</div>}
+                    </td>
+                    <td onClick={click(4)} style={{ ...td, color: '#2563eb', background: getCellBg(i, 4, base, eMst && ePst ? (eMst === 'match' && ePst === 'match' ? 'match' : 'mismatch') : null) }}>
+                      {fmt(r.epfM + r.epfP)}
+                    </td>
+                    <td onClick={click(5)} style={{ ...td, background: getCellBg(i, 5, base, null) }}>{fmt(r.socsoM)}</td>
+                    <td onClick={click(6)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 6, base, null) }}>{fmt(r.socsoP)}</td>
+                    <td onClick={click(7)} style={{ ...td, color: '#16a34a', background: getCellBg(i, 7, base, sSt) }}>
+                      {fmt(r.socsoM + r.socsoP)}
+                      {sSt === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.socso)}</div>}
+                    </td>
+                    <td onClick={click(8)} style={{ ...td, background: getCellBg(i, 8, base, null) }}>{fmt(r.eisE)}</td>
+                    <td onClick={click(9)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 9, base, null) }}>{fmt(r.eisE)}</td>
+                    <td onClick={click(10)} style={{ ...td, color: '#ca8a04', background: getCellBg(i, 10, base, eSt) }}>
+                      {fmt(r.eisE * 2)}
+                      {eSt === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.eis)}</div>}
+                    </td>
                   </tr>
                 );
               })}
@@ -417,56 +411,10 @@ export default function StatutorySummary() {
         </div>
       )}
 
-      {/* Borang Reconciliation */}
-      {rows.length > 0 && (
-        <div style={{ borderTop: '2px solid #e4e4e7', marginTop: 32, paddingTop: 24 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#18181b', marginBottom: 16 }}>Borang Reconciliation</div>
-
-          <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '14px 18px', marginBottom: 20, fontSize: 12, lineHeight: 1.7, color: '#1e3a5f' }}>
-            <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>Month Detection Mechanism</div>
-            <div>• <b>EPF Borang A</b>: "Bulan Caruman" = payroll month + 1 (e.g. July wages → Caruman <b>{pad(mo + 2 > 12 ? 1 : mo + 2)}/{mo + 2 > 12 ? yr + 1 : yr}</b>)</div>
-            <div>• <b>SOCSO Borang 8A</b>: "Caruman Gaji Bulan" = payroll month (July wages → <b>{pad(mo + 1)}/{yr}</b>)</div>
-            <div>• <b>EIS Borang 8A</b>: same as SOCSO — actual payroll month</div>
-            <div style={{ marginTop: 6, color: '#64748b' }}>SOCSO and EIS are both "Borang 8A" — the system auto-detects which is which by comparing amounts against payroll data.</div>
-          </div>
-
-          {rState === 'idle' && (
-            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, border: '2px dashed #d4d4d8', borderRadius: 12, padding: '36px 20px', cursor: 'pointer', background: '#fafafa', transition: 'border-color 0.2s' }}
-              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; }}
-              onDragLeave={e => { e.currentTarget.style.borderColor = '#d4d4d8'; }}
-              onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#d4d4d8'; const f = e.dataTransfer.files[0]; if (f && f.type === 'application/pdf') processBorang(f); }}>
-              <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) processBorang(f); }} />
-              <div style={{ fontSize: 28 }}>📄</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#18181b' }}>Upload Scanned Borang PDF</div>
-              <div style={{ fontSize: 12, color: '#71717a' }}>Drop here or click to browse — supports EPF Borang A + SOCSO/EIS Borang 8A in one PDF</div>
-            </label>
-          )}
-
-          {rState === 'processing' && <FlappyLoader label="Reading Borang forms..." />}
-
-          {rState === 'error' && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '14px 18px', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#991b1b', marginBottom: 4 }}>Error</div>
-              <div style={{ fontSize: 12, color: '#7f1d1d' }}>{rError}</div>
-              <button onClick={clearRecon} style={{ ...btn, marginTop: 10, fontSize: 11 }}>Try Again</button>
-            </div>
-          )}
-
-          {rState === 'done' && rResults && (<>
-            {rResults.monthAlerts.length > 0 && rResults.monthAlerts.map((a, i) => (
-              <div key={i} style={{ background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 8, padding: '10px 16px', marginBottom: 10, fontSize: 13, fontWeight: 600, color: '#92400e' }}>
-                ⚠ {a.form} month mismatch — expected <b>{a.expected}</b> for {MONTHS[mo]} payroll, form shows <b>{a.actual}</b>
-              </div>
-            ))}
-
-            {renderReconSection('EPF (Borang A)', '#2563eb', rResults.epf, true)}
-            {renderReconSection('SOCSO (Borang 8A)', '#16a34a', rResults.socso, false)}
-            {renderReconSection('EIS (Borang 8A)', '#ca8a04', rResults.eis, false)}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-              <button onClick={clearRecon} style={{ ...btn, fontSize: 12 }}>Scan Another PDF</button>
-            </div>
-          </>)}
+      {rResults?.extra?.length > 0 && (
+        <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 8, padding: '10px 16px', marginTop: 12, fontSize: 12, color: '#6b21a8' }}>
+          <b>{rResults.extra.length} staff in form but not in payroll:</b>{' '}
+          {rResults.extra.map(e => e.name).join(', ')}
         </div>
       )}
     </div>
