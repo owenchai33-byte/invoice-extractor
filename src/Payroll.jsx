@@ -820,7 +820,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       }}
     >
       <td className={"r drag-handle"+hl(0)} style={{color:'#a1a1aa',cursor:'grab',userSelect:'none',touchAction:'none'}}
-        onPointerDown={e=>startDrag(r.id,e)}
+        onPointerDown={e=>startDrag(r.id,e)} onClick={()=>applySel(ri,0)}
         title="Drag to reorder"
       >
         <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
@@ -828,10 +828,10 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           {n}
         </span>
       </td>
-      <td className={(r.addedMonth===_tsKey()?'hl-new':'')+hl(1)} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name}>{r.name}</td>
-      <td className={hl(2).trim()||undefined} style={{color:'#000',fontSize:10}} title={r.ic}>{r.ic}</td>
-      <td className={hl(3).trim()||undefined} style={{color:'#000',fontSize:10}} title={r.position}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.').replace(/OPERATIONS/gi,'OPS.')}</span></td>
-      {hasNewJoiners&&<td style={{textAlign:'center',fontSize:10,color:'#71717a'}}>
+      <td className={(r.addedMonth===_tsKey()?'hl-new':'')+hl(1)} style={{fontWeight:600,color:'#000',background:r.addedMonth===_tsKey()?'#FFF9C4':undefined}} title={r.name} onClick={()=>applySel(ri,1)}>{r.name}</td>
+      <td className={hl(2).trim()||undefined} style={{color:'#000',fontSize:10}} title={r.ic} onClick={()=>applySel(ri,2)}>{r.ic}</td>
+      <td className={hl(3).trim()||undefined} style={{color:'#000',fontSize:10}} title={r.position} onClick={()=>applySel(ri,3)}><span className="no-print">{r.position}</span><span className="pt">{r.position.replace(/SUPERVISOR/gi,'SUPV.').replace(/OPERATIONS/gi,'OPS.')}</span></td>
+      {hasNewJoiners&&<td className={hl(17).trim()||undefined} style={{textAlign:'center',fontSize:10,color:'#71717a'}} onClick={()=>applySel(ri,17)}>
         {r.addedMonth===mk ? (<>
           <input type="date" value={r.joinDate||''} onChange={e=>updateJoinDate(r.id,e.target.value)} className="i" style={{width:100,textAlign:'center',fontSize:10}} onClick={e=>e.stopPropagation()}/>
           <span className="pv">{fmtJoinDate(r.joinDate)}</span>
