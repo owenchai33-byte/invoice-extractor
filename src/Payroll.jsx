@@ -503,9 +503,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .pt{display:none}
 .print-only{display:none}
 @media print{.print-only{display:block!important}}
-/* Keyboard-nav selected cell */
-.selc{outline:2px solid #2563eb!important;outline-offset:-2px;background:#dbeafe!important}
-@media print{.selc{outline:none!important;background:transparent!important}}
+/* Keyboard-nav selected cell + crosshair */
+.selc{outline:2px solid #2563eb!important;outline-offset:-2px;background:#93c5fd!important}
+.selr,.selcol{background:#dbeafe!important}
+@media print{.selc,.selr,.selcol{outline:none!important;background:transparent!important}}
 `;
 const disp = (v, dec) => v ? (dec ? Number(v).toFixed(2) : String(v)) : '';
 const pfmt = v => (!v || v === 0) ? '-' : fmt(v);
@@ -625,7 +626,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const isHidden=useCallback(id=>(hidden[mk]||[]).includes(id),[hidden,mk]);
   const hideForMonth=useCallback(id=>{setHidden(h=>{const list=[...(h[mk]||[])];if(!list.includes(id))list.push(id);return{...h,[mk]:list};});},[mk]);
   const showForMonth=useCallback(id=>{setHidden(h=>{const list=(h[mk]||[]).filter(x=>x!==id);return{...h,[mk]:list};});},[mk]);
-  const visibleStaff=useMemo(()=>staff.filter(s=>!isHidden(s.id)),[staff,isHidden]);
+  const visibleStaff=useMemo(()=>staff.filter(s=>!isHidden(s.id)&&(!s.addedMonth||s.addedMonth<=mk)),[staff,isHidden,mk]);
   const hiddenStaff=useMemo(()=>staff.filter(s=>isHidden(s.id)),[staff,isHidden]);
   const hasNewJoiners=useMemo(()=>visibleStaff.some(s=>s.addedMonth===mk),[visibleStaff,mk]);
   const updateJoinDate=useCallback((sid,date)=>setStaff(p=>p.map(s=>s.id===sid?{...s,joinDate:date}:s)),[]);
@@ -806,7 +807,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     const isDragging=dragId===r.id;
     const isDragOver=dragOverId===r.id&&dragId!==r.id;
     const ri=riOf.get(r.id);
-    const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
+    const hl=ci=>cur?(cur.ri===ri&&cur.ci===ci?' selc':cur.ri===ri?' selr':cur.ci===ci?' selcol':''):'';
     return(
     <tr
       className={"dr"+(last?" lb":"")}
@@ -858,7 +859,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   );};
   const TR=({l,t,c})=>{
     const ri=totRi[l];
-    const hl=ci=>(cur&&cur.ri===ri&&cur.ci===ci)?' selc':'';
+    const hl=ci=>cur?(cur.ri===ri&&cur.ci===ci?' selc':cur.ri===ri?' selr':cur.ci===ci?' selcol':''):'';
     const cell=ci=><td className={"r tcell fxc"+hl(ci)} onClick={()=>applySel(ri,ci)}>{fmt(t[ci])}</td>;
     return(
     <tr className={c}>
