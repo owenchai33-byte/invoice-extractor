@@ -8,6 +8,7 @@ import MerchantReport from './MerchantReport';
 import BankRecon from './BankRecon';
 import Attendance from './Attendance';
 import BeverageFOC from './BeverageFOC';
+import StatutorySummary from './StatutorySummary';
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 /*
@@ -119,6 +120,7 @@ const SECTIONS = [
     { id: 'payslip', label: 'Payslip' },
     { id: 'epayslip', label: 'Employee Payslip' },
     { id: 'contract', label: 'Contracts' },
+    { id: 'statutory', label: 'Statutory Summary' },
   ]},
 ];
 const TAB_TO_SECTION = {};
@@ -126,7 +128,7 @@ SECTIONS.forEach(s => s.tabs.forEach(t => { TAB_TO_SECTION[t.id] = s.id; }));
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
 const APP_PIN = '9069';
-const PIN_TABS = new Set(['payroll', 'payslip', 'epayslip']);
+const PIN_TABS = new Set(['payroll', 'payslip', 'epayslip', 'statutory']);
 
 function PinGate({ onUnlock }) {
   const [pin, setPin] = useState('');
@@ -564,6 +566,7 @@ export default function App() {
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
         <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
         {active === 'bevfoc' && <BeverageFOC />}
+        {active === 'statutory' && (pinUnlocked ? <StatutorySummary /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
       </main>
 
       <style>{`
