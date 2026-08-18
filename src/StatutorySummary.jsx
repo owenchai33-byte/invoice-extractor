@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { computeStaffMonth, fmt, LS_S, LS_P, LS_H, LS_SB } from './Payroll';
 
@@ -8,9 +8,10 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 export default function StatutorySummary() {
   const now = new Date();
-  const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_ep_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
-  const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_ep_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
-  const [sel, setSel] = useState(null); // { row, col } for crosshair
+  const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_stat_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
+  const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_stat_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
+  useEffect(() => { try { localStorage.setItem('cjk_stat_mo', mo); localStorage.setItem('cjk_stat_yr', yr); } catch {} }, [mo, yr]);
+  const [sel, setSel] = useState(null);
   const atMin = mo === 6 && yr === 2026;
   const mk = `${yr}-${pad(mo + 1)}`;
   const ref = new Date(yr, mo, 15);
