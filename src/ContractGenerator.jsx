@@ -97,7 +97,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8, list }) {
         fontWeight: bold ? 700 : 'inherit',
         textAlign: center ? 'center' : 'left',
         color: '#111',
-        padding: '0 1px 0 3px',
+        padding: '0 0 0 3px',
         margin: '0 0 0 1px',
         outline: 'none',
         borderRadius: 2,
@@ -332,7 +332,10 @@ export default function ContractGenerator() {
   // 'This batch' — print just the active contract, then reset.
   useEffect(() => {
     if (!printOne) return;
-    const done = () => setPrintOne(false);
+    const c = contracts[active];
+    if (origTitleRef.current == null) origTitleRef.current = document.title;
+    document.title = (c && c.name ? c.name : 'Contract') + ' - Employment Contract';
+    const done = () => { setPrintOne(false); if (origTitleRef.current != null) { document.title = origTitleRef.current; origTitleRef.current = null; } };
     window.addEventListener('afterprint', done, { once: true });
     window.print();
     return () => window.removeEventListener('afterprint', done);
