@@ -566,7 +566,8 @@ export default function App() {
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
         <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
         {active === 'bevfoc' && <BeverageFOC />}
-        {active === 'statutory' && (pinUnlocked ? <StatutorySummary /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
+        {active === 'statutory' && !pinUnlocked && <PinGate onUnlock={() => setPinUnlocked(true)} />}
+        {pinUnlocked && <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>}
       </main>
 
       <style>{`
