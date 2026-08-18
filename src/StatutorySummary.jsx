@@ -267,13 +267,22 @@ export default function StatutorySummary() {
 
   return (
     <div style={{ padding: '20px 24px', fontFamily: `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif` }}>
-      <div className="noP" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div className="noP" style={{
+        background: '#fff', borderBottom: '1px solid #e4e4e7', padding: '0 24px',
+        display: 'flex', alignItems: 'center', gap: 12, height: 56,
+        marginBottom: 16, borderRadius: 0,
+        marginLeft: -24, marginRight: -24, marginTop: -16, flexWrap: 'nowrap',
+      }}>
+        <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, color: '#18181b', whiteSpace: 'nowrap' }}>
+          STATUTORY SUMMARY
+        </h1>
         <button onClick={() => setShowMech(v => !v)} style={{ border: '1px solid #e4e4e7', background: showMech ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
           {showMech ? '▾ Mechanism' : '▸ Mechanism'}
         </button>
+        <div style={{ width: 1, height: 24, background: '#e4e4e7' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button disabled={atMin} onClick={() => changeMonth(-1)} style={{ ...btn, width: 28, height: 28, padding: 0, opacity: atMin ? 0.4 : 1, cursor: atMin ? 'default' : 'pointer' }}>&#9664;</button>
-          <div style={{ fontSize: 14, fontWeight: 700, minWidth: 140, textAlign: 'center', color: '#18181b' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, minWidth: 120, textAlign: 'center', color: '#18181b' }}>
             {MONTHS[mo]} {yr}
           </div>
           <button onClick={() => changeMonth(1)} style={{ ...btn, width: 28, height: 28, padding: 0 }}>&#9654;</button>
