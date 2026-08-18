@@ -207,13 +207,14 @@ export default function StatutorySummary() {
     XLSX.writeFile(wb, `Statutory Summary - ${MONTHS[mo]} ${yr}.xlsx`);
   }, [rows, totals, mo, yr]);
 
-  // Reconciliation
-  const [rState, setRState] = useState('idle');
-  const [rResults, setRResults] = useState(null);
+  // Reconciliation — persist to localStorage like BankRecon
+  const LS_RECON = 'cjk_stat_recon';
+  const [rState, setRState] = useState(() => { try { const s = localStorage.getItem(LS_RECON); return s ? 'done' : 'idle'; } catch { return 'idle'; } });
+  const [rResults, setRResults] = useState(() => { try { const s = localStorage.getItem(LS_RECON); if (!s) return null; const d = JSON.parse(s); return { ...d, byIC: new Map(Object.entries(d.byIC || {})) }; } catch { return null; } });
   const [rError, setRError] = useState('');
   const fileRef = useRef(null);
 
-  useEffect(() => { setRState('idle'); setRResults(null); setRError(''); }, [mo, yr]);
+  useEffect(() => { setRState('idle'); setRResults(null); setRError(''); try { localStorage.removeItem(LS_RECON); } catch {} }, [mo, yr]);
 
   const processBorang = useCallback(async (file) => {
     setRState('processing');
@@ -234,15 +235,17 @@ export default function StatutorySummary() {
         }
       }
       const extracted = parseAIJson(result.text);
-      setRResults(buildRecon(rows, extracted, mo, yr));
+      const recon = buildRecon(rows, extracted, mo, yr);
+      setRResults(recon);
       setRState('done');
+      try { localStorage.setItem(LS_RECON, JSON.stringify({ ...recon, byIC: Object.fromEntries(recon.byIC) })); } catch {}
     } catch (e) {
       setRError(e.message || 'Processing failed');
       setRState('error');
     }
   }, [rows, mo, yr]);
 
-  const clearRecon = useCallback(() => { setRState('idle'); setRResults(null); setRError(''); if (fileRef.current) fileRef.current.value = ''; }, []);
+  const clearRecon = useCallback(() => { setRState('idle'); setRResults(null); setRError(''); try { localStorage.removeItem(LS_RECON); } catch {} if (fileRef.current) fileRef.current.value = ''; }, []);
 
   const reconStats = useMemo(() => {
     if (!rResults) return null;
@@ -384,11 +387,11 @@ export default function StatutorySummary() {
                     <td onClick={click(1)} style={{ ...tdName, background: getCellBg(i, 1, base, fm ? (eMst !== 'mismatch' && ePst !== 'mismatch' && sSt !== 'mismatch' && eSt !== 'mismatch' ? 'match' : 'mismatch') : null) }}>{r.name}</td>
                     <td onClick={click(2)} style={{ ...td, background: getCellBg(i, 2, base, eMst) }}>
                       {fmt(r.epfM)}
-                      {eMst === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.epfM)}</div>}
+                      {eMst === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.epfM)}</div>}
                     </td>
                     <td onClick={click(3)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 3, base, ePst) }}>
                       {fmt(r.epfP)}
-                      {ePst === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.epfP)}</div>}
+                      {ePst === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.epfP)}</div>}
                     </td>
                     <td onClick={click(4)} style={{ ...td, color: '#2563eb', background: getCellBg(i, 4, base, eMst && ePst ? (eMst === 'match' && ePst === 'match' ? 'match' : 'mismatch') : null) }}>
                       {fmt(r.epfM + r.epfP)}
@@ -397,13 +400,13 @@ export default function StatutorySummary() {
                     <td onClick={click(6)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 6, base, null) }}>{fmt(r.socsoP)}</td>
                     <td onClick={click(7)} style={{ ...td, color: '#16a34a', background: getCellBg(i, 7, base, sSt) }}>
                       {fmt(r.socsoM + r.socsoP)}
-                      {sSt === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.socso)}</div>}
+                      {sSt === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.socso)}</div>}
                     </td>
                     <td onClick={click(8)} style={{ ...td, background: getCellBg(i, 8, base, null) }}>{fmt(r.eisE)}</td>
                     <td onClick={click(9)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 9, base, null) }}>{fmt(r.eisE)}</td>
                     <td onClick={click(10)} style={{ ...td, color: '#ca8a04', background: getCellBg(i, 10, base, eSt) }}>
                       {fmt(r.eisE * 2)}
-                      {eSt === 'mismatch' && <div style={{ fontSize: 9, color: '#dc2626', marginTop: 1 }}>Form: {fmtN(fm.eis)}</div>}
+                      {eSt === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.eis)}</div>}
                     </td>
                   </tr>
                 );
