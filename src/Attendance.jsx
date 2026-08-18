@@ -754,7 +754,7 @@ export default function Attendance() {
   const [empTimestamps, setEmpTimestamps] = useState({});
   const [confirmedPH, setConfirmedPH] = useState(new Set());
   const [verifiedPH, setVerifiedPH] = useState({});
-  const [showRules, setShowRules] = useState(false);
+  const [showMech, setShowMech] = useState(false);
   const fileRef = useRef(null);
   const origTitle = useRef(document.title);
 
@@ -965,8 +965,8 @@ export default function Attendance() {
         <h1 style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.04em', margin: 0, color: '#18181b', whiteSpace: 'nowrap' }}>
           ATTENDANCE REPORT
         </h1>
-        <button onClick={() => setShowRules(v => !v)} style={{ border: '1px solid #e4e4e7', background: showRules ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
-          {showRules ? '▾ Rules' : '▸ Rules'}
+        <button onClick={() => setShowMech(v => !v)} style={{ border: '1px solid #e4e4e7', background: showMech ? '#f0f9ff' : '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
+          {showMech ? '▾ Mechanism' : '▸ Mechanism'}
         </button>
         <div style={{ width: 1, height: 24, background: '#e4e4e7' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -996,9 +996,9 @@ export default function Attendance() {
         </div>
       </div>
 
-      {showRules && (
+      {showMech && (
         <div className="att-no-print" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '16px 20px', marginBottom: 16, fontSize: 12, color: '#334155', lineHeight: 1.7 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#0f172a' }}>ATTENDANCE RULES</div>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#0f172a' }}>ATTENDANCE MECHANISM</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
             <div>
               <div style={{ fontWeight: 600, color: '#1e40af' }}>Working Hours</div>
