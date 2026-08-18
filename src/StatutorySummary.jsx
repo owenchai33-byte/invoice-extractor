@@ -10,6 +10,7 @@ export default function StatutorySummary() {
   const now = new Date();
   const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_ep_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
   const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_ep_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
+  const [sel, setSel] = useState(null); // { row, col } for crosshair
   const atMin = mo === 6 && yr === 2026;
   const mk = `${yr}-${pad(mo + 1)}`;
   const ref = new Date(yr, mo, 15);
@@ -21,7 +22,7 @@ export default function StatutorySummary() {
 
   const visible = useMemo(() => {
     const hSet = new Set(hidden[mk] || []);
-    return staff.filter(s => !hSet.has(s.id));
+    return staff.filter(s => !hSet.has(s.id) && (!s.addedMonth || s.addedMonth <= mk));
   }, [staff, hidden, mk]);
 
   const rows = useMemo(() => visible.map(s => computeStaffMonth(s, pd[mk]?.[s.id], ref, sb)), [visible, pd, mk, ref, sb]);
@@ -44,6 +45,7 @@ export default function StatutorySummary() {
     } else {
       if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1);
     }
+    setSel(null);
   }, [mo, yr]);
 
   const exportXls = useCallback(() => {
@@ -66,8 +68,12 @@ export default function StatutorySummary() {
     XLSX.writeFile(wb, `Statutory Summary - ${MONTHS[mo]} ${yr}.xlsx`);
   }, [rows, totals, mo, yr]);
 
-  const th = { padding: '8px 10px', fontSize: 13, fontWeight: 700, textAlign: 'center', borderBottom: '2px solid #e4e4e7', whiteSpace: 'nowrap', color: '#18181b' };
-  const td = { padding: '8px 12px', fontSize: 14, textAlign: 'right', borderBottom: '1px solid #f4f4f5', color: '#18181b', fontFamily: 'monospace' };
+  const HL = '#dbeafe';
+  const isHL = (r, c) => sel && (sel.row === r || sel.col === c);
+  const cellBg = (r, c, base) => sel?.row === r && sel?.col === c ? '#93c5fd' : isHL(r, c) ? HL : base;
+
+  const th = { padding: '8px 12px', fontSize: 13, fontWeight: 700, textAlign: 'center', borderBottom: '2px solid #e4e4e7', whiteSpace: 'nowrap', color: '#18181b' };
+  const td = { padding: '8px 12px', fontSize: 14, textAlign: 'right', borderBottom: '1px solid #f4f4f5', color: '#18181b', fontFamily: 'monospace', cursor: 'pointer' };
   const tdName = { ...td, textAlign: 'left', fontFamily: 'inherit', fontWeight: 500, fontSize: 13 };
   const btn = { padding: '6px 14px', borderRadius: 7, border: '1px solid #e4e4e7', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 };
 
@@ -102,47 +108,51 @@ export default function StatutorySummary() {
               <tr style={{ background: '#fafafa' }}>
                 <th style={th} />
                 <th style={th} />
-                <th style={{ ...th, background: '#eff6ff', fontSize: 11 }}>Majikan</th>
-                <th style={{ ...th, background: '#eff6ff', fontSize: 11 }}>Pekerja</th>
-                <th style={{ ...th, background: '#eff6ff', fontSize: 11 }}>Jumlah</th>
-                <th style={{ ...th, background: '#f0fdf4', fontSize: 11 }}>Majikan</th>
-                <th style={{ ...th, background: '#f0fdf4', fontSize: 11 }}>Pekerja</th>
-                <th style={{ ...th, background: '#f0fdf4', fontSize: 11 }}>Jumlah</th>
-                <th style={{ ...th, background: '#fefce8', fontSize: 11 }}>Majikan</th>
-                <th style={{ ...th, background: '#fefce8', fontSize: 11 }}>Pekerja</th>
-                <th style={{ ...th, background: '#fefce8', fontSize: 11 }}>Jumlah</th>
+                <th style={{ ...th, background: sel?.col === 2 ? HL : '#eff6ff', fontSize: 11 }}>Majikan</th>
+                <th style={{ ...th, background: sel?.col === 3 ? HL : '#eff6ff', fontSize: 11 }}>Pekerja</th>
+                <th style={{ ...th, background: sel?.col === 4 ? HL : '#eff6ff', fontSize: 11 }}>Jumlah</th>
+                <th style={{ ...th, background: sel?.col === 5 ? HL : '#f0fdf4', fontSize: 11 }}>Majikan</th>
+                <th style={{ ...th, background: sel?.col === 6 ? HL : '#f0fdf4', fontSize: 11 }}>Pekerja</th>
+                <th style={{ ...th, background: sel?.col === 7 ? HL : '#f0fdf4', fontSize: 11 }}>Jumlah</th>
+                <th style={{ ...th, background: sel?.col === 8 ? HL : '#fefce8', fontSize: 11 }}>Majikan</th>
+                <th style={{ ...th, background: sel?.col === 9 ? HL : '#fefce8', fontSize: 11 }}>Pekerja</th>
+                <th style={{ ...th, background: sel?.col === 10 ? HL : '#fefce8', fontSize: 11 }}>Jumlah</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.id} style={{ background: i % 2 ? '#fafafa' : '#fff' }}>
-                  <td style={{ ...td, textAlign: 'center', fontFamily: 'inherit', color: '#71717a' }}>{i + 1}</td>
-                  <td style={tdName}>{r.name}</td>
-                  <td style={td}>{fmt(r.epfM)}</td>
-                  <td style={{ ...td, fontWeight: 700 }}>{fmt(r.epfP)}</td>
-                  <td style={{ ...td, color: '#2563eb' }}>{fmt(r.epfM + r.epfP)}</td>
-                  <td style={td}>{fmt(r.socsoM)}</td>
-                  <td style={{ ...td, fontWeight: 700 }}>{fmt(r.socsoP)}</td>
-                  <td style={{ ...td, color: '#16a34a' }}>{fmt(r.socsoM + r.socsoP)}</td>
-                  <td style={td}>{fmt(r.eisE)}</td>
-                  <td style={{ ...td, fontWeight: 700 }}>{fmt(r.eisE)}</td>
-                  <td style={{ ...td, color: '#ca8a04' }}>{fmt(r.eisE * 2)}</td>
-                </tr>
-              ))}
+              {rows.map((r, i) => {
+                const base = i % 2 ? '#fafafa' : '#fff';
+                const click = (c) => () => setSel(prev => prev?.row === i && prev?.col === c ? null : { row: i, col: c });
+                return (
+                  <tr key={r.id}>
+                    <td onClick={click(0)} style={{ ...td, textAlign: 'center', fontFamily: 'inherit', color: '#71717a', background: cellBg(i, 0, base) }}>{i + 1}</td>
+                    <td onClick={click(1)} style={{ ...tdName, background: cellBg(i, 1, base) }}>{r.name}</td>
+                    <td onClick={click(2)} style={{ ...td, background: cellBg(i, 2, base) }}>{fmt(r.epfM)}</td>
+                    <td onClick={click(3)} style={{ ...td, fontWeight: 700, background: cellBg(i, 3, base) }}>{fmt(r.epfP)}</td>
+                    <td onClick={click(4)} style={{ ...td, color: '#2563eb', background: cellBg(i, 4, base) }}>{fmt(r.epfM + r.epfP)}</td>
+                    <td onClick={click(5)} style={{ ...td, background: cellBg(i, 5, base) }}>{fmt(r.socsoM)}</td>
+                    <td onClick={click(6)} style={{ ...td, fontWeight: 700, background: cellBg(i, 6, base) }}>{fmt(r.socsoP)}</td>
+                    <td onClick={click(7)} style={{ ...td, color: '#16a34a', background: cellBg(i, 7, base) }}>{fmt(r.socsoM + r.socsoP)}</td>
+                    <td onClick={click(8)} style={{ ...td, background: cellBg(i, 8, base) }}>{fmt(r.eisE)}</td>
+                    <td onClick={click(9)} style={{ ...td, fontWeight: 700, background: cellBg(i, 9, base) }}>{fmt(r.eisE)}</td>
+                    <td onClick={click(10)} style={{ ...td, color: '#ca8a04', background: cellBg(i, 10, base) }}>{fmt(r.eisE * 2)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
-              <tr style={{ background: '#f4f4f5', fontWeight: 700 }}>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }} />
-                <td style={{ ...tdName, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>TOTAL</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }}>{fmt(totals.epfM)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>{fmt(totals.epfP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#2563eb', fontSize: 15 }}>{fmt(Math.round((totals.epfM + totals.epfP) * 100) / 100)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }}>{fmt(totals.socsoM)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>{fmt(totals.socsoP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#16a34a', fontSize: 15 }}>{fmt(Math.round((totals.socsoM + totals.socsoP) * 100) / 100)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none' }}>{fmt(totals.eisM)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700 }}>{fmt(totals.eisP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#ca8a04', fontSize: 15 }}>{fmt(Math.round((totals.eisM + totals.eisP) * 100) / 100)}</td>
+              <tr style={{ fontWeight: 700 }}>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 0 ? HL : '#f4f4f5' }} />
+                <td style={{ ...tdName, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 1 ? HL : '#f4f4f5' }}>TOTAL</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 2 ? HL : '#f4f4f5' }}>{fmt(totals.epfM)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 3 ? HL : '#f4f4f5' }}>{fmt(totals.epfP)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#2563eb', fontSize: 15, background: sel?.col === 4 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.epfM + totals.epfP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 5 ? HL : '#f4f4f5' }}>{fmt(totals.socsoM)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 6 ? HL : '#f4f4f5' }}>{fmt(totals.socsoP)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#16a34a', fontSize: 15, background: sel?.col === 7 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.socsoM + totals.socsoP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 8 ? HL : '#f4f4f5' }}>{fmt(totals.eisM)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 9 ? HL : '#f4f4f5' }}>{fmt(totals.eisP)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#ca8a04', fontSize: 15, background: sel?.col === 10 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.eisM + totals.eisP) * 100) / 100)}</td>
               </tr>
             </tfoot>
           </table>
