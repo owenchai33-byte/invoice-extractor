@@ -18,29 +18,37 @@ function monthsMatch(a, b) {
   return pa && pb && parseInt(pa[1]) === parseInt(pb[1]) && parseInt(pa[2]) === parseInt(pb[2]);
 }
 
-const BORANG_PROMPT = `Extract data from these scanned Malaysian statutory contribution forms. The PDF contains up to 3 forms separated by blank pages.
+const BORANG_PROMPT = `You are reading scanned Malaysian statutory contribution forms (KWSP Borang A and PERKESO Borang 8A). These are PHOTOCOPIED forms where amounts appear inside small digit grid boxes. Read every digit box VERY carefully — zoom in mentally on each cell.
 
-FORM TYPES:
-1. EPF "Borang A" (KWSP) — header: "KUMPULAN WANG SIMPANAN PEKERJA"
-   - "Bulan Caruman" field = contribution month in MM/YYYY format
-   - Per staff row: IC (NO KAD PENGENALAN, 12 digits), name, MAJIKAN amount (RM), PEKERJA amount (RM)
-   - Amounts are in individual digit grid boxes — read each digit carefully
+FORM 1 — EPF "Borang A" (KWSP):
+Header: "KUMPULAN WANG SIMPANAN PEKERJA" / "KWSP 6"
+"Bulan Caruman" = contribution month (MM/YYYY)
+Table columns left to right: NO | NO. AHLI | K | NO. KAD PENGENALAN (IC) | NAMA PEKERJA | UPAH (RM) | CARUMAN: MAJIKAN | CARUMAN: PEKERJA
+CRITICAL: The CARUMAN section has TWO separate groups of digit boxes per row.
+- The FIRST group (columns labeled 1-4 under "MAJIKAN") = employer contribution in RM
+- The SECOND group (columns labeled 5-8 under "PEKERJA") = employee contribution in RM
+- Each group shows a decimal amount across individual digit cells (hundreds, tens, ones, then sens)
+- Do NOT confuse UPAH (salary) digits with CARUMAN digits — UPAH is a separate column to the LEFT
+- The TOTAL row at the bottom shows sum totals — use it to cross-check your extraction
+- Typical EPF amounts: MAJIKAN ranges from RM 12 to RM 500+, PEKERJA from RM 0 to RM 400+
 
-2. SOCSO or EIS "Borang 8A" (PERKESO) — header: "PERTUBUHAN KESELAMATAN SOSIAL"
-   - "CARUMAN GAJI BULAN" field = salary month in MM/YYYY format
-   - Per staff row: IC (12 digits), name, caruman amount (RM column + SEN column combined)
-   - TWO separate Borang 8A forms may exist: SOCSO has higher per-person amounts, EIS has lower
+FORM 2 — SOCSO or EIS "Borang 8A" (PERKESO):
+Header: "PERTUBUHAN KESELAMATAN SOSIAL"
+"CARUMAN GAJI BULAN" = salary month (MM/YYYY)
+Table: NO.KAD PENGENALAN (IC) | NAMA PEKERJA | CARUMAN (RM column + SEN column)
+Two separate Borang 8A forms may exist in the same PDF: SOCSO (higher amounts, typically RM 10-70 per person) and EIS (lower amounts, typically RM 2-15 per person).
 
-Return ONLY valid JSON, no explanation:
+Return ONLY valid JSON:
 {"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":12.00,"pekerja":0.00}]},{"form_type":"PERKESO","month":"07/2026","total":2225.00,"staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]}]}
 
 RULES:
 - IC: exactly 12 digits, no dashes or spaces
-- Amounts in digit grid boxes — read each digit carefully, combine into decimal RM amount
-- PERKESO caruman: combine RM + SEN columns (e.g. RM=4, SEN=95 → 4.95)
+- Read each digit box individually then combine: e.g. boxes showing [3][3][3][0][0] = 333.00
+- PERKESO: RM and SEN are separate columns, combine into decimal (RM=34, SEN=15 → 34.15)
 - Multi-page forms: merge all pages of same form type into one entry
 - Skip blank pages, ignore watermarks ("FOR RECORD PURPOSES ONLY", "TIDAK SAH")
-- Extract EVERY staff row — do not skip any`;
+- Staff not in one form may appear in another — extract ALL staff from each form independently
+- Double-check amounts against the TOTAL row at the bottom of each form page`;
 
 async function pdfToDataUrls(file) {
   const ab = await file.arrayBuffer();
@@ -48,7 +56,7 @@ async function pdfToDataUrls(file) {
   const urls = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
-    const vp = page.getViewport({ scale: 2.0 });
+    const vp = page.getViewport({ scale: 3.0 });
     const c = document.createElement('canvas');
     c.width = vp.width; c.height = vp.height;
     const ctx = c.getContext('2d');
@@ -58,7 +66,7 @@ async function pdfToDataUrls(file) {
     for (let i = 0; i < d.length; i += 400) {
       if (d[i] < 200 || d[i + 1] < 200 || d[i + 2] < 200) dark++;
     }
-    if (dark > 50) urls.push(c.toDataURL('image/jpeg', 0.85));
+    if (dark > 50) urls.push(c.toDataURL('image/jpeg', 0.92));
   }
   return urls;
 }
