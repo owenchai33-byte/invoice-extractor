@@ -134,14 +134,11 @@ async function parseEPFDirect(file) {
 
       const parseAmt = (its) => {
         if (!its.length) return 0;
-        const singles = its.filter(i => i.str.length === 1);
-        const dbl = its.find(i => i.str.length === 2);
-        if (singles.length > 0 && dbl) return parseInt(singles.map(i => i.str).join('')) + parseInt(dbl.str) / 100;
-        if (its.every(i => i.str.length === 1) && its.length >= 3) {
-          const all = its.map(i => i.str).join('');
-          return parseInt(all.slice(0, -2) || '0') + parseInt(all.slice(-2)) / 100;
-        }
-        return parseFloat(its.map(i => i.str).join('')) || 0;
+        const dec = its.find(i => /^\d+\.\d+$/.test(i.str));
+        if (dec) return parseFloat(dec.str) || 0;
+        const combined = its.map(i => i.str).join('');
+        if (combined.length >= 3) return parseInt(combined.slice(0, -2) || '0') + parseInt(combined.slice(-2)) / 100;
+        return parseFloat(combined) || 0;
       };
 
       staff.push({ ic: icIt.str, name: name.replace(/\s+/g, ' ').trim(), wages, majikan: parseAmt(majItems), pekerja: parseAmt(pekItems) });
