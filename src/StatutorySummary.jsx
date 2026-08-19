@@ -227,7 +227,7 @@ export default function StatutorySummary() {
       let result, attempts = 0;
       while (true) {
         try {
-          result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, images: dataUrls, prompt: BORANG_PROMPT, maxOutputTokens: 12000 });
+          result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: dataUrls, prompt: BORANG_PROMPT, maxOutputTokens: 12000 });
           break;
         } catch (e) {
           if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
