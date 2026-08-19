@@ -61,23 +61,34 @@ async function parseAutoCountPdf(file) {
 
     for (const [, row] of rowMap) {
       row.sort((a, b) => a.x - b.x);
-      const docNo = row.find(it => it.x < 100 && /^(PI|CN|DN)[\s\-]/.test(it.str));
-      if (!docNo) continue;
 
-      const ref = row.find(it => it.x >= 100 && it.x < 180);
-      const date = row.find(it => it.x >= 180 && it.x < 230 && /\d{2}\/\d{2}\/\d{4}/.test(it.str));
-      const creditor = row.filter(it => it.x >= 280 && it.x < 470).map(it => it.str).join(' ');
-      const amount = row.find(it => it.x >= 500 && /^[\d,]+\.\d{2}$/.test(it.str));
-
-      if (ref && amount) {
-        entries.push({
-          docType: docNo.str.split(/\s/)[0],
-          docNo: docNo.str,
-          ref: ref.str.trim(),
-          date: date ? date.str : '',
-          creditor: creditor.trim(),
-          amount: parseFloat(amount.str.replace(/,/g, '')) || 0,
-        });
+      if (docType === 'PI') {
+        const docNoIt = row.find(it => it.x < 100 && /^(PI|CN|DN)[\s\-]/.test(it.str));
+        if (!docNoIt) continue;
+        const ref = row.find(it => it.x >= 100 && it.x < 180);
+        const date = row.find(it => it.x >= 180 && it.x < 230 && /\d{2}\/\d{2}\/\d{4}/.test(it.str));
+        const creditor = row.filter(it => it.x >= 280 && it.x < 470).map(it => it.str).join(' ');
+        const amount = row.find(it => it.x >= 500 && /^[\d,]+\.\d{2}$/.test(it.str));
+        if (ref && amount) {
+          entries.push({
+            docType: docNoIt.str.split(/[\s\-]/)[0], docNo: docNoIt.str,
+            ref: ref.str.trim(), date: date ? date.str : '', creditor: creditor.trim(),
+            amount: parseFloat(amount.str.replace(/,/g, '')) || 0,
+          });
+        }
+      } else {
+        const dateIt = row.find(it => it.x < 80 && /\d{2}\/\d{2}\/\d{4}/.test(it.str));
+        if (!dateIt) continue;
+        const docNoIt = row.find(it => it.x >= 80 && it.x < 175);
+        const creditor = row.filter(it => it.x >= 220 && it.x < 400).map(it => it.str).join(' ');
+        const amountIt = row.find(it => it.x >= 470 && it.x < 520 && /^[\d,]+\.\d{2}$/.test(it.str));
+        if (docNoIt && amountIt) {
+          entries.push({
+            docType: 'CN', docNo: docNoIt.str.trim(),
+            ref: docNoIt.str.trim(), date: dateIt.str, creditor: creditor.trim(),
+            amount: parseFloat(amountIt.str.replace(/,/g, '')) || 0,
+          });
+        }
       }
     }
   }
