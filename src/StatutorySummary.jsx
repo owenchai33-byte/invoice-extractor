@@ -76,7 +76,6 @@ async function parseEPFDirect(file) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
   const staff = [];
   let month = null;
-  let colMajX = null, colPekX = null;
 
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -89,25 +88,6 @@ async function parseEPFDirect(file) {
       if (m) month = `${m[1].padStart(2, '0')}/${m[2]}`;
     }
 
-    let pageMajX = null, pageMajY = null, pagePekX = null;
-    for (const it of items) {
-      if (/MAJIKAN/i.test(it.str) && pageMajX === null) {
-        pageMajX = Math.round(it.transform[4]);
-        pageMajY = Math.round(it.transform[5]);
-      }
-    }
-    if (pageMajX !== null) {
-      for (const it of items) {
-        if (/PEKERJA/i.test(it.str) && Math.abs(Math.round(it.transform[5]) - pageMajY) <= 3) {
-          pagePekX = Math.round(it.transform[4]);
-          break;
-        }
-      }
-    }
-    if (pageMajX !== null && pagePekX !== null) { colMajX = pageMajX; colPekX = pagePekX; }
-    if (colMajX === null || colPekX === null) continue;
-
-    const midX = (colMajX + colPekX) / 2;
     const rowMap = new Map();
     for (const it of items) {
       const y = Math.round(it.transform[5]);
@@ -132,7 +112,7 @@ async function parseEPFDirect(file) {
 
       let wages = 0, carumanItems = [];
       for (let i = 0; i < restItems.length; i++) {
-        if (/^\d[\d,]*\.\d{2}$/.test(restItems[i].str) && restItems[i].x < colMajX) {
+        if (/^\d[\d,]*\.\d{2}$/.test(restItems[i].str)) {
           wages = parseFloat(restItems[i].str.replace(/,/g, ''));
           carumanItems = restItems.slice(i + 1);
           break;
@@ -140,8 +120,17 @@ async function parseEPFDirect(file) {
       }
       if (wages === 0) continue;
 
-      const majItems = carumanItems.filter(it => it.x < midX && /^\d+$/.test(it.str));
-      const pekItems = carumanItems.filter(it => it.x >= midX && /^\d+$/.test(it.str));
+      const digitItems = carumanItems.filter(it => /^\d+$/.test(it.str));
+      digitItems.sort((a, b) => a.x - b.x);
+      if (digitItems.length < 4) continue;
+
+      let maxGap = 0, splitIdx = Math.ceil(digitItems.length / 2);
+      for (let i = 1; i < digitItems.length; i++) {
+        const gap = digitItems[i].x - digitItems[i - 1].x;
+        if (gap > maxGap) { maxGap = gap; splitIdx = i; }
+      }
+      const majItems = digitItems.slice(0, splitIdx);
+      const pekItems = digitItems.slice(splitIdx);
 
       const parseAmt = (its) => {
         if (!its.length) return 0;
