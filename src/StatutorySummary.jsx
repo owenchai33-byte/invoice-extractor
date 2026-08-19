@@ -19,26 +19,28 @@ function monthsMatch(a, b) {
 }
 
 
-const BORANG_TEXT_PROMPT = `You are parsing extracted text from Malaysian statutory contribution reports (KWSP/EPF and PERKESO/SOCSO/EIS). The text has been extracted from digital PDF reports.
+const BORANG_TEXT_PROMPT = `You are parsing extracted text from Malaysian statutory contribution reports. The text has been extracted from digital PDF reports.
 
-Identify each form type from the text:
-- KWSP/EPF: look for "KUMPULAN WANG SIMPANAN PEKERJA", "KWSP", "EPF", "Borang A"
-- PERKESO/SOCSO/EIS: look for "PERTUBUHAN KESELAMATAN SOSIAL", "PERKESO", "SOCSO", "EIS", "Borang 8A"
+Identify each form type:
+- KWSP/EPF: contains "KUMPULAN WANG SIMPANAN PEKERJA", "KWSP", "EPF", or "Borang A"
+- SOCSO: contains "ACR" in header/title, or "Skim Bencana Pekerjaan" / "Skim Keilatan". Higher contribution amounts (typically RM 30-90 per person).
+- EIS: contains "ECR" in header/title, or "Sistem Insurans Pekerjaan" / "SIP". Lower contribution amounts (typically RM 2-15 per person).
+
+CRITICAL: Use "SOCSO" or "EIS" as form_type — NOT "PERKESO". ACR = SOCSO, ECR = EIS. They are SEPARATE forms.
 
 Extract:
-- form_type: "KWSP" or "PERKESO"
+- form_type: "KWSP", "SOCSO", or "EIS"
 - month: contribution month in MM/YYYY format
 - For KWSP: each staff member's IC, name, majikan (employer) amount, pekerja (employee) amount
-- For PERKESO: each staff member's IC, name, caruman (contribution) amount
+- For SOCSO/EIS: each staff member's IC, name, caruman (contribution) amount
 
 Return ONLY valid JSON:
-{"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":12.00,"pekerja":0.00}]},{"form_type":"PERKESO","month":"07/2026","total":2225.00,"staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]}]}
+{"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":12.00,"pekerja":0.00}]},{"form_type":"SOCSO","month":"07/2026","staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]},{"form_type":"EIS","month":"07/2026","staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":5.50}]}]}
 
 RULES:
 - IC: exactly 12 digits, no dashes or spaces
 - Amounts as numbers with 2 decimal places
 - Multi-page forms: merge all pages of same form type into one entry
-- PERKESO forms: Two Borang 8A may exist — SOCSO (higher amounts) and EIS (lower amounts). Extract each as separate entries.
 - Extract ALL staff from each form independently`;
 
 async function pdfExtractText(file) {
@@ -74,25 +76,8 @@ function buildRecon(payrollRows, extracted, mo, yr) {
   const prkExp = `${pad(payMonth)}/${yr}`;
 
   const epfForm = forms.find(f => f.form_type === 'KWSP');
-  const prkForms = forms.filter(f => f.form_type === 'PERKESO');
-  let socsoForm = null, eisForm = null;
-
-  if (prkForms.length >= 2) {
-    const expSocso = payrollRows.reduce((s, r) => s + r.socsoM + r.socsoP, 0);
-    const t0 = prkForms[0].staff?.reduce((s, r) => s + (r.caruman || 0), 0) || 0;
-    const t1 = prkForms[1].staff?.reduce((s, r) => s + (r.caruman || 0), 0) || 0;
-    if (Math.abs(t0 - expSocso) < Math.abs(t1 - expSocso)) {
-      socsoForm = prkForms[0]; eisForm = prkForms[1];
-    } else {
-      socsoForm = prkForms[1]; eisForm = prkForms[0];
-    }
-  } else if (prkForms.length === 1) {
-    const expSocso = payrollRows.reduce((s, r) => s + r.socsoM + r.socsoP, 0);
-    const expEis = payrollRows.reduce((s, r) => s + r.eisE * 2, 0);
-    const t = prkForms[0].staff?.reduce((s, r) => s + (r.caruman || 0), 0) || 0;
-    if (Math.abs(t - expSocso) < Math.abs(t - expEis)) socsoForm = prkForms[0];
-    else eisForm = prkForms[0];
-  }
+  const socsoForm = forms.find(f => /socso|acr/i.test(f.form_type)) || null;
+  const eisForm = forms.find(f => /eis|ecr/i.test(f.form_type)) || null;
 
   if (epfForm && !monthsMatch(epfForm.month, epfExp))
     result.monthAlerts.push({ form: 'EPF', expected: epfExp, actual: epfForm.month || '?' });
