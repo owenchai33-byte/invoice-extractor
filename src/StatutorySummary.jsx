@@ -151,24 +151,35 @@ async function parseEPFDirect(file) {
 
       const digitItems = afterUpah.filter(it => /^\d+$/.test(it.str));
       digitItems.sort((a, b) => a.x - b.x);
-      if (digitItems.length < 4) continue;
+      if (digitItems.length < 2) continue;
 
-      let majItems, pekItems;
-      if (colPekX !== null) {
-        majItems = digitItems.filter(it => it.x < colPekX);
-        pekItems = digitItems.filter(it => it.x >= colPekX);
+      let splitIdx;
+      if (digitItems.length <= 3) {
+        splitIdx = Math.ceil(digitItems.length / 2) - 1;
       } else {
-        const half = Math.ceil(digitItems.length / 2);
-        majItems = digitItems.slice(0, half);
-        pekItems = digitItems.slice(half);
+        const rangeStart = digitItems[0].x;
+        const rangeEnd = digitItems[digitItems.length - 1].x;
+        const range = rangeEnd - rangeStart;
+        const midLow = rangeStart + range * 0.2;
+        const midHigh = rangeStart + range * 0.8;
+        let bestIdx = -1, bestGap = 0;
+        for (let i = 0; i < digitItems.length - 1; i++) {
+          const gapMid = (digitItems[i].x + digitItems[i + 1].x) / 2;
+          const gap = digitItems[i + 1].x - digitItems[i].x;
+          if (gapMid >= midLow && gapMid <= midHigh && gap > bestGap) { bestGap = gap; bestIdx = i; }
+        }
+        splitIdx = bestIdx >= 0 ? bestIdx : Math.ceil(digitItems.length / 2) - 1;
       }
+
+      const majItems = digitItems.slice(0, splitIdx + 1);
+      const pekItems = digitItems.slice(splitIdx + 1);
       if (majItems.length === 0 || pekItems.length === 0) continue;
 
       const parseAmt = (its) => {
         if (!its.length) return 0;
         const combined = its.map(i => i.str).join('');
-        if (combined.length >= 3) return parseInt(combined.slice(0, -2) || '0') + parseInt(combined.slice(-2)) / 100;
-        return parseFloat(combined) || 0;
+        const num = parseInt(combined) || 0;
+        return num > 5000 ? num / 100 : num;
       };
 
       staff.push({ ic: icIt.str, name: name.replace(/\s+/g, ' ').trim(), wages, majikan: parseAmt(majItems), pekerja: parseAmt(pekItems) });
