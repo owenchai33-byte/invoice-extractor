@@ -185,35 +185,27 @@ export default function StatutorySummary() {
     XLSX.writeFile(wb, `Statutory Summary - ${MONTHS[mo]} ${yr}.xlsx`);
   }, [rows, totals, mo, yr]);
 
-  // Reconciliation — persist to localStorage like BankRecon
-  const LS_RECON = 'cjk_stat_recon';
-  const [rState, setRState] = useState(() => {
+  // Reconciliation — persist per month to localStorage
+  const reconKey = `cjk_stat_recon_${yr}_${mo}`;
+  const loadRecon = (key) => {
     try {
-      const s = localStorage.getItem(LS_RECON);
-      if (!s) return 'idle';
+      const s = localStorage.getItem(key);
+      if (!s) return { st: 'idle', res: null };
       const d = JSON.parse(s);
-      if (d._mo !== mo || d._yr !== yr) { localStorage.removeItem(LS_RECON); return 'idle'; }
-      return 'done';
-    } catch { try { localStorage.removeItem(LS_RECON); } catch {} return 'idle'; }
-  });
-  const [rResults, setRResults] = useState(() => {
-    try {
-      const s = localStorage.getItem(LS_RECON);
-      if (!s) return null;
-      const d = JSON.parse(s);
-      if (d._mo !== mo || d._yr !== yr) return null;
-      return { ...d, byIC: new Map(Object.entries(d.byIC || {})) };
-    } catch { return null; }
-  });
+      return { st: 'done', res: { ...d, byIC: new Map(Object.entries(d.byIC || {})) } };
+    } catch { try { localStorage.removeItem(key); } catch {} return { st: 'idle', res: null }; }
+  };
+  const [rState, setRState] = useState(() => loadRecon(reconKey).st);
+  const [rResults, setRResults] = useState(() => loadRecon(reconKey).res);
   const [rError, setRError] = useState('');
   const fileRef = useRef(null);
   const reconInitRef = useRef(true);
 
   useEffect(() => {
     if (reconInitRef.current) { reconInitRef.current = false; return; }
-    setRState('idle'); setRResults(null); setRError('');
-    try { localStorage.removeItem(LS_RECON); } catch {};
-  }, [mo, yr]);
+    const { st, res } = loadRecon(reconKey);
+    setRState(st); setRResults(res); setRError('');
+  }, [reconKey]);
 
   const processBorang = useCallback(async (files) => {
     setRState('processing');
@@ -243,14 +235,14 @@ export default function StatutorySummary() {
       const recon = buildRecon(rows, extracted, mo, yr);
       setRResults(recon);
       setRState('done');
-      try { localStorage.setItem(LS_RECON, JSON.stringify({ _mo: mo, _yr: yr, ...recon, byIC: Object.fromEntries(recon.byIC) })); } catch {}
+      try { localStorage.setItem(reconKey, JSON.stringify({ ...recon, byIC: Object.fromEntries(recon.byIC) })); } catch {}
     } catch (e) {
       setRError(e.message || 'Processing failed');
       setRState('error');
     }
   }, [rows, mo, yr]);
 
-  const clearRecon = useCallback(() => { setRState('idle'); setRResults(null); setRError(''); try { localStorage.removeItem(LS_RECON); } catch {} if (fileRef.current) fileRef.current.value = ''; }, []);
+  const clearRecon = useCallback(() => { setRState('idle'); setRResults(null); setRError(''); try { localStorage.removeItem(reconKey); } catch {} if (fileRef.current) fileRef.current.value = ''; }, [reconKey]);
 
   const reconStats = useMemo(() => {
     if (!rResults) return null;
