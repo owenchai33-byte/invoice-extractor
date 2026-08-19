@@ -329,16 +329,8 @@ export default function StatutorySummary() {
                 : `${reconStats.matched}/${reconStats.total} matched · ${reconStats.mismatch} mismatch${reconStats.mismatch !== 1 ? 'es' : ''}`}
             </span>
           )}
-          {rState === 'idle' && rows.length > 0 && (
-            <label style={{ ...btn, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) processBorang(f); }} />
-              📄 Upload Borang
-            </label>
-          )}
-          {rState === 'processing' && <span style={{ ...btn, opacity: 0.5, cursor: 'wait' }}>Scanning...</span>}
           {rState === 'done' && <button onClick={clearRecon} style={btn}>Scan Another</button>}
-          {rState === 'error' && <button onClick={clearRecon} style={{ ...btn, color: '#dc2626' }}>✗ Retry</button>}
-          <button onClick={exportXls} style={{ ...btn, background: '#111', color: '#fff' }}>⬇ Export Excel</button>
+          {rState === 'done' && <button onClick={exportXls} style={{ ...btn, background: '#111', color: '#fff' }}>⬇ Export Excel</button>}
         </div>
       </div>
 
@@ -352,8 +344,36 @@ export default function StatutorySummary() {
         </div>
       )}
 
-      {rState === 'error' && rError && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 16px', marginBottom: 12, fontSize: 12, color: '#991b1b' }}>{rError}</div>
+      {rState === 'idle' && (
+        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+          {rows.length === 0 ? (
+            <div style={{ color: '#a1a1aa', fontSize: 14 }}>No payroll data for this month</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#18181b', marginBottom: 4 }}>Upload Borang to Reconcile</div>
+              <div style={{ fontSize: 12, color: '#71717a', marginBottom: 16 }}>Upload your EPF Borang A / SOCSO & EIS Borang 8A PDF</div>
+              <label style={{ ...btn, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 24px', fontSize: 14 }}>
+                <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) processBorang(f); }} />
+                📄 Upload Borang PDF
+              </label>
+            </>
+          )}
+        </div>
+      )}
+
+      {rState === 'processing' && <FlappyLoader label="Reading Borang forms..." />}
+
+      {rState === 'error' && (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 18px', marginBottom: 16, fontSize: 13, color: '#991b1b', display: 'inline-block', maxWidth: 500, textAlign: 'left' }}>{rError}</div>
+          <div>
+            <label style={{ ...btn, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 24px', fontSize: 14 }}>
+              <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) { setRState('idle'); setRError(''); processBorang(f); } }} />
+              📄 Try Again
+            </label>
+          </div>
+        </div>
       )}
 
       {rResults?.monthAlerts?.length > 0 && rResults.monthAlerts.map((a, i) => (
@@ -362,11 +382,7 @@ export default function StatutorySummary() {
         </div>
       ))}
 
-      {rState === 'processing' && <FlappyLoader label="Reading Borang forms..." />}
-
-      {rows.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#a1a1aa', padding: 60, fontSize: 14 }}>No payroll data for this month</div>
-      ) : rState !== 'processing' && (
+      {rState === 'done' && rows.length > 0 && (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
             <thead>
