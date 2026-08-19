@@ -75,7 +75,7 @@ function buildRecon(payrollRows, extracted, mo, yr) {
   const epfExp = `${pad(epfExpMo)}/${epfExpYr}`;
   const prkExp = `${pad(payMonth)}/${yr}`;
 
-  const epfForm = forms.find(f => f.form_type === 'KWSP');
+  const epfForm = forms.find(f => /kwsp|epf/i.test(f.form_type)) || null;
   const socsoForm = forms.find(f => /socso|acr/i.test(f.form_type)) || null;
   const eisForm = forms.find(f => /eis|ecr/i.test(f.form_type)) || null;
 
