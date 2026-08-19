@@ -237,14 +237,19 @@ export default function StatutorySummary() {
     try { localStorage.removeItem(LS_RECON); } catch {};
   }, [mo, yr]);
 
-  const processBorang = useCallback(async (file) => {
+  const processBorang = useCallback(async (files) => {
     setRState('processing');
     setRError('');
     try {
       const apiKey = localStorage.getItem(AI_CFG.storageKey);
       if (!apiKey) throw new Error('API key not set. Go to Invoices tab → ⚙ to configure your ' + AI_CFG.label + ' key.');
-      const dataUrls = await pdfToDataUrls(file);
-      if (dataUrls.length === 0) throw new Error('PDF appears blank — no pages with content.');
+      const allUrls = [];
+      for (const file of files) {
+        const urls = await pdfToDataUrls(file);
+        allUrls.push(...urls);
+      }
+      const dataUrls = allUrls;
+      if (dataUrls.length === 0) throw new Error('PDFs appear blank — no pages with content.');
       let result, attempts = 0;
       while (true) {
         try {
@@ -354,8 +359,8 @@ export default function StatutorySummary() {
               <div style={{ fontSize: 15, fontWeight: 600, color: '#18181b', marginBottom: 4 }}>Upload Borang to Reconcile</div>
               <div style={{ fontSize: 12, color: '#71717a', marginBottom: 16 }}>Upload your EPF Borang A / SOCSO & EIS Borang 8A PDF</div>
               <label style={{ ...btn, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 24px', fontSize: 14 }}>
-                <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) processBorang(f); }} />
-                📄 Upload Borang PDF
+                <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }} onChange={e => { const f = Array.from(e.target.files); if (f.length) processBorang(f); }} />
+                📄 Upload Borang PDFs
               </label>
             </>
           )}
@@ -369,7 +374,7 @@ export default function StatutorySummary() {
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 18px', marginBottom: 16, fontSize: 13, color: '#991b1b', display: 'inline-block', maxWidth: 500, textAlign: 'left' }}>{rError}</div>
           <div>
             <label style={{ ...btn, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 24px', fontSize: 14 }}>
-              <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) { setRState('idle'); setRError(''); processBorang(f); } }} />
+              <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }} onChange={e => { const f = Array.from(e.target.files); if (f.length) { setRState('idle'); setRError(''); processBorang(f); } }} />
               📄 Try Again
             </label>
           </div>
