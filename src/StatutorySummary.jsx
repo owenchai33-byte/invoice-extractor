@@ -90,15 +90,15 @@ async function parseEPFDirect(file) {
     }
 
     if (colPekX === null) {
-      let majY = null;
+      let majX = null;
       for (const it of items) {
-        if (/MAJIKAN/i.test(it.str)) { majY = Math.round(it.transform[5]); break; }
+        if (/MAJIKAN/i.test(it.str)) { majX = Math.round(it.transform[4]); break; }
       }
-      if (majY !== null) {
+      if (majX !== null) {
         for (const it of items) {
-          if (/PEKERJA/i.test(it.str) && Math.abs(Math.round(it.transform[5]) - majY) <= 3) {
-            colPekX = Math.round(it.transform[4]);
-            break;
+          if (/PEKERJA/i.test(it.str)) {
+            const x = Math.round(it.transform[4]);
+            if (x > majX && (colPekX === null || x < colPekX)) colPekX = x;
           }
         }
       }
@@ -126,17 +126,30 @@ async function parseEPFDirect(file) {
       }
       if (!name) continue;
 
-      let wages = 0, carumanItems = [];
+      let wages = 0, upahIdx = -1;
       for (let i = 0; i < restItems.length; i++) {
         if (/^\d[\d,]*\.\d{2}$/.test(restItems[i].str)) {
           wages = parseFloat(restItems[i].str.replace(/,/g, ''));
-          carumanItems = restItems.slice(i + 1);
+          upahIdx = i;
           break;
         }
       }
       if (wages === 0) continue;
 
-      const digitItems = carumanItems.filter(it => /^\d+$/.test(it.str));
+      const afterUpah = restItems.slice(upahIdx + 1);
+
+      const decItems = afterUpah.filter(it => /^\d[\d,]*\.\d{2}$/.test(it.str));
+      if (decItems.length >= 2) {
+        decItems.sort((a, b) => a.x - b.x);
+        staff.push({
+          ic: icIt.str, name: name.replace(/\s+/g, ' ').trim(), wages,
+          majikan: parseFloat(decItems[0].str.replace(/,/g, '')),
+          pekerja: parseFloat(decItems[1].str.replace(/,/g, '')),
+        });
+        continue;
+      }
+
+      const digitItems = afterUpah.filter(it => /^\d+$/.test(it.str));
       digitItems.sort((a, b) => a.x - b.x);
       if (digitItems.length < 4) continue;
 
@@ -149,11 +162,10 @@ async function parseEPFDirect(file) {
         majItems = digitItems.slice(0, half);
         pekItems = digitItems.slice(half);
       }
+      if (majItems.length === 0 || pekItems.length === 0) continue;
 
       const parseAmt = (its) => {
         if (!its.length) return 0;
-        const dec = its.find(i => /^\d+\.\d+$/.test(i.str));
-        if (dec) return parseFloat(dec.str) || 0;
         const combined = its.map(i => i.str).join('');
         if (combined.length >= 3) return parseInt(combined.slice(0, -2) || '0') + parseInt(combined.slice(-2)) / 100;
         return parseFloat(combined) || 0;
@@ -315,13 +327,11 @@ export default function StatutorySummary() {
       const nonEpfTexts = [];
 
       for (const file of files) {
+        try {
+          const epf = await parseEPFDirect(file);
+          if (epf.staff.length > 0) { allForms.push(epf); continue; }
+        } catch {}
         const txt = await pdfExtractText(file);
-        if (/kwsp|epf|kumpulan wang simpanan/i.test(txt) || /kwsp|epf/i.test(file.name)) {
-          try {
-            const epf = await parseEPFDirect(file);
-            if (epf.staff.length > 0) { allForms.push(epf); continue; }
-          } catch {}
-        }
         nonEpfTexts.push(txt);
       }
 
