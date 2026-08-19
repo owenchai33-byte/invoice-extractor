@@ -209,12 +209,33 @@ export default function StatutorySummary() {
 
   // Reconciliation — persist to localStorage like BankRecon
   const LS_RECON = 'cjk_stat_recon';
-  const [rState, setRState] = useState(() => { try { const s = localStorage.getItem(LS_RECON); return s ? 'done' : 'idle'; } catch { return 'idle'; } });
-  const [rResults, setRResults] = useState(() => { try { const s = localStorage.getItem(LS_RECON); if (!s) return null; const d = JSON.parse(s); return { ...d, byIC: new Map(Object.entries(d.byIC || {})) }; } catch { return null; } });
+  const [rState, setRState] = useState(() => {
+    try {
+      const s = localStorage.getItem(LS_RECON);
+      if (!s) return 'idle';
+      const d = JSON.parse(s);
+      if (d._mo !== mo || d._yr !== yr) { localStorage.removeItem(LS_RECON); return 'idle'; }
+      return 'done';
+    } catch { try { localStorage.removeItem(LS_RECON); } catch {} return 'idle'; }
+  });
+  const [rResults, setRResults] = useState(() => {
+    try {
+      const s = localStorage.getItem(LS_RECON);
+      if (!s) return null;
+      const d = JSON.parse(s);
+      if (d._mo !== mo || d._yr !== yr) return null;
+      return { ...d, byIC: new Map(Object.entries(d.byIC || {})) };
+    } catch { return null; }
+  });
   const [rError, setRError] = useState('');
   const fileRef = useRef(null);
+  const reconInitRef = useRef(true);
 
-  useEffect(() => { setRState('idle'); setRResults(null); setRError(''); try { localStorage.removeItem(LS_RECON); } catch {} }, [mo, yr]);
+  useEffect(() => {
+    if (reconInitRef.current) { reconInitRef.current = false; return; }
+    setRState('idle'); setRResults(null); setRError('');
+    try { localStorage.removeItem(LS_RECON); } catch {};
+  }, [mo, yr]);
 
   const processBorang = useCallback(async (file) => {
     setRState('processing');
@@ -238,7 +259,7 @@ export default function StatutorySummary() {
       const recon = buildRecon(rows, extracted, mo, yr);
       setRResults(recon);
       setRState('done');
-      try { localStorage.setItem(LS_RECON, JSON.stringify({ ...recon, byIC: Object.fromEntries(recon.byIC) })); } catch {}
+      try { localStorage.setItem(LS_RECON, JSON.stringify({ _mo: mo, _yr: yr, ...recon, byIC: Object.fromEntries(recon.byIC) })); } catch {}
     } catch (e) {
       setRError(e.message || 'Processing failed');
       setRState('error');
