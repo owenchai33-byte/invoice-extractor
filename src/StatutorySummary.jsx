@@ -364,6 +364,7 @@ export default function StatutorySummary() {
             <thead>
               <tr style={{ background: '#fafafa' }}>
                 <th style={{ ...th, textAlign: 'center', width: 40 }}>NO</th>
+                <th style={{ ...th, textAlign: 'left', minWidth: 120 }}>IC NO</th>
                 <th style={{ ...th, textAlign: 'left', minWidth: 180 }}>NAME</th>
                 <th colSpan={3} style={{ ...th, background: '#eff6ff', borderBottom: '2px solid #bfdbfe' }}>EPF</th>
                 <th colSpan={3} style={{ ...th, background: '#f0fdf4', borderBottom: '2px solid #bbf7d0' }}>SOCSO</th>
@@ -372,15 +373,16 @@ export default function StatutorySummary() {
               <tr style={{ background: '#fafafa' }}>
                 <th style={th} />
                 <th style={th} />
-                <th style={{ ...th, background: sel?.col === 2 ? HL : '#eff6ff', fontSize: 11 }}>Majikan</th>
-                <th style={{ ...th, background: sel?.col === 3 ? HL : '#eff6ff', fontSize: 11 }}>Pekerja</th>
-                <th style={{ ...th, background: sel?.col === 4 ? HL : '#eff6ff', fontSize: 11 }}>Jumlah</th>
-                <th style={{ ...th, background: sel?.col === 5 ? HL : '#f0fdf4', fontSize: 11 }}>Majikan</th>
-                <th style={{ ...th, background: sel?.col === 6 ? HL : '#f0fdf4', fontSize: 11 }}>Pekerja</th>
-                <th style={{ ...th, background: sel?.col === 7 ? HL : '#f0fdf4', fontSize: 11 }}>Jumlah</th>
-                <th style={{ ...th, background: sel?.col === 8 ? HL : '#fefce8', fontSize: 11 }}>Majikan</th>
-                <th style={{ ...th, background: sel?.col === 9 ? HL : '#fefce8', fontSize: 11 }}>Pekerja</th>
-                <th style={{ ...th, background: sel?.col === 10 ? HL : '#fefce8', fontSize: 11 }}>Jumlah</th>
+                <th style={th} />
+                <th style={{ ...th, background: sel?.col === 3 ? HL : '#eff6ff', fontSize: 11 }}>Majikan</th>
+                <th style={{ ...th, background: sel?.col === 4 ? HL : '#eff6ff', fontSize: 11 }}>Pekerja</th>
+                <th style={{ ...th, background: sel?.col === 5 ? HL : '#eff6ff', fontSize: 11 }}>Jumlah</th>
+                <th style={{ ...th, background: sel?.col === 6 ? HL : '#f0fdf4', fontSize: 11 }}>Majikan</th>
+                <th style={{ ...th, background: sel?.col === 7 ? HL : '#f0fdf4', fontSize: 11 }}>Pekerja</th>
+                <th style={{ ...th, background: sel?.col === 8 ? HL : '#f0fdf4', fontSize: 11 }}>Jumlah</th>
+                <th style={{ ...th, background: sel?.col === 9 ? HL : '#fefce8', fontSize: 11 }}>Majikan</th>
+                <th style={{ ...th, background: sel?.col === 10 ? HL : '#fefce8', fontSize: 11 }}>Pekerja</th>
+                <th style={{ ...th, background: sel?.col === 11 ? HL : '#fefce8', fontSize: 11 }}>Jumlah</th>
               </tr>
             </thead>
             <tbody>
@@ -397,27 +399,28 @@ export default function StatutorySummary() {
                 return (
                   <tr key={r.id}>
                     <td onClick={click(0)} style={{ ...td, textAlign: 'center', fontFamily: 'inherit', color: '#71717a', background: getCellBg(i, 0, base, null) }}>{i + 1}</td>
-                    <td onClick={click(1)} style={{ ...tdName, background: getCellBg(i, 1, base, fm ? (eMst !== 'mismatch' && ePst !== 'mismatch' && sSt !== 'mismatch' && eSt !== 'mismatch' ? 'match' : 'mismatch') : null) }}>{r.name}</td>
-                    <td onClick={click(2)} style={{ ...td, background: getCellBg(i, 2, base, eMst) }}>
+                    <td onClick={click(1)} style={{ ...td, textAlign: 'left', fontFamily: 'monospace', fontSize: 11, background: getCellBg(i, 1, base, fm ? 'match' : null) }}>{r.ic}</td>
+                    <td onClick={click(2)} style={{ ...tdName, background: getCellBg(i, 2, base, fm ? (eMst !== 'mismatch' && ePst !== 'mismatch' && sSt !== 'mismatch' && eSt !== 'mismatch' ? 'match' : 'mismatch') : null) }}>{r.name}</td>
+                    <td onClick={click(3)} style={{ ...td, background: getCellBg(i, 3, base, eMst) }}>
                       {fmt(r.epfM)}
                       {eMst === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.epfM)}</div>}
                     </td>
-                    <td onClick={click(3)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 3, base, ePst) }}>
+                    <td onClick={click(4)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 4, base, ePst) }}>
                       {fmt(r.epfP)}
                       {ePst === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.epfP)}</div>}
                     </td>
-                    <td onClick={click(4)} style={{ ...td, color: '#2563eb', background: getCellBg(i, 4, base, eMst && ePst ? (eMst === 'match' && ePst === 'match' ? 'match' : 'mismatch') : null) }}>
+                    <td onClick={click(5)} style={{ ...td, color: '#2563eb', background: getCellBg(i, 5, base, eMst && ePst ? (eMst === 'match' && ePst === 'match' ? 'match' : 'mismatch') : null) }}>
                       {fmt(r.epfM + r.epfP)}
                     </td>
-                    <td onClick={click(5)} style={{ ...td, background: getCellBg(i, 5, base, null) }}>{fmt(r.socsoM)}</td>
-                    <td onClick={click(6)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 6, base, null) }}>{fmt(r.socsoP)}</td>
-                    <td onClick={click(7)} style={{ ...td, color: '#16a34a', background: getCellBg(i, 7, base, sSt) }}>
+                    <td onClick={click(6)} style={{ ...td, background: getCellBg(i, 6, base, null) }}>{fmt(r.socsoM)}</td>
+                    <td onClick={click(7)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 7, base, null) }}>{fmt(r.socsoP)}</td>
+                    <td onClick={click(8)} style={{ ...td, color: '#16a34a', background: getCellBg(i, 8, base, sSt) }}>
                       {fmt(r.socsoM + r.socsoP)}
                       {sSt === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.socso)}</div>}
                     </td>
-                    <td onClick={click(8)} style={{ ...td, background: getCellBg(i, 8, base, null) }}>{fmt(r.eisE)}</td>
-                    <td onClick={click(9)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 9, base, null) }}>{fmt(r.eisE)}</td>
-                    <td onClick={click(10)} style={{ ...td, color: '#ca8a04', background: getCellBg(i, 10, base, eSt) }}>
+                    <td onClick={click(9)} style={{ ...td, background: getCellBg(i, 9, base, null) }}>{fmt(r.eisE)}</td>
+                    <td onClick={click(10)} style={{ ...td, fontWeight: 700, background: getCellBg(i, 10, base, null) }}>{fmt(r.eisE)}</td>
+                    <td onClick={click(11)} style={{ ...td, color: '#ca8a04', background: getCellBg(i, 11, base, eSt) }}>
                       {fmt(r.eisE * 2)}
                       {eSt === 'mismatch' && <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2, background: '#fef2f2', borderRadius: 3, padding: '1px 4px' }}>Form: {fmtN(fm.eis)}</div>}
                     </td>
@@ -428,16 +431,17 @@ export default function StatutorySummary() {
             <tfoot>
               <tr style={{ fontWeight: 700 }}>
                 <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 0 ? HL : '#f4f4f5' }} />
-                <td style={{ ...tdName, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 1 ? HL : '#f4f4f5' }}>TOTAL</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 2 ? HL : '#f4f4f5' }}>{fmt(totals.epfM)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 3 ? HL : '#f4f4f5' }}>{fmt(totals.epfP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#2563eb', fontSize: 15, background: sel?.col === 4 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.epfM + totals.epfP) * 100) / 100)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 5 ? HL : '#f4f4f5' }}>{fmt(totals.socsoM)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 6 ? HL : '#f4f4f5' }}>{fmt(totals.socsoP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#16a34a', fontSize: 15, background: sel?.col === 7 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.socsoM + totals.socsoP) * 100) / 100)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 8 ? HL : '#f4f4f5' }}>{fmt(totals.eisM)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 9 ? HL : '#f4f4f5' }}>{fmt(totals.eisP)}</td>
-                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#ca8a04', fontSize: 15, background: sel?.col === 10 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.eisM + totals.eisP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 1 ? HL : '#f4f4f5' }} />
+                <td style={{ ...tdName, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 2 ? HL : '#f4f4f5' }}>TOTAL</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 3 ? HL : '#f4f4f5' }}>{fmt(totals.epfM)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 4 ? HL : '#f4f4f5' }}>{fmt(totals.epfP)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#2563eb', fontSize: 15, background: sel?.col === 5 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.epfM + totals.epfP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 6 ? HL : '#f4f4f5' }}>{fmt(totals.socsoM)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 7 ? HL : '#f4f4f5' }}>{fmt(totals.socsoP)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#16a34a', fontSize: 15, background: sel?.col === 8 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.socsoM + totals.socsoP) * 100) / 100)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', background: sel?.col === 9 ? HL : '#f4f4f5' }}>{fmt(totals.eisM)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', fontWeight: 700, background: sel?.col === 10 ? HL : '#f4f4f5' }}>{fmt(totals.eisP)}</td>
+                <td style={{ ...td, borderTop: '2px solid #d4d4d8', borderBottom: 'none', color: '#ca8a04', fontSize: 15, background: sel?.col === 11 ? HL : '#f4f4f5' }}>{fmt(Math.round((totals.eisM + totals.eisP) * 100) / 100)}</td>
               </tr>
             </tfoot>
           </table>
