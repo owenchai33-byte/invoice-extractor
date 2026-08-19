@@ -50,6 +50,50 @@ RULES:
 - Staff not in one form may appear in another — extract ALL staff from each form independently
 - Double-check amounts against the TOTAL row at the bottom of each form page`;
 
+const BORANG_TEXT_PROMPT = `You are parsing extracted text from Malaysian statutory contribution reports (KWSP/EPF and PERKESO/SOCSO/EIS). The text has been extracted from digital PDF reports.
+
+Identify each form type from the text:
+- KWSP/EPF: look for "KUMPULAN WANG SIMPANAN PEKERJA", "KWSP", "EPF", "Borang A"
+- PERKESO/SOCSO/EIS: look for "PERTUBUHAN KESELAMATAN SOSIAL", "PERKESO", "SOCSO", "EIS", "Borang 8A"
+
+Extract:
+- form_type: "KWSP" or "PERKESO"
+- month: contribution month in MM/YYYY format
+- For KWSP: each staff member's IC, name, majikan (employer) amount, pekerja (employee) amount
+- For PERKESO: each staff member's IC, name, caruman (contribution) amount
+
+Return ONLY valid JSON:
+{"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":12.00,"pekerja":0.00}]},{"form_type":"PERKESO","month":"07/2026","total":2225.00,"staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]}]}
+
+RULES:
+- IC: exactly 12 digits, no dashes or spaces
+- Amounts as numbers with 2 decimal places
+- Multi-page forms: merge all pages of same form type into one entry
+- PERKESO forms: Two Borang 8A may exist — SOCSO (higher amounts) and EIS (lower amounts). Extract each as separate entries.
+- Extract ALL staff from each form independently`;
+
+async function pdfExtractText(file) {
+  const ab = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
+  let allText = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const lines = [];
+    let lastY = null;
+    for (const item of content.items) {
+      if (!item.str.trim()) continue;
+      const y = Math.round(item.transform[5]);
+      if (lastY !== null && Math.abs(y - lastY) > 3) lines.push('\n');
+      else if (lines.length > 0 && !lines[lines.length - 1].endsWith('\n')) lines.push('\t');
+      lines.push(item.str);
+      lastY = y;
+    }
+    allText += lines.join('') + '\n---PAGE---\n';
+  }
+  return allText.trim();
+}
+
 async function pdfToDataUrls(file) {
   const ab = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
@@ -243,21 +287,40 @@ export default function StatutorySummary() {
     try {
       const apiKey = localStorage.getItem(AI_CFG.storageKey);
       if (!apiKey) throw new Error('API key not set. Go to Invoices tab → ⚙ to configure your ' + AI_CFG.label + ' key.');
-      const allUrls = [];
+
+      let allText = '';
       for (const file of files) {
-        const urls = await pdfToDataUrls(file);
-        allUrls.push(...urls);
+        const txt = await pdfExtractText(file);
+        allText += txt + '\n';
       }
-      const dataUrls = allUrls;
-      if (dataUrls.length === 0) throw new Error('PDFs appear blank — no pages with content.');
+      const hasText = (allText.match(/\d{12}/g) || []).length >= 2;
+
       let result, attempts = 0;
-      while (true) {
-        try {
-          result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: dataUrls, prompt: BORANG_PROMPT, maxOutputTokens: 12000 });
-          break;
-        } catch (e) {
-          if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
-          throw e;
+      if (hasText) {
+        while (true) {
+          try {
+            result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
+            break;
+          } catch (e) {
+            if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
+            throw e;
+          }
+        }
+      } else {
+        const allUrls = [];
+        for (const file of files) {
+          const urls = await pdfToDataUrls(file);
+          allUrls.push(...urls);
+        }
+        if (allUrls.length === 0) throw new Error('PDFs appear blank — no pages with content.');
+        while (true) {
+          try {
+            result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: allUrls, prompt: BORANG_PROMPT, maxOutputTokens: 12000 });
+            break;
+          } catch (e) {
+            if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
+            throw e;
+          }
         }
       }
       const extracted = parseAIJson(result.text);
