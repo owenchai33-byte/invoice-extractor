@@ -595,13 +595,10 @@ const F='Calibri, "Segoe UI", Arial, sans-serif';
 // number of images. Returns { text } or throws Error with .code in
 // { 'rate_limit', 'auth', 'malformed', 'other' } for the retry loop to handle.
 export async function callAI({provider, apiKey, model, imageDataUrl, images, prompt, maxOutputTokens}){
-  const imgs = (images && images.length) ? images : [imageDataUrl];
+  const imgs = (images && images.length) ? images : imageDataUrl ? [imageDataUrl] : [];
   const maxTok = maxOutputTokens || 6000;
 
   if(provider === 'anthropic'){
-    // Browser-direct call to the Anthropic Messages API. The
-    // anthropic-dangerous-direct-browser-access header is what enables CORS from
-    // the browser (the key lives in the user's localStorage, same as Gemini/Groq).
     const content = [];
     for(const dataUrl of imgs){
       const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);
