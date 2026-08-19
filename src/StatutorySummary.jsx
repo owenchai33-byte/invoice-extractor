@@ -31,17 +31,23 @@ CRITICAL: Use "SOCSO" or "EIS" as form_type — NOT "PERKESO". ACR = SOCSO, ECR 
 Extract:
 - form_type: "KWSP", "SOCSO", or "EIS"
 - month: contribution month in MM/YYYY format
-- For KWSP: each staff member's IC, name, majikan (employer) amount, pekerja (employee) amount
+- For KWSP: each staff member's IC, name, majikan (EMPLOYER CONTRIBUTION amount), pekerja (EMPLOYEE CONTRIBUTION amount)
+  IMPORTANT: The EPF report has columns for WAGES/GAJI/UPAH and CARUMAN/CONTRIBUTION.
+  - Do NOT use the WAGES/GAJI/UPAH column (this is the salary, typically RM 1000-5000+)
+  - "majikan" = EMPLOYER CONTRIBUTION (CARUMAN MAJIKAN) — typically RM 50-500
+  - "pekerja" = EMPLOYEE CONTRIBUTION (CARUMAN PEKERJA) — typically RM 0-400
+  - These are SMALLER amounts than the wages. If you see a large number like 1700 or 4500, that is WAGES, not a contribution.
 - For SOCSO/EIS: each staff member's IC, name, caruman (contribution) amount
 
 Return ONLY valid JSON:
-{"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":12.00,"pekerja":0.00}]},{"form_type":"SOCSO","month":"07/2026","staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]},{"form_type":"EIS","month":"07/2026","staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":5.50}]}]}
+{"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":357.00,"pekerja":302.00}]},{"form_type":"SOCSO","month":"07/2026","staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]},{"form_type":"EIS","month":"07/2026","staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":5.50}]}]}
 
 RULES:
 - IC: exactly 12 digits, no dashes or spaces
 - Amounts as numbers with 2 decimal places
 - Multi-page forms: merge all pages of same form type into one entry
-- Extract ALL staff from each form independently`;
+- Extract ALL staff from each form independently
+- EPF majikan and pekerja are CONTRIBUTION amounts, NOT salary/wages`;
 
 async function pdfExtractText(file) {
   const ab = await file.arrayBuffer();
