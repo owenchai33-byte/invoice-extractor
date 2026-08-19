@@ -170,6 +170,8 @@ export default function App() {
   const [time, setTime] = useState(() => new Date());
   const [pinUnlocked, setPinUnlocked] = useState(false);
 
+  useState(() => { try { localStorage.removeItem('cjk_stat_recon'); } catch {} });
+
   useEffect(() => {
     setPinUnlocked(false);
     try { localStorage.setItem('sabrina_active', active); } catch {}
