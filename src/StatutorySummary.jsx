@@ -71,6 +71,96 @@ async function pdfExtractText(file) {
   return allText.trim();
 }
 
+async function parseEPFDirect(file) {
+  const ab = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
+  const staff = [];
+  let month = null;
+  let colMajX = null, colPekX = null;
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(it => it.str.trim());
+
+    if (!month) {
+      const txt = items.map(it => it.str).join(' ');
+      const m = txt.match(/(\d{1,2})\s*[\/\-]\s*(\d{4})/);
+      if (m) month = `${m[1].padStart(2, '0')}/${m[2]}`;
+    }
+
+    let pageMajX = null, pageMajY = null, pagePekX = null;
+    for (const it of items) {
+      if (/MAJIKAN/i.test(it.str) && pageMajX === null) {
+        pageMajX = Math.round(it.transform[4]);
+        pageMajY = Math.round(it.transform[5]);
+      }
+    }
+    if (pageMajX !== null) {
+      for (const it of items) {
+        if (/PEKERJA/i.test(it.str) && Math.abs(Math.round(it.transform[5]) - pageMajY) <= 3) {
+          pagePekX = Math.round(it.transform[4]);
+          break;
+        }
+      }
+    }
+    if (pageMajX !== null && pagePekX !== null) { colMajX = pageMajX; colPekX = pagePekX; }
+    if (colMajX === null || colPekX === null) continue;
+
+    const midX = (colMajX + colPekX) / 2;
+    const rowMap = new Map();
+    for (const it of items) {
+      const y = Math.round(it.transform[5]);
+      let ry = y;
+      for (const [k] of rowMap) { if (Math.abs(k - y) <= 3) { ry = k; break; } }
+      if (!rowMap.has(ry)) rowMap.set(ry, []);
+      rowMap.get(ry).push({ str: it.str.trim(), x: Math.round(it.transform[4]) });
+    }
+
+    for (const [, row] of rowMap) {
+      row.sort((a, b) => a.x - b.x);
+      const icIt = row.find(it => /^\d{12}$/.test(it.str));
+      if (!icIt) continue;
+
+      const after = row.filter(it => it.x > icIt.x);
+      let name = '', restItems = [], hitNum = false;
+      for (const it of after) {
+        if (!hitNum && !/^\d/.test(it.str)) name += (name ? ' ' : '') + it.str;
+        else { hitNum = true; restItems.push(it); }
+      }
+      if (!name) continue;
+
+      let wages = 0, carumanItems = [];
+      for (let i = 0; i < restItems.length; i++) {
+        if (/^\d[\d,]*\.\d{2}$/.test(restItems[i].str) && restItems[i].x < colMajX) {
+          wages = parseFloat(restItems[i].str.replace(/,/g, ''));
+          carumanItems = restItems.slice(i + 1);
+          break;
+        }
+      }
+      if (wages === 0) continue;
+
+      const majItems = carumanItems.filter(it => it.x < midX && /^\d+$/.test(it.str));
+      const pekItems = carumanItems.filter(it => it.x >= midX && /^\d+$/.test(it.str));
+
+      const parseAmt = (its) => {
+        if (!its.length) return 0;
+        const singles = its.filter(i => i.str.length === 1);
+        const dbl = its.find(i => i.str.length === 2);
+        if (singles.length > 0 && dbl) return parseInt(singles.map(i => i.str).join('')) + parseInt(dbl.str) / 100;
+        if (its.every(i => i.str.length === 1) && its.length >= 3) {
+          const all = its.map(i => i.str).join('');
+          return parseInt(all.slice(0, -2) || '0') + parseInt(all.slice(-2)) / 100;
+        }
+        return parseFloat(its.map(i => i.str).join('')) || 0;
+      };
+
+      staff.push({ ic: icIt.str, name: name.replace(/\s+/g, ' ').trim(), wages, majikan: parseAmt(majItems), pekerja: parseAmt(pekItems) });
+    }
+  }
+  return { form_type: 'KWSP', month, staff };
+}
+
 
 function buildRecon(payrollRows, extracted, mo, yr) {
   const result = { monthAlerts: [], byIC: new Map(), extra: [] };
@@ -217,28 +307,45 @@ export default function StatutorySummary() {
     setRState('processing');
     setRError('');
     try {
-      const apiKey = localStorage.getItem(AI_CFG.storageKey);
-      if (!apiKey) throw new Error('API key not set. Go to Invoices tab → ⚙ to configure your ' + AI_CFG.label + ' key.');
+      const allForms = [];
+      const nonEpfTexts = [];
 
-      let allText = '';
       for (const file of files) {
         const txt = await pdfExtractText(file);
-        allText += txt + '\n';
+        if (/kwsp|epf|kumpulan wang simpanan/i.test(txt) || /kwsp|epf/i.test(file.name)) {
+          try {
+            const epf = await parseEPFDirect(file);
+            if (epf.staff.length > 0) { allForms.push(epf); continue; }
+          } catch {}
+        }
+        nonEpfTexts.push(txt);
       }
-      if ((allText.match(/\d{12}/g) || []).length < 2) throw new Error('No text found in PDF — please upload the downloaded digital report, not a scanned photocopy.');
 
-      let result, attempts = 0;
-      while (true) {
-        try {
-          result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
-          break;
-        } catch (e) {
-          if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
-          throw e;
+      if (nonEpfTexts.length > 0) {
+        const apiKey = localStorage.getItem(AI_CFG.storageKey);
+        if (!apiKey) throw new Error('API key not set. Go to Invoices tab → ⚙ to configure your ' + AI_CFG.label + ' key.');
+        const allText = nonEpfTexts.join('\n');
+        if ((allText.match(/\d{12}/g) || []).length < 2 && allForms.length === 0)
+          throw new Error('No text found in PDF — please upload the downloaded digital report, not a scanned photocopy.');
+
+        if ((allText.match(/\d{12}/g) || []).length >= 2) {
+          let result, attempts = 0;
+          while (true) {
+            try {
+              result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
+              break;
+            } catch (e) {
+              if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
+              throw e;
+            }
+          }
+          const parsed = parseAIJson(result.text);
+          allForms.push(...(parsed.forms || []));
         }
       }
-      const extracted = parseAIJson(result.text);
-      const recon = buildRecon(rows, extracted, mo, yr);
+
+      if (allForms.length === 0) throw new Error('Could not parse any forms from the uploaded PDFs.');
+      const recon = buildRecon(rows, { forms: allForms }, mo, yr);
       setRResults(recon);
       setRState('done');
       try { localStorage.setItem(reconKey, JSON.stringify({ ...recon, byIC: Object.fromEntries(recon.byIC) })); } catch {}
@@ -246,7 +353,7 @@ export default function StatutorySummary() {
       setRError(e.message || 'Processing failed');
       setRState('error');
     }
-  }, [rows, mo, yr]);
+  }, [rows, mo, yr, reconKey]);
 
   const clearRecon = useCallback(() => { setRState('idle'); setRResults(null); setRError(''); try { localStorage.removeItem(reconKey); } catch {} if (fileRef.current) fileRef.current.value = ''; }, [reconKey]);
 
