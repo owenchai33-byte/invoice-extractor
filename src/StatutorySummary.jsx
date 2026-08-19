@@ -76,6 +76,7 @@ async function parseEPFDirect(file) {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
   const staff = [];
   let month = null;
+  let colPekX = null;
 
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -86,6 +87,21 @@ async function parseEPFDirect(file) {
       const txt = items.map(it => it.str).join(' ');
       const m = txt.match(/(\d{1,2})\s*[\/\-]\s*(\d{4})/);
       if (m) month = `${m[1].padStart(2, '0')}/${m[2]}`;
+    }
+
+    if (colPekX === null) {
+      let majY = null;
+      for (const it of items) {
+        if (/MAJIKAN/i.test(it.str)) { majY = Math.round(it.transform[5]); break; }
+      }
+      if (majY !== null) {
+        for (const it of items) {
+          if (/PEKERJA/i.test(it.str) && Math.abs(Math.round(it.transform[5]) - majY) <= 3) {
+            colPekX = Math.round(it.transform[4]);
+            break;
+          }
+        }
+      }
     }
 
     const rowMap = new Map();
@@ -124,13 +140,15 @@ async function parseEPFDirect(file) {
       digitItems.sort((a, b) => a.x - b.x);
       if (digitItems.length < 4) continue;
 
-      let maxGap = 0, splitIdx = Math.ceil(digitItems.length / 2);
-      for (let i = 1; i < digitItems.length; i++) {
-        const gap = digitItems[i].x - digitItems[i - 1].x;
-        if (gap > maxGap) { maxGap = gap; splitIdx = i; }
+      let majItems, pekItems;
+      if (colPekX !== null) {
+        majItems = digitItems.filter(it => it.x < colPekX);
+        pekItems = digitItems.filter(it => it.x >= colPekX);
+      } else {
+        const half = Math.ceil(digitItems.length / 2);
+        majItems = digitItems.slice(0, half);
+        pekItems = digitItems.slice(half);
       }
-      const majItems = digitItems.slice(0, splitIdx);
-      const pekItems = digitItems.slice(splitIdx);
 
       const parseAmt = (its) => {
         if (!its.length) return 0;
