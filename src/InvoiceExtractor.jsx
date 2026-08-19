@@ -515,7 +515,7 @@ Return ONLY the JSON object. Nothing else.`;
 export const AI_PROVIDER = 'anthropic';
 const GROQ_MODEL = 'qwen/qwen3.6-27b';         // free fallback vision model (Groq)
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';  // free fallback vision model (Google)
-const ANTHROPIC_MODEL = 'claude-haiku-4-5';    // paid: cheapest/fastest Claude, vision, ~cents/mo at this volume
+const ANTHROPIC_MODEL = 'claude-sonnet-5';     // upgraded for better OCR accuracy on invoices
 
 // Provider-specific config used by settings UI + API call dispatch.
 const PROVIDERS = {
