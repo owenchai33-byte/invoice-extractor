@@ -434,7 +434,10 @@ export default function StatutorySummary() {
                 : `${reconStats.matched}/${reconStats.total} matched · ${reconStats.mismatch} mismatch${reconStats.mismatch !== 1 ? 'es' : ''}`}
             </span>
           )}
-          {rState === 'done' && <button onClick={clearRecon} style={btn}>Scan Another</button>}
+          {rState === 'done' && <label style={{ ...btn, cursor: 'pointer' }}>
+              <input ref={fileRef} type="file" accept=".pdf" multiple style={{ display: 'none' }} onChange={e => { const f = Array.from(e.target.files); if (f.length) { clearRecon(); processBorang(f); } }} />
+              Upload New
+            </label>}
           {rState === 'done' && <button onClick={exportXls} style={{ ...btn, background: '#111', color: '#fff' }}>⬇ Export Excel</button>}
         </div>
       </div>
