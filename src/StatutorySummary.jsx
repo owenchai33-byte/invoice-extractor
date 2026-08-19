@@ -18,37 +18,6 @@ function monthsMatch(a, b) {
   return pa && pb && parseInt(pa[1]) === parseInt(pb[1]) && parseInt(pa[2]) === parseInt(pb[2]);
 }
 
-const BORANG_PROMPT = `You are reading scanned Malaysian statutory contribution forms (KWSP Borang A and PERKESO Borang 8A). These are PHOTOCOPIED forms where amounts appear inside small digit grid boxes. Read every digit box VERY carefully — zoom in mentally on each cell.
-
-FORM 1 — EPF "Borang A" (KWSP):
-Header: "KUMPULAN WANG SIMPANAN PEKERJA" / "KWSP 6"
-"Bulan Caruman" = contribution month (MM/YYYY)
-Table columns left to right: NO | NO. AHLI | K | NO. KAD PENGENALAN (IC) | NAMA PEKERJA | UPAH (RM) | CARUMAN: MAJIKAN | CARUMAN: PEKERJA
-CRITICAL: The CARUMAN section has TWO separate groups of digit boxes per row.
-- The FIRST group (columns labeled 1-4 under "MAJIKAN") = employer contribution in RM
-- The SECOND group (columns labeled 5-8 under "PEKERJA") = employee contribution in RM
-- Each group shows a decimal amount across individual digit cells (hundreds, tens, ones, then sens)
-- Do NOT confuse UPAH (salary) digits with CARUMAN digits — UPAH is a separate column to the LEFT
-- The TOTAL row at the bottom shows sum totals — use it to cross-check your extraction
-- Typical EPF amounts: MAJIKAN ranges from RM 12 to RM 500+, PEKERJA from RM 0 to RM 400+
-
-FORM 2 — SOCSO or EIS "Borang 8A" (PERKESO):
-Header: "PERTUBUHAN KESELAMATAN SOSIAL"
-"CARUMAN GAJI BULAN" = salary month (MM/YYYY)
-Table: NO.KAD PENGENALAN (IC) | NAMA PEKERJA | CARUMAN (RM column + SEN column)
-Two separate Borang 8A forms may exist in the same PDF: SOCSO (higher amounts, typically RM 10-70 per person) and EIS (lower amounts, typically RM 2-15 per person).
-
-Return ONLY valid JSON:
-{"forms":[{"form_type":"KWSP","month":"08/2026","staff":[{"ic":"071210130907","name":"TAN WEI HOW","majikan":12.00,"pekerja":0.00}]},{"form_type":"PERKESO","month":"07/2026","total":2225.00,"staff":[{"ic":"870907135413","name":"AZNAN BIN ZAHIDI","caruman":45.65}]}]}
-
-RULES:
-- IC: exactly 12 digits, no dashes or spaces
-- Read each digit box individually then combine: e.g. boxes showing [3][3][3][0][0] = 333.00
-- PERKESO: RM and SEN are separate columns, combine into decimal (RM=34, SEN=15 → 34.15)
-- Multi-page forms: merge all pages of same form type into one entry
-- Skip blank pages, ignore watermarks ("FOR RECORD PURPOSES ONLY", "TIDAK SAH")
-- Staff not in one form may appear in another — extract ALL staff from each form independently
-- Double-check amounts against the TOTAL row at the bottom of each form page`;
 
 const BORANG_TEXT_PROMPT = `You are parsing extracted text from Malaysian statutory contribution reports (KWSP/EPF and PERKESO/SOCSO/EIS). The text has been extracted from digital PDF reports.
 
@@ -94,26 +63,6 @@ async function pdfExtractText(file) {
   return allText.trim();
 }
 
-async function pdfToDataUrls(file) {
-  const ab = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-  const urls = [];
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const vp = page.getViewport({ scale: 3.0 });
-    const c = document.createElement('canvas');
-    c.width = vp.width; c.height = vp.height;
-    const ctx = c.getContext('2d');
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
-    const d = ctx.getImageData(0, 0, c.width, c.height).data;
-    let dark = 0;
-    for (let i = 0; i < d.length; i += 400) {
-      if (d[i] < 200 || d[i + 1] < 200 || d[i + 2] < 200) dark++;
-    }
-    if (dark > 50) urls.push(c.toDataURL('image/jpeg', 0.92));
-  }
-  return urls;
-}
 
 function buildRecon(payrollRows, extracted, mo, yr) {
   const result = { monthAlerts: [], byIC: new Map(), extra: [] };
@@ -293,34 +242,16 @@ export default function StatutorySummary() {
         const txt = await pdfExtractText(file);
         allText += txt + '\n';
       }
-      const hasText = (allText.match(/\d{12}/g) || []).length >= 2;
+      if ((allText.match(/\d{12}/g) || []).length < 2) throw new Error('No text found in PDF — please upload the downloaded digital report, not a scanned photocopy.');
 
       let result, attempts = 0;
-      if (hasText) {
-        while (true) {
-          try {
-            result = await callAI({ provider: AI_PROVIDER, apiKey, model: AI_CFG.model, images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
-            break;
-          } catch (e) {
-            if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
-            throw e;
-          }
-        }
-      } else {
-        const allUrls = [];
-        for (const file of files) {
-          const urls = await pdfToDataUrls(file);
-          allUrls.push(...urls);
-        }
-        if (allUrls.length === 0) throw new Error('PDFs appear blank — no pages with content.');
-        while (true) {
-          try {
-            result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: allUrls, prompt: BORANG_PROMPT, maxOutputTokens: 12000 });
-            break;
-          } catch (e) {
-            if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
-            throw e;
-          }
+      while (true) {
+        try {
+          result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-haiku-4-5', images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
+          break;
+        } catch (e) {
+          if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
+          throw e;
         }
       }
       const extracted = parseAIJson(result.text);
