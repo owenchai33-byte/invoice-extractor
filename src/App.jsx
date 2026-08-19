@@ -128,7 +128,7 @@ SECTIONS.forEach(s => s.tabs.forEach(t => { TAB_TO_SECTION[t.id] = s.id; }));
 
 const FONT_STACK = `-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif`;
 const APP_PIN = '9069';
-const PIN_TABS = new Set(['payroll', 'payslip', 'epayslip', 'statutory']);
+const PIN_TABS = new Set(['payroll', 'payslip', 'epayslip']);
 
 function PinGate({ onUnlock }) {
   const [pin, setPin] = useState('');
@@ -169,7 +169,6 @@ export default function App() {
   });
   const [time, setTime] = useState(() => new Date());
   const [pinUnlocked, setPinUnlocked] = useState(false);
-  const [statMounted, setStatMounted] = useState(false);
 
   useEffect(() => {
     setPinUnlocked(false);
@@ -567,8 +566,7 @@ export default function App() {
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
         <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
         {active === 'bevfoc' && <BeverageFOC />}
-        {active === 'statutory' && !pinUnlocked && <PinGate onUnlock={() => { setPinUnlocked(true); setStatMounted(true); }} />}
-        {statMounted && <div style={{display: active === 'statutory' && pinUnlocked ? 'block' : 'none'}}><StatutorySummary /></div>}
+        <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>
       </main>
 
       <style>{`
