@@ -332,7 +332,7 @@ export default function StatutorySummary() {
           let result, attempts = 0;
           while (true) {
             try {
-              result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-sonnet-5', images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
+              result = await callAI({ provider: AI_PROVIDER, apiKey, model: 'claude-haiku-4-5', images: [], prompt: BORANG_TEXT_PROMPT + '\n\nEXTRACTED TEXT:\n' + allText, maxOutputTokens: 12000 });
               break;
             } catch (e) {
               if (e.code === 'rate_limit' && attempts < 3) { attempts++; await new Promise(r => setTimeout(r, 2000 * attempts)); continue; }
