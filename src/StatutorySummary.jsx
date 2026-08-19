@@ -321,7 +321,9 @@ export default function StatutorySummary() {
 
   const processBorang = useCallback(async (files) => {
     setRState('processing');
+    setRResults(null);
     setRError('');
+    try { localStorage.removeItem(reconKey); } catch {}
     try {
       const allForms = [];
       const nonEpfTexts = [];
