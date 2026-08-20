@@ -1365,6 +1365,24 @@ export default function Attendance() {
 
           {/* ─── Styles ─── */}
           <style>{`
+            @media (max-width: 768px) {
+              .att-root { padding: 12px 10px !important; }
+              .att-root > .att-no-print:first-child {
+                flex-wrap: wrap !important; height: auto !important;
+                padding: 8px 12px !important; gap: 8px !important;
+                margin-left: -10px !important; margin-right: -10px !important;
+              }
+              .att-layout { flex-direction: column !important; }
+              .att-sidebar {
+                width: 100% !important; flex-direction: row !important;
+                flex-wrap: wrap !important; max-height: none !important;
+                position: static !important; overflow-y: visible !important;
+              }
+              .att-sidebar > div:first-child { width: 100%; }
+              .att-sidebar button { font-size: 10px !important; padding: 4px 8px !important; }
+              .att-table-summary-row { flex-direction: column !important; }
+              .att-summary-box { position: static !important; width: 100% !important; }
+            }
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
