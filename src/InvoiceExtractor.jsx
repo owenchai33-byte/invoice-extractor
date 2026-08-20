@@ -19,7 +19,8 @@ export const SUPPLIERS = {
       { id:'r1c', label:'1L x 12',    rate:0.50, minVol:950,  maxVol:1100, packSize:12 },
       // 500ML x 24 — RM0.50
       { id:'r2',  label:'500ML x 24', rate:0.50, minVol:450,  maxVol:510,  packSize:24 },
-      // 320/300ML x 24 — RM0.40
+      // 355/320/300ML x 24 — RM0.40
+      { id:'r3z', label:'355ML x 24', rate:0.40, minVol:341,  maxVol:370,  packSize:24 },
       { id:'r3a', label:'320ML x 24', rate:0.40, minVol:315,  maxVol:340,  packSize:24 },
       { id:'r3b', label:'300ML x 24', rate:0.40, minVol:285,  maxVol:314,  packSize:24 },
       // 500ML x 12 — RM0.25
