@@ -643,6 +643,10 @@ export default function App() {
              column stays on-screen (the global table nowrap was shoving it off). */
           .foc-tbl { display: table !important; white-space: normal !important; }
           .foc-tbl td, .foc-tbl th { white-space: normal !important; }
+
+          /* Merchant Report: one upload card fills the screen (swipe / arrows to
+             the next) instead of 4 crammed narrow columns. */
+          .mr-card { flex: 0 0 85vw !important; }
         }
       `}</style>
 
