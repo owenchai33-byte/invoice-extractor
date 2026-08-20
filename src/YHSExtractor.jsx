@@ -616,7 +616,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
           html,body{margin:0!important;padding:0!important;background:#fff}
           /* Flatten the 100vh root so it can't push a blank page in print. */
           .ext-root{min-height:0!important}
-          @page{size:A4 portrait;margin:7mm 8mm 7mm 20mm}
+          @page{size:A4 portrait;margin:7mm 8mm 7mm 15mm}
           .wrap{max-width:100%!important;padding:0!important}
           .print-area{font-size:11px!important}
           .print-area table{font-size:10.5px!important}
