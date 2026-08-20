@@ -647,6 +647,13 @@ export default function App() {
           /* Merchant Report: one upload card fills the screen (swipe / arrows to
              the next) instead of 4 crammed narrow columns. */
           .mr-card { flex: 0 0 85vw !important; }
+
+          /* WeeklyPayment reference strip was position:fixed at the bottom,
+             sitting ON TOP of the sheet's totals / +Add Week 2 / EPAY field —
+             so those looked "covered" and their buttons wouldn't tap. Un-fix it
+             so it flows below the content instead of covering it. */
+          .wp-ref-bar { position: static !important; backdrop-filter: none !important; }
+          .wp-layout { padding-bottom: 24px !important; }
         }
       `}</style>
 
