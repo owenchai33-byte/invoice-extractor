@@ -616,7 +616,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
           html,body{margin:0!important;padding:0!important;background:#fff}
           /* Flatten the 100vh root so it can't push a blank page in print. */
           .ext-root{min-height:0!important}
-          @page{size:A4 portrait;margin:7mm 8mm}
+          @page{size:A4 portrait;margin:7mm 8mm 7mm 20mm}
           .wrap{max-width:100%!important;padding:0!important}
           .print-area{font-size:11px!important}
           .print-area table{font-size:10.5px!important}
@@ -670,7 +670,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
             <div style={{ fontWeight: 700, fontSize: 16, marginTop: 2 }}>SUPPLIER: {YHS_SUPPLIER}</div>
           </div>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14, tableLayout: 'fixed' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
             <thead><tr>
               <th style={{ ...T.th, width: 42 }}>NO.</th>
               <th style={{ ...T.th, width: 82 }}>DATE</th>
