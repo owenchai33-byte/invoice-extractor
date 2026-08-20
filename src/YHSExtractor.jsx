@@ -670,7 +670,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
             <div style={{ fontWeight: 700, fontSize: 16, marginTop: 2 }}>SUPPLIER: {YHS_SUPPLIER}</div>
           </div>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14, tableLayout: 'fixed' }}>
             <thead><tr>
               <th style={{ ...T.th, width: 42 }}>NO.</th>
               <th style={{ ...T.th, width: 82 }}>DATE</th>
@@ -764,7 +764,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
           )}
 
           {/* SUMMARY DEDUCTIONS — compact right-aligned block under the invoice table */}
-          <table style={{ borderCollapse: 'collapse', marginTop: 8, marginLeft: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', marginTop: 24, marginLeft: 'auto', marginRight: 'auto' }}>
             <tbody>
               <SumRow label="TOTAL INVOICE AMOUNT:" value={calc.totalAmount} sign="" bold />
               <SumRow label="2% DISCOUNT:" value={calc.discount2} />
