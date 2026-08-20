@@ -638,6 +638,11 @@ export default function App() {
           /* Bank Recon / Merchant Report: trim the wide desktop side padding. */
           .br-body, .mr-body { padding-left: 12px !important; padding-right: 12px !important; }
           .br-summary { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+
+          /* Beverage FOC calculator: let category names wrap so the qty-input
+             column stays on-screen (the global table nowrap was shoving it off). */
+          .foc-tbl { display: table !important; white-space: normal !important; }
+          .foc-tbl td, .foc-tbl th { white-space: normal !important; }
         }
       `}</style>
 
