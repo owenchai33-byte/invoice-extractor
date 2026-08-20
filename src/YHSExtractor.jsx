@@ -236,7 +236,7 @@ const T = {
   td: { border: B, padding: '7px 8px', fontSize: 16, textAlign: 'center', verticalAlign: 'middle', fontFamily: F, fontVariantNumeric: 'tabular-nums' },
   bxL: { border: 'none', padding: '5px 14px', fontSize: 15, fontWeight: 700, textAlign: 'right', fontFamily: F },
   bxM: { border: 'none', padding: '5px 10px', fontSize: 15, fontWeight: 700, textAlign: 'center', fontFamily: F, width: 24 },
-  bxR: { border: 'none', padding: '5px 14px', fontSize: 16, fontWeight: 700, textAlign: 'right', fontFamily: F, minWidth: 120, width: 120, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
+  bxR: { border: 'none', padding: '5px 14px', fontSize: 16, fontWeight: 700, textAlign: 'right', fontFamily: F, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
 };
 const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '1px solid #aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: p ? '#111' : '#fff', color: p ? '#fff' : '#333', fontFamily: F });
 
@@ -262,7 +262,6 @@ function NumberField({ value, onCommit, placeholder = '0.00', style = {} }) {
 function SumRow({ label, value, sign = '-', bold = false, highlight = false, topBorder = false }) {
   return (
     <tr>
-      <td style={{ border: 'none' }} />
       <td style={{ ...T.bxL, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(bold ? { fontSize: 16 } : {}) }}>{label}</td>
       <td style={{ ...T.bxM, ...(topBorder ? { borderTop: '2px solid #000' } : {}) }}>{sign}</td>
       <td style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}) }}>{fmt(value)}</td>
@@ -764,17 +763,8 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
             </div>
           )}
 
-          {/* SUMMARY DEDUCTIONS — right-aligned totals box (empty left is borderless),
-              fixed columns so the block sits neatly under the invoice table's right side. */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8, tableLayout: 'fixed' }}>
-            {/* Value column (last) ~= the upper table's VOLUME BREAKDOWN width so the
-                amounts line up under VOLUME BREAKDOWN (not QUANTITY). */}
-            <colgroup>
-              <col style={{ width: '14%' }} />
-              <col />
-              <col style={{ width: '4%' }} />
-              <col style={{ width: '30%' }} />
-            </colgroup>
+          {/* SUMMARY DEDUCTIONS — compact right-aligned block under the invoice table */}
+          <table style={{ borderCollapse: 'collapse', marginTop: 8, marginLeft: 'auto' }}>
             <tbody>
               <SumRow label="TOTAL INVOICE AMOUNT:" value={calc.totalAmount} sign="" bold />
               <SumRow label="2% DISCOUNT:" value={calc.discount2} />
@@ -787,7 +777,6 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>
-                <td style={{ border: 'none' }} />
                 <td style={T.bxL}>OTHER DISCOUNT:</td>
                 <td style={T.bxM}>{otherDiscount ? '-' : ''}</td>
                 <td style={T.bxR}>
@@ -798,7 +787,6 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               </tr>
               {/* CREDIT NOTE — editable */}
               <tr>
-                <td style={{ border: 'none' }} />
                 <td style={T.bxL}>CREDIT NOTE:</td>
                 <td style={T.bxM}>{creditNote ? '-' : ''}</td>
                 <td style={T.bxR}>
