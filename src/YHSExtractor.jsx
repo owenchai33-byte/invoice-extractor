@@ -234,9 +234,9 @@ function EditableVol({ ml, onCommit }) {
 const T = {
   th: { border: B, padding: '9px 6px', fontWeight: 700, fontSize: 13, textAlign: 'center', background: '#f0f0f0', fontFamily: F },
   td: { border: B, padding: '7px 8px', fontSize: 16, textAlign: 'center', verticalAlign: 'middle', fontFamily: F, fontVariantNumeric: 'tabular-nums' },
-  bxL: { border: B, padding: '6px 14px', fontSize: 15, fontWeight: 700, textAlign: 'right', background: '#f0f0f0', fontFamily: F },
-  bxM: { border: B, padding: '6px 10px', fontSize: 15, fontWeight: 700, textAlign: 'center', fontFamily: F, width: 24 },
-  bxR: { border: B, padding: '6px 14px', fontSize: 16, fontWeight: 700, textAlign: 'right', fontFamily: F, minWidth: 120, width: 120, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
+  bxL: { border: 'none', padding: '5px 14px', fontSize: 15, fontWeight: 700, textAlign: 'right', fontFamily: F },
+  bxM: { border: 'none', padding: '5px 10px', fontSize: 15, fontWeight: 700, textAlign: 'center', fontFamily: F, width: 24 },
+  bxR: { border: 'none', padding: '5px 14px', fontSize: 16, fontWeight: 700, textAlign: 'right', fontFamily: F, minWidth: 120, width: 120, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
 };
 const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '1px solid #aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: p ? '#111' : '#fff', color: p ? '#fff' : '#333', fontFamily: F });
 
