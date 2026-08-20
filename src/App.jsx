@@ -654,6 +654,10 @@ export default function App() {
              so it flows below the content instead of covering it. */
           .wp-ref-bar { position: static !important; backdrop-filter: none !important; }
           .wp-layout { padding-bottom: 24px !important; }
+
+          /* Payroll's custom fixed scroll-bar is redundant on touch (native scroll)
+             and its fixed strip can block the bottom row — hide it on phones. */
+          .hbar { display: none !important; }
         }
       `}</style>
 
