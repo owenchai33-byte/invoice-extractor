@@ -171,7 +171,7 @@ export default function EmployeePayslip() {
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);
     const hiddenIds = hiddenData[mk] || [];
-    const visible = staff.filter(s => !hiddenIds.includes(s.id));
+    const visible = staff.filter(s => !hiddenIds.includes(s.id) && (!s.addedMonth || s.addedMonth <= mk));
     const all = visible.map(s => computeStaffMonth(s, pd[mk]?.[s.id], ref, showBonus));
     return [...all.filter(r => r.method === 'bank'), ...all.filter(r => r.method === 'cash')];
   }, [staff, pd, showBonus, mo, yr, hiddenData]);
