@@ -602,6 +602,7 @@ const CSS = `
   .wp-bar{display:none}
   .wp-layout{display:none!important}
   .wp-print-body{display:block!important;padding:0}
+  .wp-print-body .wp-tbl tbody td{font-weight:700}
   .wp-print-header{display:block!important;text-align:center;margin-bottom:20px}
   .wp-print-title{font-size:16px;font-weight:700;color:#000}
   .wp-print-week{font-size:14px;font-weight:700;color:#000;margin-top:2px}
