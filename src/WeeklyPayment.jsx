@@ -541,11 +541,11 @@ const CSS = `
 
 .wp-tbl tbody td{padding:4px 10px;border-bottom:1px solid #e4e4e7;vertical-align:middle}
 .wp-no{text-align:center;color:#71717a;font-weight:600;font-size:12px}
-.wp-bank{font-size:12px;color:#18181b;font-variant-numeric:tabular-nums;font-weight:500}
+.wp-bank{font-size:12px;color:#18181b;font-variant-numeric:tabular-nums;font-weight:700}
 
-.wp-sup-name{font-size:12px;color:#18181b;font-weight:500;white-space:nowrap}
+.wp-sup-name{font-size:12px;color:#18181b;font-weight:700;white-space:nowrap}
 
-.wp-input{width:100%;border:1px solid #e4e4e7;border-radius:4px;padding:5px 6px;font-size:12px;font-family:inherit;color:#18181b;background:#fff}
+.wp-input{width:100%;border:1px solid #e4e4e7;border-radius:4px;padding:5px 6px;font-size:12px;font-family:inherit;color:#18181b;background:#fff;font-weight:700}
 .wp-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
 .wp-input::-webkit-inner-spin-button,.wp-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .wp-input{-moz-appearance:textfield}
