@@ -279,7 +279,7 @@ export default function WeeklyPayment() {
             WEEK 1 — ending <input type="date" value={weekDate} onChange={e => {
               const nd = e.target.value, od = weekDate;
               const next = { ...allData, _currentWeek: nd };
-              if (od !== nd && allData[od]) { next[nd] = allData[od]; delete next[od]; }
+              if (od !== nd && allData[od] && !allData[nd]) { next[nd] = allData[od]; delete next[od]; }
               setWeekDate(nd); save(next);
             }} className="wp-date-input" style={{ fontSize: 12, padding: '2px 6px' }} onClick={e => e.stopPropagation()} />
           </div>
@@ -342,7 +342,7 @@ export default function WeeklyPayment() {
                 <span>WEEK 2 — ending <input type="date" value={weekDate2} onChange={e => {
                   const nd = e.target.value, od = weekDate2;
                   const next = { ...allData, _currentWeek2: nd };
-                  if (od !== nd && allData[od]) { next[nd] = allData[od]; delete next[od]; }
+                  if (od !== nd && allData[od] && !allData[nd]) { next[nd] = allData[od]; delete next[od]; }
                   setWeekDate2(nd); save(next);
                 }} className="wp-date-input" style={{ fontSize: 12, padding: '2px 6px' }} onClick={e => e.stopPropagation()} /></span>
                 <button onClick={e => { e.stopPropagation(); setWeekDate2(''); setActiveWeek(1); save({ ...allData, _currentWeek2: '' }); }} style={{ border: 'none', background: 'none', color: '#a1a1aa', cursor: 'pointer', fontSize: 14, padding: '0 4px' }} title="Remove Week 2">✕</button>
