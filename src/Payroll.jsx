@@ -375,7 +375,7 @@ const CSS=`
 .t .eh{background:#f0fdf4}
 .t .dh{background:#fef2f2}
 .t .nh{background:#eff6ff}
-.i{width:50px;text-align:center;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:10.5px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
+.i{width:100%;box-sizing:border-box;text-align:center;border:none;border-bottom:1px dashed #d4d4d8;background:transparent;font-size:10.5px;font-family:inherit;font-variant-numeric:tabular-nums;padding:1px 2px;outline:none;transition:border-color .15s}
 .i:focus{border-color:#2563eb;border-style:solid}
 .i::placeholder{color:#d4d4d8}
 /* Remove spinner arrows from number inputs - allow direct typing */

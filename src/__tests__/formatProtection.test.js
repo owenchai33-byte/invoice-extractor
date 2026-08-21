@@ -18,7 +18,7 @@ import { resolve } from 'path';
 
 const PROTECTED_FORMATS = {
   'src/Payslip.jsx':          '0f9c05fe75bd9939',
-  'src/Payroll.jsx':          'bf32ab8f66915c47',
+  'src/Payroll.jsx':          '0d81bb2d45a7db36',
   'src/WeeklyPayment.jsx':    '5eee73ba86442fc4',
   'src/BeverageFOC.jsx':      '27319168abc50c81',
   'src/EmployeePayslip.jsx':  '2ef2ae401c1e466a',
