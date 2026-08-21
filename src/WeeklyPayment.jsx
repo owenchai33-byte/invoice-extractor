@@ -159,6 +159,8 @@ export default function WeeklyPayment() {
   const activeWk = activeWeek === 1 ? weekDate : weekDate2;
   const activeData = activeWeek === 1 ? data1 : data2;
 
+  const [supSearch, setSupSearch] = useState('');
+
   const [dragFrom, setDragFrom] = useState(null);
   const [dragOver, setDragOver] = useState(null);
 
@@ -219,8 +221,17 @@ export default function WeeklyPayment() {
       <div className="wp-layout no-print">
         <div className="wp-sidebar">
           <div className="wp-sidebar-title">ADD TO {activeWeek === 1 ? 'WEEK 1' : 'WEEK 2'}</div>
+          <div style={{ padding: '6px 6px 0' }}>
+            <input
+              type="text"
+              value={supSearch}
+              onChange={e => setSupSearch(e.target.value)}
+              placeholder="Search supplier..."
+              className="wp-search"
+            />
+          </div>
           <div className="wp-sidebar-list">
-            {SUPPLIERS.map(s => {
+            {SUPPLIERS.filter(s => !supSearch || s.name.toLowerCase().includes(supSearch.toLowerCase())).map(s => {
               const used = activeRows.some(r => r.supplier === s.name);
               return (
                 <button
@@ -462,6 +473,9 @@ const CSS = `
 .wp-main{flex:1;min-width:0}
 .wp-sidebar{width:210px;flex-shrink:0;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;background:#f9fafb;border:1px solid #e4e4e7;border-radius:8px;padding:8px 0}
 .wp-sidebar-title{font-size:11px;font-weight:700;color:#71717a;padding:4px 12px 6px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e4e4e7}
+.wp-search{width:100%;border:1px solid #d4d4d8;border-radius:6px;padding:6px 10px;font-size:12px;font-family:inherit;color:#18181b;background:#fff;box-sizing:border-box}
+.wp-search:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+.wp-search::placeholder{color:#a1a1aa}
 .wp-sidebar-list{padding:4px 0;display:flex;flex-direction:column;gap:2px}
 .wp-sidebar-item{font-size:11px;padding:5px 10px;margin:0 6px;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #e4e4e7;border-radius:6px;background:#fff;cursor:pointer;text-align:left;font-family:inherit;width:calc(100% - 12px)}
 .wp-sidebar-item:hover{background:#eff6ff;border-color:#93c5fd}
