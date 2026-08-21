@@ -87,15 +87,34 @@ function EditableCell({ value, onChange, type, placeholder, style, align }) {
   const [local, setLocal] = useState(value);
   const ref = useRef(null);
   useEffect(() => { setLocal(value); }, [value]);
-  const commit = () => { if (local !== value) onChange(local); };
+  const commit = (val) => {
+    let v = val !== undefined ? val : local;
+    if (type === 'number' && v !== '' && v != null) {
+      const n = parseFloat(v);
+      if (!isNaN(n)) v = n.toFixed(2);
+    }
+    if (v !== local) setLocal(v);
+    if (v !== value) onChange(v);
+  };
+  const focusNext = () => {
+    const td = ref.current?.closest('td');
+    const next = td?.nextElementSibling?.querySelector('input');
+    if (next) next.focus();
+  };
   return (
     <input
       ref={ref}
       type={type || 'text'}
       value={local}
       onChange={e => setLocal(e.target.value)}
-      onBlur={commit}
-      onKeyDown={e => { if (e.key === 'Enter') { commit(); ref.current?.blur(); } }}
+      onBlur={() => commit()}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          commit();
+          focusNext();
+        }
+      }}
       placeholder={placeholder || ''}
       className="wp-input"
       style={{ textAlign: align || 'left', ...style }}
