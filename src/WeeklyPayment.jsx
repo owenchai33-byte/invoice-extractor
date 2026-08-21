@@ -160,6 +160,7 @@ export default function WeeklyPayment() {
   const activeData = activeWeek === 1 ? data1 : data2;
 
   const [supSearch, setSupSearch] = useState('');
+  const [showSup, setShowSup] = useState(false);
 
   const [dragFrom, setDragFrom] = useState(null);
   const [dragOver, setDragOver] = useState(null);
@@ -213,13 +214,14 @@ export default function WeeklyPayment() {
       <style>{CSS}</style>
       <div className="wp-bar no-print">
         <div className="wp-acts">
+          <button className="wp-btn wp-btn-sup" onClick={() => setShowSup(v => !v)}>{showSup ? '✕ Close' : '+ Supplier'}</button>
           <button className="wp-btn" onClick={() => window.print()}>Print</button>
           <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
         </div>
       </div>
 
       <div className="wp-layout no-print">
-        <div className="wp-sidebar">
+        <div className={`wp-sidebar${showSup ? ' wp-sidebar-open' : ''}`}>
           <div className="wp-sidebar-title">ADD TO {activeWeek === 1 ? 'WEEK 1' : 'WEEK 2'}</div>
           <div style={{ padding: '6px 6px 0' }}>
             <input
@@ -549,6 +551,16 @@ const CSS = `
 .wp-drag-over td{border-bottom:2px solid #2563eb!important}
 .wp-grip{color:#a1a1aa;font-size:10px;letter-spacing:-1px;user-select:none}
 
+.wp-btn-sup{display:none}
+@media (max-width: 768px) {
+  .wp-btn-sup{display:inline-block}
+  .wp-layout{flex-direction:column;padding:12px 8px 100px}
+  .wp-sidebar{display:none;width:100%;position:static;max-height:50vh}
+  .wp-sidebar.wp-sidebar-open{display:block}
+  .wp-main{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .wp-tbl{min-width:700px}
+  .wp-bar{padding:0 12px}
+}
 @media print{
   .no-print,.noP{display:none!important}
   .wp-root{background:#fff;min-height:0!important}
