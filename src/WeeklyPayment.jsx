@@ -234,7 +234,13 @@ export default function WeeklyPayment() {
       <div className="wp-bar no-print">
         <div className="wp-acts">
           <button className="wp-btn wp-btn-sup" onClick={() => setShowSup(v => !v)}>{showSup ? '✕ Close' : '+ Supplier'}</button>
-          <button className="wp-btn" onClick={() => window.print()}>Print</button>
+          <button className="wp-btn" onClick={() => {
+            const d = weekDate.split('-');
+            const prev = document.title;
+            document.title = `WEEKLY PAYMENT SUMMARY ${d[2]}${d[1]}${d[0].slice(-2)}`;
+            window.print();
+            document.title = prev;
+          }}>Print</button>
           <button className="wp-btn wp-btn-o" onClick={clearWeek}>Clear</button>
         </div>
       </div>
