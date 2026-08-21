@@ -666,9 +666,9 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const ptT=useMemo(()=>({advance:ptR.reduce((s,r)=>s+r.advance,0),netPay:ptR.reduce((s,r)=>s+r.netPay,0)}),[ptR]);
   const notes=useMemo(()=>{
     const n=[...bS,...cS].filter(r=>r.underAge).map(r=>{const firstName=(r.name||'(unnamed)').split(' ')[0];return `${firstName}: below 18 years old, not subject to EIS deduction per PERKESO.`;});
-    hiddenStaff.forEach(s=>n.push(`INACTIVE STAFF: ${s.name}`));
+    hiddenStaff.forEach(s=>{const fm=Object.entries(hidden).filter(([,ids])=>Array.isArray(ids)&&ids.includes(s.id)).map(([m])=>m).sort()[0];if(fm===mk)n.push(`INACTIVE STAFF: ${s.name}`);});
     return n;
-  },[bS,cS,hiddenStaff]);
+  },[bS,cS,hiddenStaff,hidden,mk]);
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase(),addedMonth:`${yr}-${String(mo+1).padStart(2,'0')}`}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});setEid(null);};
   const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});};
   const delS=id=>{hideForMonth(id);};
