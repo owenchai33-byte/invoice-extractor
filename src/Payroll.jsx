@@ -167,6 +167,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true){
 // LS_PT still _v2 (part-time list is empty, no change).
 // LS_P kept as-is so per-month advance/bonus history is preserved.
 export const LS_S='cjk_payroll_staff_v3',LS_P='cjk_payroll_data',LS_PT='cjk_pt_v2',LS_SB='cjk_payroll_showbonus',LS_R='cjk_payroll_remarks',LS_TS='cjk_payroll_updated',LS_PIN='cjk_payroll_pin',LS_H='cjk_staff_hidden',LS_LE='cjk_payroll_lastedit';
+export function isStaffHidden(hiddenData,sid,mk){return Object.entries(hiddenData).some(([m,ids])=>m<=mk&&Array.isArray(ids)&&ids.includes(sid));}
 export function readMonthTs(mo,yr){const k=`${yr}-${String(mo+1).padStart(2,'0')}`;const raw=localStorage.getItem(LS_TS);if(!raw)return '';try{const o=JSON.parse(raw);return o[k]||'';}catch{return '';}}
 function loadJ(k,f){try{return JSON.parse(localStorage.getItem(k))||f;}catch{return f;}}
 function saveJ(k,d){localStorage.setItem(k,JSON.stringify(d));}
@@ -637,9 +638,9 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const isMonthLocked=mk<currentMK;
   useEffect(()=>{if(isMonthLocked)setLocked(true);},[mk]);
-  const isHidden=useCallback(id=>(hidden[mk]||[]).includes(id),[hidden,mk]);
+  const isHidden=useCallback(id=>Object.entries(hidden).some(([m,ids])=>m<=mk&&Array.isArray(ids)&&ids.includes(id)),[hidden,mk]);
   const hideForMonth=useCallback(id=>{setHidden(h=>{const list=[...(h[mk]||[])];if(!list.includes(id))list.push(id);return{...h,[mk]:list};});},[mk]);
-  const showForMonth=useCallback(id=>{setHidden(h=>{const list=(h[mk]||[]).filter(x=>x!==id);return{...h,[mk]:list};});},[mk]);
+  const showForMonth=useCallback(id=>{setHidden(h=>{const n={...h};Object.keys(n).forEach(m=>{if(Array.isArray(n[m]))n[m]=n[m].filter(x=>x!==id);});return n;});},[]);
   const visibleStaff=useMemo(()=>staff.filter(s=>!isHidden(s.id)&&(!s.addedMonth||s.addedMonth<=mk)),[staff,isHidden,mk]);
   const hiddenStaff=useMemo(()=>staff.filter(s=>isHidden(s.id)),[staff,isHidden]);
   const hasNewJoiners=useMemo(()=>visibleStaff.some(s=>s.addedMonth===mk),[visibleStaff,mk]);
@@ -1108,7 +1109,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
             </div>
             <div style={{fontSize:12,fontWeight:700,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Full-Time ({visibleStaff.length})</div>
             {visibleStaff.map(s=><div className="si" key={s.id}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><span className={`tag ${s.method==='bank'?'tgb':'tgc'}`}>{s.method==='bank'?'BANK':'CASH'}</span><label style={{fontSize:11,display:'flex',alignItems:'center',gap:3,cursor:'pointer'}}><input type="checkbox" checked={s.status==='probationary'} onChange={()=>setStaff(p=>p.map(x=>x.id===s.id?{...x,status:x.status==='probationary'?'permanent':'probationary'}:x))}/><span className={`tag ${s.status==='probationary'?'tgp':'tgg'}`} style={{margin:0}}>{s.status==='probationary'?'PROB':'PERM'}</span></label><button className="b bg" style={{padding:'4px 8px',fontSize:12}} onClick={()=>edS(s)}>Edit</button><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#92400e'}} onClick={()=>convertFTtoPT(s)} title="Move to Part-Time">→ PT</button><button className="b br" style={{padding:'4px 8px',fontSize:12}} onClick={()=>delS(s.id)}>Hide</button></div>)}
-            {hiddenStaff.length>0&&<><div style={{fontSize:12,fontWeight:700,margin:'16px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#a3a3a3'}}>Hidden this month ({hiddenStaff.length})</div>{hiddenStaff.map(s=><div className="si" key={s.id} style={{opacity:0.6}}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#16a34a'}} onClick={()=>showForMonth(s.id)}>Restore</button></div>)}</>}
+            {hiddenStaff.length>0&&<><div style={{fontSize:12,fontWeight:700,margin:'16px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#a3a3a3'}}>Inactive staff ({hiddenStaff.length})</div>{hiddenStaff.map(s=><div className="si" key={s.id} style={{opacity:0.6}}><div className="sif"><div className="sin">{s.name}</div><div className="sim">{s.position} &middot; RM{s.salary}</div></div><button className="b bg" style={{padding:'4px 8px',fontSize:12,color:'#16a34a'}} onClick={()=>showForMonth(s.id)}>Restore</button></div>)}</>}
             <div style={{fontSize:12,fontWeight:700,margin:'20px 0 8px',textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>Part-Time ({pt.length})<button className="b bg" style={{marginLeft:8,fontSize:11}} onClick={()=>setPtf(!ptf)}>+ Add</button></div>
             {ptf&&<div style={{background:'#fafafa',borderRadius:8,padding:12,marginBottom:12,border:'1px solid #e4e4e7'}}>
               <div style={{fontSize:11,fontWeight:700,marginBottom:10,textTransform:'uppercase',letterSpacing:'.05em',color:'#71717a'}}>{eidPT?'Edit Part-Time':'Add Part-Time'}</div>

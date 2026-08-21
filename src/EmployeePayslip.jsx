@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_H, SAMPLE_STAFF, fmt } from './Payroll';
+import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_H, SAMPLE_STAFF, fmt, isStaffHidden } from './Payroll';
 const LS_EP_TS = 'cjk_ep_updated';
 const ATT_DATA_KEY = 'cjk_attendance_v1';
 
@@ -170,8 +170,7 @@ export default function EmployeePayslip() {
   const hiddenData = useMemo(() => load(LS_H, {}), []);
   const rows = useMemo(() => {
     const mk = `${yr}-${String(mo + 1).padStart(2, '0')}`, ref = new Date(yr, mo, 15);
-    const hiddenIds = hiddenData[mk] || [];
-    const visible = staff.filter(s => !hiddenIds.includes(s.id) && (!s.addedMonth || s.addedMonth <= mk));
+    const visible = staff.filter(s => !isStaffHidden(hiddenData, s.id, mk) && (!s.addedMonth || s.addedMonth <= mk));
     const all = visible.map(s => computeStaffMonth(s, pd[mk]?.[s.id], ref, showBonus));
     return [...all.filter(r => r.method === 'bank'), ...all.filter(r => r.method === 'cash')];
   }, [staff, pd, showBonus, mo, yr, hiddenData]);
