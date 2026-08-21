@@ -537,13 +537,13 @@ function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
           const ci = Array.from(tr?.children || []).indexOf(td);
           const nextTr = tr?.nextElementSibling;
           const target = nextTr?.children[ci]?.querySelector('input');
-          if (target) target.focus(); else ref.current?.blur();
+          if (target) { target.focus(); target.select(); } else ref.current?.blur();
         }
         if (e.key === 'Tab') {
           e.preventDefault(); commit();
           const td = ref.current?.closest('td');
           const next = td?.nextElementSibling?.querySelector('input');
-          if (next) next.focus(); else ref.current?.blur();
+          if (next) { next.focus(); next.select(); } else ref.current?.blur();
         }
         if (e.key === 'Escape') { setLocal(disp(value, dec)); ref.current?.blur(); }
       }}
