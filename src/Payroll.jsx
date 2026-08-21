@@ -530,7 +530,16 @@ function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
       onChange={e => setLocal(e.target.value.replace(/[^0-9.-]/g,''))}
       onBlur={commit}
       onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Enter') {
+          e.preventDefault(); commit();
+          const td = ref.current?.closest('td');
+          const tr = td?.closest('tr');
+          const ci = Array.from(tr?.children || []).indexOf(td);
+          const nextTr = tr?.nextElementSibling;
+          const target = nextTr?.children[ci]?.querySelector('input');
+          if (target) target.focus(); else ref.current?.blur();
+        }
+        if (e.key === 'Tab') {
           e.preventDefault(); commit();
           const td = ref.current?.closest('td');
           const next = td?.nextElementSibling?.querySelector('input');
