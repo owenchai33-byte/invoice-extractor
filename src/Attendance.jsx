@@ -703,6 +703,7 @@ const ATT_OLD_SEL = 'cjk_attendance_sel_v1';
 
 function attKey(yr, mo) { return `${ATT_DATA_PREFIX}${yr}-${pad(mo + 1)}`; }
 function attSelKey(yr, mo) { return `${ATT_SEL_PREFIX}${yr}-${pad(mo + 1)}`; }
+function attDismissedKey(yr, mo) { return `cjk_att_dismissed_${yr}-${pad(mo + 1)}`; }
 
 function mergeAttData(existing, incoming) {
   if (!existing) return incoming;
@@ -836,13 +837,14 @@ export default function Attendance() {
     setDismissedHalfDays(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem(attDismissedKey(yr, mo), JSON.stringify([...next])); } catch {}
       return next;
     });
     setLastOverviewEdit(new Date());
     const empId = key.split('-')[0];
     const ts = new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     setEmpTimestamps(prev => ({ ...prev, [empId]: ts }));
-  }, []);
+  }, [yr, mo]);
 
   const dataKeyRef = useRef(dataKey);
   const selKeyRef = useRef(selKey);
@@ -880,7 +882,8 @@ export default function Attendance() {
     try {
       setSelected(localStorage.getItem(selKey) || null);
     } catch { setSelected(null); }
-    setDismissedHalfDays(new Set());
+    try { const d = localStorage.getItem(attDismissedKey(yr, mo)); setDismissedHalfDays(d ? new Set(JSON.parse(d)) : new Set()); }
+    catch { setDismissedHalfDays(new Set()); }
     setConfirmedPH(new Set());
     setVerifiedPH({});
     setSuspectPH([]);
@@ -971,6 +974,7 @@ export default function Attendance() {
       setSuspectPH(suspects);
       setConfirmedPH(new Set());
       setDismissedHalfDays(new Set());
+      try { localStorage.removeItem(attDismissedKey(targetYr, targetMo)); } catch {}
       setLastOverviewEdit(null);
       setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
       setEmpTimestamps({});
