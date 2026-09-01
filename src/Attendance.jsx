@@ -704,6 +704,37 @@ const ATT_OLD_SEL = 'cjk_attendance_sel_v1';
 function attKey(yr, mo) { return `${ATT_DATA_PREFIX}${yr}-${pad(mo + 1)}`; }
 function attSelKey(yr, mo) { return `${ATT_SEL_PREFIX}${yr}-${pad(mo + 1)}`; }
 
+function mergeAttData(existing, incoming) {
+  if (!existing) return incoming;
+  const merged = {};
+  const allIds = new Set([...Object.keys(existing), ...Object.keys(incoming)]);
+  for (const eid of allIds) {
+    const old = existing[eid], inc = incoming[eid];
+    if (!old) { merged[eid] = inc; continue; }
+    if (!inc) { merged[eid] = old; continue; }
+    const dayMap = {};
+    for (const d of old.days) dayMap[d.date] = d;
+    for (const d of inc.days) dayMap[d.date] = d;
+    const allDays = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
+    const from = old.period.from < inc.period.from ? old.period.from : inc.period.from;
+    const to = old.period.to > inc.period.to ? old.period.to : inc.period.to;
+    const working = allDays.filter(d => d.type !== 'off' && d.type !== 'holiday');
+    merged[eid] = {
+      ...old, ...inc, days: allDays, period: { from, to },
+      summary: {
+        working: working.length,
+        present: working.filter(d => d.scans.length > 0).length,
+        absent: working.filter(d => d.type === 'absent').length,
+        half: allDays.filter(d => d.type === 'half-am' || d.type === 'half-pm').length,
+        lateIn: allDays.reduce((s, d) => s + d.lateIn, 0),
+        breakExcess: allDays.reduce((s, d) => s + d.breakExcess, 0),
+        earlyOut: allDays.reduce((s, d) => s + d.earlyOut, 0),
+      },
+    };
+  }
+  return merged;
+}
+
 function migrateOldAttendance() {
   try {
     const old = localStorage.getItem(ATT_OLD_KEY);
@@ -729,8 +760,9 @@ function migrateOldAttendance() {
 export default function Attendance() {
   useState(() => migrateOldAttendance());
   const now = new Date();
-  const [mo, setMo] = useState(now.getMonth());
-  const [yr, setYr] = useState(now.getFullYear());
+  const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_att_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
+  const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_att_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
+  useEffect(() => { try { localStorage.setItem('cjk_att_mo', mo); localStorage.setItem('cjk_att_yr', yr); } catch {} }, [mo, yr]);
   const dataKey = attKey(yr, mo);
   const selKey = attSelKey(yr, mo);
 
@@ -917,31 +949,33 @@ export default function Attendance() {
       if (!parsed.records.length) throw new Error('No attendance records found in file');
       const { data: results, suspectPH: suspects } = processRecords(parsed);
       const firstEmp = Object.values(results)[0];
+      let targetYr = yr, targetMo = mo;
       if (firstEmp?.period?.from) {
         const [fy, fm] = firstEmp.period.from.split('-').map(Number);
-        if (fy !== yr || fm - 1 !== mo) {
-          setYr(fy);
-          setMo(fm - 1);
-          const fk = attKey(fy, fm - 1);
-          localStorage.setItem(fk, JSON.stringify(results));
-          const fsk = attSelKey(fy, fm - 1);
-          const firstSel = sortByPayroll(results)[0];
-          if (firstSel) localStorage.setItem(fsk, firstSel);
-        }
+        targetYr = fy; targetMo = fm - 1;
+        if (fy !== yr || fm - 1 !== mo) { setYr(fy); setMo(fm - 1); }
       }
-      setData(results);
+      const tk = attKey(targetYr, targetMo);
+      let existing = null;
+      try { const s = localStorage.getItem(tk); if (s) existing = JSON.parse(s); } catch {}
+      const merged = mergeAttData(existing, results);
+      localStorage.setItem(tk, JSON.stringify(merged));
+      const tsk = attSelKey(targetYr, targetMo);
+      const firstSel = sortByPayroll(merged)[0];
+      if (firstSel) localStorage.setItem(tsk, firstSel);
+      setData(merged);
       setSuspectPH(suspects);
       setConfirmedPH(new Set());
       setDismissedHalfDays(new Set());
       setLastOverviewEdit(null);
       setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
       setEmpTimestamps({});
-      setSelected(sortByPayroll(results)[0]);
+      setSelected(firstSel || null);
     } catch (e) {
       setError(e.message || 'Failed to parse file');
     }
     setLoading(false);
-  }, []);
+  }, [yr, mo]);
 
   const onDrop = useCallback((e) => {
     e.preventDefault();
