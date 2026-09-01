@@ -339,10 +339,8 @@ function processRecords({ records, from, to }) {
           day.type = 'full';
         } else if (firstMorning) {
           day.type = 'half-am';
-          day.remarks.push('No clock out');
         } else if (lastAfternoon) {
           day.type = 'half-pm';
-          if (!day.clockIn) day.remarks.push('No clock in');
         } else {
           day.type = 'incomplete';
           day.remarks.push('No AM/PM scan');
@@ -377,7 +375,6 @@ function processRecords({ records, from, to }) {
         const hrs = Math.floor(workedMin / 60);
         const mins = workedMin % 60;
         day.remarks.push(`Worked ${hrs}h ${pad(mins)}m`);
-        day.remarks.push('Subject to review (possible missed scan)');
       }
 
       if (scans.length > 4) day.remarks.push(`${scans.length} scans`);
