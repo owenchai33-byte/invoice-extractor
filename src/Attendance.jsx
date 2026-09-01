@@ -566,7 +566,7 @@ function AttTableBody({ days }) {
   );
 }
 
-function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
+function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay, onReasonChange }) {
   const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
   if (!notes.length) return null;
   const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
@@ -627,17 +627,24 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                 }
               } else {
                 const key = `${empId}-${d.date}`;
-                const dismissed = isHalf(d) && dismissedHalfDays?.has(key);
+                const dismissed = isHalf(d) && key in (dismissedHalfDays || {});
+                const reason = dismissed ? dismissedHalfDays[key] : '';
                 rows.push(
                   <tr key={d.date} style={dismissed ? { opacity: 0.5, textDecoration: 'line-through' } : undefined}>
                     <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
                     <td style={ntd}>{d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}</td>
                     <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>
                       {onToggleHalfDay ? (
-                        <label className="att-no-print" style={{ cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <input type="checkbox" checked={!dismissed} onChange={() => onToggleHalfDay(key)} />
-                          {dismissed ? 'Forgot scan' : 'Confirmed'}
-                        </label>
+                        <span className="att-no-print" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10 }}>
+                          <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <input type="checkbox" checked={!dismissed} onChange={() => onToggleHalfDay(key)} />
+                            {!dismissed && 'Confirmed'}
+                          </label>
+                          {dismissed && onReasonChange && <select value={reason} onChange={e => onReasonChange(key, e.target.value)} style={{ fontSize: 10, padding: '1px 4px', border: '1px solid #d4d4d8', borderRadius: 4 }}>
+                            <option value="Forgot scan">Forgot scan</option>
+                            <option value="Machine issue">Machine issue</option>
+                          </select>}
+                        </span>
                       ) : ' '}
                     </td>
                   </tr>
@@ -780,7 +787,7 @@ export default function Attendance() {
   const [printAll, setPrintAll] = useState(false);
   const [printOverview, setPrintOverview] = useState(false);
   const [printHalf, setPrintHalf] = useState(null);
-  const [dismissedHalfDays, setDismissedHalfDays] = useState(new Set());
+  const [dismissedHalfDays, setDismissedHalfDays] = useState({});
   const [lastOverviewEdit, setLastOverviewEdit] = useState(null);
   const [suspectPH, setSuspectPH] = useState([]);
   const [generatedAt, setGeneratedAt] = useState(() => new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
@@ -835,15 +842,23 @@ export default function Attendance() {
 
   const toggleHalfDay = useCallback((key) => {
     setDismissedHalfDays(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      try { localStorage.setItem(attDismissedKey(yr, mo), JSON.stringify([...next])); } catch {}
+      const next = { ...prev };
+      if (key in next) delete next[key]; else next[key] = 'Forgot scan';
+      try { localStorage.setItem(attDismissedKey(yr, mo), JSON.stringify(next)); } catch {}
       return next;
     });
     setLastOverviewEdit(new Date());
     const empId = key.split('-')[0];
     const ts = new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     setEmpTimestamps(prev => ({ ...prev, [empId]: ts }));
+  }, [yr, mo]);
+  const setDismissReason = useCallback((key, reason) => {
+    setDismissedHalfDays(prev => {
+      const next = { ...prev, [key]: reason };
+      try { localStorage.setItem(attDismissedKey(yr, mo), JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setLastOverviewEdit(new Date());
   }, [yr, mo]);
 
   const dataKeyRef = useRef(dataKey);
@@ -882,8 +897,8 @@ export default function Attendance() {
     try {
       setSelected(localStorage.getItem(selKey) || null);
     } catch { setSelected(null); }
-    try { const d = localStorage.getItem(attDismissedKey(yr, mo)); setDismissedHalfDays(d ? new Set(JSON.parse(d)) : new Set()); }
-    catch { setDismissedHalfDays(new Set()); }
+    try { const d = localStorage.getItem(attDismissedKey(yr, mo)); setDismissedHalfDays(d ? JSON.parse(d) : {}); }
+    catch { setDismissedHalfDays({}); }
     setConfirmedPH(new Set());
     setVerifiedPH({});
     setSuspectPH([]);
@@ -973,7 +988,7 @@ export default function Attendance() {
       setData(merged);
       setSuspectPH(suspects);
       setConfirmedPH(new Set());
-      setDismissedHalfDays(new Set());
+      setDismissedHalfDays({});
       try { localStorage.removeItem(attDismissedKey(targetYr, targetMo)); } catch {}
       setLastOverviewEdit(null);
       setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
@@ -1216,7 +1231,7 @@ export default function Attendance() {
                         <AttTableBody days={viewDays} />
                       </table>
                     </div>
-                    {printHalf !== 'first' && <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />}
+                    {printHalf !== 'first' && <AttNotesBox days={emp.days} empId={selected} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} onReasonChange={setDismissReason} />}
                   </div>
 
                   {/* Summary — vertical sidebar on screen, below table in print */}
@@ -1226,7 +1241,7 @@ export default function Attendance() {
                   }}>
                     <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 10, color: '#18181b' }}>Summary</div>
                     <div className="att-stat-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {(() => { const adjHalf = emp.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${selected}-${d.date}`)).length; return <>
+                      {(() => { const adjHalf = emp.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !(`${selected}-${d.date}` in dismissedHalfDays)).length; return <>
                       <StatCard label="Working Days" value={`${emp.summary.working} days`} />
                       <StatCard label="Present" value={`${emp.summary.present} days`} />
                       <StatCard label="Absent" value={`${emp.summary.absent} days`} warn={emp.summary.absent > 0} />
@@ -1283,14 +1298,14 @@ export default function Attendance() {
                       <AttTableHeader />
                       <AttTableBody days={eDays} />
                     </table>
-                    {printHalf !== 'first' && <AttNotesBox days={e.days} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} />}
+                    {printHalf !== 'first' && <AttNotesBox days={e.days} empId={id} dismissedHalfDays={dismissedHalfDays} onToggleHalfDay={toggleHalfDay} onReasonChange={setDismissReason} />}
                     {printHalf !== 'first' && <div className="att-summary-box" style={{
                       marginTop: 20, padding: '16px 20px', background: '#fff',
                       border: '1px solid #e4e4e7', borderRadius: 8,
                     }}>
                       <div className="att-stat-title" style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#18181b' }}>Summary</div>
                       <div className="att-stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-                        {(() => { const adjHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${id}-${d.date}`)).length; return <>
+                        {(() => { const adjHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !(`${id}-${d.date}` in dismissedHalfDays)).length; return <>
                         <StatCard label="Working Days" value={`${s.working} days`} />
                         <StatCard label="Present" value={`${s.present} days`} />
                         <StatCard label="Absent" value={`${s.absent} days`} warn={s.absent > 0} />
@@ -1357,7 +1372,7 @@ export default function Attendance() {
                       const s = e.summary;
                       const total = s.lateIn + s.breakExcess + s.earlyOut;
                       const absentDates = e.days.filter(d => d.type === 'absent').map(d => d.dateShort);
-                      const confirmedHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${id}-${d.date}`));
+                      const confirmedHalf = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !(`${id}-${d.date}` in dismissedHalfDays));
                       const halfCount = confirmedHalf.length;
                       const halfDates = confirmedHalf.map(d => d.dateShort);
                       const hasPenalty = total > 0 || s.absent > 0 || halfCount > 0;
