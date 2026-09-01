@@ -1475,11 +1475,13 @@ export default function Attendance() {
               .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 7% !important; text-align: center !important; }
               .att-notes-box { margin-top: 4px !important; overflow: visible !important; width: 100% !important; border-radius: 0 !important; box-sizing: border-box !important; border: 1px solid #666 !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; border-bottom: 1px solid #666 !important; }
-              .att-notes-box table { font-size: 10.5px !important; width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+              .att-notes-box table { font-size: 10.5px !important; width: 100% !important; border-collapse: collapse !important; }
+              .att-notes-box table tr { border-bottom: 1px solid #999 !important; }
+              .att-notes-box table tr:last-child { border-bottom: none !important; }
+              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; border: none !important; border-right: 1px solid #999 !important; }
+              .att-notes-box table th:last-child, .att-notes-box table td:last-child { border-right: none !important; white-space: normal !important; }
               .att-notes-box table th:nth-child(1), .att-notes-box table td:nth-child(1) { width: 12% !important; }
               .att-notes-box table th:nth-child(2), .att-notes-box table td:nth-child(2) { width: 18% !important; }
-              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; border: 1px solid #999 !important; }
-              .att-notes-box table th:last-child, .att-notes-box table td:last-child { width: auto !important; white-space: normal !important; border-right: none !important; }
               .att-signature { page-break-inside: avoid !important; padding-top: 0 !important; margin-top: auto !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
