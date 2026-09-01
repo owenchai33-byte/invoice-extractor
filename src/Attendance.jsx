@@ -1430,6 +1430,7 @@ export default function Attendance() {
               .att-summary-box { position: static !important; width: 100% !important; }
             }
             .att-dismissed-row { opacity: 0.5; text-decoration: line-through; }
+            @page { margin: 10mm; }
             @media print {
               .att-dismissed-row { opacity: 0.5 !important; }
               .att-no-print { display: none !important; }
