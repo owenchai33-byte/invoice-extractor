@@ -629,7 +629,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                 const key = `${empId}-${d.date}`;
                 const dismissed = isHalf(d) && dismissedHalfDays?.has(key);
                 rows.push(
-                  <tr key={d.date} style={dismissed ? { opacity: 0.5, textDecoration: 'line-through' } : undefined}>
+                  <tr key={d.date} className={dismissed ? 'att-dismissed-row' : undefined}>
                     <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
                     <td style={ntd}>{d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}</td>
                     <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>
@@ -1432,7 +1432,9 @@ export default function Attendance() {
               .att-table-summary-row { flex-direction: column !important; }
               .att-summary-box { position: static !important; width: 100% !important; }
             }
+            .att-dismissed-row { opacity: 0.5; text-decoration: line-through; }
             @media print {
+              .att-dismissed-row { opacity: 1 !important; text-decoration: none !important; }
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
               .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
