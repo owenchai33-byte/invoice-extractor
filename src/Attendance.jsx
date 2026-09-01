@@ -1474,9 +1474,10 @@ export default function Attendance() {
               .att-notes-box { margin-top: 4px !important; overflow: visible !important; width: 100% !important; border-radius: 0 !important; box-sizing: border-box !important; border: 1px solid #999 !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; border-bottom: 1px solid #999 !important; }
               .att-notes-box table { font-size: 10.5px !important; width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
-              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; }
+              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; border: 1px solid #999 !important; }
               .att-notes-box table th:nth-child(1), .att-notes-box table td:nth-child(1) { width: 12% !important; }
               .att-notes-box table th:nth-child(2), .att-notes-box table td:nth-child(2) { width: 18% !important; }
+              .att-notes-box table th:nth-child(3), .att-notes-box table td:nth-child(3) { width: 70% !important; }
               .att-signature { page-break-inside: avoid !important; padding-top: 0 !important; margin-top: auto !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
