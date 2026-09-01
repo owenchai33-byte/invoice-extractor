@@ -582,7 +582,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
           <tr style={{ background: '#fafafa' }}>
             <th style={{ ...nth, width: 60 }}>Date</th>
             <th style={{ ...nth, width: 80 }}>Type</th>
-            <th style={{ ...nth, borderRight: 'none' }}>Reason</th>
+            <th style={nth}>Reason</th>
           </tr>
         </thead>
         <tbody>
@@ -613,7 +613,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                     <tr key={run[0].date}>
                       <td style={{ ...ntd, fontWeight: 500 }}>{run[0].dateShort} – {run[run.length - 1].dateShort}</td>
                       <td style={ntd}>Absent ({run.length} days)</td>
-                      <td style={{ ...ntd, borderRight: 'none', color: '#71717a', fontStyle: 'italic' }}>No attendance recorded</td>
+                      <td style={{ ...ntd, color: '#71717a', fontStyle: 'italic' }}>No attendance recorded</td>
                     </tr>
                   );
                 } else {
@@ -621,7 +621,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                     <tr key={rd.date}>
                       <td style={{ ...ntd, fontWeight: 500 }}>{rd.dateShort}</td>
                       <td style={ntd}>Absent</td>
-                      <td style={{ ...ntd, borderRight: 'none' }}>{' '}</td>
+                      <td style={ntd}>{' '}</td>
                     </tr>
                   ));
                 }
@@ -632,7 +632,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                   <tr key={d.date} className={dismissed ? 'att-dismissed-row' : undefined}>
                     <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
                     <td style={ntd}>{d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}</td>
-                    <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>
+                    <td style={{ ...ntd, minHeight: 20 }}>
                       {onToggleHalfDay ? (<>
                         <label className="att-no-print" style={{ cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <input type="checkbox" checked={!dismissed} onChange={() => onToggleHalfDay(key)} />
