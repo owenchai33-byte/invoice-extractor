@@ -1427,7 +1427,6 @@ export default function Attendance() {
               .att-table-summary-row { flex-direction: column !important; }
               .att-summary-box { position: static !important; width: 100% !important; }
             }
-            @page { size: A4; margin: 3mm; }
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
@@ -1435,12 +1434,12 @@ export default function Attendance() {
               .att-layout { display: block !important; }
               .att-sidebar { display: none !important; }
               .att-table-scroll { overflow: visible !important; }
-              .att-table { font-size: 11.5px !important; table-layout: fixed !important; width: 100% !important; }
-              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 11.5px !important; white-space: nowrap !important; overflow: hidden !important; }
+              .att-table { font-size: 10px !important; table-layout: fixed !important; width: 100% !important; }
+              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 10px !important; white-space: nowrap !important; overflow: hidden !important; }
               .att-table th { white-space: normal !important; overflow: visible !important; line-height: 1.1 !important; }
-              .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 30px !important; }
-              .att-table th:nth-child(2), .att-table td:nth-child(2) { width: 26px !important; }
-              .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 44px !important; text-align: center !important; }
+              .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 5% !important; }
+              .att-table th:nth-child(2), .att-table td:nth-child(2) { width: 4% !important; }
+              .att-table th:nth-child(n+3):nth-child(-n+10), .att-table td:nth-child(n+3):nth-child(-n+10) { width: 8% !important; text-align: center !important; }
               .att-table th:last-child, .att-table td:last-child { width: auto !important; white-space: normal !important; }
               .att-page-break { page-break-before: always; }
               .att-emp-page { min-height: 100vh; box-sizing: border-box; padding: 0 2mm 3mm; display: flex !important; flex-direction: column; }
