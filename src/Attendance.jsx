@@ -788,6 +788,8 @@ export default function Attendance() {
   const [verifiedPH, setVerifiedPH] = useState({});
   const [showMech, setShowMech] = useState(false);
   const fileRef = useRef(null);
+  const addFileRef = useRef(null);
+  const uploadModeRef = useRef('merge');
   const origTitle = useRef(document.title);
 
   const effectiveData = useMemo(() => {
@@ -957,7 +959,9 @@ export default function Attendance() {
       }
       const tk = attKey(targetYr, targetMo);
       let existing = null;
-      try { const s = localStorage.getItem(tk); if (s) existing = JSON.parse(s); } catch {}
+      if (uploadModeRef.current === 'merge') {
+        try { const s = localStorage.getItem(tk); if (s) existing = JSON.parse(s); } catch {}
+      }
       const merged = mergeAttData(existing, results);
       localStorage.setItem(tk, JSON.stringify(merged));
       const tsk = attSelKey(targetYr, targetMo);
@@ -1021,7 +1025,9 @@ export default function Attendance() {
               <button onClick={() => setPrintOverview(true)} style={btn}>📊 Overview</button>
               <button onClick={() => { origTitle.current = document.title; document.title = getPrintTitle(emp.period, emp.name, printHalf); window.print(); }} style={btn}>🖨 Print</button>
               <button onClick={handlePrintAll} style={{ ...btn, background: '#18181b', color: '#fff', border: '1px solid #18181b' }}>🖨 Print All</button>
-              <button onClick={() => { setData(null); setSelected(null); localStorage.removeItem(dataKey); localStorage.removeItem(selKey); }} style={{ ...btn, background: '#059669', color: '#fff', border: '1px solid #059669' }}>Upload New</button>
+              <button onClick={() => { uploadModeRef.current = 'merge'; addFileRef.current?.click(); }} style={{ ...btn, background: '#059669', color: '#fff', border: '1px solid #059669' }}>+ Upload More</button>
+              <button onClick={() => { uploadModeRef.current = 'replace'; addFileRef.current?.click(); }} style={{ ...btn, background: '#d97706', color: '#fff', border: '1px solid #d97706' }}>🔄 Upload Revised</button>
+              <input ref={addFileRef} type="file" accept=".pdf,.xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
             </>
           )}
           <span style={{ fontSize: 12, color: '#71717a', whiteSpace: 'nowrap' }}>
@@ -1088,7 +1094,7 @@ export default function Attendance() {
           onDragOver={e => e.preventDefault()}
           onDragEnter={e => { e.currentTarget.style.borderColor = '#18181b'; }}
           onDragLeave={e => { e.currentTarget.style.borderColor = '#d4d4d8'; }}
-          onClick={() => fileRef.current?.click()}
+          onClick={() => { uploadModeRef.current = 'merge'; fileRef.current?.click(); }}
           style={{
             border: '2px dashed #d4d4d8', borderRadius: 12, padding: '80px 40px',
             textAlign: 'center', cursor: 'pointer', background: '#fafafa',
