@@ -633,12 +633,13 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                     <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
                     <td style={ntd}>{d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}</td>
                     <td style={{ ...ntd, borderRight: 'none', minHeight: 20 }}>
-                      {onToggleHalfDay ? (
+                      {onToggleHalfDay ? (<>
                         <label className="att-no-print" style={{ cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <input type="checkbox" checked={!dismissed} onChange={() => onToggleHalfDay(key)} />
                           {dismissed ? 'Forgot scan / Machine issue' : 'Confirmed'}
                         </label>
-                      ) : ' '}
+                        <span className="att-print-only" style={{ display: 'none', fontSize: 10 }}>{dismissed ? 'Forgot scan / Machine issue' : ' '}</span>
+                      </>) : ' '}
                     </td>
                   </tr>
                 );
@@ -1470,9 +1471,9 @@ export default function Attendance() {
               .att-overview-view .att-table th:nth-child(5), .att-overview-view .att-table td:nth-child(5) { width: 24% !important; }
               .att-overview-view .att-table th:nth-child(6), .att-overview-view .att-table td:nth-child(6) { width: 24% !important; }
               .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 7% !important; text-align: center !important; }
-              .att-notes-box { margin-top: 4px !important; overflow: visible !important; width: 100% !important; border-radius: 0 !important; box-sizing: border-box !important; }
-              .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; }
-              .att-notes-box table { font-size: 10.5px !important; width: 100% !important; table-layout: fixed !important; }
+              .att-notes-box { margin-top: 4px !important; overflow: visible !important; width: 100% !important; border-radius: 0 !important; box-sizing: border-box !important; border: 1px solid #666 !important; }
+              .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; border-bottom: 1px solid #666 !important; }
+              .att-notes-box table { font-size: 10.5px !important; width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
               .att-notes-box table th:nth-child(1), .att-notes-box table td:nth-child(1) { width: 12% !important; }
               .att-notes-box table th:nth-child(2), .att-notes-box table td:nth-child(2) { width: 18% !important; }
               .att-notes-box table th:last-child, .att-notes-box table td:last-child { width: auto !important; white-space: normal !important; }
