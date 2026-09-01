@@ -1203,7 +1203,7 @@ export default function Attendance() {
                 {/* Table + Summary side-by-side on screen */}
                 <div className="att-table-summary-row" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ overflowX: 'auto' }}>
+                    <div className="att-table-scroll" style={{ overflowX: 'auto' }}>
                       <table className="att-table" style={{
                         width: '100%', borderCollapse: 'collapse', fontSize: 12.5, background: '#fff',
                         border: '1px solid #e4e4e7',
@@ -1427,13 +1427,15 @@ export default function Attendance() {
               .att-table-summary-row { flex-direction: column !important; }
               .att-summary-box { position: static !important; width: 100% !important; }
             }
+            @page { size: A4; margin: 3mm; }
             @media print {
               .att-no-print { display: none !important; }
               .att-print-only { display: block !important; }
               .att-root { padding: 0 !important; max-width: none !important; margin: 0 !important; }
               .att-layout { display: block !important; }
               .att-sidebar { display: none !important; }
-              .att-table { font-size: 11.5px !important; table-layout: fixed !important; }
+              .att-table-scroll { overflow: visible !important; }
+              .att-table { font-size: 11.5px !important; table-layout: fixed !important; width: 100% !important; }
               .att-table th, .att-table td { padding: 2px 3px !important; font-size: 11.5px !important; white-space: nowrap !important; overflow: hidden !important; }
               .att-table th { white-space: normal !important; overflow: visible !important; line-height: 1.1 !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 30px !important; }
@@ -1484,8 +1486,13 @@ export default function Attendance() {
               .att-half-first .att-all-view .att-signature { display: none !important; }
               .att-half-second .att-single-view .att-emp-page,
               .att-half-second .att-all-view .att-emp-page { padding-top: var(--half-split, 50vh) !important; }
-              .att-half-second .att-single-view .att-table thead,
-              .att-half-second .att-all-view .att-table thead { display: none !important; }
+              .att-half-second .att-single-view .att-table thead th,
+              .att-half-second .att-all-view .att-table thead th {
+                height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important;
+                border-top-width: 0 !important; border-bottom-width: 0 !important;
+                font-size: 0 !important; line-height: 0 !important; color: transparent !important;
+                overflow: hidden !important;
+              }
               .att-print-all.att-half-first .att-overview-view,
               .att-print-all.att-half-second .att-overview-view { display: none !important; }
               .att-summary-box { border-color: #666 !important; }
