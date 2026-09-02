@@ -1526,6 +1526,7 @@ export default function Attendance() {
               .att-print-all.att-half-second .att-overview-view { display: none !important; }
               .att-summary-box { border-color: #666 !important; }
               .att-table { border-color: #666 !important; }
+              @page{margin:6mm}
             }
           `}</style>
         </>
