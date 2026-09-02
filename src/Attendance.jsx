@@ -1376,7 +1376,10 @@ export default function Attendance() {
                             borderLeft: gb, borderBottom: bb,
                           }}>{s.absent > 0 ? `${s.absent} (${collapseDateRanges(absentDates)})` : '-'}</td>
                           <td style={{ ...td, color: halfCount > 0 ? '#18181b' : '#a3a3a3', borderBottom: bb }}>
-                            {halfCount > 0 ? `${halfCount} (${collapseDateRanges(halfDates)})` : '-'}
+                            {halfCount > 0 ? `${halfCount} (${confirmedHalf.map(d => {
+                              const worked = d.remarks.find(r => r.startsWith('Worked '));
+                              return `${d.dateShort} ${worked ? worked.replace('Worked ', '') : ''}`;
+                            }).join(', ')})` : '-'}
                           </td>
                           {(() => {
                             const totalLeave = s.absent + halfCount * 0.5;
