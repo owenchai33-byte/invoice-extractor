@@ -579,7 +579,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
           <tr style={{ background: '#fafafa' }}>
             <th style={{ ...nth, width: 60 }}>Date</th>
             <th style={{ ...nth, width: 80 }}>Type</th>
-            <th style={nth}>Reason</th>
+            <th style={{ ...nth, borderRight: 'none' }}>Reason</th>
           </tr>
         </thead>
         <tbody>
@@ -610,7 +610,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                     <tr key={run[0].date}>
                       <td style={{ ...ntd, fontWeight: 500 }}>{run[0].dateShort} – {run[run.length - 1].dateShort}</td>
                       <td style={ntd}>Absent ({run.length} days)</td>
-                      <td style={{ ...ntd, color: '#71717a', fontStyle: 'italic' }}>No attendance recorded</td>
+                      <td style={{ ...ntd, color: '#71717a', fontStyle: 'italic', borderRight: 'none' }}>No attendance recorded</td>
                     </tr>
                   );
                 } else {
@@ -618,7 +618,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                     <tr key={rd.date}>
                       <td style={{ ...ntd, fontWeight: 500 }}>{rd.dateShort}</td>
                       <td style={ntd}>Absent</td>
-                      <td style={ntd}>{' '}</td>
+                      <td style={{ ...ntd, borderRight: 'none' }}>{' '}</td>
                     </tr>
                   ));
                 }
@@ -629,7 +629,7 @@ function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
                   <tr key={d.date} className={dismissed ? 'att-dismissed-row' : undefined}>
                     <td style={{ ...ntd, fontWeight: 500 }}>{d.dateShort}</td>
                     <td style={ntd}>{d.type === 'half-am' ? 'Half Day (AM)' : 'Half Day (PM)'}</td>
-                    <td style={{ ...ntd, minHeight: 20 }}>
+                    <td style={{ ...ntd, minHeight: 20, borderRight: 'none' }}>
                       {onToggleHalfDay ? (<>
                         <label className="att-no-print" style={{ cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
                           <input type="checkbox" checked={!dismissed} onChange={() => onToggleHalfDay(key)} />
@@ -1482,6 +1482,7 @@ export default function Attendance() {
               .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; }
               .att-notes-box table th:nth-child(1), .att-notes-box table td:nth-child(1) { width: 12% !important; }
               .att-notes-box table th:nth-child(2), .att-notes-box table td:nth-child(2) { width: 18% !important; }
+              .att-notes-box table th:last-child, .att-notes-box table td:last-child { border-right: none !important; }
               .att-signature { page-break-inside: avoid !important; padding-top: 0 !important; margin-top: auto !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
