@@ -411,7 +411,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .pt{display:inline!important}
   .dgs{display:none!important}   /* hide drag ⋮⋮ handle on print */
   .pr{background:#fff}
-  .body{max-width:100%;padding:1cm 0.5cm;margin:0;box-sizing:border-box}
+  .body{max-width:100%;padding:0.3cm 0.5cm;margin:0;box-sizing:border-box}
   .sec{border:none;border-radius:0;margin-bottom:6px;box-shadow:none}
   .sh{padding:4px 0;border:none}
   .sht{font-size:10pt;font-weight:700}
