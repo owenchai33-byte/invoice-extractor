@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_H, SAMPLE_STAFF, fmt, isStaffHidden } from './Payroll';
 const LS_EP_TS = 'cjk_ep_updated';
-const ATT_DATA_KEY = 'cjk_attendance_v1';
+const ATT_DATA_PREFIX = 'cjk_attendance_';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -148,10 +148,8 @@ export default function EmployeePayslip() {
   const setOthV = (sid, v) => { const k = othK(sid); const next = { ...oth, [k]: v }; setOth(next); try { localStorage.setItem('cjk_ep_others', JSON.stringify(next)); } catch {} _touchTs(); };
   const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
   const syncAttendance = () => {
-    let raw; try { raw = JSON.parse(localStorage.getItem(ATT_DATA_KEY)); } catch {}
+    let raw; try { raw = JSON.parse(localStorage.getItem(`${ATT_DATA_PREFIX}${viewMK}`)); } catch {}
     if (!raw || !Object.keys(raw).length) { alert('No attendance data found. Upload attendance in the Attendance tab first.'); return; }
-    const attMonth = Object.values(raw)[0]?.period?.from?.slice(0, 7);
-    if (attMonth !== viewMK) { alert(`Attendance data is for ${attMonth || '?'}, but payslip is showing ${viewMK}. Switch to the matching month.`); return; }
     let matched = 0;
     for (const r of rows) {
       const rName = (r.name || '').trim().toLowerCase();
