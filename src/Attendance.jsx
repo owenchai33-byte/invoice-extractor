@@ -459,7 +459,7 @@ function AttTableHeader() {
         <th style={{ ...th, color: '#dc2626' }}>Late In</th>
         <th style={{ ...th, color: '#dc2626' }}>Break +</th>
         <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
-        <th style={th}>Remarks</th>
+        <th style={{ ...th, borderRight: 'none' }}>Remarks</th>
       </tr>
     </thead>
   );
@@ -510,7 +510,7 @@ function AttTableBody({ days }) {
             <tr key={first.date} style={{ background: '#fef3c7' }}>
               <td style={{ ...td, fontWeight: 700 }}>{first.dateShort}</td>
               <td style={{ ...td, fontWeight: 700 }}>{last.dateShort}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#b45309', fontStyle: 'italic', fontWeight: 700 }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#b45309', fontStyle: 'italic', fontWeight: 700, borderRight: 'none' }}>
                 Absent ({g.absentCount} days) — No attendance recorded
               </td>
             </tr>
@@ -528,7 +528,7 @@ function AttTableBody({ days }) {
             <tr key={d.date} style={{ background: bg }}>
               <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
               <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400 }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400, borderRight: 'none' }}>
                 {label}
               </td>
             </tr>
@@ -555,7 +555,7 @@ function AttTableBody({ days }) {
             <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
             <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
             <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
-            <td style={{ ...td, color: '#71717a' }}><Remarks d={d} /></td>
+            <td style={{ ...td, color: '#71717a', borderRight: 'none' }}><Remarks d={d} /></td>
           </tr>
         );
       })}
@@ -1440,7 +1440,7 @@ export default function Attendance() {
               .att-sidebar { display: none !important; }
               .att-table-scroll { overflow: visible !important; }
               .att-table { font-size: 10px !important; table-layout: fixed !important; width: 100% !important; }
-              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 10px !important; white-space: nowrap !important; overflow: hidden !important; border: 1px solid #666 !important; }
+              .att-table th, .att-table td { padding: 2px 3px !important; font-size: 10px !important; white-space: nowrap !important; overflow: hidden !important; }
               .att-table th { white-space: normal !important; overflow: visible !important; line-height: 1.1 !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 5% !important; }
               .att-table th:nth-child(2), .att-table td:nth-child(2) { width: 4% !important; }
@@ -1474,10 +1474,9 @@ export default function Attendance() {
               .att-notes-box { margin-top: 4px !important; overflow: visible !important; width: 100% !important; border-radius: 0 !important; box-sizing: border-box !important; border: 1px solid #999 !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; border-bottom: 1px solid #999 !important; }
               .att-notes-box table { font-size: 10.5px !important; width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
-              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; border: 1px solid #999 !important; }
+              .att-notes-box th, .att-notes-box td { padding: 2px 6px !important; font-size: 10.5px !important; }
               .att-notes-box table th:nth-child(1), .att-notes-box table td:nth-child(1) { width: 12% !important; }
               .att-notes-box table th:nth-child(2), .att-notes-box table td:nth-child(2) { width: 18% !important; }
-              .att-notes-box table th:nth-child(3), .att-notes-box table td:nth-child(3) { width: 70% !important; }
               .att-signature { page-break-inside: avoid !important; padding-top: 0 !important; margin-top: auto !important; }
               .att-signature > div { justify-content: center !important; }
               .att-table-summary-row { display: block !important; }
