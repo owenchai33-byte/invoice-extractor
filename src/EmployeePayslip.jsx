@@ -149,19 +149,37 @@ export default function EmployeePayslip() {
   const viewMK = `${yr}-${String(mo + 1).padStart(2, '0')}`;
   const syncAttendance = () => {
     let leave; try { leave = JSON.parse(localStorage.getItem(`cjk_att_leave_${viewMK}`)); } catch {}
-    if (!leave || !Object.keys(leave).length) { alert('No attendance data found. Open the Attendance tab first to generate leave totals.'); return; }
-    let matched = 0; const unmatched = [];
+    if (!leave || !Object.keys(leave).length) {
+      let raw; try { raw = JSON.parse(localStorage.getItem(`${ATT_DATA_PREFIX}${viewMK}`)); } catch {}
+      if (!raw || !Object.keys(raw).length) { alert('No attendance data found. Upload attendance in the Attendance tab first.'); return; }
+      const emps = Object.values(raw);
+      const suspectDates = new Set();
+      if (emps.length > 1) { const first = emps[0]; for (const d of (first.days || [])) { if (d.type === 'absent' && emps.every(e => (e.days || []).find(ed => ed.date === d.date)?.type === 'absent')) suspectDates.add(d.date); } }
+      let dismissed; try { dismissed = new Set(JSON.parse(localStorage.getItem(`cjk_att_dismissed_${viewMK}`) || '[]')); } catch { dismissed = new Set(); }
+      leave = {};
+      for (const e of emps) {
+        const absent = (e.days || []).filter(d => d.type === 'absent' && !suspectDates.has(d.date)).length;
+        const half = (e.days || []).filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissed.has(`${e.id}-${d.date}`)).length;
+        leave[(e.name || '').trim().toLowerCase()] = absent + half * 0.5;
+      }
+    }
+    const attNames = Object.keys(leave);
+    let matched = 0; const unmatched = []; const details = [];
     for (const r of rows) {
       const rName = (r.name || '').trim().toLowerCase();
-      let days = leave[rName];
-      if (days === undefined) { const match = Object.keys(leave).find(n => n.includes(rName) || rName.includes(n)); if (match !== undefined) days = leave[match]; }
+      let days = leave[rName]; let usedName = rName;
+      if (days === undefined) { const match = attNames.find(n => n.includes(rName) || rName.includes(n)); if (match !== undefined) { days = leave[match]; usedName = match; } }
       if (days !== undefined) {
         setAbsV(r.id, days > 0 ? String(days) : '');
         matched++;
+        if (days > 0) details.push(`${r.name}: ${days}`);
       } else { unmatched.push(r.name); }
     }
-    if (matched === 0) alert('No matching employees found between attendance and payslip.');
-    else { let msg = `Synced absence for ${matched} employee${matched > 1 ? 's' : ''}.`; if (unmatched.length) msg += `\n\nNot matched (${unmatched.length}): ${unmatched.join(', ')}`; alert(msg); }
+    if (matched === 0) { alert(`No matching employees.\n\nPayslip names: ${rows.map(r => r.name).join(', ')}\n\nAttendance names: ${attNames.join(', ')}`); return; }
+    let msg = `Synced ${matched} employee${matched > 1 ? 's' : ''}.`;
+    if (details.length) msg += `\n\nLeave: ${details.join(', ')}`;
+    if (unmatched.length) msg += `\n\nNot matched: ${unmatched.join(', ')}`;
+    alert(msg);
   };
   const canShowStart = (r) => r.status === 'probationary' && r.addedMonth === viewMK;
 
