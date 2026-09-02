@@ -932,7 +932,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           <div style={{fontSize:24,marginBottom:6}}>🔒</div>
           <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Enter PIN to unlock editing</div>
           {isMonthLocked&&<div style={{fontSize:11,color:'#dc2626',marginBottom:8}}>Past month — editing locked</div>}
-          <input type="password" inputMode="numeric" maxLength={4} autoComplete="one-time-code" data-1p-ignore data-lpignore="true" name="app-pin" value={pinVal} onChange={e=>{setPinErr(false);setPinVal(e.target.value.replace(/\D/g,''));}} onKeyDown={e=>e.key==='Enter'&&submitPin()} autoFocus style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${pinErr?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace'}} placeholder="····"/>
+          <input type="text" inputMode="numeric" maxLength={4} autoComplete="off" value={pinVal} onChange={e=>{setPinErr(false);setPinVal(e.target.value.replace(/\D/g,''));}} onKeyDown={e=>e.key==='Enter'&&submitPin()} autoFocus style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${pinErr?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace',WebkitTextSecurity:'disc'}} placeholder="····"/>
           {pinErr&&<div style={{fontSize:12,color:'#dc2626',marginTop:6}}>Wrong PIN</div>}
           <div style={{marginTop:14,display:'flex',gap:8,justifyContent:'center'}}>
             <button onClick={cancelPin} style={{padding:'7px 20px',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer',border:'1px solid #d4d4d8',background:'#fff',color:'#18181b'}}>Cancel</button>
