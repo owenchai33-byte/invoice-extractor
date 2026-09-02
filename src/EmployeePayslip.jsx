@@ -150,18 +150,32 @@ export default function EmployeePayslip() {
   const syncAttendance = () => {
     let raw; try { raw = JSON.parse(localStorage.getItem(`${ATT_DATA_PREFIX}${viewMK}`)); } catch {}
     if (!raw || !Object.keys(raw).length) { alert('No attendance data found. Upload attendance in the Attendance tab first.'); return; }
-    let matched = 0;
-    for (const r of rows) {
-      const rName = (r.name || '').trim().toLowerCase();
-      const attEmp = Object.values(raw).find(e => (e.name || '').trim().toLowerCase() === rName);
-      if (attEmp) {
-        const days = (attEmp.summary?.absent || 0) + (attEmp.summary?.half || 0) * 0.5;
-        setAbsV(r.id, days > 0 ? String(days) : '');
-        matched++;
+    const emps = Object.values(raw);
+    const suspectPH = new Set();
+    if (emps.length > 1) {
+      const first = emps[0];
+      for (let i = 0; i < (first.days || []).length; i++) {
+        const d0 = first.days[i];
+        if (d0.type !== 'absent') continue;
+        if (emps.every(e => e.days?.[i]?.type === 'absent')) suspectPH.add(d0.date);
       }
     }
+    let dismissed; try { dismissed = new Set(JSON.parse(localStorage.getItem(`cjk_att_dismissed_${viewMK}`) || '[]')); } catch { dismissed = new Set(); }
+    let matched = 0; const unmatched = [];
+    for (const r of rows) {
+      const rName = (r.name || '').trim().toLowerCase();
+      let attEmp = emps.find(e => (e.name || '').trim().toLowerCase() === rName);
+      if (!attEmp) attEmp = emps.find(e => { const n = (e.name || '').trim().toLowerCase(); return n.includes(rName) || rName.includes(n); });
+      if (attEmp) {
+        const absentDays = (attEmp.days || []).filter(d => d.type === 'absent' && !suspectPH.has(d.date)).length;
+        const halfDays = (attEmp.days || []).filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissed.has(`${attEmp.id}-${d.date}`)).length;
+        const days = absentDays + halfDays * 0.5;
+        setAbsV(r.id, days > 0 ? String(days) : '');
+        matched++;
+      } else { unmatched.push(r.name); }
+    }
     if (matched === 0) alert('No matching employees found between attendance and payslip.');
-    else alert(`Synced absence for ${matched} employee${matched > 1 ? 's' : ''}.`);
+    else { let msg = `Synced absence for ${matched} employee${matched > 1 ? 's' : ''}.`; if (unmatched.length) msg += `\n\nNot matched (${unmatched.length}): ${unmatched.join(', ')}`; if (suspectPH.size) msg += `\n\nExcluded ${suspectPH.size} suspected public holiday(s) from absence count.`; alert(msg); }
   };
   const canShowStart = (r) => r.status === 'probationary' && r.addedMonth === viewMK;
 
