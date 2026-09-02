@@ -816,6 +816,16 @@ export default function Attendance() {
   const viewDays = emp ? getHalfDays(emp.days, printHalf) : [];
   const viewPeriod = emp ? getHalfPeriod(emp.period, printHalf) : null;
 
+  useEffect(() => {
+    if (!effectiveData) return;
+    const leave = {};
+    for (const [id, e] of Object.entries(effectiveData)) {
+      const halfCount = e.days.filter(d => (d.type === 'half-am' || d.type === 'half-pm') && !dismissedHalfDays.has(`${id}-${d.date}`)).length;
+      leave[(e.name || '').trim().toLowerCase()] = e.summary.absent + halfCount * 0.5;
+    }
+    try { localStorage.setItem(`cjk_att_leave_${yr}-${pad(mo + 1)}`, JSON.stringify(leave)); } catch {}
+  }, [effectiveData, dismissedHalfDays, yr, mo]);
+
   const halfSplitVh = useMemo(() => {
     if (!effectiveData || !empIds.length) return 50;
     let maxRows = 0;
