@@ -459,7 +459,7 @@ function AttTableHeader() {
         <th style={{ ...th, color: '#dc2626' }}>Late In</th>
         <th style={{ ...th, color: '#dc2626' }}>Break +</th>
         <th style={{ ...th, color: '#dc2626' }}>Early Out</th>
-        <th style={{ ...th, borderRight: 'none' }}>Remarks</th>
+        <th style={th}>Remarks</th>
       </tr>
     </thead>
   );
@@ -510,7 +510,7 @@ function AttTableBody({ days }) {
             <tr key={first.date} style={{ background: '#fef3c7' }}>
               <td style={{ ...td, fontWeight: 700 }}>{first.dateShort}</td>
               <td style={{ ...td, fontWeight: 700 }}>{last.dateShort}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#b45309', fontStyle: 'italic', fontWeight: 700, borderRight: 'none' }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#b45309', fontStyle: 'italic', fontWeight: 700 }}>
                 Absent ({g.absentCount} days) — No attendance recorded
               </td>
             </tr>
@@ -528,7 +528,7 @@ function AttTableBody({ days }) {
             <tr key={d.date} style={{ background: bg }}>
               <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
               <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400, borderRight: 'none' }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400 }}>
                 {label}
               </td>
             </tr>
@@ -555,7 +555,7 @@ function AttTableBody({ days }) {
             <td style={valStyle(d.lateIn)}>{d.lateIn ? `${d.lateIn}m` : '-'}</td>
             <td style={valStyle(d.breakExcess)}>{d.breakExcess ? `${d.breakExcess}m` : '-'}</td>
             <td style={valStyle(d.earlyOut)}>{d.earlyOut ? `${d.earlyOut}m` : '-'}</td>
-            <td style={{ ...td, color: '#71717a', borderRight: 'none' }}><Remarks d={d} /></td>
+            <td style={{ ...td, color: '#71717a' }}><Remarks d={d} /></td>
           </tr>
         );
       })}
@@ -1439,7 +1439,7 @@ export default function Attendance() {
               .att-layout { display: block !important; }
               .att-sidebar { display: none !important; }
               .att-table-scroll { overflow: visible !important; }
-              .att-table { font-size: 10px !important; table-layout: fixed !important; width: 100% !important; border: 1px solid #666 !important; }
+              .att-table { font-size: 10px !important; table-layout: fixed !important; width: 100% !important; border: none !important; }
               .att-table th, .att-table td { padding: 2px 3px !important; font-size: 10px !important; white-space: nowrap !important; overflow: hidden !important; border: 1px solid #666 !important; }
               .att-table th { white-space: normal !important; overflow: visible !important; line-height: 1.1 !important; }
               .att-table th:nth-child(1), .att-table td:nth-child(1) { width: 5% !important; }
