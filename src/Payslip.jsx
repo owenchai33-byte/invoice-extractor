@@ -332,7 +332,7 @@ const CSS = `
 
 /* NET PAY row inside the table */
 .slip-box .net td{border:none;font-weight:700;padding-top:.5em}
-.slip-box .net-val{border-top:1px solid #000!important;border-bottom:3px double #000!important}
+.slip-box .net-val{border-top:1px solid #000!important;border-bottom:3px double #000!important;border-right:1px solid #000!important}
 
 /* Signature block — label centered above line, signing space between */
 .slip-sig{display:flex;justify-content:space-between;margin-top:3.5em;font-size:1em}
