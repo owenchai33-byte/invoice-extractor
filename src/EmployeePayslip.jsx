@@ -164,11 +164,20 @@ export default function EmployeePayslip() {
       }
     }
     const attNames = Object.keys(leave);
+    const findMatch = (rName) => {
+      if (leave[rName] !== undefined) return rName;
+      const sub = attNames.find(n => n.includes(rName) || rName.includes(n));
+      if (sub !== undefined) return sub;
+      const rWords = rName.split(/\s+/);
+      let best = null, bestCount = 0;
+      for (const n of attNames) { const nWords = n.split(/\s+/); const shared = rWords.filter(w => nWords.includes(w)).length; if (shared >= 2 && shared > bestCount) { bestCount = shared; best = n; } }
+      return best;
+    };
     let matched = 0; const unmatched = []; const details = [];
     for (const r of rows) {
       const rName = (r.name || '').trim().toLowerCase();
-      let days = leave[rName]; let usedName = rName;
-      if (days === undefined) { const match = attNames.find(n => n.includes(rName) || rName.includes(n)); if (match !== undefined) { days = leave[match]; usedName = match; } }
+      const matchName = findMatch(rName);
+      let days = matchName !== null ? leave[matchName] : undefined;
       if (days !== undefined) {
         setAbsV(r.id, days > 0 ? String(days) : '');
         matched++;
