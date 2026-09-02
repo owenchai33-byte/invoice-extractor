@@ -850,8 +850,17 @@ export default function Attendance() {
   selKeyRef.current = selKey;
 
   useEffect(() => {
-    if (data) localStorage.setItem(dataKeyRef.current, JSON.stringify(data));
-    else localStorage.removeItem(dataKeyRef.current);
+    if (data) {
+      const fe = Object.values(data)[0];
+      const pf = fe?.period?.from;
+      if (pf) {
+        const [py, pm] = pf.split('-').map(Number);
+        if (`${ATT_DATA_PREFIX}${py}-${pad(pm)}` !== dataKeyRef.current) return;
+      }
+      localStorage.setItem(dataKeyRef.current, JSON.stringify(data));
+    } else {
+      localStorage.removeItem(dataKeyRef.current);
+    }
   }, [data]);
 
   useEffect(() => {
@@ -875,7 +884,16 @@ export default function Attendance() {
   useEffect(() => {
     try {
       const s = localStorage.getItem(dataKey);
-      setData(s ? JSON.parse(s) : null);
+      if (s) {
+        const parsed = JSON.parse(s);
+        const fe = Object.values(parsed)[0];
+        const pf = fe?.period?.from;
+        if (pf) {
+          const [py, pm] = pf.split('-').map(Number);
+          if (py !== yr || pm !== mo + 1) { localStorage.removeItem(dataKey); setData(null); }
+          else setData(parsed);
+        } else setData(parsed);
+      } else setData(null);
     } catch { setData(null); }
     try {
       setSelected(localStorage.getItem(selKey) || null);
