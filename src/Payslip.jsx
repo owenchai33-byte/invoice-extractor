@@ -355,6 +355,6 @@ const CSS = `
   .ps-page .sig-line{margin-top:auto}
 
   .slip-blank{border:none!important;height:50vh}
-  @page{size:A4 portrait;margin:0}
+  @page{size:A4 portrait;margin:6mm}
 }
 `;
