@@ -568,6 +568,7 @@ export default function App() {
         {active === 'epayslip' && (pinUnlocked ? <EmployeePayslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'merchant' && <MerchantReport />}
         <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
+        {active === 'attendance' && <style>{'@page{margin:6mm}'}</style>}
         <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
         {active === 'bevfoc' && <BeverageFOC />}
         <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>
