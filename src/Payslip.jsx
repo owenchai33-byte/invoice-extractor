@@ -65,12 +65,13 @@ function Slip({ r, mo, yr }) {
             <td className="cl">TOTAL</td><td className="ca">{numFmt(earnTotal)}</td>
             <td className="cl">TOTAL</td><td className="ca">{numFmt(dedTotal)}</td>
           </tr>
-          <tr className="net">
-            <td className="cl">NET PAY</td><td className="ca net-val">{numFmt(r.netPay)}</td>
-            <td></td><td></td>
-          </tr>
         </tbody>
       </table>
+
+      <div className="slip-net">
+        <span className="sn-lb">NET PAY</span>
+        <span className="sn-val">{numFmt(r.netPay)}</span>
+      </div>
 
       <div className="slip-sig">
         <div className="sig-col">
@@ -330,9 +331,10 @@ const CSS = `
 .slip-box th:nth-child(3),.slip-box td:nth-child(3){border-left-color:#000}
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
-/* NET PAY row inside the table */
-.slip-box .net td{border:none;font-weight:700;padding-top:.5em}
-.slip-box .net-val{border-top:1px solid #000!important;border-bottom:3px double #000!important}
+/* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
+.slip-net{display:flex;align-items:center;margin-top:.5em;font-size:1em;font-weight:700}
+.sn-lb{width:20%;flex-shrink:0}
+.sn-val{border:none;border-top:1px solid #000;border-bottom:3px double #000;padding:.2em .5em;font-variant-numeric:tabular-nums;width:30%;text-align:right;box-sizing:border-box}
 
 /* Signature block — label centered above line, signing space between */
 .slip-sig{display:flex;justify-content:space-between;margin-top:3.5em;font-size:1em}
@@ -355,6 +357,6 @@ const CSS = `
   .ps-page .sig-line{margin-top:auto}
 
   .slip-blank{border:none!important;height:50vh}
-  @page{size:A4 portrait;margin:6mm}
+  @page{size:A4 portrait;margin:0}
 }
 `;

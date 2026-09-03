@@ -367,9 +367,9 @@ const CSS = `
 /* ─── Card ─── */
 .ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.55;display:flex;flex-direction:column}
 .ep-halves{display:flex;gap:1cm}
-.ep-sal{flex:1;min-width:0;display:flex;flex-direction:column}
+.ep-sal{flex:1;display:flex;flex-direction:column}
 .ep-sal-full{flex:1}
-.ep-inc{flex:1;min-width:0;display:flex;flex-direction:column}
+.ep-inc{flex:1;display:flex;flex-direction:column}
 
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
 .ep-info{margin-bottom:.6em}
@@ -431,6 +431,6 @@ const CSS = `
   .ep-oth-pr{display:inline!important}
   .fv-wrap{border-bottom:none;cursor:default}
   .fv-tip{display:none!important}
-  @page{size:A4 portrait;margin:6mm}
+  @page{size:A4 portrait;margin:0}
 }
 `;
