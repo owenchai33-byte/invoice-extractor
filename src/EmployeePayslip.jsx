@@ -426,6 +426,8 @@ const CSS = `
   .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 5mm;box-sizing:border-box;min-height:0;overflow:hidden}
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
   .ep-pair-single>.ep-card{flex:none;width:calc(50% - 5mm)}
+  .ep-halves{display:grid;grid-template-columns:1fr 1fr;gap:1cm}
+  .ep-sal-full{grid-column:span 2}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .ep-oth-pr{display:inline!important}
