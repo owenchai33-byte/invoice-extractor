@@ -366,10 +366,10 @@ const CSS = `
 
 /* ─── Card ─── */
 .ep-card{box-sizing:border-box;background:#fff;color:#000;font-family:"Calibri","Segoe UI",system-ui,sans-serif;line-height:1.55;display:flex;flex-direction:column}
-.ep-halves{display:flex;gap:1cm}
-.ep-sal{flex:1;min-width:0;display:flex;flex-direction:column}
-.ep-sal-full{flex:1}
-.ep-inc{flex:1;min-width:0;display:flex;flex-direction:column}
+.ep-halves{display:grid;grid-template-columns:1fr 1fr;gap:1cm}
+.ep-sal{min-width:0;display:flex;flex-direction:column}
+.ep-sal-full{grid-column:1 / -1}
+.ep-inc{min-width:0;display:flex;flex-direction:column}
 
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
 .ep-info{margin-bottom:.6em}
@@ -426,9 +426,9 @@ const CSS = `
   .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 5mm;box-sizing:border-box;min-height:0;overflow:hidden}
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
   .ep-pair-single>.ep-card{flex:none;width:calc(50% - 5mm)}
-  .ep-halves{display:table;table-layout:fixed;width:100%;border-collapse:collapse}
-  .ep-halves .ep-sal:not(.ep-sal-full){display:table-cell;vertical-align:top;padding-right:.5cm}
-  .ep-halves .ep-inc{display:table-cell;vertical-align:top;padding-left:.5cm}
+  .ep-halves{gap:0}
+  .ep-halves .ep-sal:not(.ep-sal-full){padding-right:.5cm}
+  .ep-halves .ep-inc{padding-left:.5cm}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .ep-oth-pr{display:inline!important}
