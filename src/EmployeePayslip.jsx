@@ -41,9 +41,9 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
 
   return (
     <div className={"ep-card" + (compact ? " ep-compact" : "")}>
-      <div className="ep-halves">
+      <div className="ep-halves" style={hasInc ? {display:'flex',gap:0} : undefined}>
         {/* Salary side */}
-        <div className={hasInc ? 'ep-sal' : 'ep-sal ep-sal-full'}>
+        <div className={hasInc ? 'ep-sal' : 'ep-sal ep-sal-full'} style={hasInc ? {width:'50%',minWidth:0,boxSizing:'border-box',paddingRight:'0.5cm'} : undefined}>
           <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
           <div className="ep-info">
             <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
@@ -80,7 +80,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
 
         {/* Incentive side */}
         {hasInc && (
-          <div className="ep-inc">
+          <div className="ep-inc" style={{width:'50%',minWidth:0,boxSizing:'border-box',paddingLeft:'0.5cm'}}>
             <div className="ep-ti">PAYSLIP {MONTHS[mo].toUpperCase()} {yr}</div>
             <div className="ep-info">
               <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
