@@ -317,7 +317,7 @@ const CSS = `
 .si-xs{font-size:.7em}
 
 /* Earnings/Deductions bordered table */
-.slip-box{width:100%;border-collapse:collapse;font-size:1em}
+.slip-box{width:100%;border-collapse:collapse;table-layout:fixed;font-size:1em}
 .slip-box th{border-top:1px solid #000;border-bottom:1px solid #000;border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em;text-align:center;font-weight:700}
 .slip-box td{border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em}
 .slip-box .hl{width:20%}
