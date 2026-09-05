@@ -595,7 +595,7 @@ export default function App() {
         ::selection { background: rgba(10,10,10,0.12); color: #0a0a0a; }
 
         /* ── Mobile (screen only — never affects @media print / PDF output) ── */
-        @media (max-width: 768px) {
+        @media screen and (max-width: 768px) {
           html, body { overflow-x: hidden; }
           .app-shell main { max-width: 100vw; }
           /* Wide desktop tables scroll inside their own box instead of
