@@ -318,17 +318,13 @@ const CSS = `
 
 /* Earnings/Deductions bordered table */
 .slip-box{width:100%;border-collapse:collapse;font-size:1em}
-.slip-box th{border-top:1px solid #000;border-bottom:1px solid #000;border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em;text-align:center;font-weight:700}
-.slip-box td{border-left:1px solid #bbb;border-right:1px solid #bbb;padding:.2em .5em}
+.slip-box th{border:1px solid #000;padding:.2em .5em;text-align:center;font-weight:700}
+.slip-box td{border-left:1px solid #000;border-right:1px solid #000;padding:.2em .5em}
 .slip-box .hl{width:20%}
 .slip-box .ha{width:30%}
 .slip-box .cl{text-align:left}
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
 .slip-box .cl-long{font-size:.75em;white-space:nowrap}
-.slip-box th:first-child,.slip-box td:first-child{border-left-color:#000}
-.slip-box th:last-child,.slip-box td:last-child{border-right-color:#000}
-.slip-box th:nth-child(2),.slip-box td:nth-child(2){border-right-color:#000}
-.slip-box th:nth-child(3),.slip-box td:nth-child(3){border-left-color:#000}
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
