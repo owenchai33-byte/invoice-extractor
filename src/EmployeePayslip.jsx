@@ -232,6 +232,8 @@ export default function EmployeePayslip() {
   const [sel, setSel] = useState(() => rows.length ? rows[0].id : null);
   useEffect(() => { if (screenPages[curPage]) { const ids = screenPages[curPage].items.map(it => it.r.id); if (!ids.includes(sel)) setSel(ids[0]); } }, [curPage, screenPages]);
   const [printMode, setPrintMode] = useState(null);
+  const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  useEffect(() => { document.title = `HQ STAFF PAYSLIP - ${MON_S[mo]}'${String(yr).slice(-2)}`; }, [mo, yr]);
   useEffect(() => { if (printMode) { window.print(); setPrintMode(null); } }, [printMode]);
 
 

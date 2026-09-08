@@ -355,7 +355,7 @@ const CSS=`
 .t.ft tr:hover td{background:#fafafa}
 .t.ft .gh td{background:#f4f4f5}
 .t.ft .ph td{background:#fef3c7}
-.t th{padding:5px 3px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:break-word;line-height:1.15;vertical-align:bottom}
+.t th{padding:5px 3px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap;line-height:1.15;vertical-align:bottom}
 .t th.r{text-align:center}
 .t th.l{text-align:left}
 .t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -453,7 +453,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(14){width:4%!important}    /* Jml EIS */
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
-  .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-wrap:break-word;overflow:hidden;line-height:1.1;vertical-align:middle!important}
+  .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:nowrap!important;overflow:hidden;line-height:1.1;vertical-align:middle!important}
   .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;border-bottom:1px solid #ccc;vertical-align:middle!important}
   .t .lb td{border-bottom:1px solid #000!important}
   .t td:nth-child(n+5){font-size:7pt!important}
@@ -645,7 +645,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const hiddenStaff=useMemo(()=>staff.filter(s=>isHidden(s.id)),[staff,isHidden]);
   const hasNewJoiners=useMemo(()=>visibleStaff.some(s=>s.addedMonth===mk),[visibleStaff,mk]);
   const updateJoinDate=useCallback((sid,date)=>setStaff(p=>p.map(s=>s.id===sid?{...s,joinDate:date}:s)),[]);
-  const fmtJoinDate=d=>{if(!d)return'';const p=d.split('-');if(p.length!==3)return d;return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-MY',{day:'numeric',month:'short'});};
+  const fmtJoinDate=d=>{if(!d)return'';const p=d.split('-');if(p.length!==3)return d;return `${+p[2]}/${+p[1]}/${p[0]}`;};
   // Per-month editable remarks (defined here because they key off `mk`).
   const remarks=remAll[mk]||[''];
   const setRemark=(i,v)=>setRemAll(p=>{const c=[...(p[mk]||[''])];c[i]=v;return{...p,[mk]:c};});
@@ -956,7 +956,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           {!locked&&onRedo&&<button className="b bo pr-act" disabled={!canRedo} onClick={onRedo} title="Redo last change" style={!canRedo?{opacity:.4,cursor:'default'}:undefined}>↪ Redo</button>}
           <button className="b bo" disabled={locked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
-          <button className="b bo pr-act" onClick={()=>window.print()}>Print</button>
+          <button className="b bo pr-act" onClick={()=>{document.title=`HQ STAFF PAYROLL - ${MON_S[mo]}'${String(yr).slice(-2)}`;window.print();}}>Print</button>
         </div>
       </div>
       <div className="body">
