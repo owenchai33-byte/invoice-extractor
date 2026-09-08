@@ -174,18 +174,22 @@ export default function EmployeePayslip() {
       for (const n of attNames) { const nWords = n.split(/\s+/); const shared = rWords.filter(w => nWords.includes(w)).length; if (shared >= 2 && shared > bestCount) { bestCount = shared; best = n; } }
       return best;
     };
-    let matched = 0; const unmatched = []; const details = [];
+    let matched = 0; const unmatched = []; const details = []; const updates = {};
     for (const r of rows) {
       const rName = (r.name || '').trim().toLowerCase();
       const matchName = findMatch(rName);
       const days = matchName !== null ? leave[matchName] : undefined;
       if (days !== undefined) {
-        setAbsV(r.id, days > 0 ? String(days) : '');
+        updates[absK(r.id)] = days > 0 ? String(days) : '';
         matched++;
         details.push(`${r.name}: ${days > 0 ? days : 0}`);
       } else { unmatched.push(r.name); }
     }
     if (matched === 0) { alert(`No matching employees.\n\nPayslip names: ${rows.map(r => r.name).join(', ')}\n\nAttendance names: ${attNames.join(', ')}`); return; }
+    const next = { ...abs, ...updates };
+    setAbs(next);
+    try { localStorage.setItem('cjk_absence', JSON.stringify(next)); } catch {}
+    _touchTs();
     let msg = `Synced ${matched}/${rows.length}.`;
     msg += `\n\n${details.join('\n')}`;
     if (suspectDates.size) msg += `\n\nExcluded ${suspectDates.size} public holiday(s).`;
