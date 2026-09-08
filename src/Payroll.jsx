@@ -477,7 +477,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .notes p.rem-inactive{color:#000;font-weight:700;font-style:normal}
   .t.nj{table-layout:auto!important}
   .t.nj col{width:auto!important}
-  @page{size:A4 landscape;margin:0}
+  @page{size:A4 landscape;margin:15mm 0 0 0}
 }
 .po{display:none}
 @media print{.po{display:block!important;text-align:center;margin-bottom:4px}.po div:first-child{font-size:9pt!important;font-weight:700}.po div:nth-child(2){font-size:8pt!important;font-weight:600}.po div:nth-child(3){font-size:7pt!important;font-weight:700;text-align:left}}
