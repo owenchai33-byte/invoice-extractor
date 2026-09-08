@@ -327,6 +327,10 @@ const CSS = `
 .slip-box .cl{text-align:left}
 .slip-box .ca{text-align:right;font-variant-numeric:tabular-nums}
 .slip-box .cl-long{font-size:.75em;white-space:nowrap}
+.slip-box th:nth-child(1),.slip-box td:nth-child(1){border-right-color:#555}
+.slip-box th:nth-child(2),.slip-box td:nth-child(2){border-left-color:#555}
+.slip-box th:nth-child(3),.slip-box td:nth-child(3){border-right-color:#555}
+.slip-box th:nth-child(4),.slip-box td:nth-child(4){border-left-color:#555}
 .slip-box .tot td{border-top:1px solid #000;border-bottom:1px solid #000}
 
 /* NET PAY row — value box aligned under earnings AMOUNT column like Excel */
