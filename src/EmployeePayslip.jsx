@@ -405,9 +405,9 @@ const CSS = `
 .ep-tbl td.ep-tm+td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
 .ep-split{display:flex;justify-content:space-between;align-items:baseline}
-.ep-nums{font-variant-numeric:tabular-nums;text-align:right}
+.ep-nums{font-variant-numeric:tabular-nums;text-align:right;font-size:1.08em;line-height:1.43}
 .ep-skbbk{white-space:nowrap}
-.ep-tm{text-align:left;font-size:.9em}
+.ep-tm{text-align:left;font-size:1em;line-height:1.43}
 .ep-tbl .ep-tr{text-align:right;font-variant-numeric:tabular-nums;font-size:1.08em;line-height:1.43}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
 .ep-hdr th{border:1px solid #000;text-align:center}
