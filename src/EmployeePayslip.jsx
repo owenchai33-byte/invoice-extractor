@@ -411,6 +411,7 @@ const CSS = `
 .ep-tbl .ep-tr{text-align:right;font-variant-numeric:tabular-nums;font-size:1em}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
 .ep-hdr th{border:1px solid #000;text-align:center}
+.ep-hdr th.ep-tr{text-align:center}
 .ep-bonus td{color:#c00}
 .ep-ded td{font-size:1em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
