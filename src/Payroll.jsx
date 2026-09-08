@@ -355,7 +355,7 @@ const CSS=`
 .t.ft tr:hover td{background:#fafafa}
 .t.ft .gh td{background:#f4f4f5}
 .t.ft .ph td{background:#fef3c7}
-.t th{padding:5px 3px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:nowrap;line-height:1.15;vertical-align:bottom}
+.t th{padding:5px 3px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#71717a;background:#fafafa;border-bottom:1px solid #e4e4e7;white-space:normal;word-break:normal;line-height:1.15;vertical-align:bottom}
 .t th.r{text-align:center}
 .t th.l{text-align:left}
 .t td{padding:4px 3px;border-bottom:1px solid #f4f4f5;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -453,7 +453,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .t.nb col:nth-child(14){width:4%!important}    /* Jml EIS */
   .t.nb col:nth-child(15){width:4%!important}    /* Adv */
   .t.nb col:nth-child(16){width:6%!important}    /* Net Pay */
-  .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:nowrap!important;overflow:hidden;line-height:1.1;vertical-align:middle!important}
+  .t th{position:static;padding:2px 2px;font-size:6pt;background:#f0f0f0!important;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:normal!important;word-break:normal!important;overflow:hidden;line-height:1.1;vertical-align:middle!important}
   .t td{padding:2px 2px;font-size:6.5pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;border-bottom:1px solid #ccc;vertical-align:middle!important}
   .t .lb td{border-bottom:1px solid #000!important}
   .t td:nth-child(n+5){font-size:7pt!important}
