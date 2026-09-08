@@ -405,14 +405,14 @@ const CSS = `
 .ep-tbl td.ep-tm+td.ep-tr{border-left:none}
 .ep-tl{text-align:left}
 .ep-split{display:flex;justify-content:space-between;align-items:baseline}
-.ep-nums{font-variant-numeric:tabular-nums;text-align:right;font-size:1.08em;line-height:1.43}
+.ep-nums{font-variant-numeric:tabular-nums;text-align:right;font-size:1em}
 .ep-skbbk{white-space:nowrap}
-.ep-tm{text-align:left;font-size:1em;line-height:1.43}
-.ep-tbl .ep-tr{text-align:right;font-variant-numeric:tabular-nums;font-size:1.08em;line-height:1.43}
+.ep-tm{text-align:left;font-size:1em}
+.ep-tbl .ep-tr{text-align:right;font-variant-numeric:tabular-nums;font-size:1em}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
 .ep-hdr th{border:1px solid #000;text-align:center}
 .ep-bonus td{color:#c00}
-.ep-ded td{font-size:.92em}
+.ep-ded td{font-size:1em}
 .ep-sub td{border-top:1px solid #000;font-weight:700}
 
 /* ─── NET PAY ─── */
