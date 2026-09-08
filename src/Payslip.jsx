@@ -3,6 +3,7 @@ import { computeStaffMonth, LS_S, LS_P, LS_SB, LS_PIN, LS_H, SAMPLE_STAFF, fmt, 
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MON_S = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
 const numFmt = v => (!v || v === 0) ? '-' : Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const lastDay = (mo, yr) => { const d = new Date(yr, mo + 1, 0); return `${d.getDate()}-${MON3[mo]}-${yr}`; };
@@ -96,6 +97,7 @@ export default function Payslip() {
   const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_ep_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
   const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_ep_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
   useEffect(() => { try { localStorage.setItem('cjk_ep_mo', mo); localStorage.setItem('cjk_ep_yr', yr); } catch {} }, [mo, yr]);
+  useEffect(() => { document.title = `HQ STAFF OFFICIAL PAYSLIP - ${MON_S[mo]}'${String(yr).slice(-2)}`; }, [mo, yr]);
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
