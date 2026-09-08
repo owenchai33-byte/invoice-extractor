@@ -408,7 +408,7 @@ const CSS = `
 .ep-nums{font-variant-numeric:tabular-nums;text-align:right}
 .ep-skbbk{white-space:nowrap}
 .ep-tm{text-align:left;font-size:.9em}
-.ep-tbl .ep-tr{text-align:right;font-variant-numeric:tabular-nums;font-size:1.08em}
+.ep-tbl .ep-tr{text-align:right;font-variant-numeric:tabular-nums;font-size:1.08em;line-height:1.43}
 .ep-ded tr:last-child td,.ep-inc-body tr:last-child td{border-bottom:1px solid #000}
 .ep-hdr th{border:1px solid #000;text-align:center}
 .ep-bonus td{color:#c00}
