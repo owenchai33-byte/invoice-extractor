@@ -97,7 +97,6 @@ export default function Payslip() {
   const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_ep_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
   const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_ep_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
   useEffect(() => { try { localStorage.setItem('cjk_ep_mo', mo); localStorage.setItem('cjk_ep_yr', yr); } catch {} }, [mo, yr]);
-  useEffect(() => { document.title = `HQ STAFF OFFICIAL PAYSLIP - ${MON_S[mo]}'${String(yr).slice(-2)}`; }, [mo, yr]);
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
@@ -142,6 +141,7 @@ export default function Payslip() {
 
   useEffect(() => {
     if (printOnly !== null) {
+      document.title = `HQ STAFF OFFICIAL PAYSLIP - ${MON_S[mo]}'${String(yr).slice(-2)}`;
       window.print();
       setPrintOnly(null);
     }
@@ -207,7 +207,7 @@ export default function Payslip() {
           </div>
           <span className="ps-count">{pairs.length ? `Page ${cur + 1} / ${pairs.length}` : '0'}</span>
           <button className="ps-btn ps-btn-o" onClick={() => setPrintOnly(sel)}>Print current</button>
-          <button className="ps-btn" onClick={() => window.print()}>Print all</button>
+          <button className="ps-btn" onClick={() => {document.title=`HQ STAFF OFFICIAL PAYSLIP - ${MON_S[mo]}'${String(yr).slice(-2)}`;window.print();}}>Print all</button>
         </div>
       </div>
 
