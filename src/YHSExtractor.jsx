@@ -34,7 +34,8 @@ const YHS_SUPPLIER = 'YEO HIAP SENG TRADING SDN BHD';
 // type any other volume via the custom option.
 const COMMON_VOLS = [250, 300, 320, 500, 1000, 1500];
 
-export function volLabel(ml) {
+export function volLabel(ml, unit) {
+  if (unit === 'g') return `${ml}G`;
   return formatVolUnit(ml) || `${ml}ML`;
 }
 
@@ -60,11 +61,16 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
 
   // Aggregate carton counts per volume across every invoice.
   const volMap = {};
+  const unitMap = {};
   invoices.forEach(i => {
     const vols = i.vols || {};
+    const units = i.volUnits || {};
     Object.keys(vols).forEach(ml => {
       const m = Number(ml), c = Number(vols[ml]) || 0;
-      if (m > 0 && c) volMap[m] = (volMap[m] || 0) + c;
+      if (m > 0 && c) {
+        volMap[m] = (volMap[m] || 0) + c;
+        if (units[m]) unitMap[m] = units[m];
+      }
     });
   });
   const volumes = Object.keys(volMap)
@@ -72,7 +78,7 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
       const m = Number(ml), ctn = volMap[ml], r = rateFor(m);
       const ov = (ctnOverrides && ctnOverrides[m] != null) ? Math.max(0, Number(ctnOverrides[m]) || 0) : null;
       const subsidyCtn = ov != null ? ov : ctn;
-      return { ml: m, label: volLabel(m), rate: r, ctn, subsidyCtn, overridden: ov != null, bonus: r4(subsidyCtn * r) };
+      return { ml: m, label: volLabel(m, unitMap[m]), unit: unitMap[m], rate: r, ctn, subsidyCtn, overridden: ov != null, bonus: r4(subsidyCtn * r) };
     })
     .sort((a, b) => a.ml - b.ml);
   const totalBonus = r4(volumes.reduce((s, v) => s + v.bonus, 0));
@@ -204,30 +210,34 @@ export function parseVolInput(str) {
   return Math.round(n);
 }
 
-// Click-to-edit volume label. Shows "320ML"; on click becomes a text box you can
-// type any volume into ("300ML", "1L", "325"). Commits the parsed ml on Enter/blur.
-function EditableVol({ ml, onCommit }) {
+// Click-to-edit volume label. Shows "320ML" or "145G"; on click becomes a text box.
+function EditableVol({ ml, unit, onCommit }) {
   const [editing, setEditing] = useState(false);
-  const [local, setLocal] = useState(volLabel(ml));
+  const [local, setLocal] = useState(volLabel(ml, unit));
   const ref = useRef(null);
-  useEffect(() => { if (!editing) setLocal(volLabel(ml)); }, [ml, editing]);
+  useEffect(() => { if (!editing) setLocal(volLabel(ml, unit)); }, [ml, unit, editing]);
   useEffect(() => { if (editing && ref.current) { ref.current.focus(); ref.current.select(); } }, [editing]);
   const commit = () => {
+    const low = local.trim().toLowerCase();
+    if (low.endsWith('g') && !low.endsWith('mg')) {
+      const n = parseInt(low, 10);
+      if (n > 0) { onCommit(n, 'g'); setEditing(false); return; }
+    }
     const parsed = parseVolInput(local);
-    if (parsed && parsed !== ml) onCommit(parsed);
+    if (parsed && parsed !== ml) onCommit(parsed, 'ml');
     setEditing(false);
   };
   if (editing) {
     return <input ref={ref} type="text" value={local}
       onChange={e => setLocal(e.target.value)}
       onBlur={commit}
-      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setLocal(volLabel(ml)); setEditing(false); } }}
+      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setLocal(volLabel(ml, unit)); setEditing(false); } }}
       className="noP"
       style={{ width: 66, border: '1px solid #2563eb', borderRadius: 3, padding: '1px 3px', fontSize: 16, fontWeight: 700, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />;
   }
   return <span onClick={() => setEditing(true)} className="editable-text" title="Click to edit volume"
     style={{ fontWeight: 700, minWidth: 52, textAlign: 'right', cursor: 'text', padding: '1px 3px', borderRadius: 3, display: 'inline-block' }}>
-    {volLabel(ml)}
+    {volLabel(ml, unit)}
   </span>;
 }
 
@@ -272,15 +282,16 @@ function SumRow({ label, value, sign = '-', bold = false, highlight = false, top
 // Per-invoice volume breakdown cell (only the volumes this invoice carries).
 // Defined at module scope so typing in the add-volume inputs doesn't remount it
 // (an inner component definition would drop focus after a single keystroke).
-function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, changeInvVol }) {
+function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, changeInvVol, setInvVolUnit }) {
   const entries = Object.keys(inv.vols || {}).map(Number).sort((a, b) => a - b).filter(ml => inv.vols[ml] != null);
-  const add = volAdd[inv.id] || { ml: String(COMMON_VOLS[0]), custom: '', ctn: '' };
+  const units = inv.volUnits || {};
+  const add = volAdd[inv.id] || { ml: String(COMMON_VOLS[0]), custom: '', ctn: '', unit: 'ml' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch' }}>
       {entries.length === 0 && <span className="printOnly" style={{ color: '#bbb', fontSize: 13 }}>—</span>}
       {entries.map(ml => (
         <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-          <EditableVol ml={ml} onCommit={newMl => changeInvVol(inv.id, ml, newMl)} />
+          <EditableVol ml={ml} unit={units[ml]} onCommit={(newMl, newUnit) => { changeInvVol(inv.id, ml, newMl); if (newUnit) setInvVolUnit(inv.id, newMl, newUnit); }} />
           <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
           <span style={{ color: '#888', fontSize: 16 }}>CTN</span>
           <button className="noP" onClick={() => removeInvVol(inv.id, ml)} title="Remove volume"
@@ -295,11 +306,17 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
           {COMMON_VOLS.map(ml => <option key={ml} value={String(ml)}>{volLabel(ml)}</option>)}
           <option value="custom">custom…</option>
         </select>
-        {add.ml === 'custom' && (
-          <input type="number" value={add.custom} placeholder="ml"
+        {add.ml === 'custom' && (<>
+          <input type="number" value={add.custom} placeholder="qty"
             onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, custom: e.target.value } }))}
-            style={{ width: 54, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
-        )}
+            style={{ width: 48, fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }} />
+          <select value={add.unit || 'ml'}
+            onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, unit: e.target.value } }))}
+            style={{ fontSize: 12, padding: '2px 4px', border: '1px solid #bbb', borderRadius: 3, fontFamily: F }}>
+            <option value="ml">ml</option>
+            <option value="g">g</option>
+          </select>
+        </>)}
         <input type="number" value={add.ctn} placeholder="CTN"
           onChange={e => setVolAdd(prev => ({ ...prev, [inv.id]: { ...add, ctn: e.target.value } }))}
           onKeyDown={e => e.key === 'Enter' && addInvVol(inv.id)}
@@ -392,11 +409,9 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
     setInvoices(prev => prev.map(inv => {
       if (inv.id !== id) return inv;
       const vols = { ...inv.vols }; delete vols[ml];
-      return { ...inv, vols };
+      const volUnits = { ...(inv.volUnits || {}) }; delete volUnits[ml];
+      return { ...inv, vols, volUnits };
     }));
-  // Re-key one invoice's volume (correct a misread volume, e.g. 320ML → 300ML),
-  // carrying its carton count over. If the target volume already exists on that
-  // invoice, the cartons merge into it.
   const changeInvVol = (id, oldMl, newMl) => {
     if (!newMl || newMl <= 0 || newMl === oldMl) return;
     setInvoices(prev => prev.map(inv => {
@@ -405,18 +420,32 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
       const ctn = Number(vols[oldMl]) || 0;
       delete vols[oldMl];
       vols[newMl] = (Number(vols[newMl]) || 0) + ctn;
-      return { ...inv, vols };
+      const volUnits = { ...(inv.volUnits || {}) };
+      if (volUnits[oldMl]) { volUnits[newMl] = volUnits[oldMl]; delete volUnits[oldMl]; }
+      return { ...inv, vols, volUnits };
     }));
   };
+  const setInvVolUnit = (id, ml, unit) =>
+    setInvoices(prev => prev.map(inv => {
+      if (inv.id !== id) return inv;
+      const volUnits = { ...(inv.volUnits || {}) };
+      if (unit === 'ml') delete volUnits[ml]; else volUnits[ml] = unit;
+      return { ...inv, volUnits };
+    }));
   const addInvVol = (id) => {
     const entry = volAdd[id] || {};
     const ml = entry.ml === 'custom' ? parseInt(entry.custom, 10) : parseInt(entry.ml, 10);
     const ctn = parseInt(entry.ctn, 10);
     if (!ml || ml <= 0 || !ctn || ctn <= 0) return;
-    setInvoices(prev => prev.map(inv => inv.id === id
-      ? { ...inv, vols: { ...inv.vols, [ml]: (Number(inv.vols?.[ml]) || 0) + ctn } }
-      : inv));
-    setVolAdd(prev => ({ ...prev, [id]: { ml: String(COMMON_VOLS[0]), custom: '', ctn: '' } }));
+    const unit = entry.ml === 'custom' ? (entry.unit || 'ml') : 'ml';
+    setInvoices(prev => prev.map(inv => {
+      if (inv.id !== id) return inv;
+      const vols = { ...inv.vols, [ml]: (Number(inv.vols?.[ml]) || 0) + ctn };
+      const volUnits = { ...(inv.volUnits || {}) };
+      if (unit === 'g') volUnits[ml] = 'g'; else delete volUnits[ml];
+      return { ...inv, vols, volUnits };
+    }));
+    setVolAdd(prev => ({ ...prev, [id]: { ml: String(COMMON_VOLS[0]), custom: '', ctn: '', unit: 'ml' } }));
   };
 
   const removeInvoice = id => setInvoices(prev => prev.filter(i => i.id !== id));
@@ -582,7 +611,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
       const volStr = Object.keys(inv.vols || {})
         .map(Number).sort((a, b) => a - b)
         .filter(ml => inv.vols[ml])
-        .map(ml => `${volLabel(ml)}: ${inv.vols[ml]}`).join(', ');
+        .map(ml => `${volLabel(ml, (inv.volUnits || {})[ml])}: ${inv.vols[ml]}`).join(', ');
       d.push([i + 1, inv.invoice_date, inv.invoice_no, inv.amount, inv.qty, volStr]);
     });
     d.push(['TOTAL:', '', '', calc.totalAmount, calc.totalCtn, '']);
@@ -705,7 +734,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                   <td style={T.td}><EditableInt value={inv.qty} onCommit={v => updateField(inv.id, 'qty', v)} /></td>
                   <td style={{ ...T.td, textAlign: 'center' }}>
                     <VolCell inv={inv} volAdd={volAdd} setVolAdd={setVolAdd}
-                      setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} />
+                      setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} setInvVolUnit={setInvVolUnit} />
                   </td>
                 </tr>
               ))}
@@ -871,7 +900,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               <div style={{ marginTop: 16, fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Volume breakdown</div>
               <div style={{ marginTop: 6 }}>
                 <VolCell inv={previewInv} volAdd={volAdd} setVolAdd={setVolAdd}
-                  setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} />
+                  setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} setInvVolUnit={setInvVolUnit} />
               </div>
             </div>
           </div>
