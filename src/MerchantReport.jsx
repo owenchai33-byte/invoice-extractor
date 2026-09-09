@@ -291,7 +291,7 @@ async function processCardPayZip(arrayBuffer) {
 async function mergeCardPayPDFs(pdfs, outlet, month, year) {
   const merged = await PDFDocument.create();
   for (const p of pdfs) {
-    const doc = await PDFDocument.load(p.buf);
+    const doc = await PDFDocument.load(p.buf, { ignoreEncryption: true });
     const pages = await merged.copyPages(doc, doc.getPageIndices());
     pages.forEach(page => merged.addPage(page));
   }
@@ -300,7 +300,9 @@ async function mergeCardPayPDFs(pdfs, outlet, month, year) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `CARDPAY D ${outlet} - ${MON_S[month]}'${String(year).slice(-2)}.pdf`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
 }
 
@@ -516,7 +518,7 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
 async function mergeMyKasihInvoicePDFs(pdfs, outlet, month, year) {
   const merged = await PDFDocument.create();
   for (const p of pdfs) {
-    const doc = await PDFDocument.load(p.buf);
+    const doc = await PDFDocument.load(p.buf, { ignoreEncryption: true });
     const pages = await merged.copyPages(doc, doc.getPageIndices());
     pages.forEach(page => merged.addPage(page));
   }
@@ -798,14 +800,14 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
   for (const ps of periodSales) {
     try {
-      const psDoc = await PDFDocument.load(ps.buf);
+      const psDoc = await PDFDocument.load(ps.buf, { ignoreEncryption: true });
       const pages = await merged.copyPages(psDoc, psDoc.getPageIndices());
       pages.forEach(p => merged.addPage(p));
     } catch (_) {}
   }
 
   try {
-    const txnDoc = await PDFDocument.load(txnBytes);
+    const txnDoc = await PDFDocument.load(txnBytes, { ignoreEncryption: true });
     const pages = await merged.copyPages(txnDoc, txnDoc.getPageIndices());
     pages.forEach(p => merged.addPage(p));
   } catch (_) {}
@@ -1004,9 +1006,13 @@ export default function MerchantReport() {
     if (file) handleCpFile(file);
   };
 
-  const doCpDownload = () => {
+  const doCpDownload = async () => {
     if (!cpResult) return;
-    mergeCardPayPDFs(cpResult.pdfs, cpResult.outlet, cpResult.month, cpResult.year);
+    try {
+      await mergeCardPayPDFs(cpResult.pdfs, cpResult.outlet, cpResult.month, cpResult.year);
+    } catch (err) {
+      setCpError('Download failed: ' + (err.message || 'unknown error'));
+    }
   };
 
   const handleMkFile = async (file) => {
