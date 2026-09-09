@@ -78,7 +78,7 @@ function extractSpayDailies(rawRows) {
 }
 
 async function extractCardpayNetAmount(buf) {
-  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise;
   for (let p = pdf.numPages; p >= 1; p--) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
