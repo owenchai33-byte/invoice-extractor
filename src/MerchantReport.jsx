@@ -752,6 +752,7 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
     const body = [];
     const dailyTotalIndices = new Set();
+    const voidIndices = new Set();
     const voidRows = [];
     let rowNo = 1;
 
@@ -773,9 +774,10 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
       const voidTotal = voidRows.reduce((s, t) => s + t.value, 0);
       voidRows.forEach(t => {
         body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+        voidIndices.add(body.length - 1);
       });
       body.push(['', '', '', '', '', '', '', '', 'Void Total:', '', '', voidTotal.toFixed(2)]);
-      dailyTotalIndices.add(body.length - 1);
+      voidIndices.add(body.length - 1);
     }
 
     autoTable(doc, {
@@ -804,6 +806,10 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
         if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) {
           data.cell.styles.fontStyle = 'bold';
           data.cell.styles.fillColor = [255, 255, 230];
+        }
+        if (data.section === 'body' && voidIndices.has(data.row.index)) {
+          data.cell.styles.textColor = [200, 0, 0];
+          data.cell.styles.fontStyle = 'bold';
         }
       }
     });
@@ -861,6 +867,7 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
   txns.forEach(t => { if (!grouped.has(t.date)) grouped.set(t.date, []); grouped.get(t.date).push(t); });
   const body = [];
   const dailyTotalIndices = new Set();
+  const voidIndices = new Set();
   const voidRows = [];
   let rowNo = 1;
   for (const [dateKey, group] of grouped) {
@@ -881,9 +888,10 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
     const voidTotal = voidRows.reduce((s, t) => s + t.value, 0);
     voidRows.forEach(t => {
       body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+      voidIndices.add(body.length - 1);
     });
     body.push(['', '', '', '', '', '', '', '', 'Void Total:', '', '', voidTotal.toFixed(2)]);
-    dailyTotalIndices.add(body.length - 1);
+    voidIndices.add(body.length - 1);
   }
   autoTable(doc, {
     startY: 14, head: [cols], body,
@@ -891,7 +899,7 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
     headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 5 },
     columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 30 }, 2: { cellWidth: 16 }, 3: { cellWidth: 16 }, 4: { cellWidth: 26 }, 5: { cellWidth: 30 }, 6: { cellWidth: 32 }, 7: { cellWidth: 18 }, 8: { cellWidth: 'auto' }, 9: { cellWidth: 30 }, 10: { cellWidth: 20 }, 11: { cellWidth: 16, halign: 'right' } },
     margin: { left: 5, right: 5 }, theme: 'grid',
-    didParseCell: (data) => { if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 255, 230]; } }
+    didParseCell: (data) => { if (data.section === 'body' && dailyTotalIndices.has(data.row.index)) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [255, 255, 230]; } if (data.section === 'body' && voidIndices.has(data.row.index)) { data.cell.styles.textColor = [200, 0, 0]; data.cell.styles.fontStyle = 'bold'; } }
   });
   const blob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
