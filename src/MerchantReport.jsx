@@ -599,7 +599,12 @@ async function extractEpayTransactions(arrayBuffer) {
         retailerRef: rowData.retailerRef || '', txnNo: rowData.txnNo || '',
         narrative: rowData.narrative || '', snEtuTxnNo: rowData.snEtuTxnNo || '',
         topupRef: rowData.topupRef || '', details: rowData.narrative || '',
-        value: parseFloat((rowData.value || '0').replace(/,/g, ''))
+        value: (() => {
+          const raw = (rowData.value || '0').replace(/,/g, '').trim();
+          const neg = raw.startsWith('(') && raw.endsWith(')');
+          const v = parseFloat(neg ? raw.slice(1, -1) : raw);
+          return isNaN(v) ? 0 : (neg ? -v : v);
+        })()
       });
     }
   }
@@ -618,7 +623,13 @@ function extractEpayTransactionsFromExcel(arrayBuffer) {
     const dtMatch = dt.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+)$/);
     if (!dtMatch) continue;
     const narrative = String(r[7] || '');
-    const val = typeof r[10] === 'number' ? r[10] : parseFloat(String(r[10] || '0').replace(/,/g, ''));
+    const val = (() => {
+      if (typeof r[10] === 'number') return r[10];
+      const raw = String(r[10] || '0').replace(/,/g, '').trim();
+      const neg = raw.startsWith('(') && raw.endsWith(')');
+      const v = parseFloat(neg ? raw.slice(1, -1) : raw);
+      return isNaN(v) ? 0 : (neg ? -v : v);
+    })();
     transactions.push({
       date: dtMatch[1], time: dtMatch[2],
       terminalId: String(r[1]), operator: String(r[2] || ''),
