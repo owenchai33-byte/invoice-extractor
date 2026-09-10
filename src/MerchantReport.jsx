@@ -752,17 +752,30 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
 
     const body = [];
     const dailyTotalIndices = new Set();
+    const voidRows = [];
     let rowNo = 1;
 
     for (const [dateKey, group] of grouped) {
-      const dayTotal = group.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
-      group.forEach((t, idx) => {
+      const reg = group.filter(t => !/^Void:/i.test(t.narrative));
+      const vd = group.filter(t => /^Void:/i.test(t.narrative));
+      voidRows.push(...vd);
+      if (!reg.length) continue;
+      const dayTotal = reg.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
+      reg.forEach((t, idx) => {
         body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
-        if (idx === group.length - 1) {
+        if (idx === reg.length - 1) {
           body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
           dailyTotalIndices.add(body.length - 1);
         }
       });
+    }
+    if (voidRows.length > 0) {
+      const voidTotal = voidRows.reduce((s, t) => s + t.value, 0);
+      voidRows.forEach(t => {
+        body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+      });
+      body.push(['', '', '', '', '', '', '', '', 'Void Total:', '', '', voidTotal.toFixed(2)]);
+      dailyTotalIndices.add(body.length - 1);
     }
 
     autoTable(doc, {
@@ -848,16 +861,29 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
   txns.forEach(t => { if (!grouped.has(t.date)) grouped.set(t.date, []); grouped.get(t.date).push(t); });
   const body = [];
   const dailyTotalIndices = new Set();
+  const voidRows = [];
   let rowNo = 1;
   for (const [dateKey, group] of grouped) {
-    const dayTotal = group.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
-    group.forEach((t, idx) => {
+    const reg = group.filter(t => !/^Void:/i.test(t.narrative));
+    const vd = group.filter(t => /^Void:/i.test(t.narrative));
+    voidRows.push(...vd);
+    if (!reg.length) continue;
+    const dayTotal = reg.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
+    reg.forEach((t, idx) => {
       body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
-      if (idx === group.length - 1) {
+      if (idx === reg.length - 1) {
         body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
         dailyTotalIndices.add(body.length - 1);
       }
     });
+  }
+  if (voidRows.length > 0) {
+    const voidTotal = voidRows.reduce((s, t) => s + t.value, 0);
+    voidRows.forEach(t => {
+      body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+    });
+    body.push(['', '', '', '', '', '', '', '', 'Void Total:', '', '', voidTotal.toFixed(2)]);
+    dailyTotalIndices.add(body.length - 1);
   }
   autoTable(doc, {
     startY: 14, head: [cols], body,
