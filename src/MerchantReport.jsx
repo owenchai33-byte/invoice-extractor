@@ -670,6 +670,9 @@ async function processEpayFiles(files) {
   }
   for (const [, txns] of byOutlet) {
     txns.sort((a, b) => {
+      const aV = /^Void:/i.test(a.narrative) ? 1 : 0;
+      const bV = /^Void:/i.test(b.narrative) ? 1 : 0;
+      if (aV !== bV) return aV - bV;
       const [da, ma, ya] = a.date.split('/').map(Number);
       const [db, mb, yb] = b.date.split('/').map(Number);
       const cmp = (ya - yb) || (ma - mb) || (da - db);
