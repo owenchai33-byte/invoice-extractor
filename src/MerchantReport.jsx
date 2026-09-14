@@ -753,29 +753,29 @@ async function buildEpayPDF(periodSales, byOutlet, month, year) {
     const body = [];
     const dailyTotalIndices = new Set();
     const voidIndices = new Set();
-    const voidRows = [];
     let rowNo = 1;
+    let voidTotal = 0;
 
     for (const [dateKey, group] of grouped) {
       const reg = group.filter(t => !/^Void:/i.test(t.narrative));
       const vd = group.filter(t => /^Void:/i.test(t.narrative));
-      voidRows.push(...vd);
-      if (!reg.length) continue;
-      const dayTotal = reg.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
-      reg.forEach((t, idx) => {
-        body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
-        if (idx === reg.length - 1) {
-          body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
-          dailyTotalIndices.add(body.length - 1);
-        }
-      });
-    }
-    if (voidRows.length > 0) {
-      const voidTotal = voidRows.reduce((s, t) => s + t.value, 0);
-      voidRows.forEach(t => {
+      if (reg.length) {
+        const dayTotal = reg.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
+        reg.forEach((t, idx) => {
+          body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+          if (idx === reg.length - 1) {
+            body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
+            dailyTotalIndices.add(body.length - 1);
+          }
+        });
+      }
+      vd.forEach(t => {
         body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
         voidIndices.add(body.length - 1);
+        voidTotal += t.value;
       });
+    }
+    if (voidTotal !== 0) {
       body.push(['', '', '', '', '', '', '', '', 'Void Total:', '', '', voidTotal.toFixed(2)]);
       voidIndices.add(body.length - 1);
     }
@@ -868,28 +868,28 @@ function buildEpayOutletPDF(txns, outletName, month, year) {
   const body = [];
   const dailyTotalIndices = new Set();
   const voidIndices = new Set();
-  const voidRows = [];
   let rowNo = 1;
+  let voidTotal = 0;
   for (const [dateKey, group] of grouped) {
     const reg = group.filter(t => !/^Void:/i.test(t.narrative));
     const vd = group.filter(t => /^Void:/i.test(t.narrative));
-    voidRows.push(...vd);
-    if (!reg.length) continue;
-    const dayTotal = reg.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
-    reg.forEach((t, idx) => {
-      body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
-      if (idx === reg.length - 1) {
-        body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
-        dailyTotalIndices.add(body.length - 1);
-      }
-    });
-  }
-  if (voidRows.length > 0) {
-    const voidTotal = voidRows.reduce((s, t) => s + t.value, 0);
-    voidRows.forEach(t => {
+    if (reg.length) {
+      const dayTotal = reg.filter(t => !/^Paid:/i.test(t.narrative)).reduce((s, t) => s + t.value, 0);
+      reg.forEach((t, idx) => {
+        body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
+        if (idx === reg.length - 1) {
+          body.push(['', '', '', '', '', '', '', '', `Daily Total (${dateKey}):`, '', '', dayTotal.toFixed(2)]);
+          dailyTotalIndices.add(body.length - 1);
+        }
+      });
+    }
+    vd.forEach(t => {
       body.push([rowNo++, `${t.date} ${t.time}`, t.terminalId, t.operator, t.retailerName, t.storeName, t.retailerRef, t.txnNo, t.narrative, t.snEtuTxnNo, t.topupRef, t.value.toFixed(2)]);
       voidIndices.add(body.length - 1);
+      voidTotal += t.value;
     });
+  }
+  if (voidTotal !== 0) {
     body.push(['', '', '', '', '', '', '', '', 'Void Total:', '', '', voidTotal.toFixed(2)]);
     voidIndices.add(body.length - 1);
   }
