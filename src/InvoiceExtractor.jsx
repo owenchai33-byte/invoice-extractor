@@ -1959,9 +1959,14 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
           )}
         </>)}
 
+        {undoAvailable&&invoices.length===0&&headerActionsRef?.current&&createPortal(
+          <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626'}} onClick={undo}>↩ Undo</button>,
+          headerActionsRef.current
+        )}
+
         {undoAvailable&&invoices.length===0&&(
-          <div className="noP" style={{textAlign:'center',marginTop:12}}>
-            <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626'}} onClick={undo}>↩ Undo Clear</button>
+          <div className="noP" style={{textAlign:'center',marginTop:18,marginBottom:8}}>
+            <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626',fontSize:16,padding:'10px 24px'}} onClick={undo}>↩ Undo Clear — Restore Previous Data</button>
           </div>
         )}
 
