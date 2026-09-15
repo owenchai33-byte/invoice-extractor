@@ -449,12 +449,40 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   };
 
   const removeInvoice = id => setInvoices(prev => prev.filter(i => i.id !== id));
+  const [undoAvailable, setUndoAvailable] = useState(() => {
+    try { return localStorage.getItem(`${LS_YHS}_bak`) != null; } catch { return false; }
+  });
+
   const reset = () => {
-    // Clears the whole list for a fresh delivery. Per-volume RM rates persist
-    // (they're product-stable), but the batch-specific CTN overrides are cleared.
+    if (invoices.length > 0) {
+      try {
+        localStorage.setItem(`${LS_YHS}_bak`, JSON.stringify(invoices));
+        localStorage.setItem(`${LS_VOLCTN}_bak`, JSON.stringify(volCtn));
+        localStorage.setItem(`${LS_META}_bak`, JSON.stringify({ otherDiscount, creditNote }));
+        setUndoAvailable(true);
+      } catch {}
+    }
     setInvoices([]); setUploading(false); setProcessing(false); setError(null);
     setOtherDiscount(0); setCreditNote(0); setPreviewId(null); setVolAdd({}); setVolCtn({});
     if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const undo = () => {
+    try {
+      const inv = JSON.parse(localStorage.getItem(`${LS_YHS}_bak`));
+      if (inv?.length) {
+        setInvoices(inv);
+        const vc = JSON.parse(localStorage.getItem(`${LS_VOLCTN}_bak`) || '{}');
+        setVolCtn(vc);
+        const meta = JSON.parse(localStorage.getItem(`${LS_META}_bak`) || '{}');
+        setOtherDiscount(meta.otherDiscount || 0);
+        setCreditNote(meta.creditNote || 0);
+      }
+      localStorage.removeItem(`${LS_YHS}_bak`);
+      localStorage.removeItem(`${LS_VOLCTN}_bak`);
+      localStorage.removeItem(`${LS_META}_bak`);
+    } catch {}
+    setUndoAvailable(false);
   };
 
   // Read a File into a data URL.
@@ -839,6 +867,11 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               <button style={btn(0)} onClick={() => setUploading(true)}>+ Add Invoice</button>
               <button style={btn(1)} onClick={() => window.print()}>🖨 Print / Save PDF</button>
               <button style={{...btn(0),background:'#059669',color:'#fff',border:'1px solid #059669'}} onClick={() => { reset(); }}>Upload New</button>
+            </div>
+          )}
+          {undoAvailable && invoices.length === 0 && (
+            <div className="noP" style={{ textAlign: 'center', marginTop: 12 }}>
+              <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626'}} onClick={undo}>↩ Undo Clear</button>
             </div>
           )}
         </>)}

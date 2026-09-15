@@ -1485,7 +1485,35 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
     XLSX.writeFile(wb,'Payment_Summary_'+config.name.split(' ')[0]+'.xlsx');
   };
 
-  const reset=()=>{setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setCnNums({});setManualEntry({});setPreviewInvId(null);if(fileRef.current)fileRef.current.value='';};
+  const [undoAvailable,setUndoAvailable]=useState(()=>{ try{ return localStorage.getItem(`${LS_INV}_bak`)!=null }catch{ return false } });
+
+  const reset=()=>{
+    if(invoices.length>0){
+      try{
+        localStorage.setItem(`${LS_INV}_bak`,JSON.stringify(invoices));
+        localStorage.setItem(`${LS_CN}_bak`,JSON.stringify(cnValues));
+        localStorage.setItem(`${LS_CNN}_bak`,JSON.stringify(cnNums));
+        setUndoAvailable(true);
+      }catch{}
+    }
+    setInvoices([]);setUploading(false);setProcessing(false);setError(null);setCnValues({});setCnNums({});setManualEntry({});setPreviewInvId(null);if(fileRef.current)fileRef.current.value='';
+  };
+
+  const undo=()=>{
+    try{
+      const inv=JSON.parse(localStorage.getItem(`${LS_INV}_bak`));
+      if(inv?.length){
+        setInvoices(inv);
+        setCnValues(JSON.parse(localStorage.getItem(`${LS_CN}_bak`)||'{}'));
+        setCnNums(JSON.parse(localStorage.getItem(`${LS_CNN}_bak`)||'{}'));
+      }
+      localStorage.removeItem(`${LS_INV}_bak`);
+      localStorage.removeItem(`${LS_CN}_bak`);
+      localStorage.removeItem(`${LS_CNN}_bak`);
+    }catch{}
+    setUndoAvailable(false);
+  };
+
   const showUpload=invoices.length===0||uploading;
 
   return(
@@ -1927,6 +1955,11 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
               <button style={btn(0)} onClick={()=>setUploading(true)}>+ Add Invoice</button>
               <button style={btn(1)} onClick={()=>window.print()}>🖨 Print / Save PDF</button>
               <button style={{...btn(0),background:'#059669',color:'#fff',border:'1px solid #059669'}} onClick={()=>{ reset(); }}>Upload New</button>
+            </div>
+          )}
+          {undoAvailable&&invoices.length===0&&(
+            <div className="noP" style={{textAlign:'center',marginTop:12}}>
+              <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626'}} onClick={undo}>↩ Undo Clear</button>
             </div>
           )}
         </>)}
