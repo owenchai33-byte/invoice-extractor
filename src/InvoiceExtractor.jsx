@@ -1957,12 +1957,13 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
               <button style={{...btn(0),background:'#059669',color:'#fff',border:'1px solid #059669'}} onClick={()=>{ reset(); }}>Upload New</button>
             </div>
           )}
-          {undoAvailable&&invoices.length===0&&(
-            <div className="noP" style={{textAlign:'center',marginTop:12}}>
-              <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626'}} onClick={undo}>↩ Undo Clear</button>
-            </div>
-          )}
         </>)}
+
+        {undoAvailable&&invoices.length===0&&(
+          <div className="noP" style={{textAlign:'center',marginTop:12}}>
+            <button style={{...btn(0),background:'#dc2626',color:'#fff',border:'1px solid #dc2626'}} onClick={undo}>↩ Undo Clear</button>
+          </div>
+        )}
 
         {/* UPLOAD */}
         {showUpload&&!processing&&apiKey&&(
