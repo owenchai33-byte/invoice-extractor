@@ -244,8 +244,8 @@ function EditableVol({ ml, unit, onCommit }) {
 const T = {
   th: { border: B, padding: '9px 6px', fontWeight: 700, fontSize: 13, textAlign: 'center', background: '#f0f0f0', fontFamily: F },
   td: { border: B, padding: '7px 8px', fontSize: 16, textAlign: 'center', verticalAlign: 'middle', fontFamily: F, fontVariantNumeric: 'tabular-nums' },
-  bxL: { border: 'none', padding: '5px 14px', fontSize: 15, fontWeight: 700, textAlign: 'right', fontFamily: F },
-  bxM: { border: 'none', padding: '5px 10px', fontSize: 15, fontWeight: 700, textAlign: 'center', fontFamily: F, width: 24 },
+  bxL: { border: 'none', padding: '5px 14px', fontSize: 16, fontWeight: 700, textAlign: 'right', fontFamily: F },
+  bxM: { border: 'none', padding: '5px 10px', fontSize: 16, fontWeight: 700, textAlign: 'center', fontFamily: F, width: 24 },
   bxR: { border: 'none', padding: '5px 14px', fontSize: 16, fontWeight: 700, textAlign: 'right', fontFamily: F, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
 };
 const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '1px solid #aaa', fontWeight: 600, fontSize: 14, cursor: 'pointer', background: p ? '#111' : '#fff', color: p ? '#fff' : '#333', fontFamily: F });
@@ -673,7 +673,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
           html,body{margin:0!important;padding:0!important;background:#fff}
           /* Flatten the 100vh root so it can't push a blank page in print. */
           .ext-root{min-height:0!important}
-          @page{size:A4 portrait;margin:7mm 8mm 7mm 15mm}
+          @page{size:A4 portrait;margin:6mm 6mm 6mm 12mm}
           .wrap{max-width:100%!important;padding:0!important}
           .print-area{font-size:11px!important}
           .print-area table{font-size:10.5px!important}
