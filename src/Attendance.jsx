@@ -137,7 +137,7 @@ async function parsePDF(buf) {
       const y = Math.round(item.transform[5]);
       let key = null;
       for (const [k] of rowMap) {
-        if (Math.abs(k - y) < 5) { key = k; break; }
+        if (Math.abs(k - y) < 10) { key = k; break; }
       }
       if (key !== null) rowMap.get(key).push(item);
       else rowMap.set(y, [item]);
@@ -202,10 +202,22 @@ function processRecords({ records, from, to }) {
   const emps = {};
   for (const r of records) {
     if (!emps[r.id]) emps[r.id] = { id: r.id, name: r.name, scans: {} };
+    else if (r.name.length > emps[r.id].name.length) emps[r.id].name = r.name;
     const dk = r.date.replace(/\//g, '-');
     if (!emps[r.id].scans[dk]) emps[r.id].scans[dk] = [];
     const [h, m] = r.time.split(':').map(Number);
     emps[r.id].scans[dk].push({ h, m });
+  }
+
+  const payrollNames = getPayrollOrder();
+  if (payrollNames.length) {
+    for (const emp of Object.values(emps)) {
+      const attName = emp.name.toUpperCase().trim();
+      const idx = fuzzyMatch(attName, payrollNames);
+      if (idx !== -1 && payrollNames[idx].length > attName.length) {
+        emp.name = payrollNames[idx];
+      }
+    }
   }
 
   if (!from || !to) {
