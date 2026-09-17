@@ -508,8 +508,7 @@ function AttTableBody({ days }) {
           const first = g.days[0], last = g.days[g.days.length - 1];
           return (
             <tr key={first.date} style={{ background: '#fef3c7' }}>
-              <td style={{ ...td, fontWeight: 700 }}>{first.dateShort}</td>
-              <td style={{ ...td, fontWeight: 700 }}>{last.dateShort}</td>
+              <td colSpan={2} style={{ ...td, fontWeight: 700 }}>{first.dateShort} ({first.day}) – {last.dateShort} ({last.day})</td>
               <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#b45309', fontStyle: 'italic', fontWeight: 700 }}>
                 Absent ({g.absentCount} days) — No attendance recorded
               </td>
