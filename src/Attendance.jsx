@@ -1170,7 +1170,7 @@ export default function Attendance() {
           <div className="att-layout" style={{ display: 'flex', gap: 16 }}>
           {empIds.length > 1 && (
             <div className="att-no-print att-sidebar" style={{
-              width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2,
+              width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2,
               maxHeight: 'calc(100vh - 100px)', overflowY: 'auto', position: 'sticky', top: 16,
               padding: '8px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e4e4e7',
             }}>
@@ -1181,7 +1181,7 @@ export default function Attendance() {
                   onClick={() => setSelected(id)}
                   style={{
                     padding: '6px 10px', borderRadius: 6, fontSize: 11.5, cursor: 'pointer',
-                    fontFamily: 'inherit', textAlign: 'left', width: '100%',
+                    fontFamily: 'inherit', textAlign: 'left', width: '100%', whiteSpace: 'normal',
                     border: selected === id ? '1.5px solid #18181b' : '1px solid transparent',
                     background: selected === id ? '#18181b' : 'transparent',
                     color: selected === id ? '#fff' : '#18181b',
@@ -1476,7 +1476,7 @@ export default function Attendance() {
               .att-print-header .att-h2 { font-size: 12px !important; margin-top: 0px !important; }
               .att-print-header .att-h3 { font-size: 10px !important; margin-top: 0px !important; }
               .att-print-emp-info { display: none !important; }
-              .att-emp-name { font-size: 12px !important; font-weight: 700 !important; margin-top: 2px !important; }
+              .att-emp-name { font-size: 12px !important; font-weight: 700 !important; margin-top: 2px !important; white-space: normal !important; overflow: visible !important; }
               .att-print-all .att-single-view { display: none !important; }
               .att-print-all .att-all-view { display: block !important; }
               .att-print-all .att-overview-view { display: block !important; }
@@ -1487,11 +1487,11 @@ export default function Attendance() {
               .att-overview-view .att-table { table-layout: fixed !important; }
               .att-overview-view .att-table td, .att-overview-view .att-table th { white-space: normal !important; overflow: visible !important; }
               .att-overview-view .att-table th:nth-child(1), .att-overview-view .att-table td:nth-child(1) { width: 4% !important; text-align: center !important; }
-              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 20% !important; }
+              .att-overview-view .att-table th:nth-child(2), .att-overview-view .att-table td:nth-child(2) { width: 26% !important; }
               .att-overview-view .att-table th:nth-child(3), .att-overview-view .att-table td:nth-child(3) { width: 7% !important; text-align: center !important; }
               .att-overview-view .att-table th:nth-child(4), .att-overview-view .att-table td:nth-child(4) { width: 7% !important; text-align: center !important; }
-              .att-overview-view .att-table th:nth-child(5), .att-overview-view .att-table td:nth-child(5) { width: 24% !important; }
-              .att-overview-view .att-table th:nth-child(6), .att-overview-view .att-table td:nth-child(6) { width: 24% !important; }
+              .att-overview-view .att-table th:nth-child(5), .att-overview-view .att-table td:nth-child(5) { width: 21% !important; }
+              .att-overview-view .att-table th:nth-child(6), .att-overview-view .att-table td:nth-child(6) { width: 21% !important; }
               .att-overview-view .att-table th:nth-child(7), .att-overview-view .att-table td:nth-child(7) { width: 7% !important; text-align: center !important; }
               .att-notes-box { margin-top: 4px !important; overflow: visible !important; width: 100% !important; border-radius: 0 !important; box-sizing: border-box !important; border: 1px solid #999 !important; }
               .att-notes-box div:first-child { padding: 3px 8px !important; font-size: 10.5px !important; border-bottom: 1px solid #999 !important; }
