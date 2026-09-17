@@ -143,15 +143,24 @@ async function parsePDF(buf) {
       else rowMap.set(y, [item]);
     }
 
-    for (const [, ri] of [...rowMap.entries()].sort((a, b) => b[0] - a[0])) {
-      const text = ri.sort((a, b) => a.transform[4] - b.transform[4]).map(i => i.str.trim()).join(' ');
+    const sortedRows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
+    let pending = null;
+    for (const [, ri] of sortedRows) {
+      let text = ri.sort((a, b) => a.transform[4] - b.transform[4]).map(i => i.str.trim()).join(' ');
 
       const pm = text.match(/From\s+(\d{4}\/\d{2}\/\d{2})\s+to\s+(\d{4}\/\d{2}\/\d{2})/i);
-      if (pm) { from = pm[1]; to = pm[2]; continue; }
+      if (pm) { from = pm[1]; to = pm[2]; pending = null; continue; }
+
+      if (pending) {
+        text = pending + ' ' + text;
+        pending = null;
+      }
 
       const m = text.match(/^(\d+)\s+(.+?)\s+(\d{4}\/\d{2}\/\d{2})\s+(\d{2}:\d{2}:\d{2})\s+Check/i);
       if (m) {
         records.push({ id: parseInt(m[1]), name: m[2].trim(), date: m[3], time: m[4] });
+      } else if (/^\d+\s+\S/.test(text) && !/\d{4}\/\d{2}\/\d{2}/.test(text)) {
+        pending = text;
       }
     }
   }
