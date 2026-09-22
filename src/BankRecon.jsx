@@ -863,7 +863,7 @@ export default function BankRecon() {
                       )}
                       {types.map(({ key, label, keyword }) => {
                         const outlets = posData[key] ? Object.keys(posData[key]) : [];
-                        const selected = posOutletFilter[key] || null;
+                        const selected = posOutletFilter[key] || (outlets.length > 1 && outlets.includes('HQ') ? new Set(['HQ']) : null);
                         const posDailies = sumPOSOutlets(posData[key], selected);
                         const bankDailies = bankMatch[key];
                         const batchLookup = findBatchMatches(posDailies, bankDailies);
@@ -877,10 +877,10 @@ export default function BankRecon() {
                         const totalBank = Object.values(bankDailies).reduce((s, v) => s + v, 0);
                         const toggleOutlet = (o) => {
                           setPosOutletFilter(prev => {
-                            const cur = prev[key] || new Set(outlets);
+                            const defaultSet = outlets.length > 1 && outlets.includes('HQ') ? new Set(['HQ']) : new Set(outlets);
+                            const cur = prev[key] || defaultSet;
                             const next = new Set(cur);
                             if (next.has(o)) next.delete(o); else next.add(o);
-                            if (next.size === outlets.length) { const p = { ...prev }; delete p[key]; return p; }
                             return { ...prev, [key]: next };
                           });
                         };
