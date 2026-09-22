@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Component } from 'react';
 import InvoicesWorkspace from './InvoicesWorkspace';
 import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
@@ -11,6 +11,24 @@ import BeverageFOC from './BeverageFOC';
 import StatutorySummary from './StatutorySummary';
 import EInvoiceRecon from './EInvoiceRecon';
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
+
+class SafeSection extends Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 24, marginBottom: 8 }}>⚠️</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Something went wrong in this section</div>
+          <div style={{ fontSize: 12, color: '#71717a', marginBottom: 16 }}>{String(this.state.error?.message || '')}</div>
+          <button onClick={() => this.setState({ error: null })} style={{ padding: '8px 20px', background: '#171717', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>Try Again</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /*
  * ─── Audrey's Message Center ───
@@ -567,9 +585,9 @@ export default function App() {
         {active === 'payslip' && (pinUnlocked ? <Payslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'epayslip' && (pinUnlocked ? <EmployeePayslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'merchant' && <MerchantReport />}
-        <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><BankRecon /></div>
+        <div style={{display: active === 'bankrecon' ? 'block' : 'none'}}><SafeSection><BankRecon /></SafeSection></div>
         {active === 'attendance' && <style>{'@page{margin:6mm}'}</style>}
-        <div style={{display: active === 'attendance' ? 'block' : 'none'}}><Attendance /></div>
+        <div style={{display: active === 'attendance' ? 'block' : 'none'}}><SafeSection><Attendance /></SafeSection></div>
         {active === 'bevfoc' && <BeverageFOC />}
         <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>
         {active === 'einvoice' && <EInvoiceRecon />}
