@@ -496,11 +496,11 @@ function buildMyKasihExcelPDF(excels, outlet, month, year) {
       if (filled.length < 1) return;
       const val = filled[filled.length - 1];
       const label = filled.slice(0, -1).join(' ');
-      doc.setFontSize(7);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text(label, 170, finalY, { align: 'right' });
       doc.text(typeof val === 'number' ? val.toFixed(2) : String(val || ''), 200, finalY, { align: 'right' });
-      finalY += 4;
+      finalY += 5;
     });
   }
 
