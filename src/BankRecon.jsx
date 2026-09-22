@@ -521,7 +521,9 @@ export default function BankRecon() {
 
   useEffect(() => {
     if (result) {
-      localStorage.setItem(LS_BR, JSON.stringify({ v: BR_VER, result, excluded: [...excluded], collapsed: [...collapsed] }));
+      try {
+        localStorage.setItem(LS_BR, JSON.stringify({ v: BR_VER, result, excluded: [...excluded], collapsed: [...collapsed] }));
+      } catch {}
     }
   }, [result, excluded, collapsed]);
 
