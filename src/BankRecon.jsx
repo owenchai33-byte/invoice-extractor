@@ -186,10 +186,11 @@ function findBatchMatches(posDailies, bankDailies) {
   return lookup;
 }
 
-function sumPOSOutlets(typeData) {
+function sumPOSOutlets(typeData, selectedOutlets) {
   const totals = {};
   if (!typeData) return totals;
-  for (const outletData of Object.values(typeData)) {
+  for (const [outlet, outletData] of Object.entries(typeData)) {
+    if (selectedOutlets && !selectedOutlets.has(outlet)) continue;
     for (const [date, amt] of Object.entries(outletData)) {
       totals[date] = (totals[date] || 0) + amt;
     }
@@ -497,6 +498,7 @@ export default function BankRecon() {
   const spayRef = useRef(null);
   const cpRef = useRef(null);
   const mkRef = useRef(null);
+  const [posOutletFilter, setPosOutletFilter] = useState({});
   const loadPosData = () => { try { const s = localStorage.getItem('br_pos_daily'); setPosData(s ? JSON.parse(s) : {}); } catch { setPosData({}); } };
   const handlePosUpload = async (type, parser, e) => {
     const file = e.target.files?.[0];
@@ -860,7 +862,9 @@ export default function BankRecon() {
                         </div>
                       )}
                       {types.map(({ key, label, keyword }) => {
-                        const posDailies = sumPOSOutlets(posData[key]);
+                        const outlets = posData[key] ? Object.keys(posData[key]) : [];
+                        const selected = posOutletFilter[key] || null;
+                        const posDailies = sumPOSOutlets(posData[key], selected);
                         const bankDailies = bankMatch[key];
                         const batchLookup = findBatchMatches(posDailies, bankDailies);
                         const allDates = [...new Set([...Object.keys(posDailies), ...Object.keys(bankDailies)])].sort((a, b) => {
@@ -871,9 +875,29 @@ export default function BankRecon() {
                         if (!allDates.length) return null;
                         const totalPOS = Object.values(posDailies).reduce((s, v) => s + v, 0);
                         const totalBank = Object.values(bankDailies).reduce((s, v) => s + v, 0);
+                        const toggleOutlet = (o) => {
+                          setPosOutletFilter(prev => {
+                            const cur = prev[key] || new Set(outlets);
+                            const next = new Set(cur);
+                            if (next.has(o)) next.delete(o); else next.add(o);
+                            if (next.size === outlets.length) { const p = { ...prev }; delete p[key]; return p; }
+                            return { ...prev, [key]: next };
+                          });
+                        };
                         return (
                           <div key={key} style={{ marginBottom: 20 }}>
                             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, borderBottom: '1px solid #e4e4e7', paddingBottom: 4 }}>{label} <span style={{ fontSize: 11, color: '#71717a', fontWeight: 400 }}>bank keyword: {keyword}</span></div>
+                            {outlets.length > 1 && (
+                              <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <span style={{ fontSize: 11, color: '#71717a', fontWeight: 600 }}>Outlets:</span>
+                                {outlets.sort().map(o => {
+                                  const isOn = !selected || selected.has(o);
+                                  return <label key={o} style={{ fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                    <input type="checkbox" checked={isOn} onChange={() => toggleOutlet(o)} style={{ margin: 0 }} />{o}
+                                  </label>;
+                                })}
+                              </div>
+                            )}
                             <table className="br-table">
                               <thead>
                                 <tr><th>Date</th><th className="br-amt">POS Amount</th><th className="br-amt">Bank Credit</th><th className="br-amt">Diff</th><th>Status</th></tr>
