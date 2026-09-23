@@ -448,7 +448,7 @@ const CSS = `
 .br-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .br-tag.charge{background:#eff6ff;color:#2563eb}
 .br-tag.loan{background:#fef2f2;color:#dc2626}
-.br-desc{position:relative;max-width:340px;cursor:default}
+.br-desc{position:relative;max-width:340px;cursor:default;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .br-noname{color:#dc2626;font-weight:600;font-size:10px;margin-left:6px}
 .br-desc:hover .br-tip{display:block}
 .br-tip{display:none;position:absolute;right:0;top:100%;z-index:100;background:#18181b;color:#fff;padding:8px 12px;border-radius:6px;font-size:11px;white-space:pre-line;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,.15);pointer-events:none;line-height:1.5}

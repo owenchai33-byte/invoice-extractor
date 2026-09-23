@@ -23,7 +23,7 @@ const PROTECTED_FORMATS = {
   'src/BeverageFOC.jsx':      '27319168abc50c81',
   'src/EmployeePayslip.jsx':  '54a2f27bf0d064f6',
   'src/MerchantReport.jsx':   '162fa68fe0a043b4',
-  'src/BankRecon.jsx':        '3d90d83a9b95eeb7',
+  'src/BankRecon.jsx':        '0601c2a784d7f8e7',
 };
 
 const root = resolve(__dirname, '../..');
