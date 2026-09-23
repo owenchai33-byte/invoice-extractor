@@ -470,6 +470,7 @@ const CSS = `
 .br-dh .br-arrow{display:inline-block;width:14px;font-size:10px;color:#71717a;margin-right:4px;transition:transform .15s}
 .br-dh .br-arrow.open{transform:rotate(90deg)}
 .br-dh-count{font-size:10px;color:#71717a;font-weight:400;margin-left:8px}
+@media(max-width:900px){.br-body{padding:16px 12px}.br-body-inner{padding:10px 8px}}
 @media print{.br-root{display:none}}
 `;
 
