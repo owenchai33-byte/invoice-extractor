@@ -473,12 +473,18 @@ const CSS = `
 @media print{.br-root{display:none}}
 `;
 
-const BR_VER = 14;
+const BR_VER = 15;
 const LS_BR = 'br_saved';
 function loadSaved() {
   try {
     const s = localStorage.getItem(LS_BR);
-    if (s) { const d = JSON.parse(s); if (d && d.v === BR_VER) return d; }
+    if (s) {
+      const d = JSON.parse(s);
+      if (d && d.v === BR_VER && d.txns) {
+        const classified = classifyBankTxns(d.txns);
+        return { ...d, result: { txns: d.txns, ...classified, totalTxns: d.txns.length, totalPages: d.totalPages || 0 } };
+      }
+    }
     localStorage.removeItem(LS_BR);
   } catch {} return null;
 }
@@ -524,7 +530,7 @@ export default function BankRecon() {
   useEffect(() => {
     if (result) {
       try {
-        localStorage.setItem(LS_BR, JSON.stringify({ v: BR_VER, result, excluded: [...excluded], collapsed: [...collapsed] }));
+        localStorage.setItem(LS_BR, JSON.stringify({ v: BR_VER, txns: result.txns, totalPages: result.totalPages, excluded: [...excluded], collapsed: [...collapsed] }));
       } catch {}
     }
   }, [result, excluded, collapsed]);
