@@ -1943,6 +1943,30 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
             </div>
           </div>
 
+          {/* CONDENSED INVOICE NUMBERS — copy-paste for DN */}
+          {(() => {
+            const nums = invoices.map(inv => (inv.raw?.invoice_no || '').trim()).filter(Boolean).sort();
+            if (nums.length < 1) return null;
+            const condensed = [];
+            let prevPrefix = '';
+            for (const n of nums) {
+              if (!prevPrefix) { condensed.push(n); prevPrefix = n.replace(/\d+$/, ''); }
+              else {
+                const curPrefix = n.replace(/\d+$/, '');
+                const suffix = n.slice(curPrefix.length);
+                if (curPrefix === prevPrefix && suffix) condensed.push(suffix);
+                else { condensed.push(n); prevPrefix = curPrefix; }
+              }
+            }
+            const text = condensed.join(', ');
+            return (
+              <div className="noP" style={{ margin: '12px 0', padding: '10px 14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, fontSize: 13 }}>
+                <div style={{ fontWeight: 700, fontSize: 11, color: '#0369a1', marginBottom: 4 }}>INVOICE NOS. (for DN)</div>
+                <div style={{ fontFamily: 'monospace', userSelect: 'all', cursor: 'text', wordBreak: 'break-all' }}>{text}</div>
+              </div>
+            );
+          })()}
+
           {/* BUTTONS — portalled to header bar when available, inline fallback */}
           {headerActionsRef?.current ? createPortal(
             <>
