@@ -59,6 +59,8 @@ const REMINDERS = [
   { period: 'END-MONTH', suppliers: ['MUI HIONG', 'SUNRISE', 'JI-FENG', 'TA YUNG', 'YEON', 'S.G.', 'PTH'] },
 ];
 
+const LS_CUSTOM_SUP = 'cjk_wp_custom_suppliers';
+function loadCustomSuppliers() { try { return JSON.parse(localStorage.getItem(LS_CUSTOM_SUP)) || []; } catch { return []; } }
 const BANK_MAP = Object.fromEntries(SUPPLIERS.map(s => [s.name, s.bank]));
 
 const nf = v => Number(v).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -129,6 +131,21 @@ export default function WeeklyPayment() {
   const [weekDate2, setWeekDate2] = useState(() => allData._currentWeek2 || '');
   const [activeWeek, setActiveWeek] = useState(1);
   const [undoWeek, setUndoWeek] = useState(null);
+  const [customSuppliers, setCustomSuppliers] = useState(loadCustomSuppliers);
+  const [newSupName, setNewSupName] = useState('');
+  const [newSupBank, setNewSupBank] = useState('');
+  const allSuppliers = [...SUPPLIERS, ...customSuppliers].sort((a, b) => a.name.localeCompare(b.name));
+  const allBankMap = Object.fromEntries(allSuppliers.map(s => [s.name, s.bank]));
+  const addCustomSupplier = () => {
+    const name = newSupName.trim().toUpperCase();
+    const bank = newSupBank.trim();
+    if (!name) return;
+    if (allSuppliers.some(s => s.name === name)) return;
+    const updated = [...customSuppliers, { name, bank }];
+    setCustomSuppliers(updated);
+    try { localStorage.setItem(LS_CUSTOM_SUP, JSON.stringify(updated)); } catch {}
+    setNewSupName(''); setNewSupBank('');
+  };
 
   const save = useCallback((newData) => {
     setAllData(newData);
@@ -259,25 +276,33 @@ export default function WeeklyPayment() {
             />
           </div>
           <div className="wp-sidebar-list">
-            {SUPPLIERS.filter(s => !supSearch || s.name.toLowerCase().includes(supSearch.toLowerCase())).map(s => {
+            {allSuppliers.filter(s => !supSearch || s.name.toLowerCase().includes(supSearch.toLowerCase())).map(s => {
               const used = activeRows.some(r => r.supplier === s.name);
+              const isCustom = customSuppliers.some(c => c.name === s.name);
               return (
                 <button
                   key={s.name}
                   className={'wp-sidebar-item' + (used ? ' wp-sidebar-used' : '')}
                   onClick={() => {
                     if (!activeWk) return;
-                    const bank = BANK_MAP[s.name] || '';
+                    const bank = allBankMap[s.name] || '';
                     const wd = activeWeek === 1 ? data1 : data2;
                     const rs = activeWeek === 1 ? rows1 : rows2;
                     updateWeekData(activeWk, wd, { rows: [...rs, { supplier: s.name, bank, amount: '', paymentFor: '', remark: '' }] });
                   }}
                 >
                   {s.name}
+                  {isCustom && <span style={{ fontSize: 9, color: '#2563eb', marginLeft: 4 }}>★</span>}
                   {used && <span className="wp-sidebar-tick"> ✓</span>}
                 </button>
               );
             })}
+          </div>
+          <div style={{ padding: '8px 6px', borderTop: '1px solid #e4e4e7' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#71717a', marginBottom: 4 }}>ADD NEW SUPPLIER</div>
+            <input value={newSupName} onChange={e => setNewSupName(e.target.value)} placeholder="Supplier name" style={{ width: '100%', boxSizing: 'border-box', fontSize: 11, padding: '4px 6px', border: '1px solid #d4d4d8', borderRadius: 4, marginBottom: 4 }} />
+            <input value={newSupBank} onChange={e => setNewSupBank(e.target.value)} placeholder="Bank account (e.g. PBB 312...)" style={{ width: '100%', boxSizing: 'border-box', fontSize: 11, padding: '4px 6px', border: '1px solid #d4d4d8', borderRadius: 4, marginBottom: 4 }} />
+            <button onClick={addCustomSupplier} disabled={!newSupName.trim()} style={{ width: '100%', fontSize: 11, fontWeight: 600, padding: '4px 0', border: '1px solid #2563eb', borderRadius: 4, background: '#2563eb', color: '#fff', cursor: newSupName.trim() ? 'pointer' : 'not-allowed', opacity: newSupName.trim() ? 1 : 0.5 }}>+ Add</button>
           </div>
         </div>
 
