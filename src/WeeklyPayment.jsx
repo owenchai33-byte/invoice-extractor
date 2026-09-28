@@ -431,9 +431,9 @@ export default function WeeklyPayment() {
                 value={data1.epayBalance}
                 onChange={e => {
                   const patch = { epayBalance: e.target.value };
-                  if (e.target.value && !data1.epayDate) {
-                    patch.epayDate = new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                  }
+                  patch.epayDate = e.target.value
+                    ? new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+                    : '';
                   updateWeekData(weekDate, data1, patch);
                 }}
                 placeholder="0.00"
