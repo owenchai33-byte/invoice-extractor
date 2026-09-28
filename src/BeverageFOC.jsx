@@ -154,11 +154,12 @@ export default function BeverageFOC() {
   };
 
   const calc = useMemo(() => {
-    let bevTotal = 0, dairyTotal = 0, dairyCtns = 0;
+    let bevTotal = 0, bevCtns = 0, dairyTotal = 0, dairyCtns = 0;
     const bevRows = BEVERAGES.map(b => {
       const q = parseFloat(qty[b.key]) || 0;
       const rebate = q * b.rate;
       bevTotal += rebate;
+      bevCtns += q;
       return { ...b, qty: q, rebate };
     });
     const dairyRows = DAIRIES.map(d => {
@@ -174,7 +175,7 @@ export default function BeverageFOC() {
     const remainder = grandTotal - focCtns * FOC_PRICE;
     const supplierFoc = remainder > 0 ? focCtns + 1 : focCtns;
     const totalFoc = supplierFoc + (bonus ? DAIRY_BONUS_CTNS : 0);
-    return { bevRows, dairyRows, bevTotal, dairyTotal, dairyCtns, bonus, grandTotal, focCtns, supplierFoc, remainder, totalFoc };
+    return { bevRows, dairyRows, bevTotal, bevCtns, dairyTotal, dairyCtns, bonus, grandTotal, focCtns, supplierFoc, remainder, totalFoc };
   }, [qty]);
 
 
@@ -215,6 +216,19 @@ export default function BeverageFOC() {
           <div className="foc-print-co">CHAI JEE KIONG TRADING SDN BHD</div>
         </div>
 
+        <div className="foc-result">
+          <table className="foc-res-tbl">
+            <tbody>
+              <tr><td className="foc-res-lb">Total Rebate</td><td className="foc-res-val">RM {nf(calc.grandTotal)}</td></tr>
+              <tr><td className="foc-res-lb">FOC (exact)</td><td className="foc-res-val">{calc.focCtns} cartons{calc.remainder > 0 ? ` + RM ${nf(calc.remainder)} remainder` : ''}</td></tr>
+              {calc.remainder > 0 && <tr><td className="foc-res-lb">Supplier rounds up</td><td className="foc-res-val">{calc.supplierFoc} cartons</td></tr>}
+              {calc.bonus && <tr><td className="foc-res-lb">Dairy bonus (+{DAIRY_BONUS_THRESHOLD} ctns)</td><td className="foc-res-val">{DAIRY_BONUS_CTNS} cartons</td></tr>}
+              <tr className="foc-res-total"><td className="foc-res-lb">TOTAL FOC</td><td className="foc-res-val">{calc.totalFoc} cartons of 100 Plus 325ml</td></tr>
+            </tbody>
+          </table>
+          <div className="foc-note">1 FOC carton = 100 Plus Original 325ml × 24 @ RM{nf(FOC_PRICE)}</div>
+        </div>
+
         <div className="foc-tables">
           <div className="foc-section">
             <div className="foc-sec-title">Beverages</div>
@@ -245,7 +259,7 @@ export default function BeverageFOC() {
                     ))}
                   </>);
                 })}
-                <tr className="foc-sub"><td>Subtotal</td><td></td><td></td><td className="foc-num">{nf(calc.bevTotal)}</td></tr>
+                <tr className="foc-sub"><td>Subtotal ({Math.round(calc.bevCtns)} ctns)</td><td></td><td></td><td className="foc-num">{nf(calc.bevTotal)}</td></tr>
               </tbody>
             </table>
           </div>
@@ -287,19 +301,6 @@ export default function BeverageFOC() {
           </div>
         </div>
 
-        <div className="foc-result">
-          <table className="foc-res-tbl">
-            <tbody>
-              <tr><td className="foc-res-lb">Total Rebate</td><td className="foc-res-val">RM {nf(calc.grandTotal)}</td></tr>
-              <tr><td className="foc-res-lb">FOC (exact)</td><td className="foc-res-val">{calc.focCtns} cartons{calc.remainder > 0 ? ` + RM ${nf(calc.remainder)} remainder` : ''}</td></tr>
-              {calc.remainder > 0 && <tr><td className="foc-res-lb">Supplier rounds up</td><td className="foc-res-val">{calc.supplierFoc} cartons</td></tr>}
-              {calc.bonus && <tr><td className="foc-res-lb">Dairy bonus (+{DAIRY_BONUS_THRESHOLD} ctns)</td><td className="foc-res-val">{DAIRY_BONUS_CTNS} cartons</td></tr>}
-              <tr className="foc-res-total"><td className="foc-res-lb">TOTAL FOC</td><td className="foc-res-val">{calc.totalFoc} cartons of 100 Plus 325ml</td></tr>
-            </tbody>
-          </table>
-          <div className="foc-note">1 FOC carton = 100 Plus Original 325ml × 24 @ RM{nf(FOC_PRICE)}</div>
-        </div>
-
         {(() => {
           const allItems = [];
           const catLabels = Object.fromEntries([...BEVERAGES, ...DAIRIES].map(c => [c.key, c.label]));
@@ -308,7 +309,7 @@ export default function BeverageFOC() {
           }
           if (!allItems.length) return null;
           return (
-            <div className="foc-log">
+            <div className="foc-log no-print">
               <div className="foc-log-title">PDF Import — Full Item Mapping</div>
               <table className="foc-log-tbl">
                 <thead><tr><th>#</th><th>Product</th><th>UOM</th><th className="foc-num">Qty</th><th>→ Category</th></tr></thead>
@@ -325,7 +326,7 @@ export default function BeverageFOC() {
 
         <div className="foc-ref no-print">
           <div className="foc-ref-title">Rebate Reference</div>
-          <div className="foc-ref-note">Supplier: Signature Selection Sdn Bhd &nbsp;|&nbsp; Valid: 01/11/2025 – 28/04/2026</div>
+          <div className="foc-ref-note">Supplier: Signature Selection Sdn Bhd</div>
         </div>
       </div>
     </div>
