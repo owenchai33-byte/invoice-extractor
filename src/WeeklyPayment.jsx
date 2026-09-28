@@ -128,6 +128,7 @@ export default function WeeklyPayment() {
   const [weekDate, setWeekDate] = useState(() => allData._currentWeek || dateToInput(friday));
   const [weekDate2, setWeekDate2] = useState(() => allData._currentWeek2 || '');
   const [activeWeek, setActiveWeek] = useState(1);
+  const [undoWeek, setUndoWeek] = useState(null);
 
   const save = useCallback((newData) => {
     setAllData(newData);
@@ -284,10 +285,14 @@ export default function WeeklyPayment() {
           <div className="wp-week-label" onClick={() => setActiveWeek(1)} style={{ cursor: 'pointer', background: activeWeek === 1 ? '#eff6ff' : '#f9fafb', border: activeWeek === 1 ? '1px solid #93c5fd' : '1px solid #e4e4e7', borderRadius: 6, padding: '6px 12px', marginBottom: 8, fontWeight: 700, fontSize: 13, color: activeWeek === 1 ? '#1e40af' : '#71717a' }}>
             WEEK 1 — ending <input type="date" value={weekDate} onChange={e => {
               const nd = e.target.value, od = weekDate;
+              if (nd !== od) setUndoWeek(od);
               const next = { ...allData, _currentWeek: nd };
-              if (od !== nd && allData[od] && !allData[nd]) { next[nd] = allData[od]; delete next[od]; }
               setWeekDate(nd); save(next);
             }} className="wp-date-input" style={{ fontSize: 12, padding: '2px 6px' }} onClick={e => e.stopPropagation()} />
+            {undoWeek && rows1.length === 0 && (
+              <button onClick={e => { e.stopPropagation(); setWeekDate(undoWeek); save({ ...allData, _currentWeek: undoWeek }); setUndoWeek(null); }}
+                style={{ marginLeft: 8, padding: '2px 10px', fontSize: 11, fontWeight: 600, background: '#dc2626', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>↩ Undo</button>
+            )}
           </div>
           <table className="wp-tbl">
             <thead>
