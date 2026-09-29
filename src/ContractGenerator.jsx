@@ -374,7 +374,7 @@ export default function ContractGenerator() {
         const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
         for (let p = 0; p < pages.length; p++) {
           const canvas = await html2canvas(pages[p], {
-            scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+            scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false,
             onclone: (doc) => {
               doc.querySelectorAll('.cfield').forEach(el => { el.style.background = 'transparent'; el.style.borderBottom = 'none'; });
               doc.querySelectorAll('.contract-noP').forEach(el => { el.style.display = 'none'; });
@@ -382,7 +382,7 @@ export default function ContractGenerator() {
             },
           });
           if (p > 0) pdf.addPage();
-          pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
+          pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
         }
         const nm = cleanName(contracts[i]?.name) || `Contract ${i + 1}`;
         zip.file(`${nm}.pdf`, pdf.output('blob'));
