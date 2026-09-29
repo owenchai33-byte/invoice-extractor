@@ -87,7 +87,7 @@ function CField({ value, onChange, placeholder, bold, center, min = 8, list }) {
       value={value}
       placeholder={placeholder}
       onChange={e => onChange(e.target.value)}
-      size={value ? value.length + 1 : Math.max(shown.length + 2, min)}
+      size={value ? value.length + 3 : Math.max(shown.length + 2, min)}
       style={{
         background: '#fff59d',
         border: 'none',
