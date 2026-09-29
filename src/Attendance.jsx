@@ -843,11 +843,11 @@ export default function Attendance() {
       const groups = groupDaysForTable(firstDays);
       if (groups.length > maxRows) maxRows = groups.length;
     }
-    const headerPx = 70;
+    const headerPx = 60;
     const rowPx = 18;
     const totalPx = headerPx + (maxRows + 1) * rowPx;
-    const pagePx = 970;
-    return Math.ceil((totalPx / pagePx) * 100) + 2;
+    const pagePx = 1060;
+    return Math.ceil((totalPx / pagePx) * 100);
   }, [effectiveData, empIds]);
 
   const toggleHalfDay = useCallback((key) => {
