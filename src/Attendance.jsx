@@ -845,7 +845,7 @@ export default function Attendance() {
     }
     const headerPx = 60;
     const rowPx = 18;
-    const totalPx = headerPx + (maxRows + 1) * rowPx;
+    const totalPx = headerPx + (maxRows + 3) * rowPx;
     const pagePx = 1060;
     return Math.ceil((totalPx / pagePx) * 100);
   }, [effectiveData, empIds]);
