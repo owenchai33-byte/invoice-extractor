@@ -1948,14 +1948,22 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
             const nums = invoices.map(inv => (inv.raw?.invoice_no || '').trim()).filter(Boolean).sort();
             if (nums.length < 1) return null;
             const condensed = [];
-            let prevPrefix = '';
+            let prev = '';
             for (const n of nums) {
-              if (!prevPrefix) { condensed.push(n); prevPrefix = n.replace(/\d+$/, ''); }
+              if (!prev) { condensed.push(n); prev = n; }
               else {
-                const curPrefix = n.replace(/\d+$/, '');
-                const suffix = n.slice(curPrefix.length);
-                if (curPrefix === prevPrefix && suffix) condensed.push(suffix);
-                else { condensed.push(n); prevPrefix = curPrefix; }
+                const prevLetters = prev.replace(/\d+$/, '');
+                const curLetters = n.replace(/\d+$/, '');
+                if (curLetters !== prevLetters) { condensed.push(n); prev = n; continue; }
+                const prevDigits = prev.slice(prevLetters.length);
+                const curDigits = n.slice(curLetters.length);
+                let diffPos = curDigits.length;
+                for (let i = 0; i < curDigits.length; i++) {
+                  if (prevDigits[i] !== curDigits[i]) { diffPos = i; break; }
+                }
+                const startPos = Math.min(diffPos, Math.max(0, curDigits.length - 4));
+                condensed.push(curDigits.slice(startPos));
+                prev = n;
               }
             }
             const text = condensed.join(', ');
