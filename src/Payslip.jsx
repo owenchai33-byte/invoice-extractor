@@ -133,7 +133,16 @@ export default function Payslip() {
     return () => window.removeEventListener('keydown', h);
   });
   // Keep the active thumbnail in view
-  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest' }); }, [cur]);
+  useEffect(() => {
+    const el = stripRef.current?.querySelector('.thumb.on');
+    const box = stripRef.current;
+    if (el && box) {
+      const eTop = el.offsetTop - box.offsetTop;
+      const eBot = eTop + el.offsetHeight;
+      if (eTop < box.scrollTop) box.scrollTop = eTop;
+      else if (eBot > box.scrollTop + box.clientHeight) box.scrollTop = eBot - box.clientHeight;
+    }
+  }, [cur]);
 
   const atMin = mo === 6 && yr === 2026;
   const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
