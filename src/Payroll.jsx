@@ -340,7 +340,7 @@ const CSS=`
 .sec{background:#fff;border-radius:8px;border:1px solid #e4e4e7;overflow:hidden;margin-bottom:12px}
 .sh{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f4f4f5}
 .sht{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
-.tw{overflow-x:auto}
+.tw{overflow-x:auto;overflow-y:hidden}
 .t{width:100%;border-collapse:collapse;font-size:10.5px;font-variant-numeric:tabular-nums;table-layout:fixed}
 /* Full-time payroll table keeps a readable minimum width and scrolls sideways in
    narrow / half-screen windows, instead of shrinking the figures to fit. */
@@ -488,9 +488,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .fxc{cursor:pointer}
 .fxc:hover{background:#eff6ff;outline:1px solid #bfdbfe}
 /* Sticky horizontal scrollbar pinned to the viewport bottom, synced to the payroll table */
-.hbar{position:fixed;bottom:0;left:13px;right:13px;height:16px;overflow-x:auto;overflow-y:hidden;z-index:60;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -1px 3px rgba(0,0,0,.06)}
+.hbar{position:fixed;bottom:0;left:13px;right:13px;height:16px;overflow-x:scroll;overflow-y:hidden;z-index:60;background:#fff;border-top:1px solid #e4e4e7;box-shadow:0 -1px 3px rgba(0,0,0,.06);scrollbar-color:#c4c4cc #fff}
 .hbar::-webkit-scrollbar{height:14px}
 .hbar::-webkit-scrollbar-thumb{background:#c4c4cc;border-radius:7px;border:3px solid #fff}
+.hbar::-webkit-scrollbar-track{background:#fff}
 @media print{.hbar{display:none!important}}
 /* Editable remarks below the table */
 .remsec{padding:10px 14px;border-top:1px solid #e4e4e7}
