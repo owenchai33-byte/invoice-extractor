@@ -340,7 +340,7 @@ const CSS = `
 .ep-btn-sync{background:#059669;border-color:#059669;color:#fff}
 .ep-btn-sync:hover{background:#047857}
 
-.ep-layout{display:flex;height:calc(100vh - 148px)}
+.ep-layout{display:flex;min-height:calc(100vh - 148px)}
 .ep-stage{flex:1;display:flex;align-items:flex-start;justify-content:center;gap:20px;padding:20px 72px;overflow-y:auto}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .ep-stage>.ep-arrow:first-child{left:12px}
