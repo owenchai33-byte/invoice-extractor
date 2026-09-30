@@ -214,7 +214,7 @@ function processRecords({ records, from, to }) {
     for (const emp of Object.values(emps)) {
       const attName = emp.name.toUpperCase().trim();
       const idx = fuzzyMatch(attName, payrollNames);
-      if (idx !== -1 && payrollNames[idx].length > attName.length) {
+      if (idx !== -1) {
         emp.name = payrollNames[idx];
       }
     }
