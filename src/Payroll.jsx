@@ -628,13 +628,15 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   useEffect(()=>{setUpdTs(_readTs(_tsKey()));try{setLastEdit(JSON.parse(localStorage.getItem(LS_LE)||'{}')[_tsKey()]||null);}catch{setLastEdit(null);}},[mo,yr]);
   const _FL={salary:'Basic Salary',incentive:'Incentive',bonus:'Bonus',advance:'Advance',wagePerDay:'Wages/Day',daysWorked:'Days'};
   const _recordEdit=(name,field,from,to)=>{const e={name:name.split(' ')[0],col:_FL[field]||field,from,to};const k=_tsKey();let o={};try{o=JSON.parse(localStorage.getItem(LS_LE)||'{}');}catch{}o[k]=e;localStorage.setItem(LS_LE,JSON.stringify(o));setLastEdit(e);};
-  const[locked,setLocked]=useState(true);
+  const UNLOCK_TTL=5*60*1000;
+  const[locked,setLocked]=useState(()=>{try{const t=parseInt(localStorage.getItem('cjk_pr_unlock_ts'));return!t||Date.now()-t>UNLOCK_TTL;}catch{return true;}});
   const[showPin,setShowPin]=useState(false);
   const[pinVal,setPinVal]=useState('');
   const[pinErr,setPinErr]=useState(false);
   const tryUnlock=()=>{setPinVal('');setPinErr(false);setShowPin(true);};
-  const submitPin=()=>{if(pinVal==='9069'){setShowPin(false);setLocked(false);}else{setPinErr(true);setPinVal('');}};
+  const submitPin=()=>{if(pinVal==='9069'){setShowPin(false);setLocked(false);try{localStorage.setItem('cjk_pr_unlock_ts',String(Date.now()));}catch{}}else{setPinErr(true);setPinVal('');}};
   const cancelPin=()=>{setShowPin(false);setPinVal('');setPinErr(false);};
+  useEffect(()=>{if(!locked){try{localStorage.setItem('cjk_pr_unlock_ts',String(Date.now()));}catch{}}else{try{localStorage.removeItem('cjk_pr_unlock_ts');}catch{}}},[locked]);
   const mk=`${yr}-${String(mo+1).padStart(2,'0')}`,ref=new Date(yr,mo,15);
   const currentMK=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const isMonthLocked=mk<currentMK;
