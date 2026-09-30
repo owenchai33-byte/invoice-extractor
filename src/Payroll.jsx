@@ -955,7 +955,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
           <button className={"b "+(locked?"bo":"bd")} onClick={locked?tryUnlock:()=>setLocked(true)} title={locked?'Click to unlock editing':'Click to lock'}>{locked?(isMonthLocked?'🔒 Month Locked':'🔒 Locked'):'🔓 Editing'}</button>
           {!locked&&onUndo&&<button className="b bo pr-act" disabled={!canUndo} onClick={onUndo} title="Undo last change" style={!canUndo?{opacity:.4,cursor:'default'}:undefined}>↩ Undo</button>}
           {!locked&&onRedo&&<button className="b bo pr-act" disabled={!canRedo} onClick={onRedo} title="Redo last change" style={!canRedo?{opacity:.4,cursor:'default'}:undefined}>↪ Redo</button>}
-          <button className="b bo" onClick={()=>setPan(true)}>Manage Staff</button>
+          <button className="b bo" disabled={locked} onClick={()=>setPan(true)}>Manage Staff</button>
           <button className="b bd" onClick={()=>exportExcel(mo,yr,bS,cS,bT,cT,gT,ptR,ptT,[...notes,...remFilled],bl,sb)}>Download Excel</button>
           <button className="b bo pr-act" onClick={()=>{document.title=`HQ STAFF PAYROLL - ${MON_S[mo]}'${String(yr).slice(-2)}`;window.print();}}>Print</button>
         </div>
