@@ -388,7 +388,7 @@ const CSS = `
 .ep-inc{min-width:0;display:flex;flex-direction:column}
 
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
-.ep-info{margin-bottom:.4em;height:5.8em;overflow:hidden}
+.ep-info{margin-bottom:.4em;height:7em;overflow:hidden}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .ep-lb{width:40%;flex-shrink:0;font-size:1em}
 .ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center;word-wrap:break-word;overflow-wrap:break-word;line-height:1.25}
