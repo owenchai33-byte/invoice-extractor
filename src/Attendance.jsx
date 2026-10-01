@@ -1535,7 +1535,22 @@ export default function Attendance() {
                     })()}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 8, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
+                {(() => {
+                  const newStaff = empIds
+                    .map(id => effectiveData[id])
+                    .filter(e => e.days.some(d => d.type === 'not-joined'))
+                    .map(e => {
+                      const firstWorking = e.days.find(d => d.type !== 'not-joined' && d.type !== 'off' && d.type !== 'holiday');
+                      return { name: e.name, date: firstWorking ? firstWorking.dateShort : '—' };
+                    });
+                  if (!newStaff.length) return null;
+                  return (
+                    <div style={{ marginTop: 6, fontSize: 10, color: '#52525b' }}>
+                      <strong>New staff:</strong> {newStaff.map(s => `${s.name} (joined ${s.date})`).join('; ')}
+                    </div>
+                  );
+                })()}
+                <div style={{ marginTop: 4, fontSize: 10, color: '#71717a', fontStyle: 'italic' }}>
                   {lastOverviewEdit
                     ? `Last updated: ${lastOverviewEdit.toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`
                     : `Generated: ${generatedAt}`}
