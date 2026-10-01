@@ -49,7 +49,6 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
             <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
             <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={vlCls(r.position)}>{r.position}</span></div>
             <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
-            {r.bankAcc ? <div className="ep-row"><span className="ep-lb">BANK ACC NO.</span><span className={'ep-vl'}>{r.bankAcc}</span></div> : <div className="ep-row ep-spacer">&nbsp;</div>}
           </div>
 
           <table className="ep-tbl">
@@ -86,7 +85,6 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
               <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
               <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={vlCls(r.position)}>{r.position}</span></div>
               <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{incDay(mo, yr)}</span></div>
-              <div className="ep-row ep-spacer">&nbsp;</div>
             </div>
 
             <table className="ep-tbl">
@@ -387,7 +385,7 @@ const CSS = `
 .ep-inc{min-width:0;display:flex;flex-direction:column}
 
 .ep-ti{font-weight:700;text-decoration:underline;margin-bottom:.4em;font-size:1em}
-.ep-info{margin-bottom:.6em;height:5em;overflow:hidden}
+.ep-info{margin-bottom:.6em;height:5.4em;overflow:hidden}
 .ep-row{display:flex;align-items:baseline;margin-bottom:.1em}
 .ep-lb{width:40%;flex-shrink:0;font-size:1em}
 .ep-vl{flex:1;font-weight:700;font-size:1em;text-align:center;word-wrap:break-word;overflow-wrap:break-word;line-height:1.25}
