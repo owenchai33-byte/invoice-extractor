@@ -49,6 +49,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
             <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
             <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={vlCls(r.position)}>{r.position}</span></div>
             <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{lastDay(mo, yr)}</span></div>
+            <div className="ep-row ep-spacer">&nbsp;</div>
           </div>
 
           <table className="ep-tbl">
@@ -85,6 +86,7 @@ function EpCard({ r, mo, yr, compact, absVal, onAbsChange, othVal, onOthChange, 
               <div className="ep-row"><span className="ep-lb">PAY TO</span><span className={vlCls(r.name)}>{r.name}</span></div>
               <div className="ep-row"><span className="ep-lb">DESIGNATION</span><span className={vlCls(r.position)}>{r.position}</span></div>
               <div className="ep-row"><span className="ep-lb">DATE</span><span className="ep-vl">{incDay(mo, yr)}</span></div>
+              <div className="ep-row ep-spacer">&nbsp;</div>
             </div>
 
             <table className="ep-tbl">
