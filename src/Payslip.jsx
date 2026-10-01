@@ -101,6 +101,7 @@ export default function Payslip() {
   const [sel, setSel] = useState(0);
   const [printOnly, setPrintOnly] = useState(null);
   const stripRef = useRef(null);
+  const stageRef = useRef(null);
   const updTs = readMonthTs(mo, yr);
 
   // Pull staff + monthly data straight from payroll storage
@@ -120,7 +121,7 @@ export default function Payslip() {
   for (let i = 0; i < rows.length; i += 2) pairs.push([rows[i], rows[i + 1]]);
 
   const cur = Math.min(idx, Math.max(0, pairs.length - 1));
-  const go = d => setIdx(i => Math.min(pairs.length - 1, Math.max(0, i + d)));
+  const go = d => { setIdx(i => Math.min(pairs.length - 1, Math.max(0, i + d))); if (stageRef.current) stageRef.current.scrollTop = 0; window.scrollTo(0, 0); };
 
   // Keyboard arrows navigate one-by-one
   useEffect(() => {
@@ -132,7 +133,6 @@ export default function Payslip() {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   });
-  // Keep the active thumbnail in view
   useEffect(() => {
     const el = stripRef.current?.querySelector('.thumb.on');
     const box = stripRef.current;
@@ -142,7 +142,7 @@ export default function Payslip() {
       if (eTop < box.scrollTop) box.scrollTop = eTop;
       else if (eBot > box.scrollTop + box.clientHeight) box.scrollTop = eBot - box.clientHeight;
     }
-  }, [cur]);
+  }, [sel, cur]);
 
   const atMin = mo === 6 && yr === 2026;
   const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
@@ -225,7 +225,7 @@ export default function Payslip() {
       ) : (
         <>
           <div className="ps-layout no-print">
-          <div className="ps-stage">
+          <div className="ps-stage" ref={stageRef}>
             <button className="ps-arrow" disabled={cur === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ps-pagewrap">
               <Slip r={pairs[cur][0]} mo={mo} yr={yr} />
@@ -236,7 +236,7 @@ export default function Payslip() {
 
           <div className="ps-sidebar" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + (i === sel ? " on" : Math.floor(i / 2) === cur ? " cur" : "")} onClick={() => { setSel(i); setIdx(Math.floor(i / 2)); }} title={r.name}>
+              <button key={r.id} className={"thumb" + (i === sel ? " on" : Math.floor(i / 2) === cur ? " cur" : "")} onClick={() => { setSel(i); setIdx(Math.floor(i / 2)); if (stageRef.current) stageRef.current.scrollTop = 0; window.scrollTo(0, 0); }} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
