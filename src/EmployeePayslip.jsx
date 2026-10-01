@@ -118,6 +118,7 @@ export default function EmployeePayslip() {
   const [idx, setIdx] = useState(0);
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1200);
   const stripRef = useRef(null);
+  const stageRef = useRef(null);
   const _epTsKey = () => `${yr}-${String(mo+1).padStart(2,'0')}`;
   const _readEpTs = k => { const raw = localStorage.getItem(LS_EP_TS); if (!raw) return ''; try { const o = JSON.parse(raw); return o[k] || ''; } catch { return ''; } };
   const [updTs, setUpdTs] = useState(() => _readEpTs(_epTsKey()));
@@ -231,7 +232,7 @@ export default function EmployeePayslip() {
 
   const maxPage = Math.max(0, screenPages.length - 1);
   const curPage = Math.min(idx, maxPage);
-  const go = d => setIdx(i => Math.min(maxPage, Math.max(0, i + d)));
+  const go = d => { setIdx(i => Math.min(maxPage, Math.max(0, i + d))); if (stageRef.current) stageRef.current.scrollTop = 0; window.scrollTo(0, 0); };
   const staffPage = useMemo(() => { const m = {}; screenPages.forEach((p, pi) => p.items.forEach(it => { m[it.r.id] = pi; })); return m; }, [screenPages]);
   const [sel, setSel] = useState(() => rows.length ? rows[0].id : null);
   useEffect(() => { if (screenPages[curPage]) { const ids = screenPages[curPage].items.map(it => it.r.id); if (!ids.includes(sel)) setSel(ids[0]); } }, [curPage, screenPages]);
@@ -249,7 +250,16 @@ export default function EmployeePayslip() {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   });
-  useEffect(() => { const el = stripRef.current?.querySelector('.thumb.on'); if (el) el.scrollIntoView({ block: 'nearest' }); }, [curPage]);
+  useEffect(() => {
+    const el = stripRef.current?.querySelector('.thumb.on');
+    const box = stripRef.current;
+    if (el && box) {
+      const eTop = el.offsetTop - box.offsetTop;
+      const eBot = eTop + el.offsetHeight;
+      if (eTop < box.scrollTop) box.scrollTop = eTop;
+      else if (eBot > box.scrollTop + box.clientHeight) box.scrollTop = eBot - box.clientHeight;
+    }
+  }, [curPage, sel]);
 
   const atMin = mo === 6 && yr === 2026;
   const changeMonth = d => { setIdx(0); if (d < 0) { if (atMin) return; if (mo === 0) { setMo(11); setYr(y => y - 1); } else setMo(m => m - 1); } else { if (mo === 11) { setMo(0); setYr(y => y + 1); } else setMo(m => m + 1); } };
@@ -281,7 +291,7 @@ export default function EmployeePayslip() {
       ) : (
         <>
           <div className="ep-layout no-print">
-          <div className="ep-stage">
+          <div className="ep-stage" ref={stageRef}>
             <button className="ep-arrow" disabled={curPage === 0} onClick={() => go(-1)}>&#9664;</button>
             <div className="ep-pagewrap">
               {screenPages[curPage].items.map(it => <div key={it.r.id} className={"ep-sel-wrap" + (sel === it.r.id ? " ep-selected" : "")} onClick={() => setSel(it.r.id)}><EpCard r={it.r} mo={mo} yr={yr} compact={!it.half} absVal={getAbs(it.r.id)} onAbsChange={v => setAbsV(it.r.id, v)} othVal={getOth(it.r.id)} onOthChange={v => setOthV(it.r.id, v)} locked={locked} showStart={canShowStart(it.r)} /></div>)}
@@ -291,7 +301,7 @@ export default function EmployeePayslip() {
 
           <div className="ep-sidebar" ref={stripRef}>
             {rows.map((r, i) => (
-              <button key={r.id} className={"thumb" + (staffPage[r.id] === curPage ? " on" : "")} onClick={() => setIdx(staffPage[r.id])} title={r.name}>
+              <button key={r.id} className={"thumb" + (staffPage[r.id] === curPage ? " on" : "")} onClick={() => { setIdx(staffPage[r.id]); if (stageRef.current) stageRef.current.scrollTop = 0; window.scrollTo(0, 0); }} title={r.name}>
                 <span className="thumb-n">{i + 1}</span>
                 <span className="thumb-name">{(r.name || '').split(' ').slice(0, 2).join(' ')}</span>
                 <span className="thumb-net">RM {fmt(r.netPay)}</span>
@@ -340,8 +350,8 @@ const CSS = `
 .ep-btn-sync{background:#059669;border-color:#059669;color:#fff}
 .ep-btn-sync:hover{background:#047857}
 
-.ep-layout{display:flex;min-height:calc(100vh - 148px)}
-.ep-stage{flex:1;display:flex;align-items:flex-start;justify-content:center;gap:20px;padding:20px 72px;overflow-y:auto}
+.ep-layout{display:flex;height:calc(100vh - 56px);overflow:hidden}
+.ep-stage{flex:1;display:flex;align-items:flex-start;justify-content:center;gap:20px;padding:20px 72px;overflow:hidden}
 .ep-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;border:1px solid #e4e4e7;background:#fff;color:#3f3f46;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .ep-stage>.ep-arrow:first-child{left:12px}
 .ep-stage>.ep-arrow:last-child{right:170px}
