@@ -655,8 +655,8 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const addRemark=()=>setRemAll(p=>({...p,[mk]:[...(p[mk]||['']),'']}));
   const delRemark=i=>setRemAll(p=>{const c=[...(p[mk]||[''])];c.splice(i,1);return{...p,[mk]:c.length?c:['']};});
   const remFilled=remarks.filter(r=>(r||'').trim());
-  const gM=useCallback(sid=>pd[mk]?.[sid]||{incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0},[pd,mk]);
-  const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={incentive:0,bonus:0,advance:0,wagePerDay:0,daysWorked:0};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
+  const gM=useCallback(sid=>pd[mk]?.[sid]||{},[pd,mk]);
+  const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
   const comp=useCallback(s=>computeStaffMonth(s, pd[mk]?.[s.id], ref, sb),[ref,pd,mk,sb]);
   const bS=useMemo(()=>visibleStaff.filter(s=>s.method==='bank').map(comp),[visibleStaff,comp]);
   const cS=useMemo(()=>visibleStaff.filter(s=>s.method==='cash').map(comp),[visibleStaff,comp]);
