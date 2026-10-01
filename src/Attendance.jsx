@@ -60,7 +60,7 @@ function getHalfDays(days, half) {
 }
 
 function calcHalfSummary(days) {
-  const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday');
+  const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
   return {
     working: working.length,
     present: working.filter(d => d.scans.length > 0).length,
@@ -198,7 +198,7 @@ function parseExcel(buf) {
   return { records, from: from.replace(/\//g, '-'), to: to.replace(/\//g, '-') };
 }
 
-function processRecords({ records, from, to }) {
+function processRecords({ records, from, to }, joinDateOverrides = {}) {
   const emps = {};
   for (const r of records) {
     if (!emps[r.id]) emps[r.id] = { id: r.id, name: r.name, scans: {} };
@@ -210,6 +210,7 @@ function processRecords({ records, from, to }) {
   }
 
   const payrollNames = getPayrollOrder();
+  const payrollJoinDates = getPayrollJoinDates();
   if (payrollNames.length) {
     for (const emp of Object.values(emps)) {
       const attName = emp.name.toUpperCase().trim();
@@ -219,6 +220,8 @@ function processRecords({ records, from, to }) {
       }
     }
   }
+
+  const allJoinDates = { ...payrollJoinDates, ...joinDateOverrides };
 
   if (!from || !to) {
     const allDates = records.map(r => r.date.replace(/\//g, '-')).sort();
@@ -236,6 +239,8 @@ function processRecords({ records, from, to }) {
     const days = [];
     const start = parseLocalDate(from);
     const end = parseLocalDate(to);
+    const empJoinDate = allJoinDates[emp.name.toUpperCase().trim()];
+    const joinStart = empJoinDate ? parseLocalDate(empJoinDate) : null;
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dk = dateKey(d);
@@ -258,6 +263,12 @@ function processRecords({ records, from, to }) {
         type: 'absent',
         remarks: [],
       };
+
+      if (joinStart && d < joinStart && !scans.length) {
+        day.type = 'not-joined';
+        days.push(day);
+        continue;
+      }
 
       if (isSun || holiday) {
         day.type = isSun ? 'off' : 'holiday';
@@ -403,7 +414,7 @@ function processRecords({ records, from, to }) {
       days.push(day);
     }
 
-    const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday');
+    const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
     const present = working.filter(d => d.scans.length > 0);
     const absent = working.filter(d => d.type === 'absent');
     const half = days.filter(d => d.type === 'half-am' || d.type === 'half-pm');
@@ -434,13 +445,23 @@ function processRecords({ records, from, to }) {
     }
   }
 
-  return { data: results, suspectPH };
+  const missingJoinDates = [];
+  for (const emp of Object.values(results)) {
+    const name = emp.name.toUpperCase().trim();
+    if (!allJoinDates[name]) {
+      const hasAbsent = emp.days.some(d => d.type === 'absent');
+      if (hasAbsent) missingJoinDates.push({ id: Object.keys(results).find(k => results[k] === emp), name: emp.name });
+    }
+  }
+
+  return { data: results, suspectPH, missingJoinDates };
 }
 
 function Remarks({ d }) {
   const parts = [];
   if (d.type === 'off') parts.push({ text: d.scans.length ? 'Sunday (worked)' : 'Sunday' });
   else if (d.type === 'holiday') parts.push({ text: d.holiday + (d.scans.length ? ' (worked)' : '') });
+  else if (d.type === 'not-joined') parts.push({ text: 'Not yet joined' });
   else if (d.type === 'absent') parts.push({ text: 'Absent', bold: true });
   else if (d.type === 'half-am') parts.push({ text: 'Half day (AM)', bold: true });
   else if (d.type === 'half-pm') parts.push({ text: 'Half day (PM)', bold: true });
@@ -491,8 +512,19 @@ function groupDaysForTable(days) {
   let i = 0;
   while (i < days.length) {
     const d = days[i];
+    const isNotJoined = d.type === 'not-joined';
     const isAbsentNoScan = d.type === 'absent' && !d.scans.length;
-    if (isAbsentNoScan) {
+    if (isNotJoined) {
+      const start = i;
+      let njCount = 1;
+      let j = i + 1;
+      while (j < days.length && (days[j].type === 'not-joined' || days[j].type === 'off' || days[j].type === 'holiday')) {
+        if (days[j].type === 'not-joined') njCount++;
+        j++;
+      }
+      groups.push({ type: 'merged-not-joined', days: days.slice(start, j), njCount });
+      i = j;
+    } else if (isAbsentNoScan) {
       const start = i;
       let absentCount = 1;
       let j = i + 1;
@@ -525,6 +557,16 @@ function AttTableBody({ days }) {
   return (
     <tbody>
       {groups.map(g => {
+        if (g.type === 'merged-not-joined') {
+          const first = g.days[0], last = g.days[g.days.length - 1];
+          return (
+            <tr key={first.date} style={{ background: '#f0f9ff' }}>
+              <td colSpan={11} style={{ ...td, textAlign: 'center', color: '#6b7280', fontStyle: 'italic' }}>
+                {first.dateShort} ({first.day}) – {last.dateShort} ({last.day}) &nbsp;|&nbsp; Not yet joined
+              </td>
+            </tr>
+          );
+        }
         if (g.type === 'merged-absent') {
           const first = g.days[0], last = g.days[g.days.length - 1];
           return (
@@ -538,16 +580,17 @@ function AttTableBody({ days }) {
         const d = g.day;
         const isOff = d.type === 'off' || d.type === 'holiday';
         const isAbsent = d.type === 'absent';
+        const isNotJoined = d.type === 'not-joined';
         const isHalf = d.type === 'half-am' || d.type === 'half-pm';
-        const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isHalf ? '#eff6ff' : '#fff';
+        const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isNotJoined ? '#f0f9ff' : isHalf ? '#eff6ff' : '#fff';
 
-        if ((isOff || isAbsent) && !d.scans.length) {
-          const label = isAbsent ? 'Absent' : d.type === 'off' ? 'Sunday' : d.holiday;
+        if ((isOff || isAbsent || isNotJoined) && !d.scans.length) {
+          const label = isNotJoined ? 'Not yet joined' : isAbsent ? 'Absent' : d.type === 'off' ? 'Sunday' : d.holiday;
           return (
             <tr key={d.date} style={{ background: bg }}>
               <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
               <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
-              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400 }}>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: isAbsent ? '#b45309' : isNotJoined ? '#6b7280' : '#a3a3a3', fontStyle: 'italic', fontWeight: isAbsent ? 700 : 400 }}>
                 {label}
               </td>
             </tr>
@@ -583,7 +626,7 @@ function AttTableBody({ days }) {
 }
 
 function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
-  const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
+  const notes = days.filter(d => (d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm'));
   if (!notes.length) return null;
   const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
   const ntd = { padding: '4px 10px', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
@@ -677,6 +720,17 @@ function getPayrollOrder() {
   } catch { return []; }
 }
 
+function getPayrollJoinDates() {
+  try {
+    const staff = JSON.parse(localStorage.getItem('cjk_payroll_staff_v3') || '[]');
+    const map = {};
+    for (const s of staff) {
+      if (s.joinDate) map[s.name.toUpperCase().trim()] = s.joinDate;
+    }
+    return map;
+  } catch { return {}; }
+}
+
 function fuzzyMatch(attName, payrollNames) {
   const exact = payrollNames.indexOf(attName);
   if (exact !== -1) return exact;
@@ -736,7 +790,7 @@ function mergeAttData(existing, incoming) {
     const allDays = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
     const from = old.period.from < inc.period.from ? old.period.from : inc.period.from;
     const to = old.period.to > inc.period.to ? old.period.to : inc.period.to;
-    const working = allDays.filter(d => d.type !== 'off' && d.type !== 'holiday');
+    const working = allDays.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
     merged[eid] = {
       ...old, ...inc, days: allDays, period: { from, to },
       summary: {
@@ -803,6 +857,9 @@ export default function Attendance() {
   const [generatedAt, setGeneratedAt] = useState(() => new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
   const [empTimestamps, setEmpTimestamps] = useState({});
   const [confirmedPH, setConfirmedPH] = useState(new Set());
+  const [joinDatePrompt, setJoinDatePrompt] = useState(null);
+  const [joinDateInputs, setJoinDateInputs] = useState({});
+  const pendingParsedRef = useRef(null);
   const [verifiedPH, setVerifiedPH] = useState({});
   const [showMech, setShowMech] = useState(false);
   const fileRef = useRef(null);
@@ -815,7 +872,7 @@ export default function Attendance() {
     const out = {};
     for (const [eid, emp] of Object.entries(data)) {
       const days = emp.days.map(d => confirmedPH.has(d.date) ? { ...d, type: 'holiday', holiday: verifiedPH[d.date] || 'Public Holiday (confirmed)' } : d);
-      const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday');
+      const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
       out[eid] = {
         ...emp, days,
         summary: {
@@ -980,6 +1037,41 @@ export default function Attendance() {
     }
   }, [printOverview, emp]);
 
+  const applyResults = useCallback((results, suspects, joinOverrides = {}) => {
+    const { data: reprocessed, suspectPH: newSuspects, missingJoinDates } = joinOverrides._skip
+      ? { data: results, suspectPH: suspects, missingJoinDates: [] }
+      : (() => { const r = processRecords(pendingParsedRef.current, joinOverrides); return r; })();
+    const finalResults = joinOverrides._skip ? results : reprocessed;
+    const finalSuspects = joinOverrides._skip ? suspects : newSuspects;
+    const firstEmp = Object.values(finalResults)[0];
+    let targetYr = yr, targetMo = mo;
+    if (firstEmp?.period?.from) {
+      const [fy, fm] = firstEmp.period.from.split('-').map(Number);
+      targetYr = fy; targetMo = fm - 1;
+      if (fy !== yr || fm - 1 !== mo) { setYr(fy); setMo(fm - 1); }
+    }
+    const tk = attKey(targetYr, targetMo);
+    let existing = null;
+    if (uploadModeRef.current === 'merge') {
+      try { const s = localStorage.getItem(tk); if (s) existing = JSON.parse(s); } catch {}
+    }
+    const merged = mergeAttData(existing, finalResults);
+    localStorage.setItem(tk, JSON.stringify(merged));
+    const tsk = attSelKey(targetYr, targetMo);
+    const firstSel = sortByPayroll(merged)[0];
+    if (firstSel) localStorage.setItem(tsk, firstSel);
+    setData(merged);
+    setSuspectPH(finalSuspects);
+    setConfirmedPH(new Set());
+    setDismissedHalfDays(new Set());
+    try { localStorage.removeItem(attDismissedKey(targetYr, targetMo)); } catch {}
+    setLastOverviewEdit(null);
+    setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
+    setEmpTimestamps({});
+    setSelected(firstSel || null);
+    return missingJoinDates || [];
+  }, [yr, mo]);
+
   const handleFile = useCallback(async (file) => {
     setLoading(true);
     setError('');
@@ -987,38 +1079,18 @@ export default function Attendance() {
       const buf = await file.arrayBuffer();
       const parsed = file.name.endsWith('.pdf') ? await parsePDF(buf) : parseExcel(buf);
       if (!parsed.records.length) throw new Error('No attendance records found in file');
-      const { data: results, suspectPH: suspects } = processRecords(parsed);
-      const firstEmp = Object.values(results)[0];
-      let targetYr = yr, targetMo = mo;
-      if (firstEmp?.period?.from) {
-        const [fy, fm] = firstEmp.period.from.split('-').map(Number);
-        targetYr = fy; targetMo = fm - 1;
-        if (fy !== yr || fm - 1 !== mo) { setYr(fy); setMo(fm - 1); }
+      pendingParsedRef.current = parsed;
+      const { data: results, suspectPH: suspects, missingJoinDates } = processRecords(parsed);
+      applyResults(results, suspects, { _skip: true });
+      if (missingJoinDates.length) {
+        setJoinDatePrompt(missingJoinDates);
+        setJoinDateInputs({});
       }
-      const tk = attKey(targetYr, targetMo);
-      let existing = null;
-      if (uploadModeRef.current === 'merge') {
-        try { const s = localStorage.getItem(tk); if (s) existing = JSON.parse(s); } catch {}
-      }
-      const merged = mergeAttData(existing, results);
-      localStorage.setItem(tk, JSON.stringify(merged));
-      const tsk = attSelKey(targetYr, targetMo);
-      const firstSel = sortByPayroll(merged)[0];
-      if (firstSel) localStorage.setItem(tsk, firstSel);
-      setData(merged);
-      setSuspectPH(suspects);
-      setConfirmedPH(new Set());
-      setDismissedHalfDays(new Set());
-      try { localStorage.removeItem(attDismissedKey(targetYr, targetMo)); } catch {}
-      setLastOverviewEdit(null);
-      setGeneratedAt(new Date().toLocaleString('en-MY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }));
-      setEmpTimestamps({});
-      setSelected(firstSel || null);
     } catch (e) {
       setError(e.message || 'Failed to parse file');
     }
     setLoading(false);
-  }, [yr, mo]);
+  }, [yr, mo, applyResults]);
 
   const onDrop = useCallback((e) => {
     e.preventDefault();
@@ -1031,6 +1103,34 @@ export default function Attendance() {
 
   return (
     <div className={`att-root${printAll ? ' att-print-all' : ''}${printOverview ? ' att-print-overview' : ''}${printHalf === 'first' ? ' att-half-first' : ''}${printHalf === 'second' ? ' att-half-second' : ''}`} style={{ maxWidth: 1600, margin: '0 auto', padding: '16px 24px', '--half-split': `${halfSplitVh}vh` }}>
+
+      {joinDatePrompt && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,.15)' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>New staff detected</div>
+            <div style={{ fontSize: 12, color: '#71717a', marginBottom: 16 }}>Enter their join date so days before it won't count as absent. Or skip if they started before this month.</div>
+            {joinDatePrompt.map(emp => (
+              <div key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, minWidth: 140 }}>{emp.name}</span>
+                <input type="date" value={joinDateInputs[emp.name] || ''} onChange={e => setJoinDateInputs(p => ({ ...p, [emp.name]: e.target.value }))} style={{ flex: 1, padding: '6px 8px', border: '1px solid #d4d4d8', borderRadius: 6, fontSize: 13 }} />
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+              <button onClick={() => { setJoinDatePrompt(null); }} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #d4d4d8', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Skip</button>
+              <button onClick={() => {
+                const overrides = {};
+                for (const [name, date] of Object.entries(joinDateInputs)) {
+                  if (date) overrides[name.toUpperCase().trim()] = date;
+                }
+                if (Object.keys(overrides).length && pendingParsedRef.current) {
+                  applyResults(null, null, overrides);
+                }
+                setJoinDatePrompt(null);
+              }} style={{ padding: '8px 16px', borderRadius: 7, border: 'none', background: '#18181b', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Header Bar ─── */}
       <div className="att-no-print" style={{
