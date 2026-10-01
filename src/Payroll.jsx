@@ -151,16 +151,21 @@ export function fmt(n){
 // Compute one staff's figures for a month. Single source of truth shared by the
 // Payroll table and the Payslip generator so their numbers can never drift.
 // `monthly` = pd[mk]?.[staff.id] (per-month override object or undefined).
-export function computeStaffMonth(s, monthly, ref, showBonus=true){
+export function computeStaffMonth(s, monthly, ref, showBonus=true, mk=''){
   const a=getAgeFromIC(s.ic,ref), m=monthly||{};
   const inc = monthly && 'incentive' in monthly ? (m.incentive||0) : (s.defIncentive||0);
   const bon = showBonus ? (monthly && 'bonus' in monthly ? (m.bonus||0) : (s.defBonus||0)) : 0;
   const adv = monthly && 'advance' in monthly ? (m.advance||0) : (s.defAdvance||0);
-  const epfWage = s.salary + inc + bon;      // bonus + incentive raise EPF base
-  const socsoEisWage = s.salary + inc;        // only incentive raises SOCSO/EIS base
+  const epfWage = s.salary + inc + bon;
+  const socsoEisWage = s.salary + inc;
   const epf=calcEPF(epfWage,a), socso=calcSOCSO(socsoEisWage,a), eis=calcEIS(socsoEisWage,a);
   const net=s.salary+inc+bon-epf.employee-socso.employee-eis.employee-adv;
-  return{...s,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
+  let pos = s.position;
+  if(monthly && 'position' in monthly) pos = monthly.position;
+  else if(mk && s.positionHistory){
+    for(const h of s.positionHistory){if(mk<h.from){pos=h.position;break;}}
+  }
+  return{...s,position:pos,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
 }
 // LS_S bumped to _v3: adds defIncentive per staff so each new month
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
@@ -657,7 +662,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
   const remFilled=remarks.filter(r=>(r||'').trim());
   const gM=useCallback(sid=>pd[mk]?.[sid]||{},[pd,mk]);
   const sM=useCallback((sid,f,v)=>{setPd(p=>{const n={...p};if(!n[mk])n[mk]={};if(!n[mk][sid])n[mk][sid]={};n[mk][sid]={...n[mk][sid],[f]:parseFloat(v)||0};return n;});},[mk]);
-  const comp=useCallback(s=>computeStaffMonth(s, pd[mk]?.[s.id], ref, sb),[ref,pd,mk,sb]);
+  const comp=useCallback(s=>computeStaffMonth(s, pd[mk]?.[s.id], ref, sb, mk),[ref,pd,mk,sb]);
   const bS=useMemo(()=>visibleStaff.filter(s=>s.method==='bank').map(comp),[visibleStaff,comp]);
   const cS=useMemo(()=>visibleStaff.filter(s=>s.method==='cash').map(comp),[visibleStaff,comp]);
   const ptR=useMemo(()=>pt.map(s=>{const m=gM(s.id),w=m.wagePerDay||s.wagePerDay||0,d=m.daysWorked||0,a=m.advance||0;return{...s,wagePerDay:w,daysWorked:d,advance:a,netPay:Math.round((w*d-a)*100)/100};}),[pt,gM]);
@@ -674,7 +679,21 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
     return n;
   },[bS,cS,hiddenStaff,hidden,mk]);
   const addS=()=>{setStaff(p=>[...p,{id:'s'+Date.now(),...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase(),addedMonth:`${yr}-${String(mo+1).padStart(2,'0')}`}]);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});setEid(null);};
-  const updS=()=>{setStaff(p=>p.map(s=>s.id===eid?{...s,...fm,name:(fm.name||'').toUpperCase(),position:(fm.position||'').toUpperCase()}:s));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});};
+  const updS=()=>{
+    const oldStaff=staff.find(s=>s.id===eid);
+    const newPos=(fm.position||'').toUpperCase();
+    setStaff(p=>p.map(s=>{
+      if(s.id!==eid)return s;
+      const upd={...s,...fm,name:(fm.name||'').toUpperCase(),position:newPos};
+      if(oldStaff&&oldStaff.position!==newPos){
+        const hist=[...(s.positionHistory||[])];
+        if(!hist.length||hist[hist.length-1].position!==oldStaff.position)hist.push({from:mk,position:oldStaff.position});
+        else hist[hist.length-1].from=mk;
+        upd.positionHistory=hist;
+      }
+      return upd;
+    }));setEid(null);setFm({name:'',ic:'',position:'',salary:1700,method:'cash',status:'permanent',defIncentive:0,defBonus:0,defAdvance:0,bankAcc:'',joinDate:''});
+  };
   const delS=id=>{hideForMonth(id);};
   const permDelS=id=>{const s=staff.find(x=>x.id===id);if(!s||!confirm(`Permanently delete ${s.name}? This cannot be undone.`))return;setStaff(p=>p.filter(x=>x.id!==id));setHidden(h=>{const n={...h};Object.keys(n).forEach(m=>{if(Array.isArray(n[m]))n[m]=n[m].filter(x=>x!==id);});return n;});};
   // Inline update of staff salary from the payroll table
