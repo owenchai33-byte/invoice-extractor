@@ -1,22 +1,19 @@
 import { useState, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 
-const fmt = v => {
-  if (v == null || v === '') return '';
-  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2);
-  return String(v).trim();
-};
+const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+const MON3 = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
 function parseFile(file) {
   return new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = e => {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
         const sheets = {};
         wb.SheetNames.forEach(name => {
           const ws = wb.Sheets[name];
-          const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+          const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
           sheets[name] = json;
         });
         res({ name: file.name, sheets, sheetNames: wb.SheetNames });
@@ -27,37 +24,135 @@ function parseFile(file) {
   });
 }
 
-function diffSheets(a, b) {
-  const maxR = Math.max(a.length, b.length);
-  const diffs = [];
-  for (let r = 0; r < maxR; r++) {
-    const rowA = a[r] || [];
-    const rowB = b[r] || [];
-    const maxC = Math.max(rowA.length, rowB.length);
-    for (let c = 0; c < maxC; c++) {
-      const va = fmt(rowA[c]);
-      const vb = fmt(rowB[c]);
-      if (va !== vb) diffs.push({ r, c, a: va, b: vb });
-    }
+function detectMonth(sheetName) {
+  const s = sheetName.toLowerCase().trim();
+  for (let i = 0; i < MONTHS.length; i++) {
+    if (s.includes(MONTHS[i]) || s.includes(MON3[i])) return i;
   }
-  return diffs;
+  const m = s.match(/\b(0?[1-9]|1[0-2])\b/);
+  if (m) return parseInt(m[1]) - 1;
+  return -1;
 }
 
-function colLabel(c) {
-  let s = '';
-  let n = c;
-  while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; }
-  return s;
+function findMatchingSheet(sheetNames, targetMonth) {
+  for (const name of sheetNames) {
+    if (detectMonth(name) === targetMonth) return name;
+  }
+  return null;
+}
+
+function normalizeVal(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date) {
+    const d = v.getDate(), m = v.getMonth() + 1, y = v.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  return String(v).trim();
+}
+
+function normalizeAmount(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return Math.round(v * 100) / 100;
+  const s = String(v).replace(/[,\s]/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : Math.round(n * 100) / 100;
+}
+
+function normalizeDate(v) {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) {
+    return { d: v.getDate(), m: v.getMonth() + 1, y: v.getFullYear() };
+  }
+  const s = String(v).trim();
+  const parts = s.match(/(\d{1,4})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
+  if (!parts) return null;
+  let [, a, b, c] = parts.map(Number);
+  if (a > 31) return { d: b, m: c > 12 ? b : c, y: a };
+  if (c > 31) return { d: a <= 31 ? a : b, m: a <= 12 && b <= 31 ? a : b, y: c < 100 ? 2000 + c : c };
+  return { d: a, m: b, y: c < 100 ? 2000 + c : c };
+}
+
+function datesMatch(da, db) {
+  if (!da || !db) return da === db;
+  if (da.d === db.d && da.m === db.m && da.y === db.y) return true;
+  if (da.d === db.m && da.m === db.d && da.y === db.y) return true;
+  return false;
+}
+
+function detectColumns(rows) {
+  let docCol = -1, amtCol = -1, dateCols = [];
+  const headerRow = rows.find(r => r.some(c => /xfer-/i.test(String(c)))) ? null : rows[0];
+
+  for (let ri = 0; ri < Math.min(rows.length, 20); ri++) {
+    const row = rows[ri];
+    for (let ci = 0; ci < row.length; ci++) {
+      const v = String(row[ci] || '');
+      if (/xfer-/i.test(v) && docCol === -1) docCol = ci;
+    }
+  }
+
+  if (docCol === -1) {
+    for (let ri = 0; ri < Math.min(rows.length, 5); ri++) {
+      for (let ci = 0; ci < (rows[ri] || []).length; ci++) {
+        const v = String(rows[ri][ci] || '').toLowerCase();
+        if (/doc|ref|number|no\.?$/i.test(v) && docCol === -1) docCol = ci;
+      }
+    }
+  }
+
+  for (let ri = 0; ri < Math.min(rows.length, 20); ri++) {
+    const row = rows[ri];
+    for (let ci = 0; ci < row.length; ci++) {
+      if (ci === docCol) continue;
+      const v = row[ci];
+      if (typeof v === 'number' && v > 0 && v < 1e8 && amtCol === -1 && ci !== docCol) amtCol = ci;
+      if ((v instanceof Date || /\d{1,4}[/\-.]?\d{1,2}[/\-.]?\d{2,4}/.test(String(v || ''))) && ci !== docCol && ci !== amtCol) {
+        if (!dateCols.includes(ci)) dateCols.push(ci);
+      }
+    }
+  }
+
+  if (headerRow) {
+    for (let ci = 0; ci < headerRow.length; ci++) {
+      const h = String(headerRow[ci] || '').toLowerCase();
+      if (/amount|total|sum|rm|amt/i.test(h)) amtCol = ci;
+      if (/date/i.test(h) && !dateCols.includes(ci)) dateCols.unshift(ci);
+    }
+  }
+
+  return { docCol, amtCol, dateCols };
+}
+
+function extractRecords(rows, cols) {
+  const records = [];
+  for (let ri = 0; ri < rows.length; ri++) {
+    const row = rows[ri];
+    const docRaw = String(row[cols.docCol] || '').trim();
+    if (!docRaw || !/xfer-/i.test(docRaw)) continue;
+    const doc = docRaw.toLowerCase();
+    const amt = normalizeAmount(row[cols.amtCol]);
+    const dates = cols.dateCols.map(ci => ({ ci, raw: normalizeVal(row[ci]), parsed: normalizeDate(row[ci]) }));
+    records.push({ ri, doc, amt, dates, raw: row });
+  }
+  return records;
+}
+
+function fmtAmt(v) {
+  if (v == null) return '-';
+  return v.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  return `${d.d}/${d.m}/${d.y}`;
 }
 
 export default function ExcelCompare() {
-  const [fileA, setFileA] = useState(null);
-  const [fileB, setFileB] = useState(null);
   const [dataA, setDataA] = useState(null);
   const [dataB, setDataB] = useState(null);
-  const [sheet, setSheet] = useState('');
   const [err, setErr] = useState('');
-  const [view, setView] = useState('diff');
+  const [sheetA, setSheetA] = useState('');
+  const [sheetB, setSheetB] = useState('');
   const refA = useRef(null);
   const refB = useRef(null);
 
@@ -65,8 +160,8 @@ export default function ExcelCompare() {
     try {
       setErr('');
       const parsed = await parseFile(file);
-      if (side === 'a') { setFileA(file); setDataA(parsed); }
-      else { setFileB(file); setDataB(parsed); }
+      if (side === 'a') setDataA(parsed);
+      else setDataB(parsed);
     } catch (e) { setErr(`Error reading file: ${e.message}`); }
   };
 
@@ -77,37 +172,96 @@ export default function ExcelCompare() {
     if (f) handleFile(f, side);
   };
 
-  const allSheets = useMemo(() => {
-    if (!dataA || !dataB) return [];
-    const set = new Set([...dataA.sheetNames, ...dataB.sheetNames]);
-    return [...set];
-  }, [dataA, dataB]);
+  const autoMatch = useMemo(() => {
+    if (!dataA || !dataB) return null;
+    let sa = sheetA;
+    let sb = sheetB;
 
-  const activeSheet = sheet || allSheets[0] || '';
+    if (!sa && dataA.sheetNames.length === 1) sa = dataA.sheetNames[0];
+    if (!sa) {
+      for (const name of dataA.sheetNames) {
+        const mo = detectMonth(name);
+        if (mo >= 0) { sa = name; break; }
+      }
+    }
+    if (!sa) sa = dataA.sheetNames[0];
+
+    if (!sb) {
+      const mo = detectMonth(sa);
+      if (mo >= 0) sb = findMatchingSheet(dataB.sheetNames, mo);
+      if (!sb) sb = dataB.sheetNames[0];
+    }
+
+    return { sa, sb };
+  }, [dataA, dataB, sheetA, sheetB]);
 
   const result = useMemo(() => {
-    if (!dataA || !dataB || !activeSheet) return null;
-    const a = dataA.sheets[activeSheet] || [];
-    const b = dataB.sheets[activeSheet] || [];
-    const diffs = diffSheets(a, b);
-    const diffSet = new Set(diffs.map(d => `${d.r},${d.c}`));
-    const onlyA = dataA.sheetNames.filter(s => !dataB.sheetNames.includes(s));
-    const onlyB = dataB.sheetNames.filter(s => !dataA.sheetNames.includes(s));
-    return { a, b, diffs, diffSet, onlyA, onlyB };
-  }, [dataA, dataB, activeSheet]);
+    if (!dataA || !dataB || !autoMatch) return null;
+    const rowsA = dataA.sheets[autoMatch.sa] || [];
+    const rowsB = dataB.sheets[autoMatch.sb] || [];
+
+    const colsA = detectColumns(rowsA);
+    const colsB = detectColumns(rowsB);
+
+    if (colsA.docCol === -1 || colsB.docCol === -1) {
+      return { error: 'Could not find document number column (xfer-...) in one or both files' };
+    }
+
+    const recsA = extractRecords(rowsA, colsA);
+    const recsB = extractRecords(rowsB, colsB);
+
+    const mapB = new Map();
+    recsB.forEach(r => mapB.set(r.doc, r));
+
+    const matched = [];
+    const onlyInA = [];
+    const usedB = new Set();
+
+    for (const ra of recsA) {
+      const rb = mapB.get(ra.doc);
+      if (rb) {
+        usedB.add(ra.doc);
+        const amtMatch = ra.amt === rb.amt;
+        const dateDiffs = [];
+        const maxDates = Math.max(ra.dates.length, rb.dates.length);
+        let dateMatch = true;
+        for (let di = 0; di < maxDates; di++) {
+          const da = ra.dates[di];
+          const db = rb.dates[di];
+          if (da && db) {
+            if (!datesMatch(da.parsed, db.parsed)) {
+              dateMatch = false;
+              dateDiffs.push({ colA: da.ci, colB: db.ci, a: da.raw, b: db.raw, pa: da.parsed, pb: db.parsed });
+            }
+          }
+        }
+        if (!amtMatch || !dateMatch) {
+          matched.push({ doc: ra.doc, a: ra, b: rb, amtMatch, dateMatch, dateDiffs });
+        }
+      } else {
+        onlyInA.push(ra);
+      }
+    }
+
+    const onlyInB = recsB.filter(r => !usedB.has(r.doc));
+
+    return { matched, onlyInA, onlyInB, totalA: recsA.length, totalB: recsB.length, colsA, colsB };
+  }, [dataA, dataB, autoMatch]);
 
   const clear = () => {
-    setFileA(null); setFileB(null); setDataA(null); setDataB(null);
-    setSheet(''); setErr(''); setView('diff');
+    setDataA(null); setDataB(null); setErr(''); setSheetA(''); setSheetB('');
     if (refA.current) refA.current.value = '';
     if (refB.current) refB.current.value = '';
   };
+
+  const hasDiffs = result && !result.error && (result.matched.length > 0 || result.onlyInA.length > 0 || result.onlyInB.length > 0);
+  const noDiffs = result && !result.error && !hasDiffs;
 
   return (
     <div className="xc-root">
       <style>{CSS}</style>
       <h2 className="xc-title">Excel Compare</h2>
-      <p className="xc-sub">Upload two Excel files to compare and highlight differences</p>
+      <p className="xc-sub">Upload two Excel files — matches by document number (xfer-...), compares amount & date</p>
 
       <div className="xc-uploads">
         <div className={'xc-drop' + (dataA ? ' xc-done' : '')}
@@ -117,7 +271,7 @@ export default function ExcelCompare() {
           onClick={() => refA.current?.click()}>
           <input ref={refA} type="file" accept=".xlsx,.xls,.csv" hidden onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0], 'a'); }} />
           <span className="xc-drop-icon">{dataA ? '✅' : '\u{1F4C4}'}</span>
-          <span className="xc-drop-label">{dataA ? dataA.name : 'File A (Original)'}</span>
+          <span className="xc-drop-label">{dataA ? dataA.name : 'File A'}</span>
           <span className="xc-drop-hint">{dataA ? 'Click to replace' : 'Drop or click to upload'}</span>
         </div>
 
@@ -130,82 +284,119 @@ export default function ExcelCompare() {
           onClick={() => refB.current?.click()}>
           <input ref={refB} type="file" accept=".xlsx,.xls,.csv" hidden onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0], 'b'); }} />
           <span className="xc-drop-icon">{dataB ? '✅' : '\u{1F4C4}'}</span>
-          <span className="xc-drop-label">{dataB ? dataB.name : 'File B (Revised)'}</span>
+          <span className="xc-drop-label">{dataB ? dataB.name : 'File B'}</span>
           <span className="xc-drop-hint">{dataB ? 'Click to replace' : 'Drop or click to upload'}</span>
         </div>
       </div>
 
       {err && <div className="xc-err">{err}</div>}
 
-      {result && (
-        <>
-          {allSheets.length > 1 && (
-            <div className="xc-sheets">
-              {allSheets.map(s => (
-                <button key={s} className={'xc-sheet-btn' + (activeSheet === s ? ' xc-sheet-on' : '') + (result.onlyA.includes(s) || result.onlyB.includes(s) ? ' xc-sheet-only' : '')}
-                  onClick={() => setSheet(s)}>
-                  {s}
-                  {result.onlyA.includes(s) && <span className="xc-badge">A only</span>}
-                  {result.onlyB.includes(s) && <span className="xc-badge">B only</span>}
-                </button>
-              ))}
-            </div>
-          )}
+      {autoMatch && dataA && dataB && (
+        <div className="xc-sheet-pick">
+          <div className="xc-sheet-sel">
+            <label>File A sheet:</label>
+            <select value={autoMatch.sa} onChange={e => setSheetA(e.target.value)}>
+              {dataA.sheetNames.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="xc-sheet-sel">
+            <label>File B sheet:</label>
+            <select value={autoMatch.sb} onChange={e => setSheetB(e.target.value)}>
+              {dataB.sheetNames.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
 
+      {result && result.error && <div className="xc-err">{result.error}</div>}
+
+      {noDiffs && (
+        <div className="xc-match-ok">
+          All {result.totalA} documents match — no differences in amount or date
+        </div>
+      )}
+
+      {hasDiffs && (
+        <>
           <div className="xc-summary">
-            <span className="xc-count">{result.diffs.length === 0 ? 'No differences found' : `${result.diffs.length} difference${result.diffs.length > 1 ? 's' : ''} found`}</span>
-            <div className="xc-actions">
-              <button className={'xc-view-btn' + (view === 'diff' ? ' xc-view-on' : '')} onClick={() => setView('diff')}>Differences</button>
-              <button className={'xc-view-btn' + (view === 'side' ? ' xc-view-on' : '')} onClick={() => setView('side')}>Side by Side</button>
-              <button className="xc-clear-btn" onClick={clear}>Clear</button>
-            </div>
+            <span className="xc-count">
+              {result.matched.length > 0 && <span className="xc-tag xc-tag-warn">{result.matched.length} mismatched</span>}
+              {result.onlyInA.length > 0 && <span className="xc-tag xc-tag-red">{result.onlyInA.length} only in A</span>}
+              {result.onlyInB.length > 0 && <span className="xc-tag xc-tag-blue">{result.onlyInB.length} only in B</span>}
+            </span>
+            <button className="xc-clear-btn" onClick={clear}>Clear</button>
           </div>
 
-          {view === 'diff' && result.diffs.length > 0 && (
-            <div className="xc-tbl-wrap">
-              <table className="xc-tbl">
-                <thead><tr><th>Cell</th><th>File A</th><th>File B</th></tr></thead>
-                <tbody>
-                  {result.diffs.map((d, i) => (
-                    <tr key={i}>
-                      <td className="xc-cell-ref">{colLabel(d.c)}{d.r + 1}</td>
-                      <td className="xc-val-a">{d.a || <span className="xc-empty">(empty)</span>}</td>
-                      <td className="xc-val-b">{d.b || <span className="xc-empty">(empty)</span>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {result.matched.length > 0 && (
+            <div className="xc-section">
+              <h3 className="xc-sec-title">Mismatched Documents</h3>
+              <div className="xc-tbl-wrap">
+                <table className="xc-tbl">
+                  <thead><tr><th>Document</th><th>Field</th><th>File A</th><th>File B</th></tr></thead>
+                  <tbody>
+                    {result.matched.map((m, i) => (
+                      <>
+                        {!m.amtMatch && (
+                          <tr key={`${i}-amt`}>
+                            <td className="xc-cell-ref">{m.doc}</td>
+                            <td className="xc-field">Amount</td>
+                            <td className="xc-val-a">{fmtAmt(m.a.amt)}</td>
+                            <td className="xc-val-b">{fmtAmt(m.b.amt)}</td>
+                          </tr>
+                        )}
+                        {m.dateDiffs.map((dd, di) => (
+                          <tr key={`${i}-d${di}`}>
+                            <td className="xc-cell-ref">{di === 0 && m.amtMatch ? m.doc : ''}</td>
+                            <td className="xc-field">Date</td>
+                            <td className="xc-val-a">{dd.a || '-'}</td>
+                            <td className="xc-val-b">{dd.b || '-'}</td>
+                          </tr>
+                        ))}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
-          {view === 'side' && (
-            <div className="xc-side">
-              {['a', 'b'].map(side => {
-                const rows = side === 'a' ? result.a : result.b;
-                const label = side === 'a' ? (dataA?.name || 'File A') : (dataB?.name || 'File B');
-                const maxC = Math.max(...rows.map(r => r.length), 0);
-                return (
-                  <div key={side} className="xc-side-panel">
-                    <div className="xc-side-title">{label}</div>
-                    <div className="xc-side-scroll">
-                      <table className="xc-tbl xc-tbl-grid">
-                        <thead><tr><th></th>{Array.from({ length: maxC }, (_, i) => <th key={i}>{colLabel(i)}</th>)}</tr></thead>
-                        <tbody>
-                          {rows.map((row, ri) => (
-                            <tr key={ri}>
-                              <td className="xc-row-num">{ri + 1}</td>
-                              {Array.from({ length: maxC }, (_, ci) => {
-                                const isDiff = result.diffSet.has(`${ri},${ci}`);
-                                return <td key={ci} className={isDiff ? 'xc-hl' : ''}>{fmt(row[ci])}</td>;
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })}
+          {result.onlyInA.length > 0 && (
+            <div className="xc-section">
+              <h3 className="xc-sec-title">Only in File A (not in B)</h3>
+              <div className="xc-tbl-wrap">
+                <table className="xc-tbl">
+                  <thead><tr><th>Document</th><th>Amount</th><th>Date</th></tr></thead>
+                  <tbody>
+                    {result.onlyInA.map((r, i) => (
+                      <tr key={i}>
+                        <td className="xc-cell-ref">{r.doc}</td>
+                        <td>{fmtAmt(r.amt)}</td>
+                        <td>{r.dates[0]?.raw || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {result.onlyInB.length > 0 && (
+            <div className="xc-section">
+              <h3 className="xc-sec-title">Only in File B (not in A)</h3>
+              <div className="xc-tbl-wrap">
+                <table className="xc-tbl">
+                  <thead><tr><th>Document</th><th>Amount</th><th>Date</th></tr></thead>
+                  <tbody>
+                    {result.onlyInB.map((r, i) => (
+                      <tr key={i}>
+                        <td className="xc-cell-ref">{r.doc}</td>
+                        <td>{fmtAmt(r.amt)}</td>
+                        <td>{r.dates[0]?.raw || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>
@@ -215,7 +406,7 @@ export default function ExcelCompare() {
 }
 
 const CSS = `
-.xc-root{max-width:1200px;margin:0 auto;padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif}
+.xc-root{max-width:1000px;margin:0 auto;padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif}
 .xc-title{font-size:22px;font-weight:700;margin:0 0 4px;color:#18181b}
 .xc-sub{font-size:14px;color:#71717a;margin:0 0 24px}
 .xc-uploads{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
@@ -227,33 +418,27 @@ const CSS = `
 .xc-drop-hint{font-size:12px;color:#a1a1aa}
 .xc-vs{font-size:18px;font-weight:700;color:#a1a1aa}
 .xc-err{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px}
-.xc-sheets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.xc-sheet-btn{padding:6px 14px;border:1px solid #e4e4e7;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit}
-.xc-sheet-btn:hover{background:#f4f4f5}
-.xc-sheet-on{background:#18181b;color:#fff;border-color:#18181b}
-.xc-sheet-only{border-color:#f59e0b}
-.xc-badge{font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;margin-left:6px}
+.xc-sheet-pick{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.xc-sheet-sel{display:flex;align-items:center;gap:8px;font-size:13px}
+.xc-sheet-sel label{font-weight:600;color:#52525b}
+.xc-sheet-sel select{padding:5px 10px;border:1px solid #d4d4d8;border-radius:6px;font-size:13px;font-family:inherit;background:#fff}
+.xc-match-ok{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:8px;padding:16px;font-size:15px;font-weight:600;text-align:center}
 .xc-summary{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
-.xc-count{font-size:15px;font-weight:600;color:#18181b}
-.xc-actions{display:flex;gap:6px}
-.xc-view-btn{padding:6px 14px;border:1px solid #e4e4e7;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit}
-.xc-view-btn:hover{background:#f4f4f5}
-.xc-view-on{background:#18181b;color:#fff;border-color:#18181b}
+.xc-count{display:flex;gap:8px;flex-wrap:wrap}
+.xc-tag{padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600}
+.xc-tag-warn{background:#fef3c7;color:#92400e}
+.xc-tag-red{background:#fef2f2;color:#b91c1c}
+.xc-tag-blue{background:#eff6ff;color:#1d4ed8}
 .xc-clear-btn{padding:6px 14px;border:1px solid #fecaca;border-radius:6px;background:#fff;color:#dc2626;font-size:13px;cursor:pointer;font-family:inherit}
 .xc-clear-btn:hover{background:#fef2f2}
-.xc-tbl-wrap{max-height:60vh;overflow:auto;border:1px solid #e4e4e7;border-radius:8px}
+.xc-section{margin-bottom:24px}
+.xc-sec-title{font-size:15px;font-weight:700;margin:0 0 8px;color:#18181b}
+.xc-tbl-wrap{max-height:50vh;overflow:auto;border:1px solid #e4e4e7;border-radius:8px}
 .xc-tbl{width:100%;border-collapse:collapse;font-size:13px}
 .xc-tbl th{background:#f4f4f5;padding:8px 12px;text-align:left;font-weight:600;position:sticky;top:0;border-bottom:1px solid #e4e4e7}
 .xc-tbl td{padding:6px 12px;border-bottom:1px solid #f4f4f5}
-.xc-cell-ref{font-weight:700;color:#3b82f6;font-family:monospace;white-space:nowrap}
-.xc-val-a{background:#fef2f2;color:#b91c1c}
-.xc-val-b{background:#f0fdf4;color:#15803d}
-.xc-empty{color:#d4d4d8;font-style:italic}
-.xc-side{display:flex;gap:16px;overflow:hidden}
-.xc-side-panel{flex:1;min-width:0;display:flex;flex-direction:column}
-.xc-side-title{font-size:13px;font-weight:700;padding:8px 0;color:#18181b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.xc-side-scroll{overflow:auto;max-height:60vh;border:1px solid #e4e4e7;border-radius:8px}
-.xc-tbl-grid td,.xc-tbl-grid th{padding:4px 8px;white-space:nowrap;font-size:12px;min-width:60px}
-.xc-row-num{color:#a1a1aa;font-size:11px;text-align:right;min-width:30px;font-family:monospace}
-.xc-hl{background:#fef9c3!important;outline:2px solid #eab308;outline-offset:-1px}
+.xc-cell-ref{font-weight:600;color:#18181b;font-family:monospace;white-space:nowrap;font-size:12px}
+.xc-field{font-weight:600;color:#71717a;font-size:12px}
+.xc-val-a{background:#fef2f2;color:#b91c1c;font-weight:600}
+.xc-val-b{background:#f0fdf4;color:#15803d;font-weight:600}
 `;
