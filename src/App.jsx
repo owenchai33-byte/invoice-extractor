@@ -10,6 +10,7 @@ import Attendance from './Attendance';
 import BeverageFOC from './BeverageFOC';
 import StatutorySummary from './StatutorySummary';
 import EInvoiceRecon from './EInvoiceRecon';
+import ExcelCompare from './ExcelCompare';
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 class SafeSection extends Component {
@@ -133,6 +134,9 @@ const SECTIONS = [
     { id: 'bankrecon', label: 'Bank Recon' },
     { id: 'bevfoc', label: 'Beverage FOC' },
     { id: 'einvoice', label: 'e-Invoice' },
+  ]},
+  { id: 'tools', label: 'Tools', tabs: [
+    { id: 'xlcompare', label: 'Excel Compare' },
   ]},
   { id: 'hr', label: 'Human Resource', tabs: [
     { id: 'attendance', label: 'Attendance' },
@@ -591,6 +595,7 @@ export default function App() {
         {active === 'bevfoc' && <BeverageFOC />}
         <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>
         {active === 'einvoice' && <EInvoiceRecon />}
+        {active === 'xlcompare' && <ExcelCompare />}
       </main>
 
       <style>{`
