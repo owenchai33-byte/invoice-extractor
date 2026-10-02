@@ -1,22 +1,65 @@
 import { useState, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
 const MON3 = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
+function isPdf(file) {
+  return file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+}
+
+async function parsePdf(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const allRows = [];
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items = content.items.filter(i => i.str.trim());
+
+    const rowMap = new Map();
+    for (const item of items) {
+      const y = Math.round(item.transform[5] * 10) / 10;
+      let matched = false;
+      for (const [ky] of rowMap) {
+        if (Math.abs(ky - y) < 3) { rowMap.get(ky).push(item); matched = true; break; }
+      }
+      if (!matched) rowMap.set(y, [item]);
+    }
+
+    const rows = [...rowMap.entries()].sort((a, b) => b[0] - a[0]);
+    for (const [, items2] of rows) {
+      const sorted = items2.sort((a, b) => a.transform[4] - b.transform[4]);
+      allRows.push(sorted.map(i => i.str.trim()));
+    }
+  }
+
+  return { name: file.name, sheets: { 'PDF': allRows }, sheetNames: ['PDF'] };
+}
+
+function parseExcel(buf) {
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const sheets = {};
+  wb.SheetNames.forEach(name => {
+    const ws = wb.Sheets[name];
+    sheets[name] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+  });
+  return { sheets, sheetNames: wb.SheetNames };
+}
+
 function parseFile(file) {
+  if (isPdf(file)) return parsePdf(file);
   return new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = e => {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-        const sheets = {};
-        wb.SheetNames.forEach(name => {
-          const ws = wb.Sheets[name];
-          const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
-          sheets[name] = json;
-        });
-        res({ name: file.name, sheets, sheetNames: wb.SheetNames });
+        const result = parseExcel(e.target.result);
+        res({ name: file.name, ...result });
       } catch (err) { rej(err); }
     };
     r.onerror = () => rej(new Error('Failed to read file'));
@@ -105,7 +148,8 @@ function detectColumns(rows) {
     for (let ci = 0; ci < row.length; ci++) {
       if (ci === docCol) continue;
       const v = row[ci];
-      if (typeof v === 'number' && v > 0 && v < 1e8 && amtCol === -1 && ci !== docCol) amtCol = ci;
+      const numV = typeof v === 'number' ? v : parseFloat(String(v).replace(/[,\s]/g, ''));
+      if (!isNaN(numV) && numV > 0 && numV < 1e8 && amtCol === -1 && ci !== docCol) amtCol = ci;
       if ((v instanceof Date || /\d{1,4}[/\-.]?\d{1,2}[/\-.]?\d{2,4}/.test(String(v || ''))) && ci !== docCol && ci !== amtCol) {
         if (!dateCols.includes(ci)) dateCols.push(ci);
       }
@@ -261,7 +305,7 @@ export default function ExcelCompare() {
     <div className="xc-root">
       <style>{CSS}</style>
       <h2 className="xc-title">Excel Compare</h2>
-      <p className="xc-sub">Upload two Excel files — matches by document number (xfer-...), compares amount & date</p>
+      <p className="xc-sub">Upload two files (Excel or PDF) — matches by document number (xfer-...), compares amount & date</p>
 
       <div className="xc-uploads">
         <div className={'xc-drop' + (dataA ? ' xc-done' : '')}
@@ -269,7 +313,7 @@ export default function ExcelCompare() {
           onDragLeave={e => e.currentTarget.classList.remove('xc-over')}
           onDrop={e => onDrop(e, 'a')}
           onClick={() => refA.current?.click()}>
-          <input ref={refA} type="file" accept=".xlsx,.xls,.csv" hidden onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0], 'a'); }} />
+          <input ref={refA} type="file" accept=".xlsx,.xls,.csv,.pdf" hidden onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0], 'a'); }} />
           <span className="xc-drop-icon">{dataA ? '✅' : '\u{1F4C4}'}</span>
           <span className="xc-drop-label">{dataA ? dataA.name : 'File A'}</span>
           <span className="xc-drop-hint">{dataA ? 'Click to replace' : 'Drop or click to upload'}</span>
@@ -282,7 +326,7 @@ export default function ExcelCompare() {
           onDragLeave={e => e.currentTarget.classList.remove('xc-over')}
           onDrop={e => onDrop(e, 'b')}
           onClick={() => refB.current?.click()}>
-          <input ref={refB} type="file" accept=".xlsx,.xls,.csv" hidden onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0], 'b'); }} />
+          <input ref={refB} type="file" accept=".xlsx,.xls,.csv,.pdf" hidden onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0], 'b'); }} />
           <span className="xc-drop-icon">{dataB ? '✅' : '\u{1F4C4}'}</span>
           <span className="xc-drop-label">{dataB ? dataB.name : 'File B'}</span>
           <span className="xc-drop-hint">{dataB ? 'Click to replace' : 'Drop or click to upload'}</span>
