@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, Component } from 'react';
+import { useState, useEffect, useRef, useCallback, Component, lazy, Suspense } from 'react';
 import InvoicesWorkspace from './InvoicesWorkspace';
 import Payroll from './Payroll';
 import ContractGenerator from './ContractGenerator';
@@ -10,7 +10,7 @@ import Attendance from './Attendance';
 import BeverageFOC from './BeverageFOC';
 import StatutorySummary from './StatutorySummary';
 import EInvoiceRecon from './EInvoiceRecon';
-import ExcelCompare from './ExcelCompare';
+const ExcelCompare = lazy(() => import('./ExcelCompare'));
 import { saveBackup, checkWeeklyDownload, downloadBackup, markBackupDone, checkAndRestore, restoreFromBackup, restoreFromFile } from './backup';
 
 class SafeSection extends Component {
@@ -595,7 +595,7 @@ export default function App() {
         {active === 'bevfoc' && <BeverageFOC />}
         <div style={{display: active === 'statutory' ? 'block' : 'none'}}><StatutorySummary /></div>
         {active === 'einvoice' && <EInvoiceRecon />}
-        {active === 'xlcompare' && <ExcelCompare />}
+        {active === 'xlcompare' && <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#71717a'}}>Loading...</div>}><ExcelCompare /></Suspense>}
       </main>
 
       <style>{`
