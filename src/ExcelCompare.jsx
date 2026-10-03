@@ -43,11 +43,11 @@ async function parsePdf(file) {
 }
 
 function parseExcel(buf) {
-  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const wb = XLSX.read(buf, { type: 'array' });
   const sheets = {};
   wb.SheetNames.forEach(name => {
     const ws = wb.Sheets[name];
-    sheets[name] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+    sheets[name] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
   });
   return { sheets, sheetNames: wb.SheetNames };
 }
@@ -87,7 +87,7 @@ function findMatchingSheet(sheetNames, targetMonth) {
 function normalizeVal(v) {
   if (v == null || v === '') return '';
   if (v instanceof Date) {
-    const d = v.getUTCDate(), m = v.getUTCMonth() + 1, y = v.getUTCFullYear();
+    const d = v.getDate(), m = v.getMonth() + 1, y = v.getFullYear();
     return `${d}/${m}/${y}`;
   }
   return String(v).trim();
@@ -104,7 +104,7 @@ function normalizeAmount(v) {
 function normalizeDate(v) {
   if (v == null || v === '') return null;
   if (v instanceof Date) {
-    return { d: v.getUTCDate(), m: v.getUTCMonth() + 1, y: v.getUTCFullYear() };
+    return { d: v.getDate(), m: v.getMonth() + 1, y: v.getFullYear() };
   }
   const s = String(v).trim();
   const parts = s.match(/(\d{1,4})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
