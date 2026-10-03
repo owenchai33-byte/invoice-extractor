@@ -122,16 +122,36 @@ function datesMatch(da, db) {
   return false;
 }
 
+function isDateLike(v) {
+  if (v instanceof Date) return true;
+  const s = String(v || '').trim();
+  if (/^\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}$/.test(s)) return true;
+  const n = parseFloat(s.replace(/[,\s]/g, ''));
+  if (!isNaN(n) && n >= 1 && n <= 31 && Number.isInteger(n)) return true;
+  return false;
+}
+
+function isAmountLike(v) {
+  const s = String(v || '').trim();
+  if (/[\d,]+\.\d{2}$/.test(s)) return true;
+  const n = typeof v === 'number' ? v : parseFloat(s.replace(/[,\s]/g, ''));
+  if (!isNaN(n) && n > 31) return true;
+  return false;
+}
+
 function detectColumns(rows) {
   let docCol = -1, amtCol = -1, dateCols = [];
-  const headerRow = rows.find(r => r.some(c => /xfer-/i.test(String(c)))) ? null : rows[0];
 
-  for (let ri = 0; ri < Math.min(rows.length, 20); ri++) {
+  const hasXfer = rows.some(r => r.some(c => /xfer-/i.test(String(c))));
+  const headerRow = !hasXfer ? rows[0] : null;
+
+  for (let ri = 0; ri < Math.min(rows.length, 30); ri++) {
     const row = rows[ri];
     for (let ci = 0; ci < row.length; ci++) {
       const v = String(row[ci] || '');
       if (/xfer-/i.test(v) && docCol === -1) docCol = ci;
     }
+    if (docCol !== -1) break;
   }
 
   if (docCol === -1) {
@@ -143,28 +163,56 @@ function detectColumns(rows) {
     }
   }
 
-  for (let ri = 0; ri < Math.min(rows.length, 20); ri++) {
-    const row = rows[ri];
-    for (let ci = 0; ci < row.length; ci++) {
-      if (ci === docCol) continue;
-      const v = row[ci];
-      const numV = typeof v === 'number' ? v : parseFloat(String(v).replace(/[,\s]/g, ''));
-      if (!isNaN(numV) && numV > 0 && numV < 1e8 && amtCol === -1 && ci !== docCol) amtCol = ci;
-      if ((v instanceof Date || /\d{1,4}[/\-.]?\d{1,2}[/\-.]?\d{2,4}/.test(String(v || ''))) && ci !== docCol && ci !== amtCol) {
-        if (!dateCols.includes(ci)) dateCols.push(ci);
-      }
-    }
-  }
-
   if (headerRow) {
     for (let ci = 0; ci < headerRow.length; ci++) {
       const h = String(headerRow[ci] || '').toLowerCase();
       if (/amount|total|sum|rm|amt/i.test(h)) amtCol = ci;
-      if (/date/i.test(h) && !dateCols.includes(ci)) dateCols.unshift(ci);
+      if (/date/i.test(h) && !dateCols.includes(ci)) dateCols.push(ci);
+    }
+  }
+
+  if (amtCol === -1 || dateCols.length === 0) {
+    const colScores = {};
+    const dataRows = rows.filter(r => r.some(c => /xfer-/i.test(String(c))));
+    const sample = dataRows.slice(0, 20);
+
+    for (const row of sample) {
+      for (let ci = 0; ci < row.length; ci++) {
+        if (ci === docCol) continue;
+        if (!colScores[ci]) colScores[ci] = { amt: 0, date: 0, count: 0 };
+        const v = row[ci];
+        if (v == null || v === '') continue;
+        colScores[ci].count++;
+        if (isAmountLike(v)) colScores[ci].amt++;
+        if (isDateLike(v)) colScores[ci].date++;
+      }
+    }
+
+    if (amtCol === -1) {
+      let bestAmt = -1, bestAmtScore = 0;
+      for (const [ci, sc] of Object.entries(colScores)) {
+        const c = Number(ci);
+        if (c === docCol || dateCols.includes(c)) continue;
+        if (sc.amt > bestAmtScore && sc.amt > sc.date) { bestAmt = c; bestAmtScore = sc.amt; }
+      }
+      if (bestAmt >= 0) amtCol = bestAmt;
+    }
+
+    if (dateCols.length === 0) {
+      for (const [ci, sc] of Object.entries(colScores)) {
+        const c = Number(ci);
+        if (c === docCol || c === amtCol) continue;
+        if (sc.date > 0 && sc.date >= sc.amt) dateCols.push(c);
+      }
     }
   }
 
   return { docCol, amtCol, dateCols };
+}
+
+function cleanDocNumber(raw) {
+  const m = raw.match(/(xfer-[\w/\-]+)/i);
+  return m ? m[1].toLowerCase() : raw.toLowerCase();
 }
 
 function extractRecords(rows, cols) {
@@ -173,7 +221,7 @@ function extractRecords(rows, cols) {
     const row = rows[ri];
     const docRaw = String(row[cols.docCol] || '').trim();
     if (!docRaw || !/xfer-/i.test(docRaw)) continue;
-    const doc = docRaw.toLowerCase();
+    const doc = cleanDocNumber(docRaw);
     const amt = normalizeAmount(row[cols.amtCol]);
     const dates = cols.dateCols.map(ci => ({ ci, raw: normalizeVal(row[ci]), parsed: normalizeDate(row[ci]) }));
     records.push({ ri, doc, amt, dates, raw: row });
@@ -257,14 +305,22 @@ export default function ExcelCompare() {
     const mapB = new Map();
     recsB.forEach(r => mapB.set(r.doc, r));
 
+    function findInB(doc) {
+      if (mapB.has(doc)) return mapB.get(doc);
+      for (const [key, val] of mapB) {
+        if (key.startsWith(doc) || doc.startsWith(key)) return val;
+      }
+      return null;
+    }
+
     const matched = [];
     const onlyInA = [];
     const usedB = new Set();
 
     for (const ra of recsA) {
-      const rb = mapB.get(ra.doc);
+      const rb = findInB(ra.doc);
       if (rb) {
-        usedB.add(ra.doc);
+        usedB.add(rb.doc);
         const amtMatch = ra.amt === rb.amt;
         const dateDiffs = [];
         const maxDates = Math.max(ra.dates.length, rb.dates.length);
