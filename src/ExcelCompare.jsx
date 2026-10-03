@@ -126,17 +126,14 @@ function isDateLike(v) {
   if (v instanceof Date) return true;
   const s = String(v || '').trim();
   if (/^\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}$/.test(s)) return true;
-  const n = parseFloat(s.replace(/[,\s]/g, ''));
-  if (!isNaN(n) && n >= 1 && n <= 31 && Number.isInteger(n)) return true;
+  const n = typeof v === 'number' ? v : parseFloat(s.replace(/[,\s]/g, ''));
+  if (!isNaN(n) && n >= 1 && n <= 31 && n === Math.floor(n)) return true;
   return false;
 }
 
-function isAmountLike(v) {
-  const s = String(v || '').trim();
-  if (/[\d,]+\.\d{2}$/.test(s)) return true;
-  const n = typeof v === 'number' ? v : parseFloat(s.replace(/[,\s]/g, ''));
-  if (!isNaN(n) && n > 31) return true;
-  return false;
+function numVal(v) {
+  if (typeof v === 'number') return v;
+  return parseFloat(String(v || '').replace(/[,\s]/g, ''));
 }
 
 function detectColumns(rows) {
@@ -172,37 +169,40 @@ function detectColumns(rows) {
   }
 
   if (amtCol === -1 || dateCols.length === 0) {
-    const colScores = {};
+    const colStats = {};
     const dataRows = rows.filter(r => r.some(c => /xfer-/i.test(String(c))));
     const sample = dataRows.slice(0, 20);
 
     for (const row of sample) {
       for (let ci = 0; ci < row.length; ci++) {
         if (ci === docCol) continue;
-        if (!colScores[ci]) colScores[ci] = { amt: 0, date: 0, count: 0 };
+        if (!colStats[ci]) colStats[ci] = { maxVal: 0, dateCount: 0, numCount: 0, count: 0 };
         const v = row[ci];
         if (v == null || v === '') continue;
-        colScores[ci].count++;
-        if (isAmountLike(v)) colScores[ci].amt++;
-        if (isDateLike(v)) colScores[ci].date++;
+        colStats[ci].count++;
+        const n = numVal(v);
+        if (!isNaN(n) && n > 0) {
+          colStats[ci].numCount++;
+          if (n > colStats[ci].maxVal) colStats[ci].maxVal = n;
+        }
+        if (isDateLike(v)) colStats[ci].dateCount++;
       }
     }
 
-    if (amtCol === -1) {
-      let bestAmt = -1, bestAmtScore = 0;
-      for (const [ci, sc] of Object.entries(colScores)) {
-        const c = Number(ci);
-        if (c === docCol || dateCols.includes(c)) continue;
-        if (sc.amt > bestAmtScore && sc.amt > sc.date) { bestAmt = c; bestAmtScore = sc.amt; }
-      }
-      if (bestAmt >= 0) amtCol = bestAmt;
+    const numCols = Object.entries(colStats)
+      .filter(([ci]) => Number(ci) !== docCol)
+      .filter(([, s]) => s.numCount > 0)
+      .sort((a, b) => b[1].maxVal - a[1].maxVal);
+
+    if (amtCol === -1 && numCols.length > 0) {
+      amtCol = Number(numCols[0][0]);
     }
 
     if (dateCols.length === 0) {
-      for (const [ci, sc] of Object.entries(colScores)) {
+      for (const [ci, sc] of Object.entries(colStats)) {
         const c = Number(ci);
         if (c === docCol || c === amtCol) continue;
-        if (sc.date > 0 && sc.date >= sc.amt) dateCols.push(c);
+        if (sc.dateCount > 0 || (sc.numCount > 0 && sc.maxVal <= 31)) dateCols.push(c);
       }
     }
   }
