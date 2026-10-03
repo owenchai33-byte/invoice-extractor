@@ -87,7 +87,7 @@ function findMatchingSheet(sheetNames, targetMonth) {
 function normalizeVal(v) {
   if (v == null || v === '') return '';
   if (v instanceof Date) {
-    const d = v.getDate(), m = v.getMonth() + 1, y = v.getFullYear();
+    const d = v.getUTCDate(), m = v.getUTCMonth() + 1, y = v.getUTCFullYear();
     return `${d}/${m}/${y}`;
   }
   return String(v).trim();
@@ -104,7 +104,7 @@ function normalizeAmount(v) {
 function normalizeDate(v) {
   if (v == null || v === '') return null;
   if (v instanceof Date) {
-    return { d: v.getDate(), m: v.getMonth() + 1, y: v.getFullYear() };
+    return { d: v.getUTCDate(), m: v.getUTCMonth() + 1, y: v.getUTCFullYear() };
   }
   const s = String(v).trim();
   const parts = s.match(/(\d{1,4})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
