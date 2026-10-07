@@ -1010,6 +1010,7 @@ const CSS = `
 .mr-select{padding:6px 10px;border-radius:6px;border:1px solid #d4d4d8;font-size:13px;font-weight:600;background:#fff;margin-right:8px}
 .mr-loading{font-size:12px;color:#71717a;margin-top:12px}
 .mr-warn{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:#92400E}
+.mr-checks{font-size:11px;color:#a1a1aa;margin:4px 0 8px;line-height:1.4}
 @media print{.mr-root{display:none}}
 `;
 
@@ -1131,29 +1132,42 @@ export default function MerchantReport() {
     }
   };
 
-  const handleMkFile = async (file) => {
-    if (!file) return;
+  const handleMkFiles = async (files) => {
+    if (!files || !files.length) return;
     setMkError('');
     setMkResult(null);
     setMkLoading(true);
     try {
-      const buf = await file.arrayBuffer();
-      const res = await processMyKasihZip(buf);
-      if (!res.excels.length && !res.pdfs.length) {
-        setMkError('No Terminal Activity Reports or Invoice PDFs found in the zip.');
+      const allExcels = [];
+      const allPdfs = [];
+      const allWarnings = [];
+      let year, month, outlet;
+      for (const file of files) {
+        const buf = await file.arrayBuffer();
+        const res = await processMyKasihZip(buf);
+        allExcels.push(...res.excels);
+        allPdfs.push(...res.pdfs);
+        allWarnings.push(...res.warnings);
+        if (!year) { year = res.year; month = res.month; outlet = res.outlet; }
+      }
+      allExcels.sort((a, b) => a.date.localeCompare(b.date));
+      allPdfs.sort((a, b) => a.date.localeCompare(b.date));
+      const merged = { excels: allExcels, pdfs: allPdfs, year, month, outlet, warnings: allWarnings };
+      if (!merged.excels.length && !merged.pdfs.length) {
+        setMkError('No Terminal Activity Reports or Invoice PDFs found in the zip file(s).');
       } else {
-        if (res.warnings.length > 0) {
-          alert('⚠️ Date Warning\n\n' + res.warnings.join('\n'));
+        if (merged.warnings.length > 0) {
+          alert('⚠️ Date Warning\n\n' + merged.warnings.join('\n'));
         }
-        setMkResult(res);
+        setMkResult(merged);
         const mkDailies = {};
-        for (const excel of res.excels) {
+        for (const excel of merged.excels) {
           const dm = excel.date.match(/^(\d{4})(\d{2})(\d{2})/);
           if (!dm) continue;
           const net = extractMyKasihNet(excel.rows);
           if (net > 0) { const k = `${dm[3]}/${dm[2]}`; mkDailies[k] = (mkDailies[k] || 0) + net; }
         }
-        savePOSDailies('mykasih', res.outlet, mkDailies);
+        savePOSDailies('mykasih', merged.outlet, mkDailies);
       }
     } catch (err) {
       setMkError('Could not process zip: ' + (err.message || 'unknown error'));
@@ -1164,8 +1178,7 @@ export default function MerchantReport() {
   const handleMkDrop = (e) => {
     e.preventDefault();
     setMkDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleMkFile(file);
+    if (e.dataTransfer.files?.length) handleMkFiles([...e.dataTransfer.files]);
   };
 
   const doMkExcelDownload = () => {
@@ -1243,6 +1256,7 @@ export default function MerchantReport() {
         <div className="mr-card">
           <h2>Sarawak Pay (SPAY)</h2>
           <p>Upload the settlement report from the SPAY portal. It will be formatted with company header, totals, and print-ready layout.</p>
+          <div className="mr-checks">Auto-checks: mixed outlets · wrong month · missing dates · duplicate dates</div>
           <div
             className={`mr-upload${dragging ? ' drag' : ''}`}
             onClick={() => fileRef.current?.click()}
@@ -1278,6 +1292,7 @@ export default function MerchantReport() {
         <div className="mr-card">
           <h2>CardPay</h2>
           <p>Upload the zip file from CardPay portal. Statement of Account PDFs will be extracted, sorted by date, and merged into one PDF.</p>
+          <div className="mr-checks">Auto-checks: mixed outlets · wrong month · missing dates · duplicate dates</div>
           <div
             className={`mr-upload${cpDragging ? ' drag' : ''}`}
             onClick={() => cpFileRef.current?.click()}
@@ -1315,7 +1330,8 @@ export default function MerchantReport() {
 
         <div className="mr-card">
           <h2>MyKasih</h2>
-          <p>Upload the zip file from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF.</p>
+          <p>Upload zip files from MyKasih portal (nested zips supported). Terminal Activity Reports → PDF, Invoices → merged PDF.</p>
+          <div className="mr-checks">Auto-checks: mixed outlets · wrong month · missing dates · duplicate dates · amount mismatch</div>
           <div
             className={`mr-upload${mkDragging ? ' drag' : ''}`}
             onClick={() => mkFileRef.current?.click()}
@@ -1325,14 +1341,15 @@ export default function MerchantReport() {
           >
             <div className="mr-icon">📦</div>
             <div className="mr-label">Click to upload or drag & drop</div>
-            <div className="mr-hint">Accepts .zip files from MyKasih portal (nested zips supported)</div>
+            <div className="mr-hint">Accepts .zip files from MyKasih portal (multiple zips + nested zips supported)</div>
           </div>
           <input
             ref={mkFileRef}
             type="file"
             accept=".zip"
+            multiple
             style={{ display: 'none' }}
-            onChange={(e) => { handleMkFile(e.target.files?.[0]); e.target.value = ''; }}
+            onChange={(e) => { handleMkFiles([...e.target.files]); e.target.value = ''; }}
           />
 
           {mkLoading && <div className="mr-loading">Extracting and processing files...</div>}
