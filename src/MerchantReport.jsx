@@ -284,6 +284,22 @@ async function processCardPayZip(arrayBuffer) {
     }))];
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
+  const datesInMonth = new Set();
+  pdfs.forEach(p => {
+    const dm = p.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dm && parseInt(dm[1]) === year && parseInt(dm[2]) - 1 === month) {
+      datesInMonth.add(parseInt(dm[3]));
+    }
+  });
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const missingDates = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (!datesInMonth.has(d)) missingDates.push(d);
+  }
+  if (missingDates.length > 0 && missingDates.length < daysInMonth) {
+    const fmt = missingDates.map(d => `${d}/${month + 1}`);
+    warnings.push(`Missing dates: ${fmt.join(', ')}. Please check if these dates should be included.`);
+  }
   const outlet = detectedOutlets.size > 0 ? [...detectedOutlets][0] : 'HQ';
   return { pdfs, year, month, outlet, warnings };
 }
