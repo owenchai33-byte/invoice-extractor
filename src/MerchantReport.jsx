@@ -285,10 +285,13 @@ async function processCardPayZip(arrayBuffer) {
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
   const datesInMonth = new Set();
+  const dateCount = {};
   pdfs.forEach(p => {
     const dm = p.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (dm && parseInt(dm[1]) === year && parseInt(dm[2]) - 1 === month) {
-      datesInMonth.add(parseInt(dm[3]));
+      const day = parseInt(dm[3]);
+      datesInMonth.add(day);
+      dateCount[day] = (dateCount[day] || 0) + 1;
     }
   });
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -299,6 +302,11 @@ async function processCardPayZip(arrayBuffer) {
   if (missingDates.length > 0 && missingDates.length < daysInMonth) {
     const fmt = missingDates.map(d => `${d}/${month + 1}`);
     warnings.push(`Missing dates: ${fmt.join(', ')}. Please check if these dates should be included.`);
+  }
+  const duplicatedDates = Object.entries(dateCount).filter(([, c]) => c > 1);
+  if (duplicatedDates.length > 0) {
+    const fmt = duplicatedDates.map(([d, c]) => `${d}/${month + 1} (×${c})`);
+    warnings.push(`Duplicate dates: ${fmt.join(', ')}. Please check for duplicated statements.`);
   }
   const outlet = detectedOutlets.size > 0 ? [...detectedOutlets][0] : 'HQ';
   return { pdfs, year, month, outlet, warnings };
