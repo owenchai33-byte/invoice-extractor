@@ -435,18 +435,6 @@ async function processMyKasihZip(arrayBuffer) {
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
 
-  const mkDailyDates = new Set();
-  allDates.forEach(d => {
-    if (d.month === month && d.year === year) mkDailyDates.add(d.day);
-  });
-  const mkDaysInMonth = new Date(year, month + 1, 0).getDate();
-  const mkMissing = [];
-  for (let d = 1; d <= mkDaysInMonth; d++) {
-    if (!mkDailyDates.has(d)) mkMissing.push(d);
-  }
-  if (mkMissing.length > 0 && mkMissing.length < mkDaysInMonth) {
-    warnings.push(`Missing dates: ${mkMissing.map(d => `${d}/${month + 1}`).join(', ')}. Please check if these dates should be included.`);
-  }
   for (const excel of excels) {
     const rows = excel.rows;
     const dataHeaderIdx = rows.findIndex(r => r[0] === 'NO');
@@ -466,7 +454,7 @@ async function processMyKasihZip(arrayBuffer) {
   }
 
   const outlet = detectedOutlets.size > 0 ? [...detectedOutlets][0] : 'HQ';
-  return { excels, pdfs, year, month, outlet, warnings };
+  return { excels, pdfs, year, month, outlet, warnings, allDates };
 }
 
 function buildMyKasihExcelPDF(excels, outlet, month, year) {
@@ -1132,6 +1120,7 @@ export default function MerchantReport() {
       const allExcels = [];
       const allPdfs = [];
       const allWarnings = [];
+      const combinedDates = [];
       let year, month, outlet;
       for (const file of files) {
         const buf = await file.arrayBuffer();
@@ -1139,10 +1128,23 @@ export default function MerchantReport() {
         allExcels.push(...res.excels);
         allPdfs.push(...res.pdfs);
         allWarnings.push(...res.warnings);
+        combinedDates.push(...res.allDates);
         if (!year) { year = res.year; month = res.month; outlet = res.outlet; }
       }
       allExcels.sort((a, b) => a.date.localeCompare(b.date));
       allPdfs.sort((a, b) => a.date.localeCompare(b.date));
+      const mkDailyDates = new Set();
+      combinedDates.forEach(d => {
+        if (d.month === month && d.year === year) mkDailyDates.add(d.day);
+      });
+      const mkDaysInMonth = new Date(year, month + 1, 0).getDate();
+      const mkMissing = [];
+      for (let d = 1; d <= mkDaysInMonth; d++) {
+        if (!mkDailyDates.has(d)) mkMissing.push(d);
+      }
+      if (mkMissing.length > 0 && mkMissing.length < mkDaysInMonth) {
+        allWarnings.push(`Missing dates: ${mkMissing.map(d => `${d}/${month + 1}`).join(', ')}. Please check if these dates should be included.`);
+      }
       const merged = { excels: allExcels, pdfs: allPdfs, year, month, outlet, warnings: allWarnings };
       if (!merged.excels.length && !merged.pdfs.length) {
         setMkError('No Terminal Activity Reports or Invoice PDFs found in the zip file(s).');
