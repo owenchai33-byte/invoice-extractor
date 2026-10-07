@@ -1149,9 +1149,6 @@ export default function MerchantReport() {
       if (!merged.excels.length && !merged.pdfs.length) {
         setMkError('No Terminal Activity Reports or Invoice PDFs found in the zip file(s).');
       } else {
-        if (merged.warnings.length > 0) {
-          alert('⚠️ Date Warning\n\n' + merged.warnings.join('\n'));
-        }
         setMkResult(merged);
         const mkDailies = {};
         for (const excel of merged.excels) {
