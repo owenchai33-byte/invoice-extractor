@@ -139,6 +139,29 @@ function processSpay(rawRows) {
     }))];
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
+  const spayDateCount = {};
+  rawRows.forEach(r => {
+    const d = r['Settlement Date'];
+    if (!d || typeof d !== 'string') return;
+    const dm = d.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dm && parseInt(dm[1]) === year && parseInt(dm[2]) - 1 === month) {
+      const day = parseInt(dm[3]);
+      spayDateCount[day] = (spayDateCount[day] || 0) + 1;
+    }
+  });
+  const spayDaysInMonth = new Date(year, month + 1, 0).getDate();
+  const spayDatesPresent = new Set(Object.keys(spayDateCount).map(Number));
+  const spayMissing = [];
+  for (let d = 1; d <= spayDaysInMonth; d++) {
+    if (!spayDatesPresent.has(d)) spayMissing.push(d);
+  }
+  if (spayMissing.length > 0 && spayMissing.length < spayDaysInMonth) {
+    warnings.push(`Missing dates: ${spayMissing.map(d => `${d}/${month + 1}`).join(', ')}. Please check if these dates should be included.`);
+  }
+  const spayDupes = Object.entries(spayDateCount).filter(([, c]) => c > 1);
+  if (spayDupes.length > 0) {
+    warnings.push(`Duplicate dates: ${spayDupes.map(([d, c]) => `${d}/${month + 1} (×${c})`).join(', ')}. Please check for duplicated entries.`);
+  }
   const mid = rawRows[0]?.['Merchant ID'] || '';
   const outlet = SPAY_OUTLETS[mid.trim()] || 'HQ';
   const title = `${outlet} SARAWAK PAY ${MONTHS[month]} ${year}`;
@@ -412,6 +435,27 @@ async function processMyKasihZip(arrayBuffer) {
     warnings.push(`Found dates from unexpected months: ${months.join(', ')}. Please check these entries.`);
   }
 
+  const mkDateCount = {};
+  excels.forEach(e => {
+    const dm = e.date.match(/^(\d{4})(\d{2})(\d{2})/);
+    if (dm && parseInt(dm[1]) === year && parseInt(dm[2]) - 1 === month) {
+      const day = parseInt(dm[3]);
+      mkDateCount[day] = (mkDateCount[day] || 0) + 1;
+    }
+  });
+  const mkDaysInMonth = new Date(year, month + 1, 0).getDate();
+  const mkDatesPresent = new Set(Object.keys(mkDateCount).map(Number));
+  const mkMissing = [];
+  for (let d = 1; d <= mkDaysInMonth; d++) {
+    if (!mkDatesPresent.has(d)) mkMissing.push(d);
+  }
+  if (mkMissing.length > 0 && mkMissing.length < mkDaysInMonth) {
+    warnings.push(`Missing dates: ${mkMissing.map(d => `${d}/${month + 1}`).join(', ')}. Please check if these dates should be included.`);
+  }
+  const mkDupes = Object.entries(mkDateCount).filter(([, c]) => c > 1);
+  if (mkDupes.length > 0) {
+    warnings.push(`Duplicate dates: ${mkDupes.map(([d, c]) => `${d}/${month + 1} (×${c})`).join(', ')}. Please check for duplicated files.`);
+  }
   for (const excel of excels) {
     const rows = excel.rows;
     const dataHeaderIdx = rows.findIndex(r => r[0] === 'NO');
