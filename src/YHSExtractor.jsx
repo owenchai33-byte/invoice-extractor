@@ -374,6 +374,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   const [showSettings, setShowSettings] = useState(false);
   const [otherDiscount, setOtherDiscount] = useState(() => loadLS(LS_META, null, {}).otherDiscount || 0);
   const [creditNote, setCreditNote] = useState(() => loadLS(LS_META, null, {}).creditNote || 0);
+  const [payableOverride, setPayableOverride] = useState(() => loadLS(LS_META, null, {}).payableOverride ?? null);
   const [previewId, setPreviewId] = useState(null);
   const [volAdd, setVolAdd] = useState({}); // { [invId]: { ml, custom, ctn } }
   const fileRef = useRef(null);
@@ -382,7 +383,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices, LS_YHS]);
   useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
   useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn, LS_VOLCTN]);
-  useEffect(() => { try { localStorage.setItem(LS_META, JSON.stringify({ otherDiscount, creditNote })); } catch {} }, [otherDiscount, creditNote, LS_META]);
+  useEffect(() => { try { localStorage.setItem(LS_META, JSON.stringify({ otherDiscount, creditNote, payableOverride })); } catch {} }, [otherDiscount, creditNote, payableOverride, LS_META]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {
@@ -659,7 +660,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
     });
     d.push(['', 'OTHER DISCOUNT:', '', calc.otherDiscount ? '-' : '', calc.otherDiscount || '']);
     d.push(['', 'CREDIT NOTE:', '', calc.creditNote ? '-' : '', calc.creditNote || '']);
-    d.push(['', 'TOTAL AMOUNT PAYABLE:', '', '', calc.payable]);
+    d.push(['', 'TOTAL AMOUNT PAYABLE:', '', '', payableOverride != null ? payableOverride : calc.payable]);
     const ws = XLSX.utils.aoa_to_sheet(d);
     ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 16 }, { wch: 14 }, { wch: 15 }, { wch: 34 }];
     XLSX.utils.book_append_sheet(wb, ws, 'YHS');
@@ -858,7 +859,15 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                   <span className="printOnly">{creditNote ? fmt(creditNote) : ''}</span>
                 </td>
               </tr>
-              <SumRow label="TOTAL AMOUNT PAYABLE:" value={calc.payable} sign="" bold highlight topBorder />
+              <tr>
+                <td style={{ ...T.bxL, borderTop: '2px solid #000', fontSize: 16 }}>TOTAL AMOUNT PAYABLE:</td>
+                <td style={{ ...T.bxM, borderTop: '2px solid #000' }}></td>
+                <td className="noP" style={{ ...T.bxR, borderTop: '2px solid #000', background: '#ffe600', fontSize: 18 }}>
+                  <NumberField value={payableOverride != null ? payableOverride : calc.payable} onCommit={v => setPayableOverride(v === calc.payable ? null : v)}
+                    style={{ width: '100%', border: '1px solid #bbb', borderRadius: 3, padding: '3px 4px', fontSize: 18, fontWeight: 700, fontFamily: F, textAlign: 'right', boxSizing: 'border-box', background: payableOverride != null ? '#fff3cd' : '#ffe600' }} />
+                  <span className="printOnly" style={{ fontWeight: 700 }}>{fmt(payableOverride != null ? payableOverride : calc.payable)}</span>
+                </td>
+              </tr>
             </tbody>
           </table>
 
