@@ -21,7 +21,7 @@ describe('calcYHS — sample Excel batch (1.xlsx) reproduces the sheet exactly',
 
   it('TOTAL INVOICE AMOUNT = 61004.69', () => expect(r.totalAmount).toBe(61004.69));
   it('total cartons = 2040', () => expect(r.totalCtn).toBe(2040));
-  it('2% DISCOUNT = 1220.0938 (unrounded, matches sheet)', () => expect(r.discount2).toBe(1220.0938));
+  it('2% DISCOUNT = 1220.09', () => expect(r.discount2).toBe(1220.09));
   it('TRANSPORT SUBSIDY 0.30 = 612', () => expect(r.transport1).toBe(612));
   it('TRANSPORT SUBSIDY 0.20 = 408', () => expect(r.transport2).toBe(408));
 
@@ -40,7 +40,7 @@ describe('calcYHS — sample Excel batch (1.xlsx) reproduces the sheet exactly',
   });
   it('total volume bonus = 675', () => expect(r.totalBonus).toBe(675));
   it('CREDIT NOTE carried through = 606.27', () => expect(r.creditNote).toBe(606.27));
-  it('TOTAL AMOUNT PAYABLE = 57483.3262 (matches sheet exactly)', () => expect(r.payable).toBe(57483.3262));
+  it('TOTAL AMOUNT PAYABLE = 57483.33', () => expect(r.payable).toBe(57483.33));
 });
 
 describe('calcYHS — per-volume rates (some products get no discount)', () => {

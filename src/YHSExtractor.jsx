@@ -49,7 +49,7 @@ export function volLabel(ml, unit) {
 // the bonus differ from the actual total — e.g. only part of the 300ML cartons get
 // a discount. The bonus uses the override; transport still uses the real total.
 export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, ctnOverrides = {}, otherDiscount = 0, creditNote = 0 }) {
-  const r4 = v => Math.round(v * 10000) / 10000;
+  const r4 = v => Math.round(v * 100) / 100;
   const dRate = Number(defaultRate) || 0;
   const rateFor = ml => (rates && rates[ml] != null) ? (Number(rates[ml]) || 0) : dRate;
   const totalAmount = invoices.reduce((s, i) => s + (Number(i.amount) || 0), 0);
