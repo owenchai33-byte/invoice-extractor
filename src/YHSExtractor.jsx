@@ -865,9 +865,11 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               <tr>
                 <td style={{ ...T.bxL, borderTop: '2px solid #000', fontSize: 16 }}>TOTAL AMOUNT PAYABLE:</td>
                 <td style={{ ...T.bxM, borderTop: '2px solid #000' }}></td>
-                <td className="noP" style={{ ...T.bxR, borderTop: '2px solid #000', background: '#ffe600', fontSize: 18 }}>
-                  <NumberField value={payableOverride != null ? payableOverride : calc.payable} onCommit={v => setPayableOverride(v === calc.payable ? null : v)}
-                    style={{ width: '100%', border: '1px solid #bbb', borderRadius: 3, padding: '3px 4px', fontSize: 18, fontWeight: 700, fontFamily: F, textAlign: 'right', boxSizing: 'border-box', background: payableOverride != null ? '#fff3cd' : '#ffe600' }} />
+                <td style={{ ...T.bxR, borderTop: '2px solid #000', background: '#ffe600', fontSize: 18 }}>
+                  <span className="noP">
+                    <NumberField value={payableOverride != null ? payableOverride : calc.payable} onCommit={v => setPayableOverride(v === calc.payable ? null : v)}
+                      style={{ width: '100%', border: '1px solid #bbb', borderRadius: 3, padding: '3px 4px', fontSize: 18, fontWeight: 700, fontFamily: F, textAlign: 'right', boxSizing: 'border-box', background: payableOverride != null ? '#fff3cd' : '#ffe600' }} />
+                  </span>
                   <span className="printOnly" style={{ fontWeight: 700 }}>{fmt(payableOverride != null ? payableOverride : calc.payable)}</span>
                 </td>
               </tr>
