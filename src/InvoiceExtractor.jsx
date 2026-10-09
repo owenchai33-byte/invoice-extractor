@@ -1966,7 +1966,9 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
                 prev = n;
               }
             }
-            const text = condensed.join(', ');
+            const text = condensed.length > 1
+              ? condensed.slice(0, -1).join(', ') + ' & ' + condensed[condensed.length - 1]
+              : condensed[0] || '';
             return (
               <div className="noP" style={{ margin: '12px 0', padding: '10px 14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, fontSize: 13 }}>
                 <div style={{ fontWeight: 700, fontSize: 11, color: '#0369a1', marginBottom: 4 }}>INVOICE NOS. (for DN)</div>
