@@ -270,11 +270,17 @@ function NumberField({ value, onCommit, placeholder = '0.00', style = {} }) {
 
 // Read-only summary line in the deductions table.
 function SumRow({ label, value, sign = '-', bold = false, highlight = false, topBorder = false }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(Number(value).toFixed(2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
   return (
     <tr>
       <td style={{ ...T.bxL, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(bold ? { fontSize: 16 } : {}) }}>{label}</td>
       <td style={{ ...T.bxM, ...(topBorder ? { borderTop: '2px solid #000' } : {}) }}>{sign}</td>
-      <td style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}) }}>{fmt(value)}</td>
+      <td className="noP" style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}), cursor: 'pointer' }} onClick={copy} title="Click to copy">{copied ? '✓ Copied' : fmt(value)}</td>
     </tr>
   );
 }
