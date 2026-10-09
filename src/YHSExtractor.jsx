@@ -280,7 +280,10 @@ function SumRow({ label, value, sign = '-', bold = false, highlight = false, top
     <tr>
       <td style={{ ...T.bxL, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(bold ? { fontSize: 16 } : {}) }}>{label}</td>
       <td style={{ ...T.bxM, ...(topBorder ? { borderTop: '2px solid #000' } : {}) }}>{sign}</td>
-      <td className="noP" style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}), cursor: 'pointer' }} onClick={copy} title="Click to copy">{copied ? '✓ Copied' : fmt(value)}</td>
+      <td style={{ ...T.bxR, ...(topBorder ? { borderTop: '2px solid #000' } : {}), ...(highlight ? { background: '#ffe600', fontSize: 18 } : {}) }}>
+        <span className="noP" style={{ cursor: 'pointer' }} onClick={copy} title="Click to copy">{copied ? '✓ Copied' : fmt(value)}</span>
+        <span className="printOnly">{fmt(value)}</span>
+      </td>
     </tr>
   );
 }
