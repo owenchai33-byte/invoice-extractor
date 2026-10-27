@@ -965,6 +965,12 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
   useEffect(()=>{ try{ localStorage.setItem(LS_INV, JSON.stringify(invoices)) }catch{} },[invoices,LS_INV]);
   useEffect(()=>{ try{ localStorage.setItem(LS_CN, JSON.stringify(cnValues)) }catch{} },[cnValues,LS_CN]);
   useEffect(()=>{ try{ localStorage.setItem(LS_CNN, JSON.stringify(cnNums)) }catch{} },[cnNums,LS_CNN]);
+  const invRef=useRef(invoices); invRef.current=invoices;
+  const cnRef=useRef(cnValues); cnRef.current=cnValues;
+  const cnnRef=useRef(cnNums); cnnRef.current=cnNums;
+  useEffect(()=>()=>{
+    try{ localStorage.setItem(LS_INV,JSON.stringify(invRef.current)); localStorage.setItem(LS_CN,JSON.stringify(cnRef.current)); localStorage.setItem(LS_CNN,JSON.stringify(cnnRef.current)); }catch{}
+  },[LS_INV,LS_CN,LS_CNN]);
 
   // Recalculate 0.4%/0.2% subsidies when CN values change (percentages are on amt-cn)
   useEffect(()=>{

@@ -387,6 +387,13 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
   useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn, LS_VOLCTN]);
   useEffect(() => { try { localStorage.setItem(LS_META, JSON.stringify({ otherDiscount, creditNote, payableOverride })); } catch {} }, [otherDiscount, creditNote, payableOverride, LS_META]);
+  const yhsInvRef=useRef(invoices); yhsInvRef.current=invoices;
+  const yhsRatesRef=useRef(volRates); yhsRatesRef.current=volRates;
+  const yhsCtnRef=useRef(volCtn); yhsCtnRef.current=volCtn;
+  const yhsMetaRef=useRef({otherDiscount,creditNote,payableOverride}); yhsMetaRef.current={otherDiscount,creditNote,payableOverride};
+  useEffect(()=>()=>{
+    try{ localStorage.setItem(LS_YHS,JSON.stringify(yhsInvRef.current)); localStorage.setItem(LS_RATES,JSON.stringify(yhsRatesRef.current)); localStorage.setItem(LS_VOLCTN,JSON.stringify(yhsCtnRef.current)); localStorage.setItem(LS_META,JSON.stringify(yhsMetaRef.current)); }catch{}
+  },[LS_YHS,LS_RATES,LS_VOLCTN,LS_META]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {

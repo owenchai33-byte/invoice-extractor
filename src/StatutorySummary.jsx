@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { computeStaffMonth, fmt, LS_S, LS_P, LS_H, LS_SB } from './Payroll';
+import { computeStaffMonth, fmt, LS_S, LS_P, LS_H, LS_SB, isStaffHidden } from './Payroll';
 import { callAI, parseAIJson, AI_PROVIDER, AI_CFG, FlappyLoader } from './InvoiceExtractor';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -261,8 +261,7 @@ export default function StatutorySummary() {
   const sb = useMemo(() => { try { const v = localStorage.getItem(LS_SB); return v === null ? true : JSON.parse(v); } catch { return true; } }, []);
 
   const visible = useMemo(() => {
-    const hSet = new Set(hidden[mk] || []);
-    return staff.filter(s => !hSet.has(s.id) && (!s.addedMonth || s.addedMonth <= mk));
+    return staff.filter(s => !isStaffHidden(hidden, s.id, mk) && (!s.addedMonth || s.addedMonth <= mk));
   }, [staff, hidden, mk]);
 
   const rows = useMemo(() => visible.map(s => computeStaffMonth(s, pd[mk]?.[s.id], ref, sb)), [visible, pd, mk, ref, sb]);
@@ -456,8 +455,8 @@ export default function StatutorySummary() {
       {showMech && (
         <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '14px 18px', marginBottom: 14, fontSize: 12, lineHeight: 1.7, color: '#1e3a5f' }}>
           <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 13 }}>Month Detection Mechanism</div>
-          <div>• <b>EPF Borang A</b>: "Bulan Caruman" = payroll month + 1 (e.g. July wages → Caruman <b>{pad(mo + 2 > 12 ? 1 : mo + 2)}/{mo + 2 > 12 ? yr + 1 : yr}</b>)</div>
-          <div>• <b>SOCSO Borang 8A</b>: "Caruman Gaji Bulan" = payroll month (July wages → <b>{pad(mo + 1)}/{yr}</b>)</div>
+          <div>• <b>EPF Borang A</b>: "Bulan Caruman" = payroll month + 1 (e.g. {MONTHS[mo]} wages → Caruman <b>{pad(mo + 2 > 12 ? 1 : mo + 2)}/{mo + 2 > 12 ? yr + 1 : yr}</b>)</div>
+          <div>• <b>SOCSO Borang 8A</b>: "Caruman Gaji Bulan" = payroll month ({MONTHS[mo]} wages → <b>{pad(mo + 1)}/{yr}</b>)</div>
           <div>• <b>EIS Borang 8A</b>: same as SOCSO — actual payroll month</div>
           <div style={{ marginTop: 4, color: '#64748b' }}>SOCSO vs EIS auto-detected by comparing amounts against payroll.</div>
         </div>
