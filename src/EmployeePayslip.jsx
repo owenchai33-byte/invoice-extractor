@@ -437,7 +437,7 @@ const CSS = `
   .no-print{display:none!important}
   .ep-root{background:#fff}
   .ep-print{display:block}
-  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:148.5mm 148.5mm;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:297mm;width:210mm;box-sizing:border-box;overflow:hidden}
+  .ep-page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:148.5mm 148.5mm;gap:0;page-break-after:always;page-break-inside:avoid;break-inside:avoid;height:297mm;width:210mm;box-sizing:border-box;overflow:hidden;transform:scale(0.98);transform-origin:top left}
   .ep-page .ep-card{font-size:11.5pt;padding:3mm 5mm;box-sizing:border-box;display:block;overflow:hidden;grid-column:span 2;min-height:0}
   .ep-page .ep-pair{grid-column:span 2;display:flex;gap:1cm;padding:3mm 5mm;box-sizing:border-box;min-height:0;overflow:hidden}
   .ep-pair>.ep-card{flex:1;padding:0;box-shadow:none;min-width:0}
@@ -445,7 +445,6 @@ const CSS = `
   .ep-halves{gap:0}
   .ep-halves .ep-sal:not(.ep-sal-full){padding-right:.5cm}
   .ep-halves .ep-inc{padding-left:.5cm}
-  .ep-page .ep-net-gap td{height:.3em}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .ep-oth-pr{display:inline!important}
