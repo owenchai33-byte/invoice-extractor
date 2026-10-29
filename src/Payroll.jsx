@@ -151,6 +151,13 @@ export function fmt(n){
 // Compute one staff's figures for a month. Single source of truth shared by the
 // Payroll table and the Payslip generator so their numbers can never drift.
 // `monthly` = pd[mk]?.[staff.id] (per-month override object or undefined).
+function autoPromoteStatus(s, mk) {
+  if (s.status !== 'probationary' || !s.addedMonth || !mk) return s.status;
+  const [ay, am] = s.addedMonth.split('-').map(Number);
+  let cm = am + 3, cy = ay;
+  if (cm > 12) { cy += Math.floor((cm - 1) / 12); cm = ((cm - 1) % 12) + 1; }
+  return mk >= `${cy}-${String(cm).padStart(2, '0')}` ? 'permanent' : 'probationary';
+}
 export function computeStaffMonth(s, monthly, ref, showBonus=true, mk=''){
   const a=getAgeFromIC(s.ic,ref), m=monthly||{};
   const inc = monthly && 'incentive' in monthly ? (m.incentive||0) : (s.defIncentive||0);
@@ -165,7 +172,9 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true, mk=''){
   else if(mk && s.positionHistory){
     for(const h of s.positionHistory){if(mk<h.from){pos=h.position;break;}}
   }
-  return{...s,position:pos,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
+  const sts = autoPromoteStatus(s, mk);
+  const autoPromoted = sts === 'permanent' && s.status === 'probationary';
+  return{...s,status:sts,autoPromoted,position:pos,age:a,incentive:inc,bonus:bon,advance:adv,epfM:epf.employer,epfP:epf.employee,socsoM:socso.employer,socsoP:socso.employee,socsoInv:socso.employeeInv,socsoSkbbk:socso.employeeNEI,eisE:eis.employee,netPay:Math.round(net*100)/100,underAge:a<18};
 }
 // LS_S bumped to _v3: adds defIncentive per staff so each new month
 // auto-fills with the June 2026 Excel's recurring incentive amounts.
