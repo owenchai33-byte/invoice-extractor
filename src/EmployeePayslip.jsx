@@ -445,6 +445,7 @@ const CSS = `
   .ep-halves{gap:0}
   .ep-halves .ep-sal:not(.ep-sal-full){padding-right:.5cm}
   .ep-halves .ep-inc{padding-left:.5cm}
+  .ep-page .ep-net-gap td{height:.3em}
   .ep-page .ep-net-body .ep-net-td{height:1.8em}
   .ep-abs-pr{display:inline!important}
   .ep-oth-pr{display:inline!important}
