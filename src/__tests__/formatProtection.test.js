@@ -21,7 +21,7 @@ const PROTECTED_FORMATS = {
   'src/Payroll.jsx':          '645029de44800c67',
   'src/WeeklyPayment.jsx':    '5eee73ba86442fc4',
   'src/BeverageFOC.jsx':      '27319168abc50c81',
-  'src/EmployeePayslip.jsx':  '7e25187786154df2',
+  'src/EmployeePayslip.jsx':  '39a3e81bff6345b3',
   'src/MerchantReport.jsx':   '8976624263ac973a',
   'src/BankRecon.jsx':        'dfd0c5f689588d69',
 };
