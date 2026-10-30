@@ -60,7 +60,7 @@ function getHalfDays(days, half) {
 }
 
 function calcHalfSummary(days) {
-  const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
+  const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined' && d.type !== 'pending');
   return {
     working: working.length,
     present: working.filter(d => d.scans.length > 0).length,
@@ -433,6 +433,27 @@ function processRecords({ records, from, to }, joinDateOverrides = {}) {
     };
   }
 
+  let lastScanDate = '';
+  for (const emp of Object.values(results)) {
+    for (const d of emp.days) {
+      if (d.scans.length && d.date > lastScanDate) lastScanDate = d.date;
+    }
+  }
+  if (lastScanDate) {
+    for (const emp of Object.values(results)) {
+      let changed = false;
+      for (const d of emp.days) {
+        if (d.type === 'absent' && d.date > lastScanDate) { d.type = 'pending'; changed = true; }
+      }
+      if (changed) {
+        const working = emp.days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined' && d.type !== 'pending');
+        emp.summary.working = working.length;
+        emp.summary.absent = working.filter(d => d.type === 'absent').length;
+        emp.summary.present = working.filter(d => d.scans.length > 0).length;
+      }
+    }
+  }
+
   const suspectPH = [];
   const eids = Object.keys(results);
   if (eids.length > 1) {
@@ -462,6 +483,7 @@ function Remarks({ d }) {
   if (d.type === 'off') parts.push({ text: d.scans.length ? 'Sunday (worked)' : 'Sunday' });
   else if (d.type === 'holiday') parts.push({ text: d.holiday + (d.scans.length ? ' (worked)' : '') });
   else if (d.type === 'not-joined') parts.push({ text: 'Not yet joined' });
+  else if (d.type === 'pending') return null;
   else if (d.type === 'absent') parts.push({ text: 'Absent', bold: true });
   else if (d.type === 'half-am') parts.push({ text: 'Half day (AM)', bold: true });
   else if (d.type === 'half-pm') parts.push({ text: 'Half day (PM)', bold: true });
@@ -513,8 +535,19 @@ function groupDaysForTable(days) {
   while (i < days.length) {
     const d = days[i];
     const isNotJoined = d.type === 'not-joined';
+    const isPending = d.type === 'pending';
     const isAbsentNoScan = d.type === 'absent' && !d.scans.length;
-    if (isNotJoined) {
+    if (isPending) {
+      const start = i;
+      let pendCount = 1;
+      let j = i + 1;
+      while (j < days.length && (days[j].type === 'pending' || days[j].type === 'off' || days[j].type === 'holiday')) {
+        if (days[j].type === 'pending') pendCount++;
+        j++;
+      }
+      groups.push({ type: 'merged-pending', days: days.slice(start, j), pendCount });
+      i = j;
+    } else if (isNotJoined) {
       const start = i;
       let njCount = 1;
       let j = i + 1;
@@ -567,6 +600,16 @@ function AttTableBody({ days }) {
             </tr>
           );
         }
+        if (g.type === 'merged-pending') {
+          const first = g.days[0], last = g.days[g.days.length - 1];
+          return (
+            <tr key={first.date} style={{ background: '#f9fafb' }}>
+              <td colSpan={11} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
+                {first.dateShort} ({first.day}) – {last.dateShort} ({last.day}) &nbsp;|&nbsp; Not yet recorded ({g.pendCount} days)
+              </td>
+            </tr>
+          );
+        }
         if (g.type === 'merged-absent') {
           const first = g.days[0], last = g.days[g.days.length - 1];
           return (
@@ -580,9 +623,22 @@ function AttTableBody({ days }) {
         const d = g.day;
         const isOff = d.type === 'off' || d.type === 'holiday';
         const isAbsent = d.type === 'absent';
+        const isPending = d.type === 'pending';
         const isNotJoined = d.type === 'not-joined';
         const isHalf = d.type === 'half-am' || d.type === 'half-pm';
-        const bg = isOff ? '#f9fafb' : isAbsent ? '#fef3c7' : isNotJoined ? '#f0f9ff' : isHalf ? '#eff6ff' : '#fff';
+        const bg = isOff || isPending ? '#f9fafb' : isAbsent ? '#fef3c7' : isNotJoined ? '#f0f9ff' : isHalf ? '#eff6ff' : '#fff';
+
+        if (isPending) {
+          return (
+            <tr key={d.date} style={{ background: bg }}>
+              <td style={{ ...td, fontWeight: 700 }}>{d.dateShort}</td>
+              <td style={{ ...td, fontWeight: 700 }}>{d.day}</td>
+              <td colSpan={9} style={{ ...td, textAlign: 'center', color: '#a3a3a3', fontStyle: 'italic' }}>
+                Not yet recorded
+              </td>
+            </tr>
+          );
+        }
 
         if ((isOff || isAbsent || isNotJoined) && !d.scans.length) {
           const label = isNotJoined ? 'Not yet joined' : isAbsent ? 'Absent' : d.type === 'off' ? 'Sunday' : d.holiday;
@@ -626,7 +682,7 @@ function AttTableBody({ days }) {
 }
 
 function AttNotesBox({ days, empId, dismissedHalfDays, onToggleHalfDay }) {
-  const notes = days.filter(d => (d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm'));
+  const notes = days.filter(d => d.type === 'absent' || d.type === 'half-am' || d.type === 'half-pm');
   if (!notes.length) return null;
   const nth = { padding: '4px 10px', textAlign: 'left', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
   const ntd = { padding: '4px 10px', borderBottom: '1px solid #666', borderRight: '1px solid #666' };
@@ -790,7 +846,7 @@ function mergeAttData(existing, incoming) {
     const allDays = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
     const from = old.period.from < inc.period.from ? old.period.from : inc.period.from;
     const to = old.period.to > inc.period.to ? old.period.to : inc.period.to;
-    const working = allDays.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
+    const working = allDays.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined' && d.type !== 'pending');
     merged[eid] = {
       ...old, ...inc, days: allDays, period: { from, to },
       summary: {
@@ -872,7 +928,7 @@ export default function Attendance() {
     const out = {};
     for (const [eid, emp] of Object.entries(data)) {
       const days = emp.days.map(d => confirmedPH.has(d.date) ? { ...d, type: 'holiday', holiday: verifiedPH[d.date] || 'Public Holiday (confirmed)' } : d);
-      const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined');
+      const working = days.filter(d => d.type !== 'off' && d.type !== 'holiday' && d.type !== 'not-joined' && d.type !== 'pending');
       out[eid] = {
         ...emp, days,
         summary: {
