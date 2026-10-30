@@ -889,8 +889,27 @@ function migrateOldAttendance() {
   } catch {}
 }
 
+function cleanupAttStorage() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(ATT_DATA_PREFIX)) continue;
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      let cleaned = false;
+      for (const emp of Object.values(parsed)) {
+        if (emp.scans && typeof emp.scans === 'object' && !Array.isArray(emp.scans)) {
+          delete emp.scans; cleaned = true;
+        }
+      }
+      if (cleaned) localStorage.setItem(k, JSON.stringify(parsed));
+    }
+  } catch {}
+}
+
 export default function Attendance() {
-  useState(() => migrateOldAttendance());
+  useState(() => { migrateOldAttendance(); cleanupAttStorage(); });
   const now = new Date();
   const [mo, setMo] = useState(() => { try { const v = localStorage.getItem('cjk_att_mo'); return v !== null ? Number(v) : now.getMonth(); } catch { return now.getMonth(); } });
   const [yr, setYr] = useState(() => { try { const v = localStorage.getItem('cjk_att_yr'); return v !== null ? Number(v) : now.getFullYear(); } catch { return now.getFullYear(); } });
@@ -899,7 +918,19 @@ export default function Attendance() {
   const selKey = attSelKey(yr, mo);
 
   const [data, setData] = useState(() => {
-    try { const s = localStorage.getItem(dataKey); return s ? JSON.parse(s) : null; }
+    try {
+      const s = localStorage.getItem(dataKey);
+      if (!s) return null;
+      const parsed = JSON.parse(s);
+      let cleaned = false;
+      for (const emp of Object.values(parsed)) {
+        if (emp.scans && typeof emp.scans === 'object' && !Array.isArray(emp.scans)) {
+          delete emp.scans; cleaned = true;
+        }
+      }
+      if (cleaned) try { localStorage.setItem(dataKey, JSON.stringify(parsed)); } catch {}
+      return parsed;
+    }
     catch { return null; }
   });
   const [selected, setSelected] = useState(() => {
@@ -1121,7 +1152,8 @@ export default function Attendance() {
       const { scans: _raw, ...rest } = emp;
       slim[eid] = rest;
     }
-    localStorage.setItem(tk, JSON.stringify(slim));
+    try { localStorage.setItem(tk, JSON.stringify(slim)); }
+    catch { cleanupAttStorage(); localStorage.setItem(tk, JSON.stringify(slim)); }
     const tsk = attSelKey(targetYr, targetMo);
     const firstSel = sortByPayroll(merged)[0];
     if (firstSel) localStorage.setItem(tsk, firstSel);
