@@ -229,6 +229,13 @@ function processRecords({ records, from, to }, joinDateOverrides = {}) {
     else return {};
   }
 
+  const [fy, fm] = from.split('-').map(Number);
+  const [ty, tm] = to.split('-').map(Number);
+  if (fy === ty && fm === tm) {
+    const lastDay = new Date(ty, tm, 0).getDate();
+    to = `${ty}-${pad(tm)}-${pad(lastDay)}`;
+  }
+
   const results = {};
 
   for (const [eid, emp] of Object.entries(emps)) {
