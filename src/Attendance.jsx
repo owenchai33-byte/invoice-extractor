@@ -1141,16 +1141,23 @@ export default function Attendance() {
       if (!parsed.records.length) throw new Error('No attendance records found in file');
       pendingParsedRef.current = parsed;
       const { data: results, suspectPH: suspects, missingJoinDates } = processRecords(parsed);
+      const hadData = !!data;
       applyResults(results, suspects, { _skip: true });
+      if (hadData) {
+        const mode = uploadModeRef.current === 'merge' ? 'merged with' : 'replaced';
+        const n = Object.keys(results).length;
+        alert(`Updated — ${n} employee(s) ${mode} existing data.`);
+      }
       if (missingJoinDates.length) {
         setJoinDatePrompt(missingJoinDates);
         setJoinDateInputs({});
       }
     } catch (e) {
       setError(e.message || 'Failed to parse file');
+      if (data) alert(e.message || 'Failed to parse file');
     }
     setLoading(false);
-  }, [yr, mo, applyResults]);
+  }, [yr, mo, applyResults, data]);
 
   const onDrop = useCallback((e) => {
     e.preventDefault();
@@ -1229,6 +1236,7 @@ export default function Attendance() {
               <input ref={addFileRef} type="file" accept=".pdf,.xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }} />
             </>
           )}
+          {loading && <span style={{ fontSize: 12, color: '#71717a', whiteSpace: 'nowrap' }}>Processing...</span>}
           <span style={{ fontSize: 12, color: '#71717a', whiteSpace: 'nowrap' }}>
             {data ? `${Object.keys(data).length} employee(s) loaded` : 'No data — upload to start'}
           </span>
