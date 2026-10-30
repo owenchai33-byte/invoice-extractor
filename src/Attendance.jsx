@@ -842,7 +842,11 @@ function mergeAttData(existing, incoming) {
     if (!inc) { merged[eid] = old; continue; }
     const dayMap = {};
     for (const d of old.days) dayMap[d.date] = d;
-    for (const d of inc.days) dayMap[d.date] = d;
+    for (const d of inc.days) {
+      const prev = dayMap[d.date];
+      if (prev && prev.scans.length && !d.scans.length) continue;
+      dayMap[d.date] = d;
+    }
     const allDays = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
     const from = old.period.from < inc.period.from ? old.period.from : inc.period.from;
     const to = old.period.to > inc.period.to ? old.period.to : inc.period.to;
