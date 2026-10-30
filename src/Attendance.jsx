@@ -1116,7 +1116,12 @@ export default function Attendance() {
       try { const s = localStorage.getItem(tk); if (s) existing = JSON.parse(s); } catch {}
     }
     const merged = mergeAttData(existing, finalResults);
-    localStorage.setItem(tk, JSON.stringify(merged));
+    const slim = {};
+    for (const [eid, emp] of Object.entries(merged)) {
+      const { scans: _raw, ...rest } = emp;
+      slim[eid] = rest;
+    }
+    localStorage.setItem(tk, JSON.stringify(slim));
     const tsk = attSelKey(targetYr, targetMo);
     const firstSel = sortByPayroll(merged)[0];
     if (firstSel) localStorage.setItem(tsk, firstSel);
