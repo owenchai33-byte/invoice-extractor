@@ -48,7 +48,7 @@ export function volLabel(ml, unit) {
 // that get no discount. `ctnOverrides` ({ [ml]: cartons }) lets the qty that earns
 // the bonus differ from the actual total — e.g. only part of the 300ML cartons get
 // a discount. The bonus uses the override; transport still uses the real total.
-export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, ctnOverrides = {}, otherDiscount = 0, creditNote = 0, customSubsidies = [] }) {
+export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, ctnOverrides = {}, otherDiscount = 0, creditNote = 0, customSubsidies = [], tagRates = {} }) {
   const r4 = v => Math.round(v * 100 + 1e-8) / 100;
   const dRate = Number(defaultRate) || 0;
   const rateFor = ml => (rates && rates[ml] != null) ? (Number(rates[ml]) || 0) : dRate;
@@ -60,16 +60,24 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
   const transport2 = r4(totalCtn * YHS_TRANSPORT_2);
 
   // Aggregate carton counts per volume across every invoice.
+  // Tagged volumes (e.g. "COCONUT") are separated from the default pool.
   const volMap = {};
   const unitMap = {};
+  const tagCtnMap = {};   // { [tag]: totalCtn }
   invoices.forEach(i => {
     const vols = i.vols || {};
     const units = i.volUnits || {};
+    const tags = i.volTags || {};
     Object.keys(vols).forEach(ml => {
       const m = Number(ml), c = Number(vols[ml]) || 0;
       if (m > 0 && c) {
-        volMap[m] = (volMap[m] || 0) + c;
-        if (units[m]) unitMap[m] = units[m];
+        const tag = (tags[ml] || tags[m] || '').trim().toUpperCase();
+        if (tag) {
+          tagCtnMap[tag] = (tagCtnMap[tag] || 0) + c;
+        } else {
+          volMap[m] = (volMap[m] || 0) + c;
+          if (units[m]) unitMap[m] = units[m];
+        }
       }
     });
   });
@@ -83,6 +91,14 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
     .sort((a, b) => a.ml - b.ml);
   const totalBonus = r4(volumes.reduce((s, v) => s + v.bonus, 0));
 
+  // Tagged volume groups — all volumes with the same tag merge into one row.
+  const taggedGroups = Object.keys(tagCtnMap).sort().map(tag => {
+    const ctn = tagCtnMap[tag];
+    const rate = Number(tagRates[tag]) || 0;
+    return { tag, ctn, rate, bonus: r4(ctn * rate) };
+  });
+  const totalTaggedBonus = r4(taggedGroups.reduce((s, g) => s + g.bonus, 0));
+
   const od = Number(otherDiscount) || 0;
   const cn = Number(creditNote) || 0;
   const csubs = customSubsidies.map(cs => {
@@ -92,13 +108,14 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
   });
   const totalCustom = r4(csubs.reduce((s, cs) => s + cs.amount, 0));
   const payable = r4(
-    totalAmount - discount2 - transport1 - transport2 - totalBonus - od - cn - totalCustom
+    totalAmount - discount2 - transport1 - transport2 - totalBonus - totalTaggedBonus - od - cn - totalCustom
   );
 
   return {
     totalAmount: r4(totalAmount), totalCtn,
     discount2, transport1, transport2,
     volumes, totalBonus,
+    taggedGroups, totalTaggedBonus,
     customSubsidies: csubs, totalCustom,
     otherDiscount: r4(od), creditNote: r4(cn), payable,
   };
@@ -299,18 +316,23 @@ function SumRow({ label, value, sign = '-', bold = false, highlight = false, top
 // Per-invoice volume breakdown cell (only the volumes this invoice carries).
 // Defined at module scope so typing in the add-volume inputs doesn't remount it
 // (an inner component definition would drop focus after a single keystroke).
-function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, changeInvVol, setInvVolUnit }) {
+function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, changeInvVol, setInvVolUnit, setInvVolTag }) {
   const entries = Object.keys(inv.vols || {}).map(Number).sort((a, b) => a - b).filter(ml => inv.vols[ml] != null);
   const units = inv.volUnits || {};
+  const tags = inv.volTags || {};
   const add = volAdd[inv.id] || { ml: String(COMMON_VOLS[0]), custom: '', ctn: '', unit: 'ml' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'stretch' }}>
       {entries.length === 0 && <span className="printOnly" style={{ color: '#bbb', fontSize: 13 }}>—</span>}
       {entries.map(ml => (
-        <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+        <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
           <EditableVol ml={ml} unit={units[ml]} onCommit={(newMl, newUnit) => { changeInvVol(inv.id, ml, newMl); if (newUnit) setInvVolUnit(inv.id, newMl, newUnit); }} />
           <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
           <span style={{ color: '#888', fontSize: 16 }}>CTN</span>
+          <input className="noP" type="text" value={tags[ml] || ''} placeholder="🏷"
+            onChange={e => setInvVolTag(inv.id, ml, e.target.value)}
+            title="Tag this volume (e.g. COCONUT) — tagged cartons get their own subsidy row"
+            style={{ width: tags[ml] ? 80 : 28, border: '1px solid ' + (tags[ml] ? '#f59e0b' : '#ddd'), borderRadius: 3, padding: '1px 4px', fontSize: 11, fontFamily: F, fontWeight: 600, background: tags[ml] ? '#fffbeb' : '#fff', color: '#92400e', textAlign: 'center', transition: 'width .15s' }} />
           <button className="noP" onClick={() => removeInvVol(inv.id, ml)} title="Remove volume"
             style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
         </div>
@@ -348,6 +370,7 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
 // Per-volume RM rates are GLOBAL across batches (product-stable) — one shared key.
 // Invoices + per-batch overrides/discounts are namespaced by batch id (see below).
 const LS_RATES = 'yhs_volrates_v2';
+const LS_TAG_RATES = 'yhs_tagrates_v1';
 
 export default function YHSExtractor({ batchId = 'default', headerActionsRef }) {
   // Per-batch persistence — each Chrome tab keeps its own invoices/overrides/discounts
@@ -370,6 +393,10 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
     try { return JSON.parse(localStorage.getItem(LS_RATES)) || {}; } catch { return {}; }
   });
   const setVolRate = (ml, r) => setVolRates(prev => ({ ...prev, [ml]: r }));
+  const [tagRates, setTagRates] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_TAG_RATES)) || {}; } catch { return {}; }
+  });
+  const setTagRate = (tag, r) => setTagRates(prev => ({ ...prev, [tag]: r }));
   // Per-volume subsidy-qty overrides: { [ml]: cartons }. When set, only this many
   // cartons of that volume earn the bonus (e.g. some 300ML products get no discount).
   // Absent → the full aggregated carton count is used.
@@ -404,16 +431,18 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
 
   useEffect(() => { try { localStorage.setItem(LS_YHS, JSON.stringify(invoices)); } catch {} }, [invoices, LS_YHS]);
   useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
+  useEffect(() => { try { localStorage.setItem(LS_TAG_RATES, JSON.stringify(tagRates)); } catch {} }, [tagRates]);
   useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn, LS_VOLCTN]);
   useEffect(() => { try { localStorage.setItem(LS_META, JSON.stringify({ otherDiscount, creditNote, payableOverride })); } catch {} }, [otherDiscount, creditNote, payableOverride, LS_META]);
   useEffect(() => { try { localStorage.setItem(LS_CSUB, JSON.stringify(customSubsidies)); } catch {} }, [customSubsidies, LS_CSUB]);
   const yhsInvRef=useRef(invoices); yhsInvRef.current=invoices;
   const yhsRatesRef=useRef(volRates); yhsRatesRef.current=volRates;
+  const yhsTagRatesRef=useRef(tagRates); yhsTagRatesRef.current=tagRates;
   const yhsCtnRef=useRef(volCtn); yhsCtnRef.current=volCtn;
   const yhsMetaRef=useRef({otherDiscount,creditNote,payableOverride}); yhsMetaRef.current={otherDiscount,creditNote,payableOverride};
   const yhsCsubRef=useRef(customSubsidies); yhsCsubRef.current=customSubsidies;
   useEffect(()=>()=>{
-    try{ localStorage.setItem(LS_YHS,JSON.stringify(yhsInvRef.current)); localStorage.setItem(LS_RATES,JSON.stringify(yhsRatesRef.current)); localStorage.setItem(LS_VOLCTN,JSON.stringify(yhsCtnRef.current)); localStorage.setItem(LS_META,JSON.stringify(yhsMetaRef.current)); localStorage.setItem(LS_CSUB,JSON.stringify(yhsCsubRef.current)); }catch{}
+    try{ localStorage.setItem(LS_YHS,JSON.stringify(yhsInvRef.current)); localStorage.setItem(LS_RATES,JSON.stringify(yhsRatesRef.current)); localStorage.setItem(LS_TAG_RATES,JSON.stringify(yhsTagRatesRef.current)); localStorage.setItem(LS_VOLCTN,JSON.stringify(yhsCtnRef.current)); localStorage.setItem(LS_META,JSON.stringify(yhsMetaRef.current)); localStorage.setItem(LS_CSUB,JSON.stringify(yhsCsubRef.current)); }catch{}
   },[LS_YHS,LS_RATES,LS_VOLCTN,LS_META,LS_CSUB]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
@@ -448,7 +477,8 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
       if (inv.id !== id) return inv;
       const vols = { ...inv.vols }; delete vols[ml];
       const volUnits = { ...(inv.volUnits || {}) }; delete volUnits[ml];
-      return { ...inv, vols, volUnits };
+      const volTags = { ...(inv.volTags || {}) }; delete volTags[ml];
+      return { ...inv, vols, volUnits, volTags };
     }));
   const changeInvVol = (id, oldMl, newMl) => {
     if (!newMl || newMl <= 0 || newMl === oldMl) return;
@@ -460,9 +490,19 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
       vols[newMl] = (Number(vols[newMl]) || 0) + ctn;
       const volUnits = { ...(inv.volUnits || {}) };
       if (volUnits[oldMl]) { volUnits[newMl] = volUnits[oldMl]; delete volUnits[oldMl]; }
-      return { ...inv, vols, volUnits };
+      const volTags = { ...(inv.volTags || {}) };
+      if (volTags[oldMl]) { volTags[newMl] = volTags[oldMl]; delete volTags[oldMl]; }
+      return { ...inv, vols, volUnits, volTags };
     }));
   };
+  const setInvVolTag = (id, ml, tag) =>
+    setInvoices(prev => prev.map(inv => {
+      if (inv.id !== id) return inv;
+      const volTags = { ...(inv.volTags || {}) };
+      const t = (tag || '').trim();
+      if (t) volTags[ml] = t; else delete volTags[ml];
+      return { ...inv, volTags };
+    }));
   const setInvVolUnit = (id, ml, unit) =>
     setInvoices(prev => prev.map(inv => {
       if (inv.id !== id) return inv;
@@ -670,7 +710,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   }, [processChunk, apiKey]);
 
   // defaultRate 0 → a volume earns no subsidy until Owen sets its rate below.
-  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, ctnOverrides: volCtn, otherDiscount, creditNote, customSubsidies });
+  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, ctnOverrides: volCtn, otherDiscount, creditNote, customSubsidies, tagRates });
   const showUpload = invoices.length === 0 || uploading;
 
   const downloadExcel = () => {
@@ -693,6 +733,9 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`, '', '-', calc.transport2]);
     calc.volumes.filter(v => v.bonus > 0).forEach(v => {
       d.push(['', `${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
+    });
+    calc.taggedGroups.filter(g => g.bonus > 0).forEach(g => {
+      d.push(['', `${g.tag} (${g.ctn} x RM${g.rate.toFixed(2)}):`, '', '-', g.bonus]);
     });
     calc.customSubsidies.filter(cs => cs.amount > 0).forEach(cs => {
       d.push(['', `${cs.name || 'CUSTOM DISCOUNT'} (${cs.qty} x RM${cs.rate.toFixed(2)}):`, '', '-', cs.amount]);
@@ -808,7 +851,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                   <td style={T.td}><EditableInt value={inv.qty} onCommit={v => updateField(inv.id, 'qty', v)} /></td>
                   <td style={{ ...T.td, textAlign: 'center' }}>
                     <VolCell inv={inv} volAdd={volAdd} setVolAdd={setVolAdd}
-                      setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} setInvVolUnit={setInvVolUnit} />
+                      setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} setInvVolUnit={setInvVolUnit} setInvVolTag={setInvVolTag} />
                   </td>
                 </tr>
               ))}
@@ -825,7 +868,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
           {/* VOLUME SUBSIDY RATES — set each volume's RM/CTN here (screen only).
               A volume with no rate earns no subsidy and is left out of the total
               below; once you set a rate, its line appears in the deductions. */}
-          {(calc.volumes.length > 0 || customSubsidies.length > 0) && (
+          {(calc.volumes.length > 0 || calc.taggedGroups.length > 0 || customSubsidies.length > 0) && (
             <div className="noP" style={{ marginTop: 18 }}>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
                 VOLUME SUBSIDY RATES
@@ -863,7 +906,22 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                       <td style={T.td}></td>
                     </tr>
                   ))}
-                  {customSubsidies.length > 0 && calc.volumes.length > 0 && (
+                  {calc.taggedGroups.length > 0 && calc.volumes.length > 0 && (
+                    <tr><td colSpan={5} style={{ borderBottom: '1px solid #000', padding: 0 }}></td></tr>
+                  )}
+                  {calc.taggedGroups.map(g => (
+                    <tr key={'tag_' + g.tag} style={{ background: '#fffbeb' }}>
+                      <td style={{ ...T.td, textAlign: 'left', fontWeight: 700, color: '#92400e' }}>{g.tag}</td>
+                      <td style={{ ...T.td, fontWeight: 600 }}>{g.ctn}</td>
+                      <td style={T.td}>
+                        <NumberField value={g.rate} onCommit={r => setTagRate(g.tag, r)}
+                          style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ ...T.td, textAlign: 'right', color: g.bonus ? '#000' : '#bbb' }}>{fmt(g.bonus)}</td>
+                      <td style={T.td}></td>
+                    </tr>
+                  ))}
+                  {customSubsidies.length > 0 && (calc.volumes.length > 0 || calc.taggedGroups.length > 0) && (
                     <tr><td colSpan={5} style={{ borderBottom: '1px solid #000', padding: 0 }}></td></tr>
                   )}
                   {customSubsidies.map((cs, ci) => {
@@ -909,7 +967,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               </button>
             </div>
           )}
-          {calc.volumes.length === 0 && customSubsidies.length === 0 && invoices.length > 0 && (
+          {calc.volumes.length === 0 && calc.taggedGroups.length === 0 && customSubsidies.length === 0 && invoices.length > 0 && (
             <div className="noP" style={{ marginTop: 18 }}>
               <button onClick={addCustomSubsidy}
                 style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px dashed #999', borderRadius: 4, background: '#fafafa', color: '#333', cursor: 'pointer', fontFamily: F }}>
@@ -929,6 +987,9 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                   Read-only here; the rate is set in the VOLUME SUBSIDY RATES table. */}
               {calc.volumes.filter(v => v.bonus > 0).map(v => (
                 <SumRow key={v.ml} label={`${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
+              ))}
+              {calc.taggedGroups.filter(g => g.bonus > 0).map(g => (
+                <SumRow key={'tag_' + g.tag} label={`${g.tag} (${g.ctn} x RM${g.rate.toFixed(2)}):`} value={g.bonus} />
               ))}
               {calc.customSubsidies.filter(cs => cs.amount > 0).map(cs => (
                 <SumRow key={cs.id} label={`${cs.name || 'CUSTOM DISCOUNT'} (${cs.qty} x RM${cs.rate.toFixed(2)}):`} value={cs.amount} />
@@ -1084,7 +1145,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               <div style={{ marginTop: 16, fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Volume breakdown</div>
               <div style={{ marginTop: 6 }}>
                 <VolCell inv={previewInv} volAdd={volAdd} setVolAdd={setVolAdd}
-                  setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} setInvVolUnit={setInvVolUnit} />
+                  setInvVol={setInvVol} removeInvVol={removeInvVol} addInvVol={addInvVol} changeInvVol={changeInvVol} setInvVolUnit={setInvVolUnit} setInvVolTag={setInvVolTag} />
               </div>
             </div>
           </div>
