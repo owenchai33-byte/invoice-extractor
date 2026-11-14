@@ -48,7 +48,7 @@ export function volLabel(ml, unit) {
 // that get no discount. `ctnOverrides` ({ [ml]: cartons }) lets the qty that earns
 // the bonus differ from the actual total — e.g. only part of the 300ML cartons get
 // a discount. The bonus uses the override; transport still uses the real total.
-export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, ctnOverrides = {}, otherDiscount = 0, creditNote = 0 }) {
+export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_RATE, ctnOverrides = {}, otherDiscount = 0, creditNote = 0, customSubsidies = [] }) {
   const r4 = v => Math.round(v * 100 + 1e-8) / 100;
   const dRate = Number(defaultRate) || 0;
   const rateFor = ml => (rates && rates[ml] != null) ? (Number(rates[ml]) || 0) : dRate;
@@ -85,14 +85,17 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
 
   const od = Number(otherDiscount) || 0;
   const cn = Number(creditNote) || 0;
+  const csubs = customSubsidies.map(cs => ({ ...cs, amount: Math.round((Number(cs.amount) || 0) * 100 + 1e-8) / 100 }));
+  const totalCustom = r4(csubs.reduce((s, cs) => s + cs.amount, 0));
   const payable = r4(
-    totalAmount - discount2 - transport1 - transport2 - totalBonus - od - cn
+    totalAmount - discount2 - transport1 - transport2 - totalBonus - od - cn - totalCustom
   );
 
   return {
     totalAmount: r4(totalAmount), totalCtn,
     discount2, transport1, transport2,
     volumes, totalBonus,
+    customSubsidies: csubs, totalCustom,
     otherDiscount: r4(od), creditNote: r4(cn), payable,
   };
 }
@@ -348,6 +351,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   const LS_YHS    = `yhs_invoices__${batchId}`;
   const LS_VOLCTN = `yhs_volctn__${batchId}`;
   const LS_META   = `yhs_meta__${batchId}`;   // { otherDiscount, creditNote }
+  const LS_CSUB   = `yhs_csub__${batchId}`;
   const isDefault = batchId === 'default';
   const loadLS = (key, legacy, fallback) => {
     try { const v = localStorage.getItem(key); if (v != null) return JSON.parse(v); } catch {}
@@ -378,6 +382,16 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   const [otherDiscount, setOtherDiscount] = useState(() => loadLS(LS_META, null, {}).otherDiscount || 0);
   const [creditNote, setCreditNote] = useState(() => loadLS(LS_META, null, {}).creditNote || 0);
   const [payableOverride, setPayableOverride] = useState(() => loadLS(LS_META, null, {}).payableOverride ?? null);
+  const [customSubsidies, setCustomSubsidies] = useState(() => loadLS(LS_CSUB, null, []));
+  const addCustomSubsidy = () => {
+    setCustomSubsidies(prev => [...prev, { id: 'cs_' + Date.now().toString(36), name: '', amount: 0 }]);
+  };
+  const updateCustomSubsidy = (id, patch) => {
+    setCustomSubsidies(prev => prev.map(cs => cs.id === id ? { ...cs, ...patch } : cs));
+  };
+  const removeCustomSubsidy = (id) => {
+    setCustomSubsidies(prev => prev.filter(cs => cs.id !== id));
+  };
   const [previewId, setPreviewId] = useState(null);
   const [volAdd, setVolAdd] = useState({}); // { [invId]: { ml, custom, ctn } }
   const fileRef = useRef(null);
@@ -387,13 +401,15 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   useEffect(() => { try { localStorage.setItem(LS_RATES, JSON.stringify(volRates)); } catch {} }, [volRates]);
   useEffect(() => { try { localStorage.setItem(LS_VOLCTN, JSON.stringify(volCtn)); } catch {} }, [volCtn, LS_VOLCTN]);
   useEffect(() => { try { localStorage.setItem(LS_META, JSON.stringify({ otherDiscount, creditNote, payableOverride })); } catch {} }, [otherDiscount, creditNote, payableOverride, LS_META]);
+  useEffect(() => { try { localStorage.setItem(LS_CSUB, JSON.stringify(customSubsidies)); } catch {} }, [customSubsidies, LS_CSUB]);
   const yhsInvRef=useRef(invoices); yhsInvRef.current=invoices;
   const yhsRatesRef=useRef(volRates); yhsRatesRef.current=volRates;
   const yhsCtnRef=useRef(volCtn); yhsCtnRef.current=volCtn;
   const yhsMetaRef=useRef({otherDiscount,creditNote,payableOverride}); yhsMetaRef.current={otherDiscount,creditNote,payableOverride};
+  const yhsCsubRef=useRef(customSubsidies); yhsCsubRef.current=customSubsidies;
   useEffect(()=>()=>{
-    try{ localStorage.setItem(LS_YHS,JSON.stringify(yhsInvRef.current)); localStorage.setItem(LS_RATES,JSON.stringify(yhsRatesRef.current)); localStorage.setItem(LS_VOLCTN,JSON.stringify(yhsCtnRef.current)); localStorage.setItem(LS_META,JSON.stringify(yhsMetaRef.current)); }catch{}
-  },[LS_YHS,LS_RATES,LS_VOLCTN,LS_META]);
+    try{ localStorage.setItem(LS_YHS,JSON.stringify(yhsInvRef.current)); localStorage.setItem(LS_RATES,JSON.stringify(yhsRatesRef.current)); localStorage.setItem(LS_VOLCTN,JSON.stringify(yhsCtnRef.current)); localStorage.setItem(LS_META,JSON.stringify(yhsMetaRef.current)); localStorage.setItem(LS_CSUB,JSON.stringify(yhsCsubRef.current)); }catch{}
+  },[LS_YHS,LS_RATES,LS_VOLCTN,LS_META,LS_CSUB]);
   useEffect(() => { try { const k = localStorage.getItem(AI_CFG.storageKey); if (k) setApiKey(k); } catch {} }, []);
   useEffect(() => {
     if (uploading && invoices.length > 0 && uploadAreaRef.current) {
@@ -476,11 +492,13 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
         localStorage.setItem(`${LS_YHS}_bak`, JSON.stringify(invoices));
         localStorage.setItem(`${LS_VOLCTN}_bak`, JSON.stringify(volCtn));
         localStorage.setItem(`${LS_META}_bak`, JSON.stringify({ otherDiscount, creditNote }));
+        localStorage.setItem(`${LS_CSUB}_bak`, JSON.stringify(customSubsidies));
         setUndoAvailable(true);
       } catch {}
     }
     setInvoices([]); setUploading(false); setProcessing(false); setError(null);
     setOtherDiscount(0); setCreditNote(0); setPreviewId(null); setVolAdd({}); setVolCtn({});
+    setCustomSubsidies([]);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -494,10 +512,13 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
         const meta = JSON.parse(localStorage.getItem(`${LS_META}_bak`) || '{}');
         setOtherDiscount(meta.otherDiscount || 0);
         setCreditNote(meta.creditNote || 0);
+        const csub = JSON.parse(localStorage.getItem(`${LS_CSUB}_bak`) || '[]');
+        setCustomSubsidies(csub);
       }
       localStorage.removeItem(`${LS_YHS}_bak`);
       localStorage.removeItem(`${LS_VOLCTN}_bak`);
       localStorage.removeItem(`${LS_META}_bak`);
+      localStorage.removeItem(`${LS_CSUB}_bak`);
     } catch {}
     setUndoAvailable(false);
   };
@@ -644,7 +665,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   }, [processChunk, apiKey]);
 
   // defaultRate 0 → a volume earns no subsidy until Owen sets its rate below.
-  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, ctnOverrides: volCtn, otherDiscount, creditNote });
+  const calc = calcYHS({ invoices, rates: volRates, defaultRate: 0, ctnOverrides: volCtn, otherDiscount, creditNote, customSubsidies });
   const showUpload = invoices.length === 0 || uploading;
 
   const downloadExcel = () => {
@@ -667,6 +688,9 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
     d.push(['', `TRANSPORT SUBSIDY (${calc.totalCtn} x RM0.20):`, '', '-', calc.transport2]);
     calc.volumes.filter(v => v.bonus > 0).forEach(v => {
       d.push(['', `${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
+    });
+    calc.customSubsidies.filter(cs => cs.amount > 0).forEach(cs => {
+      d.push(['', `${cs.name || 'CUSTOM DISCOUNT'}:`, '', '-', cs.amount]);
     });
     d.push(['', 'OTHER DISCOUNT:', '', calc.otherDiscount ? '-' : '', calc.otherDiscount || '']);
     d.push(['', 'CREDIT NOTE:', '', calc.creditNote ? '-' : '', calc.creditNote || '']);
@@ -796,8 +820,9 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
           {/* VOLUME SUBSIDY RATES — set each volume's RM/CTN here (screen only).
               A volume with no rate earns no subsidy and is left out of the total
               below; once you set a rate, its line appears in the deductions. */}
-          {calc.volumes.length > 0 && (
+          {(calc.volumes.length > 0 || customSubsidies.length > 0) && (
             <div className="noP" style={{ marginTop: 18 }}>
+              {calc.volumes.length > 0 && (<>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
                 VOLUME SUBSIDY RATES
                 <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
@@ -834,6 +859,55 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                   ))}
                 </tbody>
               </table>
+              </>)}
+              {customSubsidies.length > 0 && (
+                <div style={{ marginTop: calc.volumes.length > 0 ? 14 : 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+                    CUSTOM DISCOUNTS
+                    <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
+                      for product discounts not tied to volume
+                    </span>
+                  </div>
+                  <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 500 }}>
+                    <thead><tr>
+                      <th style={{ ...T.th, textAlign: 'left', padding: '6px 10px' }}>DISCOUNT NAME</th>
+                      <th style={{ ...T.th, padding: '6px 10px' }}>AMOUNT (RM)</th>
+                      <th style={{ ...T.th, padding: '6px 10px', width: 40 }}></th>
+                    </tr></thead>
+                    <tbody>
+                      {customSubsidies.map(cs => (
+                        <tr key={cs.id}>
+                          <td style={{ ...T.td, textAlign: 'left' }}>
+                            <input type="text" value={cs.name} placeholder="e.g. COCONUT DRINK"
+                              onChange={e => updateCustomSubsidy(cs.id, { name: e.target.value })}
+                              style={{ width: '100%', border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, boxSizing: 'border-box', fontWeight: 700 }} />
+                          </td>
+                          <td style={T.td}>
+                            <NumberField value={cs.amount} onCommit={v => updateCustomSubsidy(cs.id, { amount: v })}
+                              style={{ width: 100, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'center' }}>
+                            <button onClick={() => removeCustomSubsidy(cs.id)} title="Remove"
+                              style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <button onClick={addCustomSubsidy}
+                style={{ marginTop: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px dashed #999', borderRadius: 4, background: '#fafafa', color: '#333', cursor: 'pointer', fontFamily: F }}>
+                + Add Custom Discount
+              </button>
+            </div>
+          )}
+          {calc.volumes.length === 0 && customSubsidies.length === 0 && invoices.length > 0 && (
+            <div className="noP" style={{ marginTop: 18 }}>
+              <button onClick={addCustomSubsidy}
+                style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px dashed #999', borderRadius: 4, background: '#fafafa', color: '#333', cursor: 'pointer', fontFamily: F }}>
+                + Add Custom Discount
+              </button>
             </div>
           )}
 
@@ -848,6 +922,9 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                   Read-only here; the rate is set in the VOLUME SUBSIDY RATES table. */}
               {calc.volumes.filter(v => v.bonus > 0).map(v => (
                 <SumRow key={v.ml} label={`${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
+              ))}
+              {calc.customSubsidies.filter(cs => cs.amount > 0).map(cs => (
+                <SumRow key={cs.id} label={`${cs.name || 'CUSTOM DISCOUNT'}:`} value={cs.amount} />
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>
