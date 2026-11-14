@@ -827,19 +827,19 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               below; once you set a rate, its line appears in the deductions. */}
           {(calc.volumes.length > 0 || customSubsidies.length > 0) && (
             <div className="noP" style={{ marginTop: 18 }}>
-              {calc.volumes.length > 0 && (<>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
                 VOLUME SUBSIDY RATES
                 <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
-                  set RM/CTN per volume — leave blank for no discount, and edit the CTN if only part of it qualifies
+                  set RM/CTN per volume — leave blank for no discount
                 </span>
               </div>
-              <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 500 }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 600 }}>
                 <thead><tr>
                   <th style={{ ...T.th, textAlign: 'left', padding: '6px 10px' }}>VOLUME</th>
                   <th style={{ ...T.th, padding: '6px 10px' }}>CTN</th>
                   <th style={{ ...T.th, padding: '6px 10px' }}>RATE (RM/CTN)</th>
                   <th style={{ ...T.th, padding: '6px 10px' }}>SUBSIDY</th>
+                  <th style={{ ...T.th, padding: '6px 10px', width: 40 }}></th>
                 </tr></thead>
                 <tbody>
                   {calc.volumes.map(v => (
@@ -860,67 +860,49 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                           style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
                       </td>
                       <td style={{ ...T.td, textAlign: 'right', color: v.bonus ? '#000' : '#bbb' }}>{fmt(v.bonus)}</td>
+                      <td style={T.td}></td>
                     </tr>
                   ))}
+                  {customSubsidies.length > 0 && calc.volumes.length > 0 && (
+                    <tr><td colSpan={5} style={{ borderBottom: '1px solid #000', padding: 0 }}></td></tr>
+                  )}
+                  {customSubsidies.map((cs, ci) => {
+                    const computed = calc.customSubsidies[ci];
+                    const nextCol = e => {
+                      if (e.key !== 'Enter') return;
+                      e.preventDefault();
+                      const td = e.target.closest('td');
+                      const next = td?.nextElementSibling?.querySelector('input');
+                      if (next) next.focus();
+                    };
+                    return (
+                    <tr key={cs.id}>
+                      <td style={{ ...T.td, textAlign: 'left' }}>
+                        <input type="text" value={cs.name} placeholder="e.g. COCONUT 300ML"
+                          onChange={e => updateCustomSubsidy(cs.id, { name: e.target.value })}
+                          onKeyDown={nextCol}
+                          style={{ width: '100%', border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, boxSizing: 'border-box', fontWeight: 700 }} />
+                      </td>
+                      <td style={T.td}>
+                        <NumberField value={cs.qty} onCommit={v => updateCustomSubsidy(cs.id, { qty: v })} placeholder="0"
+                          onKeyDown={nextCol}
+                          style={{ width: 70, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={T.td}>
+                        <NumberField value={cs.rate} onCommit={v => updateCustomSubsidy(cs.id, { rate: v })}
+                          onKeyDown={nextCol}
+                          style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ ...T.td, textAlign: 'right', color: computed?.amount ? '#000' : '#bbb' }}>{fmt(computed?.amount || 0)}</td>
+                      <td style={{ ...T.td, textAlign: 'center' }}>
+                        <button onClick={() => removeCustomSubsidy(cs.id)} title="Remove"
+                          style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
+                      </td>
+                    </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-              </>)}
-              {customSubsidies.length > 0 && (
-                <div style={{ marginTop: calc.volumes.length > 0 ? 14 : 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
-                    CUSTOM DISCOUNTS
-                    <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
-                      for product discounts not tied to volume
-                    </span>
-                  </div>
-                  <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 600 }}>
-                    <thead><tr>
-                      <th style={{ ...T.th, textAlign: 'left', padding: '6px 10px' }}>DISCOUNT NAME</th>
-                      <th style={{ ...T.th, padding: '6px 10px' }}>QTY</th>
-                      <th style={{ ...T.th, padding: '6px 10px' }}>RATE (RM)</th>
-                      <th style={{ ...T.th, padding: '6px 10px' }}>SUBSIDY</th>
-                      <th style={{ ...T.th, padding: '6px 10px', width: 40 }}></th>
-                    </tr></thead>
-                    <tbody>
-                      {customSubsidies.map((cs, ci) => {
-                        const computed = calc.customSubsidies[ci];
-                        const nextCol = e => {
-                          if (e.key !== 'Enter') return;
-                          e.preventDefault();
-                          const td = e.target.closest('td');
-                          const next = td?.nextElementSibling?.querySelector('input');
-                          if (next) next.focus();
-                        };
-                        return (
-                        <tr key={cs.id}>
-                          <td style={{ ...T.td, textAlign: 'left' }}>
-                            <input type="text" value={cs.name} placeholder="e.g. COCONUT DRINK"
-                              onChange={e => updateCustomSubsidy(cs.id, { name: e.target.value })}
-                              onKeyDown={nextCol}
-                              style={{ width: '100%', border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, boxSizing: 'border-box', fontWeight: 700 }} />
-                          </td>
-                          <td style={T.td}>
-                            <NumberField value={cs.qty} onCommit={v => updateCustomSubsidy(cs.id, { qty: v })} placeholder="0"
-                              onKeyDown={nextCol}
-                              style={{ width: 70, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />
-                          </td>
-                          <td style={T.td}>
-                            <NumberField value={cs.rate} onCommit={v => updateCustomSubsidy(cs.id, { rate: v })}
-                              onKeyDown={nextCol}
-                              style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
-                          </td>
-                          <td style={{ ...T.td, textAlign: 'right', color: computed?.amount ? '#000' : '#bbb' }}>{fmt(computed?.amount || 0)}</td>
-                          <td style={{ ...T.td, textAlign: 'center' }}>
-                            <button onClick={() => removeCustomSubsidy(cs.id)} title="Remove"
-                              style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
-                          </td>
-                        </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
               <button onClick={addCustomSubsidy}
                 style={{ marginTop: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px dashed #999', borderRadius: 4, background: '#fafafa', color: '#333', cursor: 'pointer', fontFamily: F }}>
                 + Add Custom Discount
