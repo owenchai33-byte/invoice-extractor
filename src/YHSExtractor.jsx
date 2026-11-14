@@ -326,6 +326,7 @@ function VolCell({ inv, volAdd, setVolAdd, setInvVol, removeInvVol, addInvVol, c
       {entries.length === 0 && <span className="printOnly" style={{ color: '#bbb', fontSize: 13 }}>—</span>}
       {entries.map(ml => (
         <div key={ml} style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {tags[ml] && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 3, padding: '1px 5px', letterSpacing: 0.3 }}>{tags[ml].toUpperCase()}</span>}
           <EditableVol ml={ml} unit={units[ml]} onCommit={(newMl, newUnit) => { changeInvVol(inv.id, ml, newMl); if (newUnit) setInvVolUnit(inv.id, newMl, newUnit); }} />
           <EditableInt value={inv.vols[ml]} onCommit={v => (v > 0 ? setInvVol(inv.id, ml, v) : removeInvVol(inv.id, ml))} />
           <span style={{ color: '#888', fontSize: 16 }}>CTN</span>
@@ -719,10 +720,15 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
     d.push([]); d.push(['PAYMENT SUMMARY']); d.push(['SUPPLIER: ' + YHS_SUPPLIER]); d.push([]);
     d.push(['NO.', 'DATE', 'INVOICE NO.', 'AMOUNT', 'QUANTITY (CTN)', 'VOLUME BREAKDOWN (CTN)']);
     invoices.forEach((inv, i) => {
+      const invTags = inv.volTags || {};
       const volStr = Object.keys(inv.vols || {})
         .map(Number).sort((a, b) => a - b)
         .filter(ml => inv.vols[ml])
-        .map(ml => `${volLabel(ml, (inv.volUnits || {})[ml])}: ${inv.vols[ml]}`).join(', ');
+        .map(ml => {
+          const tag = (invTags[ml] || '').trim().toUpperCase();
+          const label = volLabel(ml, (inv.volUnits || {})[ml]);
+          return tag ? `${tag} ${label}: ${inv.vols[ml]}` : `${label}: ${inv.vols[ml]}`;
+        }).join(', ');
       d.push([i + 1, inv.invoice_date, inv.invoice_no, inv.amount, inv.qty, volStr]);
     });
     d.push(['TOTAL:', '', '', calc.totalAmount, calc.totalCtn, '']);
