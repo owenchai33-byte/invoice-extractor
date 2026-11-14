@@ -85,7 +85,11 @@ export function calcYHS({ invoices = [], rates = {}, defaultRate = YHS_DEFAULT_R
 
   const od = Number(otherDiscount) || 0;
   const cn = Number(creditNote) || 0;
-  const csubs = customSubsidies.map(cs => ({ ...cs, amount: Math.round((Number(cs.amount) || 0) * 100 + 1e-8) / 100 }));
+  const csubs = customSubsidies.map(cs => {
+    const qty = Number(cs.qty) || 0;
+    const rate = Number(cs.rate) || 0;
+    return { ...cs, qty, rate, amount: r4(qty * rate) };
+  });
   const totalCustom = r4(csubs.reduce((s, cs) => s + cs.amount, 0));
   const payable = r4(
     totalAmount - discount2 - transport1 - transport2 - totalBonus - od - cn - totalCustom
@@ -384,7 +388,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
   const [payableOverride, setPayableOverride] = useState(() => loadLS(LS_META, null, {}).payableOverride ?? null);
   const [customSubsidies, setCustomSubsidies] = useState(() => loadLS(LS_CSUB, null, []));
   const addCustomSubsidy = () => {
-    setCustomSubsidies(prev => [...prev, { id: 'cs_' + Date.now().toString(36), name: '', amount: 0 }]);
+    setCustomSubsidies(prev => [...prev, { id: 'cs_' + Date.now().toString(36), name: '', qty: 0, rate: 0 }]);
   };
   const updateCustomSubsidy = (id, patch) => {
     setCustomSubsidies(prev => prev.map(cs => cs.id === id ? { ...cs, ...patch } : cs));
@@ -690,7 +694,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
       d.push(['', `${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`, '', '-', v.bonus]);
     });
     calc.customSubsidies.filter(cs => cs.amount > 0).forEach(cs => {
-      d.push(['', `${cs.name || 'CUSTOM DISCOUNT'}:`, '', '-', cs.amount]);
+      d.push(['', `${cs.name || 'CUSTOM DISCOUNT'} (${cs.qty} x RM${cs.rate.toFixed(2)}):`, '', '-', cs.amount]);
     });
     d.push(['', 'OTHER DISCOUNT:', '', calc.otherDiscount ? '-' : '', calc.otherDiscount || '']);
     d.push(['', 'CREDIT NOTE:', '', calc.creditNote ? '-' : '', calc.creditNote || '']);
@@ -868,14 +872,18 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                       for product discounts not tied to volume
                     </span>
                   </div>
-                  <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 500 }}>
+                  <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 600 }}>
                     <thead><tr>
                       <th style={{ ...T.th, textAlign: 'left', padding: '6px 10px' }}>DISCOUNT NAME</th>
-                      <th style={{ ...T.th, padding: '6px 10px' }}>AMOUNT (RM)</th>
+                      <th style={{ ...T.th, padding: '6px 10px' }}>QTY</th>
+                      <th style={{ ...T.th, padding: '6px 10px' }}>RATE (RM)</th>
+                      <th style={{ ...T.th, padding: '6px 10px' }}>SUBSIDY</th>
                       <th style={{ ...T.th, padding: '6px 10px', width: 40 }}></th>
                     </tr></thead>
                     <tbody>
-                      {customSubsidies.map(cs => (
+                      {customSubsidies.map((cs, ci) => {
+                        const computed = calc.customSubsidies[ci];
+                        return (
                         <tr key={cs.id}>
                           <td style={{ ...T.td, textAlign: 'left' }}>
                             <input type="text" value={cs.name} placeholder="e.g. COCONUT DRINK"
@@ -883,15 +891,21 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                               style={{ width: '100%', border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, boxSizing: 'border-box', fontWeight: 700 }} />
                           </td>
                           <td style={T.td}>
-                            <NumberField value={cs.amount} onCommit={v => updateCustomSubsidy(cs.id, { amount: v })}
-                              style={{ width: 100, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                            <NumberField value={cs.qty} onCommit={v => updateCustomSubsidy(cs.id, { qty: v })} placeholder="0"
+                              style={{ width: 70, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />
                           </td>
+                          <td style={T.td}>
+                            <NumberField value={cs.rate} onCommit={v => updateCustomSubsidy(cs.id, { rate: v })}
+                              style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'right', color: computed?.amount ? '#000' : '#bbb' }}>{fmt(computed?.amount || 0)}</td>
                           <td style={{ ...T.td, textAlign: 'center' }}>
                             <button onClick={() => removeCustomSubsidy(cs.id)} title="Remove"
                               style={{ background: 'none', border: 'none', color: '#c00', cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✕</button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -924,7 +938,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                 <SumRow key={v.ml} label={`${v.label} (${v.subsidyCtn} x RM${v.rate.toFixed(2)}):`} value={v.bonus} />
               ))}
               {calc.customSubsidies.filter(cs => cs.amount > 0).map(cs => (
-                <SumRow key={cs.id} label={`${cs.name || 'CUSTOM DISCOUNT'}:`} value={cs.amount} />
+                <SumRow key={cs.id} label={`${cs.name || 'CUSTOM DISCOUNT'} (${cs.qty} x RM${cs.rate.toFixed(2)}):`} value={cs.amount} />
               ))}
               {/* OTHER DISCOUNT — editable */}
               <tr>
