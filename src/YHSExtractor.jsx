@@ -261,7 +261,7 @@ const btn = p => ({ padding: '8px 18px', borderRadius: 5, border: p ? 'none' : '
 // entry work) while committing the parsed value live. Binding an <input> straight
 // to a parsed number wipes a trailing "." and blocks decimals — this fixes that.
 // A blank field commits 0.
-function NumberField({ value, onCommit, placeholder = '0.00', style = {} }) {
+function NumberField({ value, onCommit, placeholder = '0.00', style = {}, onKeyDown }) {
   const [local, setLocal] = useState(value ? String(value) : '');
   const [focused, setFocused] = useState(false);
   useEffect(() => { if (!focused) setLocal(value ? String(value) : ''); }, [value, focused]);
@@ -271,6 +271,7 @@ function NumberField({ value, onCommit, placeholder = '0.00', style = {} }) {
       onFocus={() => setFocused(true)}
       onChange={e => { setLocal(e.target.value); onCommit(Math.max(0, parseFloat(e.target.value) || 0)); }}
       onBlur={() => setFocused(false)}
+      onKeyDown={onKeyDown}
       style={style} />
   );
 }
@@ -883,19 +884,29 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
                     <tbody>
                       {customSubsidies.map((cs, ci) => {
                         const computed = calc.customSubsidies[ci];
+                        const nextCol = e => {
+                          if (e.key !== 'Enter') return;
+                          e.preventDefault();
+                          const td = e.target.closest('td');
+                          const next = td?.nextElementSibling?.querySelector('input');
+                          if (next) next.focus();
+                        };
                         return (
                         <tr key={cs.id}>
                           <td style={{ ...T.td, textAlign: 'left' }}>
                             <input type="text" value={cs.name} placeholder="e.g. COCONUT DRINK"
                               onChange={e => updateCustomSubsidy(cs.id, { name: e.target.value })}
+                              onKeyDown={nextCol}
                               style={{ width: '100%', border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, boxSizing: 'border-box', fontWeight: 700 }} />
                           </td>
                           <td style={T.td}>
                             <NumberField value={cs.qty} onCommit={v => updateCustomSubsidy(cs.id, { qty: v })} placeholder="0"
+                              onKeyDown={nextCol}
                               style={{ width: 70, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'center', boxSizing: 'border-box' }} />
                           </td>
                           <td style={T.td}>
                             <NumberField value={cs.rate} onCommit={v => updateCustomSubsidy(cs.id, { rate: v })}
+                              onKeyDown={nextCol}
                               style={{ width: 84, border: '1px solid #bbb', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontFamily: F, textAlign: 'right', boxSizing: 'border-box' }} />
                           </td>
                           <td style={{ ...T.td, textAlign: 'right', color: computed?.amount ? '#000' : '#bbb' }}>{fmt(computed?.amount || 0)}</td>
