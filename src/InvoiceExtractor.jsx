@@ -962,14 +962,16 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
   // Keep this batch's invoices + credit-note values alive across Chrome-tab
   // switches and reloads. Each batch writes to its own namespaced keys, so
   // opening a new tab never touches another tab's stored data.
-  useEffect(()=>{ try{ localStorage.setItem(LS_INV, JSON.stringify(invoices)) }catch{} },[invoices,LS_INV]);
+  // Strip base64 preview images before saving — they blow the 5MB localStorage quota.
+  const stripImages = arr => arr.map(inv => inv.image ? { ...inv, image: null } : inv);
+  useEffect(()=>{ try{ localStorage.setItem(LS_INV, JSON.stringify(stripImages(invoices))) }catch{} },[invoices,LS_INV]);
   useEffect(()=>{ try{ localStorage.setItem(LS_CN, JSON.stringify(cnValues)) }catch{} },[cnValues,LS_CN]);
   useEffect(()=>{ try{ localStorage.setItem(LS_CNN, JSON.stringify(cnNums)) }catch{} },[cnNums,LS_CNN]);
   const invRef=useRef(invoices); invRef.current=invoices;
   const cnRef=useRef(cnValues); cnRef.current=cnValues;
   const cnnRef=useRef(cnNums); cnnRef.current=cnNums;
   useEffect(()=>()=>{
-    try{ localStorage.setItem(LS_INV,JSON.stringify(invRef.current)); localStorage.setItem(LS_CN,JSON.stringify(cnRef.current)); localStorage.setItem(LS_CNN,JSON.stringify(cnnRef.current)); }catch{}
+    try{ localStorage.setItem(LS_INV,JSON.stringify(stripImages(invRef.current))); localStorage.setItem(LS_CN,JSON.stringify(cnRef.current)); localStorage.setItem(LS_CNN,JSON.stringify(cnnRef.current)); }catch{}
   },[LS_INV,LS_CN,LS_CNN]);
 
   // Recalculate 0.4%/0.2% subsidies when CN values change (percentages are on amt-cn)
@@ -1496,7 +1498,7 @@ export default function InvoiceExtractor({ batchId = 'default', headerActionsRef
   const reset=()=>{
     if(invoices.length>0){
       try{
-        localStorage.setItem(`${LS_INV}_bak`,JSON.stringify(invoices));
+        localStorage.setItem(`${LS_INV}_bak`,JSON.stringify(stripImages(invoices)));
         localStorage.setItem(`${LS_CN}_bak`,JSON.stringify(cnValues));
         localStorage.setItem(`${LS_CNN}_bak`,JSON.stringify(cnNums));
         setUndoAvailable(true);
