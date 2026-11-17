@@ -211,12 +211,14 @@ function processRecords({ records, from, to }, joinDateOverrides = {}) {
 
   const payrollNames = getPayrollOrder();
   const payrollJoinDates = getPayrollJoinDates();
+  const knownPayrollIds = new Set();
   if (payrollNames.length) {
     for (const emp of Object.values(emps)) {
       const attName = emp.name.toUpperCase().trim();
       const idx = fuzzyMatch(attName, payrollNames);
       if (idx !== -1) {
         emp.name = payrollNames[idx];
+        knownPayrollIds.add(emp.id);
       }
     }
   }
@@ -476,7 +478,7 @@ function processRecords({ records, from, to }, joinDateOverrides = {}) {
   const missingJoinDates = [];
   for (const emp of Object.values(results)) {
     const name = emp.name.toUpperCase().trim();
-    if (!allJoinDates[name]) {
+    if (!allJoinDates[name] && !knownPayrollIds.has(emp.id)) {
       const hasAbsent = emp.days.some(d => d.type === 'absent');
       if (hasAbsent) missingJoinDates.push({ id: Object.keys(results).find(k => results[k] === emp), name: emp.name });
     }
