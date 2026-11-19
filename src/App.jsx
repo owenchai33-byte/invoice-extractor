@@ -168,7 +168,7 @@ function PinGate({ onUnlock }) {
         <div style={{fontSize:15,fontWeight:700,marginBottom:4,color:'#18181b'}}>Protected Page</div>
         <div style={{fontSize:12,color:'#71717a',marginBottom:20}}>Enter PIN to continue</div>
         <input
-          type="password"
+          type="text"
           inputMode="numeric"
           maxLength={4}
           value={pin}
@@ -176,8 +176,7 @@ function PinGate({ onUnlock }) {
           onKeyDown={e => e.key === 'Enter' && submit()}
           autoFocus
           autoComplete="off"
-          name="app-pin"
-          style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${err?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace'}}
+          style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${err?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace',WebkitTextSecurity:'disc'}}
           placeholder="····"
         />
         {err && <div style={{fontSize:12,color:'#dc2626',marginTop:8}}>Wrong PIN</div>}
