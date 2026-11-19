@@ -175,6 +175,8 @@ function PinGate({ onUnlock }) {
           onChange={e => { setErr(false); setPin(e.target.value.replace(/\D/g,'')); }}
           onKeyDown={e => e.key === 'Enter' && submit()}
           autoFocus
+          autoComplete="off"
+          name="app-pin"
           style={{width:120,textAlign:'center',fontSize:24,letterSpacing:8,padding:'10px 12px',border:`2px solid ${err?'#dc2626':'#d4d4d8'}`,borderRadius:8,outline:'none',fontFamily:'monospace'}}
           placeholder="····"
         />
