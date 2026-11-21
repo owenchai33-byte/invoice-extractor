@@ -189,9 +189,9 @@ export default function InvoicesWorkspace() {
         <div ref={headerRefCb} style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }} />
       </div>
 
-      {sub === 'weekly' && <WeeklyPayment />}
-      {sub === 'choonhua' && <BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} headerActionsRef={headerActionsRef} />}
-      {sub === 'yhs' && <BatchedSupplier ns="yhs" Extractor={YHSExtractor} headerActionsRef={headerActionsRef} />}
+      <div style={{display: sub === 'weekly' ? 'block' : 'none'}}><WeeklyPayment /></div>
+      <div style={{display: sub === 'choonhua' ? 'block' : 'none'}}><BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} headerActionsRef={headerActionsRef} /></div>
+      <div style={{display: sub === 'yhs' ? 'block' : 'none'}}><BatchedSupplier ns="yhs" Extractor={YHSExtractor} headerActionsRef={headerActionsRef} /></div>
     </div>
   );
 }

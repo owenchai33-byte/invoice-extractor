@@ -584,7 +584,7 @@ export default function App() {
 
       {/* ─── Content ─── */}
       <main>
-        {active === 'invoice' && <InvoicesWorkspace />}
+        <div style={{display: active === 'invoice' ? 'block' : 'none'}}><InvoicesWorkspace /></div>
         {active === 'payroll' && (pinUnlocked ? <Payroll canUndo={canUndo} onUndo={handleUndo} canRedo={canRedo} onRedo={handleRedo} /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
         {active === 'contract' && <ContractGenerator />}
         {active === 'payslip' && (pinUnlocked ? <Payslip /> : <PinGate onUnlock={() => setPinUnlocked(true)} />)}
