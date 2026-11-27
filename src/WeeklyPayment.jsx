@@ -101,7 +101,14 @@ function EditableCell({ value, onChange, type, placeholder, style, align }) {
   const focusNext = () => {
     const td = ref.current?.closest('td');
     const next = td?.nextElementSibling?.querySelector('input');
-    if (next) next.focus();
+    if (next) { next.focus(); return; }
+    const tr = td?.closest('tr');
+    let cur = tr?.nextElementSibling;
+    while (cur) {
+      const inp = cur.querySelector('input');
+      if (inp) { inp.focus(); return; }
+      cur = cur.nextElementSibling;
+    }
   };
   return (
     <input
