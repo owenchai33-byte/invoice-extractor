@@ -551,9 +551,13 @@ function EditableCell({value, onCommit, placeholder='0', width=50, dec=false}) {
           const td = ref.current?.closest('td');
           const tr = td?.closest('tr');
           const ci = Array.from(tr?.children || []).indexOf(td);
-          const nextTr = tr?.nextElementSibling;
-          const target = nextTr?.children[ci]?.querySelector('input');
-          if (target) { target.focus(); target.select(); } else ref.current?.blur();
+          let cur = tr?.nextElementSibling;
+          while (cur) {
+            const inp = cur.children[ci]?.querySelector('input');
+            if (inp) { inp.focus(); inp.select(); return; }
+            cur = cur.nextElementSibling;
+          }
+          ref.current?.blur();
         }
         if (e.key === 'Tab') {
           e.preventDefault(); commit();
