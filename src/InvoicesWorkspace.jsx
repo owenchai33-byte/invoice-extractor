@@ -19,7 +19,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 // id via the `batchId` prop). Switching / adding a tab never touches another
 // tab's stored data, so old tabs keep their info.
 // ---------------------------------------------------------------------------
-function BatchedSupplier({ ns, Extractor, headerActionsRef }) {
+function BatchedSupplier({ ns, Extractor, headerActionsRef, active }) {
   const LS_BATCHES = `${ns}_batches`;
   const LS_ACTIVE = `${ns}_active_batch`;
 
@@ -136,7 +136,7 @@ function BatchedSupplier({ ns, Extractor, headerActionsRef }) {
       </div>
 
       {/* key forces a fresh mount per batch so each loads its own saved data */}
-      <Extractor key={activeId} batchId={activeId} headerActionsRef={headerActionsRef} />
+      <Extractor key={activeId} batchId={activeId} headerActionsRef={active ? headerActionsRef : { current: null }} />
     </div>
   );
 }
@@ -190,8 +190,8 @@ export default function InvoicesWorkspace() {
       </div>
 
       <div style={{display: sub === 'weekly' ? 'block' : 'none'}}><WeeklyPayment /></div>
-      <div style={{display: sub === 'choonhua' ? 'block' : 'none'}}><BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} headerActionsRef={headerActionsRef} /></div>
-      <div style={{display: sub === 'yhs' ? 'block' : 'none'}}><BatchedSupplier ns="yhs" Extractor={YHSExtractor} headerActionsRef={headerActionsRef} /></div>
+      <div style={{display: sub === 'choonhua' ? 'block' : 'none'}}><BatchedSupplier ns="choonhua" Extractor={InvoiceExtractor} headerActionsRef={headerActionsRef} active={sub === 'choonhua'} /></div>
+      <div style={{display: sub === 'yhs' ? 'block' : 'none'}}><BatchedSupplier ns="yhs" Extractor={YHSExtractor} headerActionsRef={headerActionsRef} active={sub === 'yhs'} /></div>
     </div>
   );
 }
