@@ -293,6 +293,27 @@ function NumberField({ value, onCommit, placeholder = '0.00', style = {}, onKeyD
   );
 }
 
+function PayableCell({ value, calcPayable, onCommit, isOverride }) {
+  const [editing, setEditing] = useState(false);
+  const [local, setLocal] = useState('');
+  const ref = useRef(null);
+  const start = () => { setLocal(value.toFixed(2)); setEditing(true); setTimeout(() => ref.current?.select(), 0); };
+  const commit = () => { const n = parseFloat(local.replace(/,/g, '')) || 0; onCommit(n); setEditing(false); };
+  return (
+    <td style={{ ...T.bxR, borderTop: '2px solid #000', background: isOverride ? '#fff3cd' : '#ffe600', fontSize: 18, textAlign: 'right', fontWeight: 700 }}>
+      {editing ? (
+        <input ref={ref} className="noP" type="text" inputMode="decimal" value={local}
+          onChange={e => setLocal(e.target.value.replace(/[^0-9.-]/g, ''))}
+          onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+          style={{ width: '100%', border: '1px solid #bbb', borderRadius: 3, padding: '3px 4px', fontSize: 18, fontWeight: 700, fontFamily: F, textAlign: 'right', boxSizing: 'border-box', background: isOverride ? '#fff3cd' : '#ffe600' }} />
+      ) : (
+        <span className="noP" onClick={start} style={{ cursor: 'pointer' }} title="Click to edit">{fmt(value)}</span>
+      )}
+      <span className="printOnly">{fmt(value)}</span>
+    </td>
+  );
+}
+
 // Read-only summary line in the deductions table.
 function SumRow({ label, value, sign = '-', bold = false, highlight = false, topBorder = false }) {
   const [copied, setCopied] = useState(false);
@@ -1023,13 +1044,7 @@ export default function YHSExtractor({ batchId = 'default', headerActionsRef }) 
               <tr>
                 <td style={{ ...T.bxL, borderTop: '2px solid #000', fontSize: 16 }}>TOTAL AMOUNT PAYABLE:</td>
                 <td style={{ ...T.bxM, borderTop: '2px solid #000' }}></td>
-                <td style={{ ...T.bxR, borderTop: '2px solid #000', background: '#ffe600', fontSize: 18 }}>
-                  <span className="noP">
-                    <NumberField value={payableOverride != null ? payableOverride : calc.payable} onCommit={v => setPayableOverride(v === calc.payable ? null : v)}
-                      style={{ width: '100%', border: '1px solid #bbb', borderRadius: 3, padding: '3px 4px', fontSize: 18, fontWeight: 700, fontFamily: F, textAlign: 'right', boxSizing: 'border-box', background: payableOverride != null ? '#fff3cd' : '#ffe600' }} />
-                  </span>
-                  <span className="printOnly" style={{ fontWeight: 700 }}>{fmt(payableOverride != null ? payableOverride : calc.payable)}</span>
-                </td>
+                <PayableCell value={payableOverride != null ? payableOverride : calc.payable} calcPayable={calc.payable} onCommit={v => setPayableOverride(v === calc.payable ? null : v)} isOverride={payableOverride != null} />
               </tr>
             </tbody>
           </table>
