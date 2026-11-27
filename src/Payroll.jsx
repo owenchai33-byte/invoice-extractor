@@ -162,7 +162,7 @@ export function computeStaffMonth(s, monthly, ref, showBonus=true, mk=''){
   const a=getAgeFromIC(s.ic,ref), m=monthly||{};
   const inc = monthly && 'incentive' in monthly ? (m.incentive||0) : (s.defIncentive||0);
   const bon = showBonus ? (monthly && 'bonus' in monthly ? (m.bonus||0) : (s.defBonus||0)) : 0;
-  const adv = monthly && 'advance' in monthly ? (m.advance||0) : (s.defAdvance||0);
+  const adv = monthly && 'advance' in monthly ? (m.advance||0) : 0;
   const epfWage = s.salary + inc + bon;
   const socsoEisWage = s.salary + inc;
   const epf=calcEPF(epfWage,a), socso=calcSOCSO(socsoEisWage,a), eis=calcEIS(socsoEisWage,a);
@@ -896,7 +896,7 @@ export default function Payroll({canUndo, onUndo, canRedo, onRedo}){
       <td className={"r fxc"+hl(12)} style={{color:'#000'}} onClick={()=>applySel(ri,12)}>{fmt(r.socsoM+r.socsoP)}</td>
       <td className={"r fxc"+hl(13)} style={{color:'#000',fontWeight:700}} onClick={()=>applySel(ri,13)}>{fmt(r.eisE)}</td>
       <td className={"r fxc"+hl(14)} style={{color:'#000'}} onClick={()=>applySel(ri,14)}>{fmt(r.eisE*2)}</td>
-      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>{_recordEdit(r.name,'advance',r.advance,v);sM(r.id,'advance',v);setStaff(p=>p.map(s=>s.id===r.id?{...s,defAdvance:parseFloat(v)||0}:s));}} dec/><span className="pv">{pfmt(r.advance)}</span></td>
+      <td className={"r"+hl(15)} style={{color:'#000'}} onClick={()=>applySel(ri,15)}><EditableCell value={r.advance} onCommit={v=>{_recordEdit(r.name,'advance',r.advance,v);sM(r.id,'advance',v);}} dec/><span className="pv">{pfmt(r.advance)}</span></td>
       {isBank ? <>
         <td className={"r fxc"+hl(16)} style={{fontWeight:700,whiteSpace:'nowrap',color:'#166534'}} onClick={()=>applySel(ri,16)}>{fmt(bankAmt(r))}</td>
         <td className={"r fxc"} style={{fontWeight:700,whiteSpace:'nowrap',color:'#b45309'}}>{fmt(cashAmt(r))}</td>
